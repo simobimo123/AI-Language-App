@@ -1,0 +1,90 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class AppBottomNavBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onItemSelected;
+
+  const AppBottomNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onItemSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: theme.dividerColor.withOpacity(0.15),
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: NavigationBar(
+        selectedIndex: currentIndex,
+
+        onDestinationSelected: (index) {
+          HapticFeedback.mediumImpact();
+          onItemSelected(index);
+        },
+
+        height: 76,
+
+        backgroundColor: Colors.transparent,
+
+        elevation: 0,
+
+        indicatorColor: theme.colorScheme.primaryContainer,
+
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+
+        animationDuration: const Duration(milliseconds: 300),
+
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: Icon(
+              Icons.home_rounded,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+            label: 'الرئيسية',
+          ),
+
+          NavigationDestination(
+            icon: const Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(
+              Icons.menu_book_rounded,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+            label: 'كلماتي',
+          ),
+
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(
+              Icons.person_rounded,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+            label: 'حسابي',
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,11 @@
+tern on the  server :
+
+cd C:\Users\simobimo\Documents\AI_Language_App111\ai_app_flutter_backend\backend
+
+///////
+
+.\.venv\Scripts\Activate.ps1
+
+///////
+
+python -m uvicorn main:app --reload --host 0.0.0.0
