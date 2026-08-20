@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from schemas import WordCreate, WordResponse
-from models import Word, User
+from models import Word, User, LearningProfile
 from database import get_db
 from routers.auth import get_current_user
 
@@ -19,6 +19,28 @@ class WordStatusUpdate(BaseModel):
 
 
 # =========================
+# Get current learning profile
+# =========================
+
+def get_current_profile(
+    db: Session,
+    current_user: User
+):
+    profile = db.query(LearningProfile).filter(
+        LearningProfile.user_id == current_user.id,
+        LearningProfile.language == current_user.learning_language
+    ).first()
+
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Current learning profile not found"
+        )
+
+    return profile
+
+
+# =========================
 # Create word
 # =========================
 
@@ -28,11 +50,17 @@ def create_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    profile = get_current_profile(
+        db,
+        current_user
+    )
+
     new_word = Word(
         word=word_data.word,
         translation=word_data.translation,
         learned=False,
-        user_id=current_user.id
+        user_id=current_user.id,
+        learning_profile_id=profile.id
     )
 
     db.add(new_word)
@@ -51,8 +79,14 @@ def get_words(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    profile = get_current_profile(
+        db,
+        current_user
+    )
+
     words = db.query(Word).filter(
-        Word.user_id == current_user.id
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id
     ).all()
 
     return words
@@ -69,9 +103,15 @@ def update_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    profile = get_current_profile(
+        db,
+        current_user
+    )
+
     word = db.query(Word).filter(
         Word.id == word_id,
-        Word.user_id == current_user.id
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id
     ).first()
 
     if word is None:
@@ -100,9 +140,15 @@ def update_word_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    profile = get_current_profile(
+        db,
+        current_user
+    )
+
     word = db.query(Word).filter(
         Word.id == word_id,
-        Word.user_id == current_user.id
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id
     ).first()
 
     if word is None:
@@ -129,9 +175,15 @@ def delete_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    profile = get_current_profile(
+        db,
+        current_user
+    )
+
     word = db.query(Word).filter(
         Word.id == word_id,
-        Word.user_id == current_user.id
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id
     ).first()
 
     if word is None:

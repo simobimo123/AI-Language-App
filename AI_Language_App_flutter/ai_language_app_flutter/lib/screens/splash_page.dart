@@ -33,14 +33,16 @@ class _SplashPageState extends State<SplashPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(themeController: widget.themeController),
+          builder: (context) =>
+              HomePage(themeController: widget.themeController),
         ),
       );
     } else {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => LoginPage(themeController: widget.themeController),
+          builder: (context) =>
+              LoginPage(themeController: widget.themeController),
         ),
       );
     }

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from routers.auth import router as auth_router
 from routers.users import router as users_router
 from routers.words import router as words_router
+from routers.learning_profiles import router as learning_router
 
 
 app = FastAPI()
@@ -18,6 +19,7 @@ def home():
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(words_router)
+app.include_router(learning_router)
 
 
 # uvicorn main:app --reload

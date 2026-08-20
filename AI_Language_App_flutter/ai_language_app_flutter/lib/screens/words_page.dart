@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/learning_language_controller.dart';
 import '../widgets/word_card.dart';
 
 enum WordFilter { all, learning, learned }
@@ -15,9 +16,13 @@ class WordsPage extends StatefulWidget {
 class _WordsPageState extends State<WordsPage> {
   final ApiService apiService = ApiService();
 
+  final LearningLanguageController learningLanguageController =
+      LearningLanguageController.instance;
+
   List<dynamic> words = [];
 
   bool isLoading = true;
+
   String? errorMessage;
 
   WordFilter selectedFilter = WordFilter.all;
@@ -26,11 +31,31 @@ class _WordsPageState extends State<WordsPage> {
   void initState() {
     super.initState();
 
+    learningLanguageController.addListener(_onLearningLanguageChanged);
+
+    loadWords();
+  }
+
+  @override
+  void dispose() {
+    learningLanguageController.removeListener(_onLearningLanguageChanged);
+
+    super.dispose();
+  }
+
+  void _onLearningLanguageChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    // عند تغيير لغة التعلّم، نجلب كلمات اللغة الجديدة تلقائيًا.
     loadWords();
   }
 
   Future<void> loadWords() async {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       isLoading = true;
@@ -40,14 +65,18 @@ class _WordsPageState extends State<WordsPage> {
     try {
       final result = await apiService.getWords();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         words = result;
         isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         errorMessage = e.toString();
@@ -99,7 +128,9 @@ class _WordsPageState extends State<WordsPage> {
 
   Future<void> toggleLearned(dynamic word) async {
     final int wordId = word['id'];
+
     final bool currentStatus = word['learned'] == true;
+
     final bool newStatus = !currentStatus;
 
     final confirmed = await showDialog<bool>(
@@ -142,7 +173,9 @@ class _WordsPageState extends State<WordsPage> {
     try {
       await apiService.updateWordStatus(wordId: wordId, learned: newStatus);
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         word['learned'] = newStatus;
@@ -159,7 +192,9 @@ class _WordsPageState extends State<WordsPage> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -210,7 +245,9 @@ class _WordsPageState extends State<WordsPage> {
     try {
       await apiService.deleteWord(wordId: wordId);
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         words.removeWhere((item) => item['id'] == wordId);
@@ -223,7 +260,9 @@ class _WordsPageState extends State<WordsPage> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -240,27 +279,14 @@ class _WordsPageState extends State<WordsPage> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F7FB),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-
         title: const Text(
           'كلماتي',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-
-        actions: [
-          IconButton(
-            onPressed: loadWords,
-            tooltip: 'تحديث',
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-
-          const SizedBox(width: 8),
-        ],
       ),
-
       body: _buildBody(theme),
     );
   }
@@ -275,26 +301,30 @@ class _WordsPageState extends State<WordsPage> {
     }
 
     if (words.isEmpty) {
-      return _buildEmptyState(theme);
+      return RefreshIndicator(
+        onRefresh: loadWords,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: _buildEmptyState(theme),
+            ),
+          ],
+        ),
+      );
     }
 
     return RefreshIndicator(
       onRefresh: loadWords,
-
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
-
         children: [
           _buildWordsHeader(theme),
-
           const SizedBox(height: 18),
-
           _buildFilter(theme),
-
           const SizedBox(height: 18),
-
           if (filteredWords.isEmpty)
             _buildFilterEmptyState(theme)
           else
@@ -317,7 +347,6 @@ class _WordsPageState extends State<WordsPage> {
   Widget _buildWordsHeader(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(20),
-
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -325,35 +354,27 @@ class _WordsPageState extends State<WordsPage> {
             theme.colorScheme.secondaryContainer,
           ],
         ),
-
         borderRadius: BorderRadius.circular(24),
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     const Text(
                       'مفرداتك',
-
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
-                    '${words.length} كلمة محفوظة',
-
+                      '${words.length} كلمة محفوظة',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -362,23 +383,18 @@ class _WordsPageState extends State<WordsPage> {
                   ],
                 ),
               ),
-
               Container(
                 width: 58,
                 height: 58,
-
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.8),
                   shape: BoxShape.circle,
                 ),
-
                 child: const Icon(Icons.auto_stories_rounded, size: 30),
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           Row(
             children: [
               _buildSmallStat(
@@ -386,9 +402,7 @@ class _WordsPageState extends State<WordsPage> {
                 value: '$learningCount',
                 label: 'جاري التعلم ...',
               ),
-
               const SizedBox(width: 10),
-
               _buildSmallStat(
                 icon: Icons.check_circle_outline_rounded,
                 value: '$learnedCount',
@@ -409,21 +423,16 @@ class _WordsPageState extends State<WordsPage> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.65),
           borderRadius: BorderRadius.circular(14),
         ),
-
         child: Row(
           children: [
             Icon(icon, size: 19),
-
             const SizedBox(width: 8),
-
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
                 Text(
                   value,
@@ -432,7 +441,6 @@ class _WordsPageState extends State<WordsPage> {
                     fontSize: 15,
                   ),
                 ),
-
                 Text(
                   label,
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
@@ -448,19 +456,18 @@ class _WordsPageState extends State<WordsPage> {
   Widget _buildFilter(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(5),
-
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
       ),
-
       child: Row(
         children: [
           _buildFilterButton(label: 'الكل', filter: WordFilter.all),
-
-          _buildFilterButton(label: 'جاري التعلم ...', filter: WordFilter.learning),
-
+          _buildFilterButton(
+            label: 'جاري التعلم ...',
+            filter: WordFilter.learning,
+          ),
           _buildFilterButton(label: 'تم التعلم', filter: WordFilter.learned),
         ],
       ),
@@ -472,6 +479,7 @@ class _WordsPageState extends State<WordsPage> {
     required WordFilter filter,
   }) {
     final theme = Theme.of(context);
+
     final selected = selectedFilter == filter;
 
     return Expanded(
@@ -481,22 +489,16 @@ class _WordsPageState extends State<WordsPage> {
             selectedFilter = filter;
           });
         },
-
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-
           padding: const EdgeInsets.symmetric(vertical: 11),
-
           decoration: BoxDecoration(
             color: selected ? theme.colorScheme.primary : Colors.transparent,
-
             borderRadius: BorderRadius.circular(12),
           ),
-
           child: Text(
             label,
             textAlign: TextAlign.center,
-
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -515,13 +517,11 @@ class _WordsPageState extends State<WordsPage> {
 
     return Container(
       padding: const EdgeInsets.all(28),
-
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
       ),
-
       child: Column(
         children: [
           Icon(
@@ -529,18 +529,14 @@ class _WordsPageState extends State<WordsPage> {
             size: 42,
             color: theme.colorScheme.primary,
           ),
-
           const SizedBox(height: 14),
-
           Text(
             learnedFilter
                 ? 'لا توجد كلمات تم التعلم بعد'
                 : 'لا توجد كلمات في جاري التعلم ...',
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 6),
-
           Text(
             learnedFilter
                 ? 'واصل التدريب، وستظهر الكلمات التي تتعلمها هنا.'
@@ -557,72 +553,54 @@ class _WordsPageState extends State<WordsPage> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-
           children: [
             Container(
               width: 100,
               height: 100,
-
               decoration: BoxDecoration(
                 color: theme.colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
-
               child: Icon(
                 Icons.menu_book_rounded,
                 size: 48,
                 color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
-
             const SizedBox(height: 24),
-
             const Text(
               'لا توجد كلمات محفوظة بعد',
-
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 10),
-
             Text(
               'عند اكتشاف كلمة جديدة أثناء محادثة الذكاء الاصطناعي، أضفها إلى مفرداتك.',
-
               textAlign: TextAlign.center,
-
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.grey.shade600,
                 height: 1.5,
               ),
             ),
-
             const SizedBox(height: 26),
-
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-
                 children: [
                   Icon(
                     Icons.auto_awesome_rounded,
                     size: 20,
                     color: theme.colorScheme.primary,
                   ),
-
                   const SizedBox(width: 10),
-
                   const Flexible(
                     child: Text(
                       'تعلّم بصورة طبيعية من خلال المحادثة',
@@ -642,51 +620,37 @@ class _WordsPageState extends State<WordsPage> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-
           children: [
             Container(
               width: 80,
               height: 80,
-
               decoration: BoxDecoration(
                 color: Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
-
               child: Icon(
                 Icons.cloud_off_rounded,
                 size: 38,
                 color: Colors.red.shade400,
               ),
             ),
-
             const SizedBox(height: 20),
-
             const Text(
               'حدث خطأ ما',
-
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 8),
-
             Text(
               errorMessage!,
               textAlign: TextAlign.center,
-
               style: TextStyle(color: Colors.grey.shade600),
             ),
-
             const SizedBox(height: 20),
-
             ElevatedButton.icon(
               onPressed: loadWords,
-
               icon: const Icon(Icons.refresh_rounded),
-
               label: const Text('حاول مجددًا'),
             ),
           ],

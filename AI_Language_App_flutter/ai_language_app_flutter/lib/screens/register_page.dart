@@ -6,7 +6,10 @@ import '../services/theme_controller.dart';
 class RegisterPage extends StatefulWidget {
   final ThemeController themeController;
 
-  const RegisterPage({super.key, required this.themeController});
+  const RegisterPage({
+    super.key,
+    required this.themeController,
+  });
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -29,8 +32,18 @@ class _RegisterPageState extends State<RegisterPage> {
     'tr': 'التركية',
   };
 
+  static const Map<String, String> _levels = {
+    'A1': 'A1 - مبتدئ',
+    'A2': 'A2 - أساسي',
+    'B1': 'B1 - متوسط',
+    'B2': 'B2 - فوق المتوسط',
+    'C1': 'C1 - متقدم',
+    'C2': 'C2 - متقن',
+  };
+
   String _nativeLanguage = 'ar';
   String _learningLanguage = 'en';
+  String _learningLevel = 'A1';
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
@@ -58,6 +71,7 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text,
         nativeLanguage: _nativeLanguage,
         learningLanguage: _learningLanguage,
+        learningLevel: _learningLevel,
       );
 
       if (!mounted) return;
@@ -227,7 +241,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     : 'إظهار كلمة المرور',
                                 onPressed: () {
                                   setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
+                                    _isPasswordVisible =
+                                        !_isPasswordVisible;
                                   });
                                 },
                                 icon: Icon(
@@ -279,10 +294,26 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
 
+                          const SizedBox(height: 16),
+
+                          _LevelSelector(
+                            value: _learningLevel,
+                            levels: _levels,
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _learningLevel = value;
+                                });
+                              }
+                            },
+                          ),
+
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 18),
 
-                            _RegisterError(message: _errorMessage!),
+                            _RegisterError(
+                              message: _errorMessage!,
+                            ),
                           ],
 
                           const SizedBox(height: 24),
@@ -350,8 +381,44 @@ class _LanguageSelector extends StatelessWidget {
       ),
       items: languages.entries
           .map(
-            (entry) =>
-                DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+            (entry) => DropdownMenuItem(
+              value: entry.key,
+              child: Text(entry.value),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _LevelSelector extends StatelessWidget {
+  final String value;
+  final Map<String, String> levels;
+  final ValueChanged<String?> onChanged;
+
+  const _LevelSelector({
+    required this.value,
+    required this.levels,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'مستواك في اللغة',
+        prefixIcon: Icon(Icons.bar_chart_rounded),
+        border: OutlineInputBorder(),
+      ),
+      items: levels.entries
+          .map(
+            (entry) => DropdownMenuItem(
+              value: entry.key,
+              child: Text(entry.value),
+            ),
           )
           .toList(),
       onChanged: onChanged,
@@ -362,7 +429,9 @@ class _LanguageSelector extends StatelessWidget {
 class _RegisterError extends StatelessWidget {
   final String message;
 
-  const _RegisterError({required this.message});
+  const _RegisterError({
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -377,7 +446,9 @@ class _RegisterError extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: TextStyle(color: theme.colorScheme.onErrorContainer),
+        style: TextStyle(
+          color: theme.colorScheme.onErrorContainer,
+        ),
       ),
     );
   }

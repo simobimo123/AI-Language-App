@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/learning_language_controller.dart';
 import '../services/storage_service.dart';
 import '../services/theme_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/home/learning_progress_card.dart';
 import '../widgets/home/quick_action_card.dart';
 import '../widgets/home/welcome_header.dart';
-
 import 'login_page.dart';
 import 'profile_page.dart';
 import 'words_page.dart';
@@ -24,6 +24,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ApiService apiService = ApiService();
 
+  final LearningLanguageController learningLanguageController =
+      LearningLanguageController.instance;
+
   int currentIndex = 0;
 
   String userName = 'Learner';
@@ -33,6 +36,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    learningLanguageController.addListener(_onLearningLanguageChanged);
 
     pages = [
       _HomeContent(
@@ -47,17 +52,37 @@ class _HomePageState extends State<HomePage> {
     loadCurrentUser();
   }
 
+  @override
+  void dispose() {
+    learningLanguageController.removeListener(_onLearningLanguageChanged);
+
+    super.dispose();
+  }
+
+  void _onLearningLanguageChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    // عندما تتغير لغة التعلّم، نعيد تحميل بيانات الصفحة الرئيسية.
+    loadCurrentUser();
+  }
+
   Future<void> loadCurrentUser() async {
     try {
       final user = await apiService.getCurrentUser();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         userName = user['name'] ?? 'Learner';
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         userName = 'Learner';
@@ -80,7 +105,11 @@ class _HomePageState extends State<HomePage> {
   Future<void> logout() async {
     await StorageService().deleteToken();
 
-    if (!mounted) return;
+    learningLanguageController.clear();
+
+    if (!mounted) {
+      return;
+    }
 
     Navigator.pushReplacement(
       context,
@@ -119,9 +148,7 @@ class _HomeContent extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async {
-            await Future.delayed(const Duration(milliseconds: 500));
-          },
+          onRefresh: () async {},
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
@@ -130,32 +157,23 @@ class _HomeContent extends StatelessWidget {
                 userName: userName(),
                 themeController: themeController,
               ),
-
               const SizedBox(height: 24),
-
               const LearningProgressCard(progress: 0),
-
               const SizedBox(height: 28),
-
               Text(
                 'ابدأ التعلّم',
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-
               const SizedBox(height: 14),
-
               QuickActionCard(
                 icon: Icons.auto_awesome_rounded,
                 title: 'تدرّب مع الذكاء الاصطناعي',
-                description:
-                    'طوّر لغتك من خلال محادثات طبيعية.',
+                description: 'طوّر لغتك من خلال محادثات طبيعية.',
                 onTap: onPracticePressed,
               ),
-
               const SizedBox(height: 14),
-
               QuickActionCard(
                 icon: Icons.menu_book_rounded,
                 title: 'كلماتي',
@@ -167,22 +185,16 @@ class _HomeContent extends StatelessWidget {
                   );
                 },
               ),
-
               const SizedBox(height: 28),
-
               Text(
                 'تعلّمك',
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-
               const SizedBox(height: 14),
-
               const _LearningStats(),
-
               const SizedBox(height: 20),
-
               const _DailyTip(),
             ],
           ),
@@ -206,9 +218,7 @@ class _LearningStats extends StatelessWidget {
             label: 'أيام متتالية',
           ),
         ),
-
         SizedBox(width: 12),
-
         Expanded(
           child: _StatCard(
             icon: Icons.menu_book_rounded,
@@ -216,9 +226,7 @@ class _LearningStats extends StatelessWidget {
             label: 'كلمات متعلّمة',
           ),
         ),
-
         SizedBox(width: 12),
-
         Expanded(
           child: _StatCard(
             icon: Icons.chat_bubble_rounded,
@@ -251,25 +259,24 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
         children: [
           Icon(icon, color: theme.colorScheme.primary, size: 24),
-
           const SizedBox(height: 8),
-
           Text(
             value,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 4),
-
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 11,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -294,9 +301,7 @@ class _DailyTip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.lightbulb_rounded, color: Colors.white, size: 28),
-
           const SizedBox(width: 14),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,9 +314,7 @@ class _DailyTip extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   'تدرّب قليلًا كل يوم؛ الاستمرارية هي مفتاح تطوير مهاراتك اللغوية.',
                   style: TextStyle(

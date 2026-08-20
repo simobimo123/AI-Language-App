@@ -33,6 +33,7 @@ class ApiService {
     required String password,
     required String nativeLanguage,
     required String learningLanguage,
+    required String learningLevel,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/users'),
@@ -43,6 +44,7 @@ class ApiService {
         'password': password,
         'native_language': nativeLanguage,
         'learning_language': learningLanguage,
+        'learning_level': learningLevel,
       }),
     );
 
@@ -101,6 +103,115 @@ class ApiService {
     }
 
     throw Exception(data['detail'] ?? 'Failed to get current user');
+  }
+
+  // =========================
+  // Get all learning profiles
+  // =========================
+
+  Future<List<dynamic>> getLearningProfiles() async {
+    final token = await storageService.getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('No access token found');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/learning/profiles'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to get learning profiles');
+  }
+
+  // =========================
+  // Get current learning profile
+  // =========================
+
+  Future<Map<String, dynamic>> getCurrentLearningProfile() async {
+    final token = await storageService.getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('No access token found');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/learning/current'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to get current learning profile');
+  }
+
+  // =========================
+  // Create learning profile
+  // =========================
+
+  Future<Map<String, dynamic>> createLearningProfile({
+    required String language,
+    required String level,
+  }) async {
+    final token = await storageService.getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('No access token found');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/learning/profiles'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'language': language, 'level': level}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return data;
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to create learning profile');
+  }
+
+  // =========================
+  // Switch current learning language
+  // =========================
+
+  Future<Map<String, dynamic>> switchLearningLanguage({
+    required String language,
+  }) async {
+    final token = await storageService.getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('No access token found');
+    }
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/learning/current/$language'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to switch learning language');
   }
 
   // =========================
