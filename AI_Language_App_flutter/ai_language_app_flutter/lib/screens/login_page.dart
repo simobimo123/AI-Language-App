@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../services/language_controller.dart';
 import '../services/storage_service.dart';
 import '../services/theme_controller.dart';
 import 'home_page.dart';
@@ -8,8 +10,13 @@ import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   final ThemeController themeController;
+  final LanguageController languageController;
 
-  const LoginPage({super.key, required this.themeController});
+  const LoginPage({
+    super.key,
+    required this.themeController,
+    required this.languageController,
+  });
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -29,7 +36,11 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -49,14 +60,17 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => HomePage(themeController: widget.themeController),
+          builder: (_) => HomePage(
+            themeController: widget.themeController,
+            languageController: widget.languageController,
+          ),
         ),
       );
     } catch (_) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = 'تعذّر تسجيل الدخول. تحقّق من البريد وكلمة المرور.';
+        _errorMessage = l10n.loginError;
       });
     } finally {
       if (mounted) {
@@ -77,23 +91,19 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
-      // =========================
-      // App Bar
-      // =========================
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-
         actions: [
           IconButton(
             tooltip: theme.brightness == Brightness.dark
-                ? 'الوضع الفاتح'
-                : 'الوضع الداكن',
+                ? l10n.lightMode
+                : l10n.darkMode,
             onPressed: () {
               widget.themeController.setThemeMode(
                 theme.brightness == Brightness.dark
@@ -107,11 +117,9 @@ class _LoginPageState extends State<LoginPage> {
                   : Icons.dark_mode_rounded,
             ),
           ),
-
           const SizedBox(width: 8),
         ],
       ),
-
       body: SafeArea(
         top: false,
         child: Center(
@@ -124,9 +132,6 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // =========================
-                    // App Logo
-                    // =========================
                     Center(
                       child: Container(
                         width: 76,
@@ -160,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 26),
 
                     Text(
-                      'مرحبًا بعودتك',
+                      l10n.welcomeBackTitle,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
@@ -170,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 8),
 
                     Text(
-                      'سجّل دخولك وتابع رحلة تعلّمك.',
+                      l10n.loginSubtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: theme.colorScheme.onSurfaceVariant,
@@ -179,9 +184,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 32),
 
-                    // =========================
-                    // Login Card
-                    // =========================
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
@@ -195,7 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'تسجيل الدخول',
+                            l10n.login,
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
@@ -203,21 +205,18 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 20),
 
-                          // =========================
-                          // Email
-                          // =========================
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             autofillHints: const [AutofillHints.email],
-                            decoration: const InputDecoration(
-                              labelText: 'البريد الإلكتروني',
-                              prefixIcon: Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.email,
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if (value == null || !value.contains('@')) {
-                                return 'أدخل بريدًا إلكترونيًا صحيحًا.';
+                                return l10n.enterEmail;
                               }
 
                               return null;
@@ -226,23 +225,20 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 16),
 
-                          // =========================
-                          // Password
-                          // =========================
                           TextFormField(
                             controller: _passwordController,
                             obscureText: !_isPasswordVisible,
                             autofillHints: const [AutofillHints.password],
                             onFieldSubmitted: (_) => _login(),
                             decoration: InputDecoration(
-                              labelText: 'كلمة المرور',
+                              labelText: l10n.password,
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
                               ),
                               suffixIcon: IconButton(
                                 tooltip: _isPasswordVisible
-                                    ? 'إخفاء كلمة المرور'
-                                    : 'إظهار كلمة المرور',
+                                    ? l10n.passwordVisibilityHide
+                                    : l10n.passwordVisibilityShow,
                                 onPressed: () {
                                   setState(() {
                                     _isPasswordVisible = !_isPasswordVisible;
@@ -258,27 +254,20 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'أدخل كلمة المرور.';
+                                return l10n.enterPassword;
                               }
 
                               return null;
                             },
                           ),
 
-                          // =========================
-                          // Error
-                          // =========================
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 16),
-
                             _ErrorMessage(message: _errorMessage!),
                           ],
 
                           const SizedBox(height: 22),
 
-                          // =========================
-                          // Login Button
-                          // =========================
                           SizedBox(
                             height: 54,
                             child: FilledButton(
@@ -297,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('دخول'),
+                                  : Text(l10n.loginButton),
                             ),
                           ),
                         ],
@@ -306,13 +295,10 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    // =========================
-                    // Register
-                    // =========================
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('ليس لديك حساب؟'),
+                        Text(l10n.noAccount),
                         TextButton(
                           onPressed: _isLoading
                               ? null
@@ -322,11 +308,13 @@ class _LoginPageState extends State<LoginPage> {
                                     MaterialPageRoute(
                                       builder: (_) => RegisterPage(
                                         themeController: widget.themeController,
+                                        languageController:
+                                            widget.languageController,
                                       ),
                                     ),
                                   );
                                 },
-                          child: const Text('أنشئ حسابًا'),
+                          child: Text(l10n.createAccount),
                         ),
                       ],
                     ),
@@ -362,9 +350,7 @@ class _ErrorMessage extends StatelessWidget {
             Icons.error_outline_rounded,
             color: theme.colorScheme.onErrorContainer,
           ),
-
           const SizedBox(width: 8),
-
           Expanded(
             child: Text(
               message,

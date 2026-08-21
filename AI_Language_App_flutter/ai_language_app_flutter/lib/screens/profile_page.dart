@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../services/language_controller.dart';
 import '../services/storage_service.dart';
 import '../services/theme_controller.dart';
 import '../services/learning_language_controller.dart';
@@ -8,8 +10,13 @@ import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final ThemeController themeController;
+  final LanguageController languageController;
 
-  const ProfilePage({super.key, required this.themeController});
+  const ProfilePage({
+    super.key,
+    required this.themeController,
+    required this.languageController,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -18,26 +25,28 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final ApiService apiService = ApiService();
   final StorageService storageService = StorageService();
+
   final LearningLanguageController learningLanguageController =
       LearningLanguageController.instance;
 
-  static const Map<String, String> _languages = {
+  static const Map<String, String> _appLanguages = {
     'ar': 'العربية',
-    'en': 'الإنجليزية',
-    'fr': 'الفرنسية',
-    'es': 'الإسبانية',
-    'de': 'الألمانية',
-    'tr': 'التركية',
+    'en': 'English',
+    'fr': 'Français',
+    'es': 'Español',
+    'zh': '中文',
+    'ja': '日本語',
+    'ko': '한국어',
   };
 
-  static const Map<String, String> _levels = {
-    'A1': 'A1 - مبتدئ',
-    'A2': 'A2 - أساسي',
-    'B1': 'B1 - متوسط',
-    'B2': 'B2 - فوق المتوسط',
-    'C1': 'C1 - متقدم',
-    'C2': 'C2 - متقن',
-  };
+  static const List<String> _learningLanguageCodes = [
+    'ar',
+    'en',
+    'fr',
+    'es',
+    'de',
+    'tr',
+  ];
 
   String name = 'Loading...';
   String email = '';
@@ -66,6 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void dispose() {
     learningLanguageController.removeListener(_onLearningLanguageChanged);
+
     super.dispose();
   }
 
@@ -105,16 +115,17 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
 
+      final l10n = AppLocalizations.of(context)!;
+
       setState(() {
         name = user['name'] ?? 'Learner';
         email = user['email'] ?? '';
         userId = user['id']?.toString() ?? '';
 
         _nativeLanguageCode = nativeCode;
-        nativeLanguage = _languageName(nativeCode);
+        nativeLanguage = _learningLanguageName(nativeCode, l10n);
 
         _currentLearningLanguageCode = currentLanguage;
-
         _currentLearningLevel = currentProfile?['level']?.toString();
 
         _learningProfiles = profiles;
@@ -135,12 +146,109 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  String _languageName(String? code) {
-    return _languages[code] ?? code ?? '';
+  String _learningLanguageName(String? code, AppLocalizations l10n) {
+    switch (code) {
+      case 'ar':
+        return l10n.arabic;
+      case 'en':
+        return l10n.english;
+      case 'fr':
+        return l10n.french;
+      case 'es':
+        return l10n.spanish;
+      case 'zh':
+        return l10n.chinese;
+      case 'ja':
+        return l10n.japanese;
+      case 'ko':
+        return l10n.korean;
+      case 'de':
+        return _germanName(l10n);
+      case 'tr':
+        return _turkishName(l10n);
+      default:
+        return code ?? '';
+    }
   }
 
-  String _levelName(String? level) {
-    return _levels[level] ?? level ?? '';
+  String _germanName(AppLocalizations l10n) {
+    switch (widget.languageController.locale.languageCode) {
+      case 'ar':
+        return 'الألمانية';
+      case 'fr':
+        return 'Allemand';
+      case 'es':
+        return 'Alemán';
+      case 'ja':
+        return 'ドイツ語';
+      case 'ko':
+        return '독일어';
+      case 'zh':
+        return '德语';
+      case 'en':
+      default:
+        return 'German';
+    }
+  }
+
+  String _turkishName(AppLocalizations l10n) {
+    switch (widget.languageController.locale.languageCode) {
+      case 'ar':
+        return 'التركية';
+      case 'fr':
+        return 'Turc';
+      case 'es':
+        return 'Turco';
+      case 'ja':
+        return 'トルコ語';
+      case 'ko':
+        return '터키어';
+      case 'zh':
+        return '土耳其语';
+      case 'en':
+      default:
+        return 'Turkish';
+    }
+  }
+
+  String _levelName(String? level, AppLocalizations l10n) {
+    switch (level) {
+      case 'A1':
+        return l10n.levelA1;
+      case 'A2':
+        return l10n.levelA2;
+      case 'B1':
+        return l10n.levelB1;
+      case 'B2':
+        return l10n.levelB2;
+      case 'C1':
+        return l10n.levelC1;
+      case 'C2':
+        return l10n.levelC2;
+      default:
+        return level ?? '';
+    }
+  }
+
+  String _appLanguageName(String code, AppLocalizations l10n) {
+    switch (code) {
+      case 'ar':
+        return l10n.arabic;
+      case 'en':
+        return l10n.english;
+      case 'fr':
+        return l10n.french;
+      case 'es':
+        return l10n.spanish;
+      case 'zh':
+        return l10n.chinese;
+      case 'ja':
+        return l10n.japanese;
+      case 'ko':
+        return l10n.korean;
+      default:
+        return code;
+    }
   }
 
   dynamic _getProfile(String language) {
@@ -153,10 +261,118 @@ class _ProfilePageState extends State<ProfilePage> {
     return null;
   }
 
+  Future<void> _changeAppLanguage(String languageCode) async {
+    if (widget.languageController.locale.languageCode == languageCode) {
+      return;
+    }
+
+    await widget.languageController.setLanguage(languageCode);
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  Future<void> _showAppLanguages() async {
+    final l10n = AppLocalizations.of(context)!;
+    final currentLanguage = widget.languageController.locale.languageCode;
+
+    final selectedLanguage = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final maxHeight = MediaQuery.of(context).size.height * 0.78;
+
+        return SafeArea(
+          child: SizedBox(
+            height: maxHeight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.appLanguage,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.language,
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: _appLanguages.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final entry = _appLanguages.entries.elementAt(index);
+
+                        final isSelected = entry.key == currentLanguage;
+
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          tileColor: isSelected
+                              ? theme.colorScheme.primaryContainer
+                              : theme.colorScheme.surfaceContainerHighest,
+                          leading: Icon(
+                            isSelected
+                                ? Icons.check_circle_rounded
+                                : Icons.language_rounded,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          title: Text(
+                            _appLanguageName(entry.key, l10n),
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: theme.colorScheme.primary,
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context, entry.key);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedLanguage == null || !mounted) {
+      return;
+    }
+
+    await _changeAppLanguage(selectedLanguage);
+  }
+
   Future<void> _changeLearningLanguage(String language) async {
     if (_currentLearningLanguageCode == language) {
       return;
     }
+
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() {
       _isChangingLanguage = true;
@@ -175,12 +391,13 @@ class _ProfilePageState extends State<ProfilePage> {
         _isChangingLanguage = false;
       });
 
-      // إخبار جميع الصفحات بأن لغة التعلّم تغيرت.
       learningLanguageController.setLanguage(language);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('تم تغيير لغة التعلّم إلى ${_languageName(language)}'),
+          content: Text(
+            l10n.learningLanguageChanged(_learningLanguageName(language, l10n)),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -205,95 +422,110 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context)!;
+
     final selectedLanguage = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) {
         final theme = Theme.of(context);
+        final maxHeight = MediaQuery.of(context).size.height * 0.78;
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'لغات التعلّم',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'اختر إحدى لغاتك أو أضف لغة جديدة.',
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 16),
-                if (_learningProfiles.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text(
-                      'لا توجد لغات تعلّم بعد.',
-                      textAlign: TextAlign.center,
+          child: SizedBox(
+            height: maxHeight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.learningLanguages,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  )
-                else
-                  ..._learningProfiles.map((profile) {
-                    final language = profile['language']?.toString() ?? '';
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.chooseLearningLanguage,
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        if (_learningProfiles.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: Text(
+                              l10n.noLearningLanguages,
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        else
+                          ..._learningProfiles.map((profile) {
+                            final language =
+                                profile['language']?.toString() ?? '';
 
-                    final level = profile['level']?.toString() ?? '';
+                            final level = profile['level']?.toString() ?? '';
 
-                    final isSelected = language == _currentLearningLanguageCode;
+                            final isSelected =
+                                language == _currentLearningLanguageCode;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                tileColor: isSelected
+                                    ? theme.colorScheme.primaryContainer
+                                    : theme.colorScheme.surfaceContainerHighest,
+                                leading: Icon(
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : Icons.language_rounded,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                                title: Text(
+                                  _learningLanguageName(language, l10n),
+                                  style: TextStyle(
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: Text(_levelName(level, l10n)),
+                                trailing: isSelected
+                                    ? Icon(
+                                        Icons.check_rounded,
+                                        color: theme.colorScheme.primary,
+                                      )
+                                    : null,
+                                onTap: () {
+                                  Navigator.pop(context, language);
+                                },
+                              ),
+                            );
+                          }),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context, '__add_language__');
+                          },
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(l10n.addNewLanguage),
                         ),
-                        tileColor: isSelected
-                            ? theme.colorScheme.primaryContainer
-                            : theme.colorScheme.surfaceContainerHighest,
-                        leading: Icon(
-                          isSelected
-                              ? Icons.check_circle_rounded
-                              : Icons.language_rounded,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        title: Text(
-                          _languageName(language),
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(_levelName(level)),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check_rounded,
-                                color: theme.colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () {
-                          Navigator.pop(context, language);
-                        },
-                      ),
-                    );
-                  }),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context, '__add_language__');
-                  },
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('إضافة لغة جديدة'),
-                ),
-              ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -317,6 +549,8 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context)!;
+
     String? selectedLanguage;
     String selectedLevel = 'A1';
 
@@ -325,18 +559,18 @@ class _ProfilePageState extends State<ProfilePage> {
         .whereType<String>()
         .toSet();
 
-    final availableLanguages = _languages.entries.where((entry) {
-      return entry.key != _nativeLanguageCode &&
-          !existingLanguages.contains(entry.key);
+    final availableLanguages = _learningLanguageCodes.where((code) {
+      return code != _nativeLanguageCode && !existingLanguages.contains(code);
     }).toList();
 
     if (availableLanguages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('لا توجد لغات جديدة متاحة للإضافة.'),
+        SnackBar(
+          content: Text(l10n.noNewLanguagesAvailable),
           behavior: SnackBarBehavior.floating,
         ),
       );
+
       return;
     }
 
@@ -346,7 +580,7 @@ class _ProfilePageState extends State<ProfilePage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('إضافة لغة جديدة'),
+              title: Text(l10n.addLanguageTitle),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
@@ -354,17 +588,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
-                    value: selectedLanguage,
+                    initialValue: selectedLanguage,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'لغة التعلّم',
-                      prefixIcon: Icon(Icons.language_rounded),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.learningLanguage,
+                      prefixIcon: const Icon(Icons.language_rounded),
+                      border: const OutlineInputBorder(),
                     ),
-                    items: availableLanguages.map((entry) {
-                      return DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(entry.value),
+                    items: availableLanguages.map((code) {
+                      return DropdownMenuItem<String>(
+                        value: code,
+                        child: Text(_learningLanguageName(code, l10n)),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -375,19 +609,21 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: selectedLevel,
+                    initialValue: selectedLevel,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'مستواك في اللغة',
-                      prefixIcon: Icon(Icons.bar_chart_rounded),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.yourLearningLevel,
+                      prefixIcon: const Icon(Icons.bar_chart_rounded),
+                      border: const OutlineInputBorder(),
                     ),
-                    items: _levels.entries.map((entry) {
-                      return DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(entry.value),
-                      );
-                    }).toList(),
+                    items: [
+                      DropdownMenuItem(value: 'A1', child: Text(l10n.levelA1)),
+                      DropdownMenuItem(value: 'A2', child: Text(l10n.levelA2)),
+                      DropdownMenuItem(value: 'B1', child: Text(l10n.levelB1)),
+                      DropdownMenuItem(value: 'B2', child: Text(l10n.levelB2)),
+                      DropdownMenuItem(value: 'C1', child: Text(l10n.levelC1)),
+                      DropdownMenuItem(value: 'C2', child: Text(l10n.levelC2)),
+                    ],
                     onChanged: (value) {
                       if (value == null) {
                         return;
@@ -405,7 +641,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text('إلغاء'),
+                  child: Text(l10n.cancel),
                 ),
                 FilledButton(
                   onPressed: selectedLanguage == null
@@ -419,7 +655,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           );
                         },
-                  child: const Text('إضافة'),
+                  child: Text(l10n.add),
                 ),
               ],
             );
@@ -453,6 +689,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       setState(() {
         _learningProfiles = [..._learningProfiles, profile];
+
         _isAddingLanguage = false;
       });
 
@@ -483,7 +720,10 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (_) => LoginPage(themeController: widget.themeController),
+        builder: (_) => LoginPage(
+          themeController: widget.themeController,
+          languageController: widget.languageController,
+        ),
       ),
       (route) => false,
     );
@@ -492,24 +732,33 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     final currentProfile = _currentLearningLanguageCode == null
         ? null
         : _getProfile(_currentLearningLanguageCode!);
 
-    final currentLearningLanguage = _languageName(_currentLearningLanguageCode);
+    final currentLearningLanguage = _learningLanguageName(
+      _currentLearningLanguageCode,
+      l10n,
+    );
 
     final currentLevel =
         currentProfile?['level']?.toString() ?? _currentLearningLevel ?? '';
+
+    final currentAppLanguageCode =
+        widget.languageController.locale.languageCode;
+
+    final currentAppLanguage = _appLanguageName(currentAppLanguageCode, l10n);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
-          'حسابي',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.account,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
       body: isLoading
@@ -518,6 +767,7 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: const EdgeInsets.all(20),
               children: [
                 const SizedBox(height: 10),
+
                 Center(
                   child: Container(
                     width: 92,
@@ -533,7 +783,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
                 Center(
                   child: Text(
                     name,
@@ -543,7 +795,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Center(
                   child: Text(
                     email,
@@ -553,56 +807,88 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 30),
+
                 _ProfileInfoCard(
                   icon: Icons.person_outline_rounded,
-                  title: 'الاسم',
+                  title: l10n.name,
                   value: name,
                 ),
+
                 const SizedBox(height: 12),
+
                 _ProfileInfoCard(
                   icon: Icons.email_outlined,
-                  title: 'البريد الإلكتروني',
+                  title: l10n.email,
                   value: email,
                 ),
+
                 const SizedBox(height: 12),
+
                 _ProfileInfoCard(
                   icon: Icons.badge_outlined,
-                  title: 'رقم المستخدم',
+                  title: l10n.userId,
                   value: userId,
                 ),
+
                 const SizedBox(height: 12),
+
                 _ProfileInfoCard(
                   icon: Icons.translate_rounded,
-                  title: 'لغتك الأم',
+                  title: l10n.nativeLanguage,
                   value: nativeLanguage,
                 ),
+
                 const SizedBox(height: 12),
+
                 _LearningLanguageCard(
                   language: currentLearningLanguage,
-                  level: _levelName(currentLevel),
+                  level: _levelName(currentLevel, l10n),
                   profilesCount: _learningProfiles.length,
                   isLoading: _isChangingLanguage || _isAddingLanguage,
                   onTap: _showLearningLanguages,
                 ),
+
                 const SizedBox(height: 28),
+
                 Text(
-                  'مظهر التطبيق',
+                  l10n.appLanguage,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 12),
+
+                _AppLanguageCard(
+                  language: currentAppLanguage,
+                  onTap: _showAppLanguages,
+                ),
+
+                const SizedBox(height: 28),
+
+                Text(
+                  l10n.appAppearance,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
                 _ThemeSettingsCard(themeController: widget.themeController),
+
                 const SizedBox(height: 30),
+
                 SizedBox(
                   height: 52,
                   child: OutlinedButton.icon(
                     onPressed: logout,
                     icon: const Icon(Icons.logout_rounded),
-                    label: const Text(
-                      'تسجيل الخروج',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    label: Text(
+                      l10n.logout,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
@@ -624,6 +910,88 @@ class _AddLanguageResult {
   final String level;
 
   const _AddLanguageResult({required this.language, required this.level});
+}
+
+class _AppLanguageCard extends StatelessWidget {
+  final String language;
+  final VoidCallback onTap;
+
+  const _AppLanguageCard({required this.language, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.language_rounded,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.appLanguage,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    language,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    l10n.language,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            Icon(
+              Icons.chevron_left_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ProfileInfoCard extends StatelessWidget {
@@ -659,7 +1027,9 @@ class _ProfileInfoCard extends StatelessWidget {
             ),
             child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
           ),
+
           const SizedBox(width: 14),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -708,6 +1078,7 @@ class _LearningLanguageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return InkWell(
       onTap: isLoading ? null : onTap,
@@ -733,19 +1104,23 @@ class _LearningLanguageCard extends StatelessWidget {
                 color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
+
             const SizedBox(width: 14),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'لغة التعلّم',
+                    l10n.learningLanguage,
                     style: TextStyle(
                       fontSize: 12,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+
                   const SizedBox(height: 4),
+
                   Text(
                     language,
                     style: const TextStyle(
@@ -753,6 +1128,7 @@ class _LearningLanguageCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+
                   if (level.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(
@@ -764,11 +1140,13 @@ class _LearningLanguageCard extends StatelessWidget {
                       ),
                     ),
                   ],
+
                   const SizedBox(height: 3),
+
                   Text(
                     profilesCount > 1
-                        ? 'اضغط لتبديل لغة التعلّم'
-                        : 'اضغط لإضافة أو تغيير لغة',
+                        ? l10n.switchLearningLanguage
+                        : l10n.addOrChangeLearningLanguage,
                     style: TextStyle(
                       fontSize: 12,
                       color: theme.colorScheme.onSurfaceVariant,
@@ -777,7 +1155,9 @@ class _LearningLanguageCard extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(width: 8),
+
             if (isLoading)
               const SizedBox(
                 width: 22,
@@ -804,6 +1184,7 @@ class _ThemeSettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -813,21 +1194,21 @@ class _ThemeSettingsCard extends StatelessWidget {
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: SegmentedButton<ThemeMode>(
-        segments: const [
+        segments: [
           ButtonSegment(
             value: ThemeMode.system,
-            icon: Icon(Icons.brightness_auto_rounded),
-            label: Text('تلقائي'),
+            icon: const Icon(Icons.brightness_auto_rounded),
+            label: Text(l10n.auto),
           ),
           ButtonSegment(
             value: ThemeMode.light,
-            icon: Icon(Icons.light_mode_outlined),
-            label: Text('فاتح'),
+            icon: const Icon(Icons.light_mode_outlined),
+            label: Text(l10n.light),
           ),
           ButtonSegment(
             value: ThemeMode.dark,
-            icon: Icon(Icons.dark_mode_outlined),
-            label: Text('داكن'),
+            icon: const Icon(Icons.dark_mode_outlined),
+            label: Text(l10n.dark),
           ),
         ],
         selected: {themeController.themeMode},

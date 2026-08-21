@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/app_localizations.dart';
+
 class AppBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onItemSelected;
@@ -14,6 +16,7 @@ class AppBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -34,28 +37,19 @@ class AppBottomNavBar extends StatelessWidget {
       ),
       child: NavigationBar(
         selectedIndex: currentIndex,
-
         onDestinationSelected: (index) {
           HapticFeedback.mediumImpact();
           onItemSelected(index);
         },
-
         height: 76,
-
         backgroundColor: Colors.transparent,
-
         elevation: 0,
-
         indicatorColor: theme.colorScheme.primaryContainer,
-
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
-
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-
         animationDuration: const Duration(milliseconds: 300),
-
         destinations: [
           NavigationDestination(
             icon: const Icon(Icons.home_outlined),
@@ -63,25 +57,23 @@ class AppBottomNavBar extends StatelessWidget {
               Icons.home_rounded,
               color: theme.colorScheme.onPrimaryContainer,
             ),
-            label: 'الرئيسية',
+            label: l10n.home,
           ),
-
           NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: Icon(
               Icons.menu_book_rounded,
               color: theme.colorScheme.onPrimaryContainer,
             ),
-            label: 'كلماتي',
+            label: l10n.words,
           ),
-
           NavigationDestination(
             icon: const Icon(Icons.person_outline_rounded),
             selectedIcon: Icon(
               Icons.person_rounded,
               color: theme.colorScheme.onPrimaryContainer,
             ),
-            label: 'حسابي',
+            label: l10n.account,
           ),
         ],
       ),

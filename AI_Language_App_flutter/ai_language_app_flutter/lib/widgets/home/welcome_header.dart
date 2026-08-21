@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../screens/profile_page.dart';
+import '../../services/language_controller.dart';
 import '../../services/theme_controller.dart';
 
 class WelcomeHeader extends StatelessWidget {
   final String userName;
   final ThemeController themeController;
+  final LanguageController languageController;
 
   const WelcomeHeader({
     super.key,
     required this.userName,
     required this.themeController,
+    required this.languageController,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Row(
       children: [
@@ -24,16 +29,14 @@ class WelcomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'أهلًا بعودتك 👋',
+                l10n.welcomeBack,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-
               const SizedBox(height: 5),
-
               Text(
                 userName,
                 maxLines: 1,
@@ -43,19 +46,15 @@ class WelcomeHeader extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
-                'هل أنت مستعد لمتابعة التعلّم؟',
+                l10n.continueLearning,
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
             ],
           ),
         ),
-
         const SizedBox(width: 14),
-
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -63,7 +62,10 @@ class WelcomeHeader extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ProfilePage(themeController: themeController),
+                  builder: (_) => ProfilePage(
+                    themeController: themeController,
+                    languageController: languageController,
+                  ),
                 ),
               );
             },

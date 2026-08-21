@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class LearningProgressCard extends StatelessWidget {
   final double progress;
-  final String title;
-  final String description;
+  final String? title;
+  final String? description;
 
   const LearningProgressCard({
     super.key,
     this.progress = 0,
-    this.title = 'Your learning journey',
-    this.description =
-        'Keep practicing every day and improve your language skills.',
+    this.title,
+    this.description,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     final safeProgress = progress.clamp(0.0, 1.0);
+
+    final progressTitle = title ?? l10n.yourLearning;
+
+    final progressDescription = description ?? l10n.dailyTipDescription;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -30,14 +36,14 @@ class LearningProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome_rounded, color: Colors.white),
-              SizedBox(width: 10),
+              const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Your learning journey',
-                  style: TextStyle(
+                  progressTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -50,7 +56,7 @@ class LearningProgressCard extends StatelessWidget {
           const SizedBox(height: 18),
 
           Text(
-            description,
+            progressDescription,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
@@ -75,9 +81,9 @@ class LearningProgressCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Progress',
-                style: TextStyle(color: Colors.white, fontSize: 12),
+              Text(
+                l10n.learning,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               Text(
                 '${(safeProgress * 100).round()}%',

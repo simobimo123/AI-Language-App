@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/word_card.dart';
@@ -48,7 +49,6 @@ class _WordsPageState extends State<WordsPage> {
       return;
     }
 
-    // عند تغيير لغة التعلّم، نجلب كلمات اللغة الجديدة تلقائيًا.
     loadWords();
   }
 
@@ -127,6 +127,8 @@ class _WordsPageState extends State<WordsPage> {
   }
 
   Future<void> toggleLearned(dynamic word) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final int wordId = word['id'];
 
     final bool currentStatus = word['learned'] == true;
@@ -140,26 +142,26 @@ class _WordsPageState extends State<WordsPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: Text(
-            newStatus ? 'تحديد كمكتملة؟' : 'إعادتها إلى جاري التعلم ...؟',
-          ),
+          title: Text(newStatus ? l10n.completeWord : l10n.returnToLearning),
           content: Text(
             newStatus
-                ? 'هل أتقنت كلمة "${word['word']}"؟'
-                : 'ستعود كلمة "${word['word']}" إلى قائمة جاري التعلم ...',
+                ? l10n.masteredWord(word['word'].toString())
+                : l10n.returnWordToLearning(word['word'].toString()),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context, false);
               },
-              child: const Text('إلغاء'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(context, true);
               },
-              child: Text(newStatus ? 'تحديد كمكتملة' : 'إعادة إلى التعلّم'),
+              child: Text(
+                newStatus ? l10n.markCompleted : l10n.returnToLearningButton,
+              ),
             ),
           ],
         );
@@ -184,9 +186,7 @@ class _WordsPageState extends State<WordsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            newStatus
-                ? 'تم نقل الكلمة إلى تم التعلم.'
-                : 'تم نقل الكلمة إلى جاري التعلم ...',
+            newStatus ? l10n.wordMovedToLearned : l10n.wordMovedToLearning,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -206,6 +206,8 @@ class _WordsPageState extends State<WordsPage> {
   }
 
   Future<void> deleteWord(dynamic word) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final int wordId = word['id'];
 
     final confirmed = await showDialog<bool>(
@@ -215,23 +217,21 @@ class _WordsPageState extends State<WordsPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text('حذف الكلمة؟'),
-          content: Text(
-            'هل تريد حذف كلمة "${word['word']}"؟ لا يمكن التراجع عن هذا الإجراء.',
-          ),
+          title: Text(l10n.deleteWordTitle),
+          content: Text(l10n.deleteWordConfirmation(word['word'].toString())),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context, false);
               },
-              child: const Text('إلغاء'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () {
                 Navigator.pop(context, true);
               },
-              child: const Text('حذف'),
+              child: Text(l10n.delete),
             ),
           ],
         );
@@ -254,8 +254,8 @@ class _WordsPageState extends State<WordsPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم حذف الكلمة.'),
+        SnackBar(
+          content: Text(l10n.wordDeleted),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -276,28 +276,29 @@ class _WordsPageState extends State<WordsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
-          'كلماتي',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.words,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
-      body: _buildBody(theme),
+      body: _buildBody(theme, l10n),
     );
   }
 
-  Widget _buildBody(ThemeData theme) {
+  Widget _buildBody(ThemeData theme, AppLocalizations l10n) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
-      return _buildError();
+      return _buildError(l10n);
     }
 
     if (words.isEmpty) {
@@ -308,7 +309,7 @@ class _WordsPageState extends State<WordsPage> {
           children: [
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.75,
-              child: _buildEmptyState(theme),
+              child: _buildEmptyState(theme, l10n),
             ),
           ],
         ),
@@ -321,12 +322,12 @@ class _WordsPageState extends State<WordsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
         children: [
-          _buildWordsHeader(theme),
+          _buildWordsHeader(theme, l10n),
           const SizedBox(height: 18),
-          _buildFilter(theme),
+          _buildFilter(theme, l10n),
           const SizedBox(height: 18),
           if (filteredWords.isEmpty)
-            _buildFilterEmptyState(theme)
+            _buildFilterEmptyState(theme, l10n)
           else
             ...filteredWords.map((word) {
               return WordCard(
@@ -344,7 +345,7 @@ class _WordsPageState extends State<WordsPage> {
     );
   }
 
-  Widget _buildWordsHeader(ThemeData theme) {
+  Widget _buildWordsHeader(ThemeData theme, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -365,16 +366,16 @@ class _WordsPageState extends State<WordsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'مفرداتك',
-                      style: TextStyle(
+                    Text(
+                      l10n.myVocabulary,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${words.length} كلمة محفوظة',
+                      l10n.savedWordsCount(words.length),
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -400,13 +401,13 @@ class _WordsPageState extends State<WordsPage> {
               _buildSmallStat(
                 icon: Icons.school_outlined,
                 value: '$learningCount',
-                label: 'جاري التعلم ...',
+                label: l10n.learning,
               ),
               const SizedBox(width: 10),
               _buildSmallStat(
                 icon: Icons.check_circle_outline_rounded,
                 value: '$learnedCount',
-                label: 'تم التعلم',
+                label: l10n.learned,
               ),
             ],
           ),
@@ -431,21 +432,25 @@ class _WordsPageState extends State<WordsPage> {
           children: [
             Icon(icon, size: 19),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
-                ),
-              ],
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -453,7 +458,7 @@ class _WordsPageState extends State<WordsPage> {
     );
   }
 
-  Widget _buildFilter(ThemeData theme) {
+  Widget _buildFilter(ThemeData theme, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
@@ -463,12 +468,9 @@ class _WordsPageState extends State<WordsPage> {
       ),
       child: Row(
         children: [
-          _buildFilterButton(label: 'الكل', filter: WordFilter.all),
-          _buildFilterButton(
-            label: 'جاري التعلم ...',
-            filter: WordFilter.learning,
-          ),
-          _buildFilterButton(label: 'تم التعلم', filter: WordFilter.learned),
+          _buildFilterButton(label: l10n.all, filter: WordFilter.all),
+          _buildFilterButton(label: l10n.learning, filter: WordFilter.learning),
+          _buildFilterButton(label: l10n.learned, filter: WordFilter.learned),
         ],
       ),
     );
@@ -491,13 +493,15 @@ class _WordsPageState extends State<WordsPage> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 4),
           decoration: BoxDecoration(
             color: selected ? theme.colorScheme.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -512,7 +516,7 @@ class _WordsPageState extends State<WordsPage> {
     );
   }
 
-  Widget _buildFilterEmptyState(ThemeData theme) {
+  Widget _buildFilterEmptyState(ThemeData theme, AppLocalizations l10n) {
     final bool learnedFilter = selectedFilter == WordFilter.learned;
 
     return Container(
@@ -531,16 +535,13 @@ class _WordsPageState extends State<WordsPage> {
           ),
           const SizedBox(height: 14),
           Text(
-            learnedFilter
-                ? 'لا توجد كلمات تم التعلم بعد'
-                : 'لا توجد كلمات في جاري التعلم ...',
+            learnedFilter ? l10n.noLearnedWords : l10n.noLearningWords,
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Text(
-            learnedFilter
-                ? 'واصل التدريب، وستظهر الكلمات التي تتعلمها هنا.'
-                : 'ستظهر هنا الكلمات التي تضيفها أثناء التعلّم.',
+            learnedFilter ? l10n.keepPracticing : l10n.wordsAddedDuringLearning,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey.shade600, height: 1.4),
           ),
@@ -549,7 +550,7 @@ class _WordsPageState extends State<WordsPage> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -570,13 +571,14 @@ class _WordsPageState extends State<WordsPage> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'لا توجد كلمات محفوظة بعد',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Text(
+              l10n.noSavedWords,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Text(
-              'عند اكتشاف كلمة جديدة أثناء محادثة الذكاء الاصطناعي، أضفها إلى مفرداتك.',
+              l10n.saveWordsDuringConversation,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
@@ -601,9 +603,9 @@ class _WordsPageState extends State<WordsPage> {
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(width: 10),
-                  const Flexible(
+                  Flexible(
                     child: Text(
-                      'تعلّم بصورة طبيعية من خلال المحادثة',
+                      l10n.learnNaturally,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -616,7 +618,7 @@ class _WordsPageState extends State<WordsPage> {
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -637,9 +639,9 @@ class _WordsPageState extends State<WordsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'حدث خطأ ما',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              l10n.errorOccurred,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -651,7 +653,7 @@ class _WordsPageState extends State<WordsPage> {
             ElevatedButton.icon(
               onPressed: loadWords,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('حاول مجددًا'),
+              label: Text(l10n.tryAgain),
             ),
           ],
         ),

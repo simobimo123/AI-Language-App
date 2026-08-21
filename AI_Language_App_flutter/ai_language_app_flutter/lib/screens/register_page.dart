@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../services/language_controller.dart';
 import '../services/theme_controller.dart';
 
 class RegisterPage extends StatefulWidget {
   final ThemeController themeController;
+  final LanguageController languageController;
 
   const RegisterPage({
     super.key,
     required this.themeController,
+    required this.languageController,
   });
 
   @override
@@ -25,20 +29,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
   static const Map<String, String> _languages = {
     'ar': 'العربية',
-    'en': 'الإنجليزية',
-    'fr': 'الفرنسية',
-    'es': 'الإسبانية',
-    'de': 'الألمانية',
-    'tr': 'التركية',
-  };
-
-  static const Map<String, String> _levels = {
-    'A1': 'A1 - مبتدئ',
-    'A2': 'A2 - أساسي',
-    'B1': 'B1 - متوسط',
-    'B2': 'B2 - فوق المتوسط',
-    'C1': 'C1 - متقدم',
-    'C2': 'C2 - متقن',
+    'en': 'English',
+    'fr': 'Français',
+    'es': 'Español',
+    'de': 'Deutsch',
+    'tr': 'Türkçe',
   };
 
   String _nativeLanguage = 'ar';
@@ -50,11 +45,15 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _errorMessage;
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     if (_nativeLanguage == _learningLanguage) {
       setState(() {
-        _errorMessage = 'اختر لغتين مختلفتين للبدء.';
+        _errorMessage = l10n.differentLanguages;
       });
       return;
     }
@@ -77,8 +76,8 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم إنشاء الحساب. يمكنك تسجيل الدخول الآن.'),
+        SnackBar(
+          content: Text(l10n.accountCreated),
         ),
       );
 
@@ -87,7 +86,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = 'تعذّر إنشاء الحساب. قد يكون البريد مستخدمًا بالفعل.';
+        _errorMessage = l10n.registrationError;
       });
     } finally {
       if (mounted) {
@@ -95,6 +94,50 @@ class _RegisterPageState extends State<RegisterPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  String _languageName(
+    String code,
+    AppLocalizations l10n,
+  ) {
+    switch (code) {
+      case 'ar':
+        return l10n.arabic;
+      case 'en':
+        return l10n.english;
+      case 'fr':
+        return l10n.french;
+      case 'es':
+        return l10n.spanish;
+      case 'de':
+        return 'Deutsch';
+      case 'tr':
+        return 'Türkçe';
+      default:
+        return code;
+    }
+  }
+
+  String _levelName(
+    String level,
+    AppLocalizations l10n,
+  ) {
+    switch (level) {
+      case 'A1':
+        return l10n.levelA1;
+      case 'A2':
+        return l10n.levelA2;
+      case 'B1':
+        return l10n.levelB1;
+      case 'B2':
+        return l10n.levelB2;
+      case 'C1':
+        return l10n.levelC1;
+      case 'C2':
+        return l10n.levelC2;
+      default:
+        return level;
     }
   }
 
@@ -110,20 +153,19 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-
         actions: [
           IconButton(
             tooltip: theme.brightness == Brightness.dark
-                ? 'الوضع الفاتح'
-                : 'الوضع الداكن',
+                ? l10n.lightMode
+                : l10n.darkMode,
             onPressed: () {
               widget.themeController.setThemeMode(
                 theme.brightness == Brightness.dark
@@ -137,108 +179,133 @@ class _RegisterPageState extends State<RegisterPage> {
                   : Icons.dark_mode_rounded,
             ),
           ),
-
           const SizedBox(width: 8),
         ],
       ),
-
       body: SafeArea(
         top: false,
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 30),
+            padding: const EdgeInsets.fromLTRB(
+              24,
+              8,
+              24,
+              30,
+            ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
+              constraints: const BoxConstraints(
+                maxWidth: 460,
+              ),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'أنشئ حسابك',
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      l10n.createYourAccount,
+                      style: theme.textTheme.headlineSmall
+                          ?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Text(
-                      'اختر لغاتك وابدأ تجربة تعلّم مصممة لك.',
+                      l10n.createAccountSubtitle,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color:
+                            theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-
                     const SizedBox(height: 26),
-
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius:
+                            BorderRadius.circular(28),
                         border: Border.all(
-                          color: theme.dividerColor.withOpacity(0.2),
+                          color: theme.dividerColor
+                              .withOpacity(0.2),
                         ),
                       ),
                       child: Column(
                         children: [
                           TextFormField(
                             controller: _nameController,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.name],
-                            decoration: const InputDecoration(
-                              labelText: 'الاسم',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              border: OutlineInputBorder(),
+                            textInputAction:
+                                TextInputAction.next,
+                            autofillHints: const [
+                              AutofillHints.name,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: l10n.name,
+                              prefixIcon: const Icon(
+                                Icons.person_outline_rounded,
+                              ),
+                              border:
+                                  const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || value.trim().length < 2) {
-                                return 'أدخل اسمًا من حرفين على الأقل.';
+                              if (value == null ||
+                                  value.trim().length < 2) {
+                                return l10n.usernameMinLength;
                               }
 
                               return null;
                             },
                           ),
-
                           const SizedBox(height: 16),
-
                           TextFormField(
                             controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.email],
-                            decoration: const InputDecoration(
-                              labelText: 'البريد الإلكتروني',
-                              prefixIcon: Icon(Icons.email_outlined),
-                              border: OutlineInputBorder(),
+                            keyboardType:
+                                TextInputType.emailAddress,
+                            textInputAction:
+                                TextInputAction.next,
+                            autofillHints: const [
+                              AutofillHints.email,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: l10n.email,
+                              prefixIcon: const Icon(
+                                Icons.email_outlined,
+                              ),
+                              border:
+                                  const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || !value.contains('@')) {
-                                return 'أدخل بريدًا إلكترونيًا صحيحًا.';
+                              if (value == null ||
+                                  !value.contains('@')) {
+                                return l10n.enterEmail;
                               }
 
                               return null;
                             },
                           ),
-
                           const SizedBox(height: 16),
-
                           TextFormField(
-                            controller: _passwordController,
-                            obscureText: !_isPasswordVisible,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.newPassword],
+                            controller:
+                                _passwordController,
+                            obscureText:
+                                !_isPasswordVisible,
+                            textInputAction:
+                                TextInputAction.next,
+                            autofillHints: const [
+                              AutofillHints.newPassword,
+                            ],
                             decoration: InputDecoration(
-                              labelText: 'كلمة المرور',
-                              helperText: '8 أحرف على الأقل',
+                              labelText: l10n.password,
+                              helperText:
+                                  l10n.passwordHelper,
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
                               ),
                               suffixIcon: IconButton(
                                 tooltip: _isPasswordVisible
-                                    ? 'إخفاء كلمة المرور'
-                                    : 'إظهار كلمة المرور',
+                                    ? l10n
+                                        .passwordVisibilityHide
+                                    : l10n
+                                        .passwordVisibilityShow,
                                 onPressed: () {
                                   setState(() {
                                     _isPasswordVisible =
@@ -247,28 +314,36 @@ class _RegisterPageState extends State<RegisterPage> {
                                 },
                                 icon: Icon(
                                   _isPasswordVisible
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
+                                      ? Icons
+                                          .visibility_off_outlined
+                                      : Icons
+                                          .visibility_outlined,
                                 ),
                               ),
-                              border: const OutlineInputBorder(),
+                              border:
+                                  const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || value.length < 8) {
-                                return 'يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.';
+                              if (value == null ||
+                                  value.length < 8) {
+                                return l10n.passwordMinLength;
                               }
 
                               return null;
                             },
                           ),
-
                           const SizedBox(height: 20),
-
                           _LanguageSelector(
-                            label: 'لغتك الأم',
-                            icon: Icons.translate_rounded,
+                            label: l10n.nativeLanguageLabel,
+                            icon:
+                                Icons.translate_rounded,
                             value: _nativeLanguage,
                             languages: _languages,
+                            languageName: (code) =>
+                                _languageName(
+                              code,
+                              l10n,
+                            ),
                             onChanged: (value) {
                               if (value != null) {
                                 setState(() {
@@ -277,14 +352,19 @@ class _RegisterPageState extends State<RegisterPage> {
                               }
                             },
                           ),
-
                           const SizedBox(height: 16),
-
                           _LanguageSelector(
-                            label: 'اللغة التي تريد تعلّمها',
-                            icon: Icons.school_outlined,
+                            label:
+                                l10n.languageYouWantToLearn,
+                            icon:
+                                Icons.school_outlined,
                             value: _learningLanguage,
                             languages: _languages,
+                            languageName: (code) =>
+                                _languageName(
+                              code,
+                              l10n,
+                            ),
                             onChanged: (value) {
                               if (value != null) {
                                 setState(() {
@@ -293,12 +373,14 @@ class _RegisterPageState extends State<RegisterPage> {
                               }
                             },
                           ),
-
                           const SizedBox(height: 16),
-
                           _LevelSelector(
                             value: _learningLevel,
-                            levels: _levels,
+                            levelName: (level) =>
+                                _levelName(
+                              level,
+                              l10n,
+                            ),
                             onChanged: (value) {
                               if (value != null) {
                                 setState(() {
@@ -307,37 +389,42 @@ class _RegisterPageState extends State<RegisterPage> {
                               }
                             },
                           ),
-
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 18),
-
                             _RegisterError(
                               message: _errorMessage!,
                             ),
                           ],
-
                           const SizedBox(height: 24),
-
                           SizedBox(
                             height: 54,
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: _isLoading ? null : _register,
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                              onPressed:
+                                  _isLoading ? null : _register,
+                              style:
+                                  FilledButton.styleFrom(
+                                shape:
+                                    RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                    16,
+                                  ),
                                 ),
                               ),
                               child: _isLoading
                                   ? const SizedBox(
                                       width: 22,
                                       height: 22,
-                                      child: CircularProgressIndicator(
+                                      child:
+                                          CircularProgressIndicator(
                                         strokeWidth: 2.5,
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('إنشاء الحساب'),
+                                  : Text(
+                                      l10n.createAccountButton,
+                                    ),
                             ),
                           ),
                         ],
@@ -359,6 +446,7 @@ class _LanguageSelector extends StatelessWidget {
   final IconData icon;
   final String value;
   final Map<String, String> languages;
+  final String Function(String code) languageName;
   final ValueChanged<String?> onChanged;
 
   const _LanguageSelector({
@@ -366,27 +454,30 @@ class _LanguageSelector extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.languages,
+    required this.languageName,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
         border: const OutlineInputBorder(),
       ),
-      items: languages.entries
-          .map(
-            (entry) => DropdownMenuItem(
-              value: entry.key,
-              child: Text(entry.value),
+      items: languages.keys.map(
+        (code) {
+          return DropdownMenuItem<String>(
+            value: code,
+            child: Text(
+              languageName(code),
             ),
-          )
-          .toList(),
+          );
+        },
+      ).toList(),
       onChanged: onChanged,
     );
   }
@@ -394,33 +485,55 @@ class _LanguageSelector extends StatelessWidget {
 
 class _LevelSelector extends StatelessWidget {
   final String value;
-  final Map<String, String> levels;
+  final String Function(String level) levelName;
   final ValueChanged<String?> onChanged;
 
   const _LevelSelector({
     required this.value,
-    required this.levels,
+    required this.levelName,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
-      decoration: const InputDecoration(
-        labelText: 'مستواك في اللغة',
-        prefixIcon: Icon(Icons.bar_chart_rounded),
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        labelText: l10n.yourLearningLevel,
+        prefixIcon: const Icon(
+          Icons.bar_chart_rounded,
+        ),
+        border: const OutlineInputBorder(),
       ),
-      items: levels.entries
-          .map(
-            (entry) => DropdownMenuItem(
-              value: entry.key,
-              child: Text(entry.value),
-            ),
-          )
-          .toList(),
+      items: [
+        DropdownMenuItem(
+          value: 'A1',
+          child: Text(levelName('A1')),
+        ),
+        DropdownMenuItem(
+          value: 'A2',
+          child: Text(levelName('A2')),
+        ),
+        DropdownMenuItem(
+          value: 'B1',
+          child: Text(levelName('B1')),
+        ),
+        DropdownMenuItem(
+          value: 'B2',
+          child: Text(levelName('B2')),
+        ),
+        DropdownMenuItem(
+          value: 'C1',
+          child: Text(levelName('C1')),
+        ),
+        DropdownMenuItem(
+          value: 'C2',
+          child: Text(levelName('C2')),
+        ),
+      ],
       onChanged: onChanged,
     );
   }

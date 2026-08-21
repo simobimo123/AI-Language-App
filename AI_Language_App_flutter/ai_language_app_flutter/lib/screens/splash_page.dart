@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/language_controller.dart';
 import '../services/storage_service.dart';
 import '../services/theme_controller.dart';
 import 'home_page.dart';
@@ -7,8 +8,13 @@ import 'login_page.dart';
 
 class SplashPage extends StatefulWidget {
   final ThemeController themeController;
+  final LanguageController languageController;
 
-  const SplashPage({super.key, required this.themeController});
+  const SplashPage({
+    super.key,
+    required this.themeController,
+    required this.languageController,
+  });
 
   @override
   State<SplashPage> createState() => _SplashPageState();
@@ -33,16 +39,20 @@ class _SplashPageState extends State<SplashPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              HomePage(themeController: widget.themeController),
+          builder: (context) => HomePage(
+            themeController: widget.themeController,
+            languageController: widget.languageController,
+          ),
         ),
       );
     } else {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              LoginPage(themeController: widget.themeController),
+          builder: (context) => LoginPage(
+            themeController: widget.themeController,
+            languageController: widget.languageController,
+          ),
         ),
       );
     }
@@ -50,6 +60,10 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
   }
 }
