@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pwdlib import PasswordHash
 
 from schemas import UserCreate, UserUpdate
-from models import User, LearningProfile
+from models import User
 from database import get_db
 from routers.auth import get_current_user
 
@@ -37,6 +37,17 @@ def create_user(
             detail="Email already registered"
         )
 
+    # -----------------------------------------------------
+    # Native language and learning language
+    # must be different
+    # -----------------------------------------------------
+
+    if user.native_language == user.learning_language:
+        raise HTTPException(
+            status_code=400,
+            detail="Native language and learning language must be different"
+        )
+
     hashed_password = password_hash.hash(user.password)
 
     new_user = User(
@@ -50,19 +61,6 @@ def create_user(
     db.add(new_user)
 
     try:
-        db.flush()
-
-        # إنشاء ملف التعلم الأول للمستخدم
-        # بالمستوى الذي اختاره أثناء التسجيل
-        learning_profile = LearningProfile(
-            user_id=new_user.id,
-            language=user.learning_language,
-            level=user.learning_level,
-            progress=0.0
-        )
-
-        db.add(learning_profile)
-
         db.commit()
 
     except IntegrityError:
@@ -81,8 +79,7 @@ def create_user(
         "name": new_user.name,
         "email": new_user.email,
         "native_language": new_user.native_language,
-        "learning_language": new_user.learning_language,
-        "learning_level": user.learning_level
+        "learning_language": new_user.learning_language
     }
 
 
@@ -114,8 +111,11 @@ def update_my_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # لا نسمح بأن تكون اللغة الأم
-    # هي نفسها لغة التعلم
+    # -----------------------------------------------------
+    # Native language and learning language
+    # must be different
+    # -----------------------------------------------------
+
     if user_data.native_language == user_data.learning_language:
         raise HTTPException(
             status_code=400,
@@ -125,27 +125,14 @@ def update_my_profile(
     current_user.name = user_data.name
     current_user.email = user_data.email
     current_user.native_language = user_data.native_language
+    current_user.learning_language = user_data.learning_language
 
-    # إذا تغيرت لغة التعلم الحالية
-    # نتأكد أن لها LearningProfile
-    if current_user.learning_language != user_data.learning_language:
-
-        existing_profile = db.query(LearningProfile).filter(
-            LearningProfile.user_id == current_user.id,
-            LearningProfile.language == user_data.learning_language
-        ).first()
-
-        if existing_profile is None:
-            existing_profile = LearningProfile(
-                user_id=current_user.id,
-                language=user_data.learning_language,
-                level="A1",
-                progress=0.0
-            )
-
-            db.add(existing_profile)
-
-        current_user.learning_language = user_data.learning_language
+    # -----------------------------------------------------
+    # We intentionally do NOT create a LearningProfile here.
+    #
+    # The profile and its level are created after the
+    # onboarding and placement test.
+    # -----------------------------------------------------
 
     try:
         db.commit()

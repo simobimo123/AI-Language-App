@@ -12,14 +12,29 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL must be set in the .env file"
+    )
 
-engine = create_engine(DATABASE_URL)
+
+# =========================================================
+# Database engine
+# =========================================================
+
+engine = create_engine(
+    DATABASE_URL
+)
 
 
 SessionLocal = sessionmaker(
     bind=engine
 )
 
+
+# =========================================================
+# Database dependency
+# =========================================================
 
 def get_db():
     db = SessionLocal()
@@ -34,8 +49,23 @@ def get_db():
 # =========================================================
 # Create tables
 # =========================================================
+#
+# This creates all tables defined in models.py that do not
+# already exist.
+#
+# This now includes the new global vocabulary structure:
+#
+# - vocabulary_entries
+# - vocabulary_senses
+# - vocabulary_examples
+# - vocabulary_media
+#
+# It also keeps the existing tables.
+# =========================================================
 
-Base.metadata.create_all(engine)
+Base.metadata.create_all(
+    engine
+)
 
 
 # =========================================================
@@ -45,18 +75,24 @@ Base.metadata.create_all(engine)
 
 with engine.connect() as connection:
 
-    inspector = inspect(connection)
-
     # =====================================================
     # Users table
     # =====================================================
 
-    user_columns = inspector.get_columns("users")
+    inspector = inspect(connection)
+
+    user_columns = inspector.get_columns(
+        "users"
+    )
 
     user_column_names = [
         column["name"]
         for column in user_columns
     ]
+
+    # =====================================================
+    # native_language
+    # =====================================================
 
     if "native_language" not in user_column_names:
 
@@ -75,6 +111,10 @@ with engine.connect() as connection:
         print(
             "Added 'native_language' column to users table."
         )
+
+    # =====================================================
+    # learning_language
+    # =====================================================
 
     if "learning_language" not in user_column_names:
 
@@ -95,17 +135,66 @@ with engine.connect() as connection:
         )
 
     # =====================================================
+    # google_id
+    # =====================================================
+
+    if "google_id" not in user_column_names:
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE users
+                ADD COLUMN google_id VARCHAR(255)
+                """
+            )
+        )
+
+        connection.commit()
+
+        print(
+            "Added 'google_id' column to users table."
+        )
+
+    # =====================================================
+    # Unique Google ID index
+    # =====================================================
+
+    connection.execute(
+        text(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS
+            uq_users_google_id
+            ON users (google_id)
+            WHERE google_id IS NOT NULL
+            """
+        )
+    )
+
+    connection.commit()
+
+    print(
+        "Ensured unique Google ID index exists."
+    )
+
+    # =====================================================
     # Words table
     # =====================================================
 
-    columns = inspector.get_columns("words")
+    inspector = inspect(connection)
+
+    columns = inspector.get_columns(
+        "words"
+    )
 
     column_names = [
         column["name"]
         for column in columns
     ]
 
-    # Add learned column if it does not exist
+    # =====================================================
+    # learned
+    # =====================================================
+
     if "learned" not in column_names:
 
         connection.execute(
@@ -125,7 +214,7 @@ with engine.connect() as connection:
         )
 
     # =====================================================
-    # Add learning_profile_id
+    # learning_profile_id
     # =====================================================
 
     if "learning_profile_id" not in column_names:
@@ -146,8 +235,11 @@ with engine.connect() as connection:
         )
 
         # -------------------------------------------------
-        # Try to assign existing words using the old
-        # language column when available.
+        # Old database:
+        #
+        # If the old words table had a language column,
+        # try to match words with the corresponding
+        # LearningProfile.
         # -------------------------------------------------
 
         if "language" in column_names:
@@ -172,7 +264,9 @@ with engine.connect() as connection:
             )
 
         # -------------------------------------------------
-        # Fallback for old words that could not be matched.
+        # Fallback:
+        #
+        # Use the user's current learning language.
         # -------------------------------------------------
 
         connection.execute(
@@ -197,7 +291,7 @@ with engine.connect() as connection:
         )
 
     # =====================================================
-    # Make sure every word has a learning profile
+    # Check remaining words without profile
     # =====================================================
 
     remaining = connection.execute(
@@ -219,7 +313,11 @@ with engine.connect() as connection:
 
     else:
 
-        # Make learning_profile_id required
+        # -------------------------------------------------
+        # Only make the column required when every existing
+        # row has a value.
+        # -------------------------------------------------
+
         connection.execute(
             text(
                 """
@@ -241,7 +339,9 @@ with engine.connect() as connection:
 
     inspector = inspect(connection)
 
-    columns = inspector.get_columns("words")
+    columns = inspector.get_columns(
+        "words"
+    )
 
     column_names = [
         column["name"]
@@ -266,12 +366,14 @@ with engine.connect() as connection:
         )
 
     # =====================================================
-    # Add learning profile foreign key
+    # Learning profile foreign key
     # =====================================================
 
     inspector = inspect(connection)
 
-    foreign_keys = inspector.get_foreign_keys("words")
+    foreign_keys = inspector.get_foreign_keys(
+        "words"
+    )
 
     has_learning_profile_fk = any(
         fk.get("referred_table") == "learning_profiles"
@@ -303,4 +405,10 @@ with engine.connect() as connection:
         )
 
 
-print("Database connected successfully!")
+# =========================================================
+# Final message
+# =========================================================
+
+print(
+    "Database connected successfully!"
+)
