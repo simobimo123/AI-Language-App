@@ -22,6 +22,7 @@ from models import (
     AIUsage,
     LearningProfile,
     AIConversationMessage,
+    Word,
     VocabularyEntry,
     VocabularyRelation,
     VocabularyForm,
@@ -43,10 +44,6 @@ router = APIRouter(
     tags=["AI"],
 )
 
-
-# =========================================================
-# Logging
-# =========================================================
 
 logger = logging.getLogger(__name__)
 
@@ -70,13 +67,11 @@ client = genai.Client(
 )
 
 
-# Main conversational model.
 AI_MODEL = os.getenv(
     "GEMINI_MAIN_MODEL",
     "gemini-3.6-flash",
 )
 
-# Smaller model for request classification.
 AI_CLASSIFIER_MODEL = os.getenv(
     "GEMINI_CLASSIFIER_MODEL",
     "gemini-3.5-flash-lite",
@@ -88,9 +83,7 @@ AI_CLASSIFIER_MODEL = os.getenv(
 # =========================================================
 
 NORMAL_MAX_OUTPUT_TOKENS = 1200
-
 MEDIUM_MAX_OUTPUT_TOKENS = 3000
-
 LONG_MAX_OUTPUT_TOKENS = 4096
 
 
@@ -102,37 +95,10 @@ MAX_CONVERSATION_MESSAGES = 6
 
 
 # =========================================================
-# Vocabulary enrichment
-# =========================================================
-#
-# IMPORTANT:
-#
-# The database is the source of truth.
-#
-# Gemini is an enrichment engine.
-#
-# Flow:
-#
-# User asks about word
-#       ↓
-# Database lookup
-#       ↓
-# Is required information complete?
-#       ├── YES → use database
-#       └── NO  → Gemini generates missing information
-#                    ↓
-#                  validate
-#                    ↓
-#                  save to database
-#                    ↓
-#                  use database context
-#
-# Therefore, once information has been stored, future requests
-# normally do not need another enrichment call.
+# Vocabulary
 # =========================================================
 
 VOCABULARY_AI_SOURCE = "ai"
-
 VOCABULARY_AI_SOURCE_VERSION = AI_MODEL
 
 
@@ -176,7 +142,6 @@ SUPPORTED_LEVELS = {
 # =========================================================
 
 RATE_LIMIT_REQUESTS = 10
-
 RATE_LIMIT_WINDOW_SECONDS = 60
 
 user_requests: dict[
@@ -223,12 +188,6 @@ def reserve_ai_request(
     user_id: int,
     db: Session,
 ) -> AIUsage:
-    """
-    Atomically reserve one public AI request.
-
-    This protects the daily quota when multiple requests
-    arrive at nearly the same time.
-    """
 
     today = date.today()
 
@@ -293,15 +252,13 @@ def reserve_ai_request(
 
     db.commit()
 
-    usage = db.execute(
+    return db.execute(
         select(AIUsage)
         .where(
             AIUsage.user_id == user_id,
             AIUsage.usage_date == today,
         )
     ).scalar_one()
-
-    return usage
 
 
 def get_current_usage(
@@ -358,20 +315,12 @@ def get_current_usage(
 
 
 # =========================================================
-# Gemini usage extraction
+# Gemini token usage
 # =========================================================
 
 def extract_token_usage(
     response,
 ) -> tuple[int, int, int]:
-    """
-    Best-effort extraction of token usage.
-
-    Returns:
-        prompt_tokens
-        completion_tokens
-        total_tokens
-    """
 
     usage_metadata = getattr(
         response,
@@ -414,12 +363,6 @@ def record_api_usage(
     total_tokens: int,
     db: Session,
 ) -> None:
-    """
-    Record one actual provider API call.
-
-    Cost remains 0 until we define a central provider
-    pricing configuration.
-    """
 
     usage = get_current_usage(
         user_id=user_id,
@@ -466,7 +409,7 @@ class ChatRequest(BaseModel):
 
 
 # =========================================================
-# AI request classification
+# Classification
 # =========================================================
 
 class AIRequestClassification(BaseModel):
@@ -598,10 +541,6 @@ Understand the user's intent and return only structured JSON.
 """
 
 
-# =========================================================
-# Classify request
-# =========================================================
-
 def classify_ai_request(
     message: str,
     current_user: User,
@@ -611,13 +550,6 @@ def classify_ai_request(
     int,
     int,
 ]:
-    """
-    Returns:
-        classification
-        prompt_tokens
-        completion_tokens
-        total_tokens
-    """
 
     classifier_context = f"""
 USER PROFILE
@@ -821,7 +753,7 @@ APPLICATION DATA
 
 
 # =========================================================
-# Vocabulary normalization
+# Normalization
 # =========================================================
 
 def normalize_text(
@@ -837,11 +769,7 @@ def normalize_text(
         .casefold()
     )
 
-    return (
-        value
-        if value
-        else None
-    )
+    return value if value else None
 
 
 def normalize_language(
@@ -880,6 +808,70 @@ def normalize_level(
         return None
 
     return level
+
+
+def normalize_confidence(
+    value,
+) -> float:
+
+    if value is None:
+        return 0.5
+
+    if isinstance(
+        value,
+        bool,
+    ):
+
+        return (
+            1.0
+            if value
+            else 0.0
+        )
+
+    if isinstance(
+        value,
+        (int, float),
+    ):
+
+        return max(
+            0.0,
+            min(
+                1.0,
+                float(value),
+            ),
+        )
+
+    text = (
+        str(value)
+        .strip()
+        .lower()
+    )
+
+    mapping = {
+        "very high": 0.95,
+        "high": 0.90,
+        "medium": 0.70,
+        "moderate": 0.70,
+        "low": 0.40,
+        "very low": 0.20,
+    }
+
+    if text in mapping:
+        return mapping[text]
+
+    try:
+
+        return max(
+            0.0,
+            min(
+                1.0,
+                float(text),
+            ),
+        )
+
+    except ValueError:
+
+        return 0.5
 
 
 # =========================================================
@@ -970,11 +962,9 @@ def get_localization(
             VocabularySenseLocalization
         )
         .where(
-            VocabularySenseLocalization
-            .vocabulary_sense_id
+            VocabularySenseLocalization.vocabulary_sense_id
             == sense_id,
-            VocabularySenseLocalization
-            .language
+            VocabularySenseLocalization.language
             == language,
         )
     ).scalar_one_or_none()
@@ -1063,8 +1053,7 @@ def get_relations(
                 VocabularyRelation
             )
             .where(
-                VocabularyRelation
-                .source_entry_id
+                VocabularyRelation.source_entry_id
                 == entry_id,
                 VocabularyRelation.is_active.is_(True),
             )
@@ -1089,8 +1078,7 @@ def get_forms(
                 VocabularyForm
             )
             .where(
-                VocabularyForm
-                .vocabulary_entry_id
+                VocabularyForm.vocabulary_entry_id
                 == entry_id,
                 VocabularyForm.is_active.is_(True),
             )
@@ -1244,12 +1232,12 @@ def build_vocabulary_context(
             )
 
     lines.append(
-        f"Entry enrichment status: "
+        "Entry enrichment status: "
         f"{entry.enrichment_status}"
     )
 
     lines.append(
-        f"Sense enrichment status: "
+        "Sense enrichment status: "
         f"{sense.enrichment_status}"
     )
 
@@ -1259,7 +1247,7 @@ def build_vocabulary_context(
 
 
 # =========================================================
-# Enrichment schemas
+# AI vocabulary schemas
 # =========================================================
 
 class AIVocabularyForm(BaseModel):
@@ -1276,9 +1264,6 @@ class AIVocabularyForm(BaseModel):
 
     is_lemma: bool = False
 
-    # IMPORTANT:
-    # This remains a normal Python/Pydantic dict.
-    # It is NOT sent to Gemini as response_schema.
     grammatical_features: dict | None = None
 
 
@@ -1369,7 +1354,7 @@ class AIVocabularyEnrichment(BaseModel):
 
 
 # =========================================================
-# AI Vocabulary Instruction
+# Gemini vocabulary instruction
 # =========================================================
 
 VOCABULARY_ENRICHMENT_INSTRUCTION = """
@@ -1385,26 +1370,136 @@ Do not replace correct existing information.
 Do not invent application-specific facts.
 
 ==================================================
-LANGUAGES
+LANGUAGE ASSIGNMENT - VERY IMPORTANT
 ==================================================
 
-Learning language:
-{learning_language}
+There are TWO languages in this request.
 
-Native language:
-{native_language}
+1. LEARNING LANGUAGE
+2. NATIVE LANGUAGE
+
+You MUST keep every generated field in its correct language.
+
+LEARNING LANGUAGE:
+__LEARNING_LANGUAGE__
+
+NATIVE LANGUAGE:
+__NATIVE_LANGUAGE__
 
 ==================================================
-OUTPUT FORMAT
+FIELD LANGUAGE RULES
+==================================================
+
+The following fields MUST be written in the
+LEARNING LANGUAGE:
+
+- meaning
+- definition
+- example_sentence
+- forms
+- relation target words such as synonym and antonym
+
+The following fields MUST be written in the
+NATIVE LANGUAGE:
+
+- native_translation
+- native_definition
+- example_translations.translation
+
+The field "language" MUST equal the LEARNING LANGUAGE.
+
+==================================================
+CRITICAL RULE
+==================================================
+
+NEVER use English as a fallback language.
+
+For example, if:
+
+Learning language = de
+Native language = ar
+
+Then this is WRONG:
+
+meaning:
+"fast, quick, rapid"
+
+because that is English.
+
+Instead, the meaning MUST be German.
+
+For example:
+
+meaning:
+"schnell, mit hoher Geschwindigkeit"
+
+definition:
+"Mit hoher Geschwindigkeit oder in kurzer Zeit."
+
+Likewise:
+
+native_translation:
+"سريع"
+
+native_definition:
+"يتحرك أو يحدث بسرعة عالية."
+
+The language of each field must match its assigned language,
+even if the AI model internally reasons in English.
+
+==================================================
+RELATIONS
+==================================================
+
+All relation words MUST be in the LEARNING LANGUAGE.
+
+Examples:
+
+{
+  "word": "langsam",
+  "relation_type": "antonym"
+}
+
+{
+  "word": "rasch",
+  "relation_type": "synonym"
+}
+
+Do not return English synonyms for a German word.
+
+Do not translate relation words into the native language.
+
+==================================================
+EXAMPLE
+==================================================
+
+example_sentence MUST be in the LEARNING LANGUAGE.
+
+example_translations MUST be in the NATIVE LANGUAGE.
+
+Example:
+
+Learning language = de
+Native language = ar
+
+example_sentence:
+"Er läuft sehr schnell."
+
+example_translations:
+[
+  {
+    "language": "ar",
+    "translation": "هو يركض بسرعة كبيرة."
+  }
+]
+
+==================================================
+OUTPUT
 ==================================================
 
 Return ONLY valid JSON.
 
-Do not use Markdown.
-
-Do not wrap the JSON in ```json or ```.
-
-The JSON object must contain these fields:
+The JSON object must contain:
 
 word
 language
@@ -1423,36 +1518,7 @@ example_translations
 
 If a value is unavailable, use null.
 
-For lists that have no useful items, use [].
-
-Each form may contain:
-
-form
-form_type
-is_lemma
-grammatical_features
-
-grammatical_features may be a JSON object containing
-useful grammatical information.
-
-==================================================
-POSSIBLE FIELDS
-==================================================
-
-You may provide:
-
-1. part_of_speech
-2. pronunciation
-3. cefr_level
-4. cefr_confidence
-5. meaning in the learning language
-6. definition in the learning language
-7. translation into the native language
-8. definition in the native language
-9. useful morphological forms
-10. lexical relations
-11. one useful example sentence
-12. example translation(s)
+Lists with no useful items must be [].
 
 ==================================================
 CEFR
@@ -1468,106 +1534,71 @@ B2
 C1
 C2
 
-Choose the CEFR level for the specific sense being enriched.
-
-Do not pretend certainty when uncertain.
-Use a lower confidence value when appropriate.
-
-==================================================
-RELATIONS
-==================================================
-
-Relations should be linguistically meaningful.
-
-Examples:
-
-synonym
-antonym
-related
-derived
-hypernym
-hyponym
-
-Do not create random relations merely to fill the database.
-
-Only return relations that you are reasonably confident are
-linguistically meaningful.
+cefr_confidence must be a number from 0.0 to 1.0.
 
 ==================================================
 FORMS
 ==================================================
 
-Provide useful morphological forms when clearly applicable.
+Forms must be in the LEARNING LANGUAGE.
 
-Examples:
+Each form must use:
 
-eat
-eats
-ate
-eaten
-eating
+{
+  "form": "...",
+  "form_type": "...",
+  "is_lemma": true
+}
 
-Do not invent forms for languages where they are not applicable.
-
-grammatical_features should contain useful information when
-appropriate, for example tense, person, number, gender, case,
-mood, aspect, or other language-specific grammatical properties.
+Never use "value" instead of "form".
 
 ==================================================
-EXAMPLE
+IMPORTANT FINAL CHECK
 ==================================================
 
-The example must:
+Before returning the JSON, verify:
 
-- sound natural
-- use the target word correctly
-- be useful for language learning
-- match the user's approximate level when possible
+- meaning = LEARNING LANGUAGE
+- definition = LEARNING LANGUAGE
+- forms = LEARNING LANGUAGE
+- relation words = LEARNING LANGUAGE
+- example_sentence = LEARNING LANGUAGE
+- native_translation = NATIVE LANGUAGE
+- native_definition = NATIVE LANGUAGE
+- example translations = NATIVE LANGUAGE
+- language = LEARNING LANGUAGE
 
-==================================================
-IMPORTANT
-==================================================
-
-The database context supplied below is authoritative.
-
-Generate only useful missing information.
-
-Do not copy fields that are already present unless necessary.
+If any field is in the wrong language, correct it before returning JSON.
 
 Return valid JSON only.
 """
 
 
-# =========================================================
-# Clean Gemini JSON
-# =========================================================
-
 def clean_json_response(
     text: str,
 ) -> str:
-    """
-    Gemini normally returns plain JSON because
-    response_mime_type is application/json.
-
-    This helper also safely removes Markdown fences if
-    a model/version nevertheless returns them.
-    """
 
     text = text.strip()
 
-    if text.startswith("```json"):
+    if text.startswith(
+        "```json"
+    ):
 
         text = text[
             len("```json"):
         ].strip()
 
-    elif text.startswith("```"):
+    elif text.startswith(
+        "```"
+    ):
 
         text = text[
             len("```"):
         ].strip()
 
-    if text.endswith("```"):
+    if text.endswith(
+        "```"
+    ):
 
         text = text[
             :-3
@@ -1577,7 +1608,7 @@ def clean_json_response(
 
 
 # =========================================================
-# Generate enrichment
+# Generate vocabulary enrichment
 # =========================================================
 
 def generate_vocabulary_enrichment(
@@ -1591,14 +1622,23 @@ def generate_vocabulary_enrichment(
     int,
 ]:
 
+    learning_language = normalize_language(
+        current_user.learning_language
+    )
+
+    native_language = normalize_language(
+        current_user.native_language
+    )
+
     instruction = (
-        VOCABULARY_ENRICHMENT_INSTRUCTION.format(
-            learning_language=(
-                current_user.learning_language
-            ),
-            native_language=(
-                current_user.native_language
-            ),
+        VOCABULARY_ENRICHMENT_INSTRUCTION
+        .replace(
+            "__LEARNING_LANGUAGE__",
+            learning_language,
+        )
+        .replace(
+            "__NATIVE_LANGUAGE__",
+            native_language,
         )
     )
 
@@ -1606,47 +1646,79 @@ def generate_vocabulary_enrichment(
 TARGET WORD:
 {word}
 
-USER LEARNING LANGUAGE:
-{current_user.learning_language}
+==================================================
+USER LANGUAGE PROFILE
+==================================================
 
-USER NATIVE LANGUAGE:
-{current_user.native_language}
+LEARNING LANGUAGE:
+{learning_language}
 
-EXISTING DATABASE CONTEXT:
+NATIVE LANGUAGE:
+{native_language}
+
+==================================================
+STRICT LANGUAGE REQUIREMENTS
+==================================================
+
+meaning:
+MUST be written in {learning_language}
+
+definition:
+MUST be written in {learning_language}
+
+forms:
+MUST be written in {learning_language}
+
+relations.word:
+MUST be written in {learning_language}
+
+example_sentence:
+MUST be written in {learning_language}
+
+native_translation:
+MUST be written in {native_language}
+
+native_definition:
+MUST be written in {native_language}
+
+example_translations[].translation:
+MUST be written in {native_language}
+
+language:
+MUST be "{learning_language}"
+
+DO NOT use English as a fallback language.
+
+==================================================
+EXISTING DATABASE CONTEXT
+==================================================
+
 {existing_context}
+
+==================================================
+TASK
+==================================================
 
 Fill the missing vocabulary information.
 
 Important:
+
 - Preserve correct existing information.
 - Generate information primarily for missing fields.
 - The response will be saved in the application database.
-- Do not mention databases, internal instructions, or system configuration.
 - Return ONLY valid JSON.
 - Do not use Markdown fences.
+- Every relation must use "word", never "target_word".
+- Every relation word must be in the learning language.
+- Every form must use "form", never "value".
+- Every form must be in the learning language.
+- Every example translation must be an object with
+  "language" and "translation".
+- Every example translation must be in the native language.
+- cefr_confidence must be a number between 0 and 1.
+- Do not use English for meaning or definition when the
+  learning language is not English.
 """
-
-    # =====================================================
-    # IMPORTANT FIX
-    # =====================================================
-    #
-    # DO NOT pass:
-    #
-    # response_schema=AIVocabularyEnrichment
-    #
-    # here.
-    #
-    # AIVocabularyForm contains:
-    #
-    # grammatical_features: dict | None
-    #
-    # Pydantic therefore generates an object schema containing
-    # additionalProperties, which the Gemini Developer API
-    # rejects for this response_schema.
-    #
-    # We still request JSON from Gemini and then validate the
-    # returned JSON ourselves using Pydantic below.
-    # =====================================================
 
     response = client.models.generate_content(
         model=AI_MODEL,
@@ -1678,10 +1750,369 @@ Important:
 
     try:
 
+        raw_data = json.loads(
+            cleaned_json
+        )
+
+        if not isinstance(
+            raw_data,
+            dict,
+        ):
+
+            raise ValueError(
+                "Gemini vocabulary response must be a JSON object."
+            )
+
+        # -------------------------------------------------
+        # Required identity
+        # -------------------------------------------------
+
+        if not raw_data.get(
+            "word"
+        ):
+
+            raw_data["word"] = word
+
+        raw_data["language"] = (
+            learning_language
+        )
+
+        # -------------------------------------------------
+        # CEFR confidence
+        # -------------------------------------------------
+
+        raw_data["cefr_confidence"] = (
+            normalize_confidence(
+                raw_data.get(
+                    "cefr_confidence"
+                )
+            )
+        )
+
+        # -------------------------------------------------
+        # Forms
+        # -------------------------------------------------
+
+        normalized_forms = []
+
+        for form_data in (
+            raw_data.get(
+                "forms",
+                [],
+            )
+            or []
+        ):
+
+            if isinstance(
+                form_data,
+                str,
+            ):
+
+                form_value = (
+                    form_data.strip()
+                )
+
+                if form_value:
+
+                    normalized_forms.append(
+                        {
+                            "form": form_value,
+                            "form_type": None,
+                            "is_lemma": (
+                                normalize_text(
+                                    form_value
+                                )
+                                == normalize_text(
+                                    word
+                                )
+                            ),
+                            "grammatical_features": None,
+                        }
+                    )
+
+                continue
+
+            if not isinstance(
+                form_data,
+                dict,
+            ):
+                continue
+
+            form_value = (
+                form_data.get(
+                    "form"
+                )
+                or form_data.get(
+                    "value"
+                )
+                or form_data.get(
+                    "word"
+                )
+            )
+
+            if not form_value:
+                continue
+
+            normalized_forms.append(
+                {
+                    "form": str(
+                        form_value
+                    ).strip(),
+                    "form_type": (
+                        str(
+                            form_data.get(
+                                "form_type"
+                            )
+                        ).strip()
+                        if form_data.get(
+                            "form_type"
+                        )
+                        else None
+                    ),
+                    "is_lemma": bool(
+                        form_data.get(
+                            "is_lemma",
+                            False,
+                        )
+                    ),
+                    "grammatical_features": (
+                        form_data.get(
+                            "grammatical_features"
+                        )
+                        if isinstance(
+                            form_data.get(
+                                "grammatical_features"
+                            ),
+                            dict,
+                        )
+                        else None
+                    ),
+                }
+            )
+
+        raw_data["forms"] = (
+            normalized_forms
+        )
+
+        requested_normalized = (
+            normalize_text(
+                word
+            )
+        )
+
+        normalized_form_values = {
+            normalize_text(
+                item["form"]
+            )
+            for item in normalized_forms
+            if item.get("form")
+        }
+
+        if (
+            requested_normalized
+            not in normalized_form_values
+        ):
+
+            raw_data["forms"].insert(
+                0,
+                {
+                    "form": word,
+                    "form_type": "lemma",
+                    "is_lemma": True,
+                    "grammatical_features": None,
+                },
+            )
+
+        # -------------------------------------------------
+        # Relations
+        # -------------------------------------------------
+
+        normalized_relations = []
+
+        allowed_relation_types = {
+            "synonym",
+            "antonym",
+            "related",
+            "derived",
+            "hypernym",
+            "hyponym",
+            "holonym",
+            "meronym",
+            "coordinate_term",
+            "see_also",
+        }
+
+        for relation_data in (
+            raw_data.get(
+                "relations",
+                [],
+            )
+            or []
+        ):
+
+            if not isinstance(
+                relation_data,
+                dict,
+            ):
+                continue
+
+            target_word = (
+                relation_data.get(
+                    "word"
+                )
+                or relation_data.get(
+                    "target_word"
+                )
+            )
+
+            relation_type = (
+                relation_data.get(
+                    "relation_type"
+                )
+            )
+
+            if (
+                not target_word
+                or not relation_type
+            ):
+                continue
+
+            relation_type = (
+                str(
+                    relation_type
+                )
+                .strip()
+                .lower()
+            )
+
+            if (
+                relation_type
+                not in allowed_relation_types
+            ):
+                continue
+
+            normalized_relations.append(
+                {
+                    "word": str(
+                        target_word
+                    ).strip(),
+                    "relation_type": relation_type,
+                    "part_of_speech": (
+                        relation_data.get(
+                            "part_of_speech"
+                        )
+                    ),
+                }
+            )
+
+        raw_data["relations"] = (
+            normalized_relations
+        )
+
+        # -------------------------------------------------
+        # Example translations
+        # -------------------------------------------------
+
+        normalized_translations = []
+
+        for translation_data in (
+            raw_data.get(
+                "example_translations",
+                [],
+            )
+            or []
+        ):
+
+            if isinstance(
+                translation_data,
+                str,
+            ):
+
+                translation_text = (
+                    translation_data.strip()
+                )
+
+                if translation_text:
+
+                    normalized_translations.append(
+                        {
+                            "language": (
+                                native_language
+                            ),
+                            "translation": (
+                                translation_text
+                            ),
+                        }
+                    )
+
+                continue
+
+            if not isinstance(
+                translation_data,
+                dict,
+            ):
+                continue
+
+            translation_text = (
+                translation_data.get(
+                    "translation"
+                )
+                or translation_data.get(
+                    "text"
+                )
+                or translation_data.get(
+                    "value"
+                )
+            )
+
+            if not translation_text:
+                continue
+
+            normalized_translations.append(
+                {
+                    "language": (
+                        native_language
+                    ),
+                    "translation": (
+                        str(
+                            translation_text
+                        ).strip()
+                    ),
+                }
+            )
+
+        raw_data[
+            "example_translations"
+        ] = normalized_translations
+
+        # -------------------------------------------------
+        # Optional fields
+        # -------------------------------------------------
+
+        if raw_data.get(
+            "cefr_level"
+        ):
+
+            raw_data[
+                "cefr_level"
+            ] = (
+                str(
+                    raw_data[
+                        "cefr_level"
+                    ]
+                )
+                .strip()
+                .upper()
+            )
+
+        # -------------------------------------------------
+        # Final validation
+        # -------------------------------------------------
+
         result = (
             AIVocabularyEnrichment
-            .model_validate_json(
-                cleaned_json
+            .model_validate(
+                raw_data
             )
         )
 
@@ -1693,7 +2124,7 @@ Important:
             "response=%s",
             word,
             exc,
-            cleaned_json[:3000],
+            cleaned_json[:5000],
         )
 
         raise RuntimeError(
@@ -1709,7 +2140,7 @@ Important:
 
 
 # =========================================================
-# Find the best existing sense
+# Sense helpers
 # =========================================================
 
 def find_best_sense(
@@ -1784,7 +2215,6 @@ def get_or_create_entry_and_sense(
         )
 
         db.add(entry)
-
         db.flush()
 
     sense = find_best_sense(
@@ -1809,7 +2239,6 @@ def get_or_create_entry_and_sense(
         )
 
         db.add(sense)
-
         db.flush()
 
     return (
@@ -1855,25 +2284,23 @@ def upsert_localization(
 
     if existing is None:
 
-        existing = VocabularySenseLocalization(
-            vocabulary_sense_id=sense.id,
-            language=language,
-            meaning=meaning,
-            definition=definition,
-            source=VOCABULARY_AI_SOURCE,
-            source_version=(
-                VOCABULARY_AI_SOURCE_VERSION
-            ),
-            enrichment_status="complete",
-            quality_score=quality_score,
-            generated_by_ai=generated_by_ai,
+        existing = (
+            VocabularySenseLocalization(
+                vocabulary_sense_id=sense.id,
+                language=language,
+                meaning=meaning,
+                definition=definition,
+                source=VOCABULARY_AI_SOURCE,
+                source_version=(
+                    VOCABULARY_AI_SOURCE_VERSION
+                ),
+                enrichment_status="complete",
+                quality_score=quality_score,
+                generated_by_ai=generated_by_ai,
+            )
         )
 
         db.add(existing)
-
-        # IMPORTANT:
-        # Make the newly inserted localization visible to
-        # subsequent SELECT statements in this same transaction.
         db.flush()
 
         return True
@@ -1890,17 +2317,23 @@ def upsert_localization(
         existing.definition = definition
         changed = True
 
-    if generated_by_ai and not existing.generated_by_ai:
+    if (
+        generated_by_ai
+        and not existing.generated_by_ai
+    ):
 
         existing.generated_by_ai = True
         changed = True
 
     if (
         quality_score is not None
-        and existing.quality_score != quality_score
+        and existing.quality_score
+        != quality_score
     ):
 
-        existing.quality_score = quality_score
+        existing.quality_score = (
+            quality_score
+        )
         changed = True
 
     if changed:
@@ -1913,7 +2346,9 @@ def upsert_localization(
             VOCABULARY_AI_SOURCE_VERSION
         )
 
-        existing.enrichment_status = "complete"
+        existing.enrichment_status = (
+            "complete"
+        )
 
     return changed
 
@@ -1972,10 +2407,13 @@ def upsert_translation(
 
         if (
             quality_score is not None
-            and existing.quality_score != quality_score
+            and existing.quality_score
+            != quality_score
         ):
 
-            existing.quality_score = quality_score
+            existing.quality_score = (
+                quality_score
+            )
             changed = True
 
         return changed
@@ -2071,7 +2509,6 @@ def upsert_example(
         )
 
         db.add(existing)
-
         db.flush()
 
         created = True
@@ -2081,7 +2518,6 @@ def upsert_example(
         existing.generated_by_ai = True
 
         if not existing.source:
-
             existing.source = (
                 VOCABULARY_AI_SOURCE
             )
@@ -2099,7 +2535,8 @@ def upsert_example(
         except ValueError:
 
             logger.warning(
-                "Skipping unsupported example translation language: %s",
+                "Skipping unsupported example "
+                "translation language: %s",
                 translation_data.language,
             )
 
@@ -2178,7 +2615,9 @@ def upsert_example(
 
 def save_forms(
     entry: VocabularyEntry,
-    forms: list[AIVocabularyForm],
+    forms: list[
+        AIVocabularyForm
+    ],
     db: Session,
 ) -> int:
 
@@ -2194,7 +2633,9 @@ def save_forms(
             continue
 
         normalized = (
-            form_value.casefold().strip()
+            form_value
+            .casefold()
+            .strip()
         )
 
         existing = db.execute(
@@ -2264,42 +2705,35 @@ def save_forms(
         created_count += 1
 
     if created_count:
-
         db.flush()
 
     return created_count
 
 
 # =========================================================
-# Save CEFR assessment
+# Save CEFR
 # =========================================================
 
 def save_cefr_assessment(
     sense: VocabularySense,
     level: str | None,
-    confidence: float | None,
+    confidence,
     db: Session,
 ) -> bool:
 
-    normalized_level = normalize_level(
-        level
+    normalized_level = (
+        normalize_level(
+            level
+        )
     )
 
     if normalized_level is None:
         return False
 
     confidence = (
-        confidence
-        if confidence is not None
-        else 0.5
-    )
-
-    confidence = max(
-        0.0,
-        min(
-            1.0,
-            confidence,
-        ),
+        normalize_confidence(
+            confidence
+        )
     )
 
     existing = db.execute(
@@ -2351,7 +2785,7 @@ def save_cefr_assessment(
 
 
 # =========================================================
-# Save lexical relation
+# Save relation
 # =========================================================
 
 def save_relation(
@@ -2368,34 +2802,43 @@ def save_relation(
         return False
 
     normalized_target = (
-        target_word.casefold().strip()
+        target_word
+        .casefold()
+        .strip()
     )
 
-    target_entry = db.execute(
-        select(
-            VocabularyEntry
+    target_entry = (
+        db.execute(
+            select(
+                VocabularyEntry
+            )
+            .where(
+                VocabularyEntry.language
+                == source_entry.language,
+                VocabularyEntry.is_active.is_(True),
+                or_(
+                    VocabularyEntry
+                    .normalized_lemma
+                    == normalized_target,
+                    func.lower(
+                        VocabularyEntry
+                        .lemma
+                    )
+                    == normalized_target,
+                    func.lower(
+                        VocabularyEntry
+                        .word
+                    )
+                    == normalized_target,
+                ),
+            )
+            .order_by(
+                VocabularyEntry.id.asc()
+            )
         )
-        .where(
-            VocabularyEntry.language
-            == source_entry.language,
-            VocabularyEntry.is_active.is_(True),
-            or_(
-                VocabularyEntry.normalized_lemma
-                == normalized_target,
-                func.lower(
-                    VocabularyEntry.lemma
-                )
-                == normalized_target,
-                func.lower(
-                    VocabularyEntry.word
-                )
-                == normalized_target,
-            ),
-        )
-        .order_by(
-            VocabularyEntry.id.asc()
-        )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
 
     if target_entry is None:
         return False
@@ -2455,7 +2898,7 @@ def save_relation(
 
 
 # =========================================================
-# Determine missing data
+# Missing fields
 # =========================================================
 
 def get_missing_vocabulary_fields(
@@ -2465,24 +2908,26 @@ def get_missing_vocabulary_fields(
     db: Session,
 ) -> set[str]:
 
-    learning_language = normalize_language(
-        current_user.learning_language
+    learning_language = (
+        normalize_language(
+            current_user.learning_language
+        )
     )
 
-    native_language = normalize_language(
-        current_user.native_language
+    native_language = (
+        normalize_language(
+            current_user.native_language
+        )
     )
 
     missing: set[str] = set()
 
-    # -----------------------------------------------------
-    # Learning-language localization
-    # -----------------------------------------------------
-
-    learning_localization = get_localization(
-        sense.id,
-        learning_language,
-        db,
+    learning_localization = (
+        get_localization(
+            sense.id,
+            learning_language,
+            db,
+        )
     )
 
     if (
@@ -2503,10 +2948,6 @@ def get_missing_vocabulary_fields(
             "learning_definition"
         )
 
-    # -----------------------------------------------------
-    # Native translation
-    # -----------------------------------------------------
-
     native_translation = get_translation(
         sense.id,
         native_language,
@@ -2522,10 +2963,6 @@ def get_missing_vocabulary_fields(
             "native_translation"
         )
 
-    # -----------------------------------------------------
-    # Entry metadata
-    # -----------------------------------------------------
-
     if not entry.part_of_speech:
 
         missing.add(
@@ -2538,19 +2975,11 @@ def get_missing_vocabulary_fields(
             "pronunciation"
         )
 
-    # -----------------------------------------------------
-    # CEFR
-    # -----------------------------------------------------
-
     if not sense.cefr_level:
 
         missing.add(
             "cefr"
         )
-
-    # -----------------------------------------------------
-    # Forms
-    # -----------------------------------------------------
 
     forms = get_forms(
         entry.id,
@@ -2562,10 +2991,6 @@ def get_missing_vocabulary_fields(
         missing.add(
             "forms"
         )
-
-    # -----------------------------------------------------
-    # Example
-    # -----------------------------------------------------
 
     examples = get_examples(
         sense.id,
@@ -2605,7 +3030,7 @@ class VocabularyEnrichmentResult(BaseModel):
 
 
 # =========================================================
-# Main on-demand enrichment engine
+# Enrichment engine
 # =========================================================
 
 def enrich_vocabulary_on_demand(
@@ -2632,12 +3057,10 @@ def enrich_vocabulary_on_demand(
             None,
         )
 
-    learning_language = normalize_language(
-        current_user.learning_language
-    )
-
-    native_language = normalize_language(
-        current_user.native_language
+    learning_language = (
+        normalize_language(
+            current_user.learning_language
+        )
     )
 
     entry, sense = (
@@ -2648,11 +3071,13 @@ def enrich_vocabulary_on_demand(
         )
     )
 
-    missing = get_missing_vocabulary_fields(
-        entry=entry,
-        sense=sense,
-        current_user=current_user,
-        db=db,
+    missing = (
+        get_missing_vocabulary_fields(
+            entry=entry,
+            sense=sense,
+            current_user=current_user,
+            db=db,
+        )
     )
 
     existing_context = (
@@ -2663,10 +3088,6 @@ def enrich_vocabulary_on_demand(
             db=db,
         )
     )
-
-    # -----------------------------------------------------
-    # Nothing is missing.
-    # -----------------------------------------------------
 
     if not missing:
 
@@ -2689,10 +3110,6 @@ def enrich_vocabulary_on_demand(
             ),
         )
 
-    # -----------------------------------------------------
-    # Something is missing.
-    # -----------------------------------------------------
-
     (
         enriched,
         prompt_tokens,
@@ -2706,9 +3123,9 @@ def enrich_vocabulary_on_demand(
 
     completed_fields: set[str] = set()
 
-    # =====================================================
-    # Entry-level fields
-    # =====================================================
+    # -----------------------------------------------------
+    # Entry metadata
+    # -----------------------------------------------------
 
     if (
         not entry.part_of_speech
@@ -2736,14 +3153,16 @@ def enrich_vocabulary_on_demand(
             "pronunciation"
         )
 
-    # =====================================================
-    # Learning-language localization
-    # =====================================================
+    # -----------------------------------------------------
+    # Learning localization
+    # -----------------------------------------------------
 
-    learning_localization = get_localization(
-        sense.id,
-        learning_language,
-        db,
+    learning_localization = (
+        get_localization(
+            sense.id,
+            learning_language,
+            db,
+        )
     )
 
     if (
@@ -2767,12 +3186,12 @@ def enrich_vocabulary_on_demand(
                     "learning_meaning"
                 )
 
-    # Re-query after the first upsert because the function
-    # may have created a new localization and flushed it.
-    learning_localization = get_localization(
-        sense.id,
-        learning_language,
-        db,
+    learning_localization = (
+        get_localization(
+            sense.id,
+            learning_language,
+            db,
+        )
     )
 
     if (
@@ -2796,9 +3215,15 @@ def enrich_vocabulary_on_demand(
                     "learning_definition"
                 )
 
-    # =====================================================
+    # -----------------------------------------------------
     # Native translation
-    # =====================================================
+    # -----------------------------------------------------
+
+    native_language = (
+        normalize_language(
+            current_user.native_language
+        )
+    )
 
     native_translation = get_translation(
         sense.id,
@@ -2829,14 +3254,16 @@ def enrich_vocabulary_on_demand(
                 "native_translation"
             )
 
-    # =====================================================
+    # -----------------------------------------------------
     # Native definition
-    # =====================================================
+    # -----------------------------------------------------
 
-    existing_native_localization = get_localization(
-        sense.id,
-        native_language,
-        db,
+    existing_native_localization = (
+        get_localization(
+            sense.id,
+            native_language,
+            db,
+        )
     )
 
     if (
@@ -2863,9 +3290,9 @@ def enrich_vocabulary_on_demand(
                 "native_definition"
             )
 
-    # =====================================================
+    # -----------------------------------------------------
     # CEFR
-    # =====================================================
+    # -----------------------------------------------------
 
     if (
         not sense.cefr_level
@@ -2885,7 +3312,6 @@ def enrich_vocabulary_on_demand(
                 level=normalized_cefr,
                 confidence=(
                     enriched.cefr_confidence
-                    or 0.5
                 ),
                 db=db,
             )
@@ -2900,9 +3326,9 @@ def enrich_vocabulary_on_demand(
                     "cefr"
                 )
 
-    # =====================================================
+    # -----------------------------------------------------
     # Forms
-    # =====================================================
+    # -----------------------------------------------------
 
     if enriched.forms:
 
@@ -2918,9 +3344,9 @@ def enrich_vocabulary_on_demand(
                 "forms"
             )
 
-    # =====================================================
+    # -----------------------------------------------------
     # Relations
-    # =====================================================
+    # -----------------------------------------------------
 
     relation_count = 0
 
@@ -2940,16 +3366,20 @@ def enrich_vocabulary_on_demand(
             "relations"
         )
 
-    # =====================================================
+    # -----------------------------------------------------
     # Example
-    # =====================================================
+    # -----------------------------------------------------
 
     if enriched.example_sentence:
 
         if upsert_example(
             sense=sense,
-            sentence=enriched.example_sentence,
-            translations=enriched.example_translations,
+            sentence=(
+                enriched.example_sentence
+            ),
+            translations=(
+                enriched.example_translations
+            ),
             db=db,
         ):
 
@@ -2957,57 +3387,66 @@ def enrich_vocabulary_on_demand(
                 "example"
             )
 
-    # =====================================================
-    # Mark AI-generated records
-    # =====================================================
+    # -----------------------------------------------------
+    # Metadata
+    # -----------------------------------------------------
 
     entry.generated_by_ai = True
     sense.generated_by_ai = True
 
-    # =====================================================
-    # Recalculate completeness
-    # =====================================================
+    # -----------------------------------------------------
+    # Completeness
+    # -----------------------------------------------------
 
-    missing_after = get_missing_vocabulary_fields(
-        entry=entry,
-        sense=sense,
-        current_user=current_user,
-        db=db,
+    missing_after = (
+        get_missing_vocabulary_fields(
+            entry=entry,
+            sense=sense,
+            current_user=current_user,
+            db=db,
+        )
     )
 
     if missing_after:
 
-        entry.enrichment_status = "partial"
+        entry.enrichment_status = (
+            "partial"
+        )
 
-        sense.enrichment_status = "partial"
+        sense.enrichment_status = (
+            "partial"
+        )
 
     else:
 
-        entry.enrichment_status = "complete"
+        entry.enrichment_status = (
+            "complete"
+        )
 
-        sense.enrichment_status = "complete"
+        sense.enrichment_status = (
+            "complete"
+        )
 
     if completed_fields:
 
         now = datetime.utcnow()
 
         entry.last_enriched_at = now
-
         sense.last_enriched_at = now
-
         sense.quality_score = 0.8
 
     db.commit()
 
     db.refresh(entry)
-
     db.refresh(sense)
 
-    database_context = build_vocabulary_context(
-        entry=entry,
-        sense=sense,
-        current_user=current_user,
-        db=db,
+    database_context = (
+        build_vocabulary_context(
+            entry=entry,
+            sense=sense,
+            current_user=current_user,
+            db=db,
+        )
     )
 
     result = VocabularyEnrichmentResult(
@@ -3039,6 +3478,271 @@ def enrich_vocabulary_on_demand(
 
 
 # =========================================================
+# SAVE AI WORD FOR CURRENT USER
+# =========================================================
+
+def save_ai_word_for_user(
+    word: str,
+    entry_id: int,
+    sense_id: int,
+    current_user: User,
+    db: Session,
+) -> Word:
+
+    profile = db.execute(
+        select(
+            LearningProfile
+        )
+        .where(
+            LearningProfile.user_id
+            == current_user.id,
+            LearningProfile.language
+            == current_user.learning_language,
+        )
+    ).scalar_one_or_none()
+
+    if profile is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Current learning profile not found."
+            ),
+        )
+
+    entry = db.execute(
+        select(
+            VocabularyEntry
+        )
+        .where(
+            VocabularyEntry.id == entry_id,
+            VocabularyEntry.is_active.is_(True),
+        )
+    ).scalar_one_or_none()
+
+    if entry is None:
+
+        raise RuntimeError(
+            "Vocabulary entry not found."
+        )
+
+    sense = db.execute(
+        select(
+            VocabularySense
+        )
+        .where(
+            VocabularySense.id == sense_id,
+            VocabularySense.vocabulary_entry_id
+            == entry.id,
+            VocabularySense.is_active.is_(True),
+        )
+    ).scalar_one_or_none()
+
+    if sense is None:
+
+        raise RuntimeError(
+            "Vocabulary sense not found."
+        )
+
+    normalized_word = (
+        normalize_text(
+            word
+        )
+        or word.strip().casefold()
+    )
+
+    forms = get_forms(
+        entry.id,
+        db,
+    )
+
+    selected_form = None
+
+    for form in forms:
+
+        if normalize_text(
+            form.form
+        ) == normalized_word:
+
+            selected_form = form
+            break
+
+    if selected_form is None:
+
+        for form in forms:
+
+            if form.is_lemma:
+
+                selected_form = form
+                break
+
+    if selected_form is None and entry.word:
+
+        for form in forms:
+
+            if normalize_text(
+                form.form
+            ) == normalize_text(
+                entry.word
+            ):
+
+                selected_form = form
+                break
+
+    native_language = (
+        normalize_language(
+            current_user.native_language
+        )
+    )
+
+    native_translation = get_translation(
+        sense.id,
+        native_language,
+        db,
+    )
+
+    translation = None
+
+    if native_translation is not None:
+
+        translation = (
+            native_translation.translation
+            .strip()
+        )
+
+    if not translation:
+
+        native_localization = (
+            get_localization(
+                sense.id,
+                native_language,
+                db,
+            )
+        )
+
+        if native_localization is not None:
+
+            translation = (
+                native_localization.meaning
+                or native_localization.definition
+            )
+
+            if translation:
+
+                translation = (
+                    translation.strip()
+                )
+
+    if not translation:
+
+        translation = word.strip()
+
+    saved_word_text = (
+        selected_form.form.strip()
+        if selected_form is not None
+        else (
+            entry.word.strip()
+            if entry.word
+            else entry.lemma.strip()
+        )
+    )
+
+    existing = None
+
+    if selected_form is not None:
+
+        existing = db.execute(
+            select(
+                Word
+            )
+            .where(
+                Word.user_id
+                == current_user.id,
+                Word.learning_profile_id
+                == profile.id,
+                Word.vocabulary_form_id
+                == selected_form.id,
+            )
+        ).scalar_one_or_none()
+
+    if existing is None:
+
+        existing = db.execute(
+            select(
+                Word
+            )
+            .where(
+                Word.user_id
+                == current_user.id,
+                Word.learning_profile_id
+                == profile.id,
+                Word.vocabulary_entry_id
+                == entry.id,
+            )
+            .order_by(
+                Word.id.asc()
+            )
+        ).scalars().first()
+
+    if existing is not None:
+
+        if (
+            not existing.translation
+            or existing.translation
+            == existing.word
+        ):
+
+            existing.translation = (
+                translation
+            )
+
+            db.commit()
+            db.refresh(existing)
+
+        return existing
+
+    new_word = Word(
+        word=saved_word_text,
+        translation=translation,
+        learned=False,
+        user_id=current_user.id,
+        learning_profile_id=profile.id,
+        vocabulary_entry_id=entry.id,
+        vocabulary_form_id=(
+            selected_form.id
+            if selected_form is not None
+            else None
+        ),
+    )
+
+    db.add(new_word)
+    db.commit()
+    db.refresh(new_word)
+
+    logger.info(
+        "AI vocabulary saved "
+        "user_id=%s "
+        "word_id=%s "
+        "entry_id=%s "
+        "sense_id=%s "
+        "form_id=%s "
+        "word=%s",
+        current_user.id,
+        new_word.id,
+        entry.id,
+        sense.id,
+        (
+            selected_form.id
+            if selected_form is not None
+            else None
+        ),
+        new_word.word,
+    )
+
+    return new_word
+
+
+# =========================================================
 # Conversation history
 # =========================================================
 
@@ -3046,7 +3750,9 @@ def get_conversation_history(
     user_id: int,
     conversation_id: str | None,
     db: Session,
-) -> list[AIConversationMessage]:
+) -> list[
+    AIConversationMessage
+]:
 
     query = (
         select(
@@ -3242,7 +3948,7 @@ def sse_event(
 
 
 # =========================================================
-# Stream Gemini response
+# Stream final Gemini response
 # =========================================================
 
 def stream_gemini_response(
@@ -3287,15 +3993,13 @@ def stream_gemini_response(
             client.models.generate_content_stream(
                 model=AI_MODEL,
                 contents=contents,
-                config=(
-                    types.GenerateContentConfig(
-                        max_output_tokens=(
-                            max_output_tokens
-                        ),
-                        system_instruction=(
-                            learning_context
-                        ),
-                    )
+                config=types.GenerateContentConfig(
+                    max_output_tokens=(
+                        max_output_tokens
+                    ),
+                    system_instruction=(
+                        learning_context
+                    ),
                 ),
             )
         )
@@ -3395,7 +4099,9 @@ def stream_gemini_response(
         yield sse_event(
             {
                 "type": "done",
-                "daily_limit": DAILY_AI_LIMIT,
+                "daily_limit": (
+                    DAILY_AI_LIMIT
+                ),
                 "daily_used": (
                     usage.request_count
                 ),
@@ -3446,7 +4152,7 @@ def chat_with_ai(
 ):
 
     # -----------------------------------------------------
-    # 1. Short-term rate limit.
+    # 1. Rate limit
     # -----------------------------------------------------
 
     check_rate_limit(
@@ -3454,7 +4160,7 @@ def chat_with_ai(
     )
 
     # -----------------------------------------------------
-    # 2. Reserve one public AI request.
+    # 2. Daily quota
     # -----------------------------------------------------
 
     reserve_ai_request(
@@ -3463,7 +4169,7 @@ def chat_with_ai(
     )
 
     # -----------------------------------------------------
-    # 3. Classify request.
+    # 3. Classification
     # -----------------------------------------------------
 
     (
@@ -3477,7 +4183,7 @@ def chat_with_ai(
     )
 
     # -----------------------------------------------------
-    # 4. Record classifier API call.
+    # 4. Record classifier usage
     # -----------------------------------------------------
 
     if (
@@ -3509,7 +4215,7 @@ def chat_with_ai(
     )
 
     # -----------------------------------------------------
-    # 5. Block clearly unrelated requests.
+    # 5. Block
     # -----------------------------------------------------
 
     if classification.decision == "BLOCK":
@@ -3564,7 +4270,7 @@ def chat_with_ai(
         )
 
     # -----------------------------------------------------
-    # 6. Vocabulary enrichment.
+    # 6. Vocabulary
     # -----------------------------------------------------
 
     vocabulary_context = None
@@ -3573,12 +4279,56 @@ def chat_with_ai(
     enrichment_completion_tokens = 0
     enrichment_total_tokens = 0
 
+    enrichment_result = None
+    saved_word = None
+
+    vocabulary_entry = None
+    vocabulary_sense = None
+
     if (
         classification.needs_vocabulary_enrichment
         and classification.vocabulary_word
     ):
 
+        requested_word = (
+            classification
+            .vocabulary_word
+            .strip()
+        )
+
         try:
+
+            # -------------------------------------------------
+            # Create the global vocabulary entry/sense FIRST.
+            # -------------------------------------------------
+
+            (
+                vocabulary_entry,
+                vocabulary_sense,
+            ) = get_or_create_entry_and_sense(
+                word=requested_word,
+                learning_language=(
+                    normalize_language(
+                        current_user
+                        .learning_language
+                    )
+                ),
+                db=db,
+            )
+
+            db.commit()
+
+            db.refresh(
+                vocabulary_entry
+            )
+
+            db.refresh(
+                vocabulary_sense
+            )
+
+            # -------------------------------------------------
+            # Enrich vocabulary.
+            # -------------------------------------------------
 
             (
                 vocabulary_context,
@@ -3587,47 +4337,137 @@ def chat_with_ai(
                 enrichment_total_tokens,
                 enrichment_result,
             ) = enrich_vocabulary_on_demand(
-                word=(
-                    classification
-                    .vocabulary_word
+                word=requested_word,
+                current_user=current_user,
+                db=db,
+            )
+
+            # -------------------------------------------------
+            # Save personal user word.
+            # -------------------------------------------------
+
+            saved_word = save_ai_word_for_user(
+                word=requested_word,
+                entry_id=(
+                    enrichment_result.entry_id
+                    if enrichment_result
+                    is not None
+                    else vocabulary_entry.id
+                ),
+                sense_id=(
+                    enrichment_result.sense_id
+                    if enrichment_result
+                    is not None
+                    else vocabulary_sense.id
                 ),
                 current_user=current_user,
                 db=db,
             )
 
-            if enrichment_result is not None:
-
-                logger.info(
-                    "Vocabulary enrichment user_id=%s "
-                    "word=%s generated=%s "
-                    "missing_before=%s "
-                    "completed=%s "
-                    "remaining=%s",
-                    current_user.id,
-                    classification
-                    .vocabulary_word,
-                    enrichment_result.generated,
-                    enrichment_result.missing_before,
-                    enrichment_result.completed_fields,
-                    enrichment_result.remaining_fields,
-                )
+            logger.info(
+                "AI vocabulary saved "
+                "user_id=%s "
+                "saved_word_id=%s "
+                "word=%s",
+                current_user.id,
+                saved_word.id,
+                saved_word.word,
+            )
 
         except Exception as exc:
-
-            db.rollback()
 
             logger.exception(
                 "Vocabulary enrichment failed "
                 "user_id=%s word=%s: %s",
                 current_user.id,
-                classification.vocabulary_word,
+                requested_word,
                 exc,
             )
 
-            vocabulary_context = None
+            db.rollback()
+
+            # -------------------------------------------------
+            # FALLBACK:
+            # Save the requested word even if enrichment fails.
+            # -------------------------------------------------
+
+            try:
+
+                if (
+                    vocabulary_entry is None
+                    or vocabulary_sense is None
+                ):
+
+                    (
+                        vocabulary_entry,
+                        vocabulary_sense,
+                    ) = get_or_create_entry_and_sense(
+                        word=requested_word,
+                        learning_language=(
+                            normalize_language(
+                                current_user
+                                .learning_language
+                            )
+                        ),
+                        db=db,
+                    )
+
+                    db.commit()
+
+                    db.refresh(
+                        vocabulary_entry
+                    )
+
+                    db.refresh(
+                        vocabulary_sense
+                    )
+
+                saved_word = save_ai_word_for_user(
+                    word=requested_word,
+                    entry_id=(
+                        vocabulary_entry.id
+                    ),
+                    sense_id=(
+                        vocabulary_sense.id
+                    ),
+                    current_user=current_user,
+                    db=db,
+                )
+
+                vocabulary_context = (
+                    build_vocabulary_context(
+                        entry=vocabulary_entry,
+                        sense=vocabulary_sense,
+                        current_user=current_user,
+                        db=db,
+                    )
+                )
+
+                logger.info(
+                    "AI vocabulary fallback save "
+                    "successful "
+                    "user_id=%s "
+                    "saved_word_id=%s "
+                    "word=%s",
+                    current_user.id,
+                    saved_word.id,
+                    saved_word.word,
+                )
+
+            except Exception as save_exc:
+
+                db.rollback()
+
+                logger.exception(
+                    "AI vocabulary fallback save failed "
+                    "user_id=%s word=%s: %s",
+                    current_user.id,
+                    requested_word,
+                    save_exc,
+                )
 
     # -----------------------------------------------------
-    # 7. Record enrichment API usage.
+    # 7. Record enrichment usage
     # -----------------------------------------------------
 
     if (
@@ -3651,28 +4491,32 @@ def chat_with_ai(
         )
 
     # -----------------------------------------------------
-    # 8. Build learning context.
+    # 8. Learning context
     # -----------------------------------------------------
 
-    learning_context = build_learning_context(
-        current_user,
-        db,
+    learning_context = (
+        build_learning_context(
+            current_user,
+            db,
+        )
     )
 
     # -----------------------------------------------------
-    # 9. Conversation history.
+    # 9. Conversation history
     # -----------------------------------------------------
 
-    history = get_conversation_history(
-        user_id=current_user.id,
-        conversation_id=(
-            request.conversation_id
-        ),
-        db=db,
+    history = (
+        get_conversation_history(
+            user_id=current_user.id,
+            conversation_id=(
+                request.conversation_id
+            ),
+            db=db,
+        )
     )
 
     # -----------------------------------------------------
-    # 10. Build Gemini contents.
+    # 10. Gemini contents
     # -----------------------------------------------------
 
     contents = build_gemini_contents(
@@ -3682,7 +4526,7 @@ def chat_with_ai(
     )
 
     # -----------------------------------------------------
-    # 11. Final conversational Gemini call.
+    # 11. Final response
     # -----------------------------------------------------
 
     return StreamingResponse(

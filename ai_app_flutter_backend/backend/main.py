@@ -67,4 +67,4 @@ app.include_router(placement_router)
 app.include_router(vocabulary_router)
 
 
-# uvicorn main:app --reload
+# python -m uvicorn main:app --reload --host 0.0.0.0
