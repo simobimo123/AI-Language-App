@@ -6,6 +6,39 @@ from models import PlacementVocabulary
 
 
 ENGLISH_VOCABULARY = {
+    # =====================================================
+    # PRE-A1
+    # =====================================================
+    #
+    # Very basic vocabulary for complete beginners.
+    #
+    "PRE_A1": [
+        "I", "you", "he", "she", "we",
+        "they", "my", "your", "his", "her",
+        "hello", "hi", "bye", "yes", "no",
+        "please", "thanks", "sorry", "help", "okay",
+        "name", "friend", "family", "mother", "father",
+        "mom", "dad", "boy", "girl", "baby",
+        "man", "woman", "child", "person", "people",
+        "home", "house", "room", "door", "bed",
+        "chair", "table", "book", "pen", "phone",
+        "car", "bus", "school", "class", "teacher",
+        "water", "milk", "bread", "apple", "food",
+        "tea", "coffee", "dog", "cat", "animal",
+        "one", "two", "three", "four", "five",
+        "six", "seven", "eight", "nine", "ten",
+        "red", "blue", "green", "yellow", "black",
+        "white", "big", "small", "good", "bad",
+        "hot", "cold", "happy", "sad", "here",
+        "there", "today", "now", "come", "go",
+        "eat", "drink", "sleep", "look", "see",
+        "like", "want", "have", "make", "give",
+    ],
+
+    # =====================================================
+    # A1
+    # =====================================================
+
     "A1": [
         "hello", "house", "water", "book", "food",
         "mother", "father", "school", "friend", "family",
@@ -28,6 +61,10 @@ ENGLISH_VOCABULARY = {
         "parent", "son", "daughter", "teacher", "student",
         "class", "lesson", "language", "word", "sentence",
     ],
+
+    # =====================================================
+    # A2
+    # =====================================================
 
     "A2": [
         "usually", "because", "between", "important", "weekend",
@@ -52,6 +89,10 @@ ENGLISH_VOCABULARY = {
         "interested", "boring", "useful", "famous", "local",
     ],
 
+    # =====================================================
+    # B1
+    # =====================================================
+
     "B1": [
         "experience", "decision", "improve", "behavior", "environment",
         "relationship", "opportunity", "although", "advantage", "disadvantage",
@@ -74,6 +115,10 @@ ENGLISH_VOCABULARY = {
         "fail", "focus", "force", "guess", "include",
         "introduce", "join", "lend", "miss", "offer",
     ],
+
+    # =====================================================
+    # B2
+    # =====================================================
 
     "B2": [
         "approach", "evidence", "require", "significant", "maintain",
@@ -98,6 +143,10 @@ ENGLISH_VOCABULARY = {
         "mental", "negative", "obvious", "positive", "precise",
     ],
 
+    # =====================================================
+    # C1
+    # =====================================================
+
     "C1": [
         "acknowledge", "controversial", "substantial", "contemporary", "underlying",
         "inevitable", "nevertheless", "distinguish", "implement", "perspective",
@@ -120,6 +169,10 @@ ENGLISH_VOCABULARY = {
         "phenomenon", "hypothesis", "ideology", "incentive", "intervention",
         "trajectory", "vulnerability", "resilience", "counterpart", "constraint",
     ],
+
+    # =====================================================
+    # C2
+    # =====================================================
 
     "C2": [
         "abate", "aberration", "abhor", "acclaimed", "acquiesce",
@@ -175,8 +228,7 @@ def seed_english_vocabulary():
     try:
 
         # -------------------------------------------------
-        # Remove the old temporary English vocabulary.
-        # We only touch English placement vocabulary.
+        # Remove the existing English placement vocabulary.
         # Other languages remain untouched.
         # -------------------------------------------------
 
@@ -191,7 +243,7 @@ def seed_english_vocabulary():
         inserted = 0
 
         # -------------------------------------------------
-        # Insert the new 600-word English bank.
+        # Insert the English placement vocabulary.
         # -------------------------------------------------
 
         for level, words in ENGLISH_VOCABULARY.items():
@@ -233,7 +285,7 @@ def seed_english_vocabulary():
         print(
             f"Total inserted: {inserted}"
         )
-        print("Expected: 600")
+        print("Expected: 700")
         print("==============================================")
         print()
 

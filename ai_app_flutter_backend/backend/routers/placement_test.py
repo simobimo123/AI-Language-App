@@ -24,6 +24,14 @@ router = APIRouter(
 # =========================================================
 # Configuration
 # =========================================================
+#
+# The placement screening starts at A1.
+#
+# PRE_A1 is the result when the user does not reach A1.
+#
+# PRE_A1 itself does NOT need a separate placement word
+# screening or confirmation quiz.
+# =========================================================
 
 LEVELS = [
     "A1",
@@ -34,15 +42,22 @@ LEVELS = [
     "C2",
 ]
 
+
+ALL_LEVELS = [
+    "PRE_A1",
+    *LEVELS,
+]
+
+
 PASS_THRESHOLD = 50.0
 
 WORDS_PER_LEVEL = 20
 
 
-# Confirmation quiz (grammar / comprehension) configuration.
+# Confirmation quiz configuration.
 #
-# This test only runs ONCE, at the level where the user
-# stopped climbing in the quick vocabulary screening.
+# This test runs only for A1..C2.
+# PRE_A1 does not need a confirmation quiz.
 
 QUIZ_QUESTIONS_PER_TEST = 10
 
@@ -112,6 +127,8 @@ class PlacementWordEvaluationResponse(BaseModel):
 
     next_level: str | None
 
+    # Can now be:
+    # PRE_A1, A1, A2, B1, B2, C1, C2
     preliminary_level: str
 
 
@@ -165,6 +182,8 @@ class PlacementQuizEvaluationResponse(BaseModel):
 
     # The level the user should actually be placed at,
     # after confirmation.
+    #
+    # Can now be PRE_A1 when A1 confirmation is failed.
     final_level: str
 
 
@@ -178,12 +197,18 @@ class PlacementFinalizeRequest(BaseModel):
         max_length=10,
     )
 
-    # A1..C2. "PRE_A1" from the vocabulary screening is
-    # mapped to "A1" by the client before calling this
-    # endpoint, since it is the floor level.
+    # Final level can be:
+    #
+    # PRE_A1
+    # A1
+    # A2
+    # B1
+    # B2
+    # C1
+    # C2
     level: str = Field(
         min_length=2,
-        max_length=2,
+        max_length=10,
     )
 
 
@@ -450,10 +475,6 @@ def evaluate_placement_words(
 
     # -----------------------------------------------------
     # Count known words.
-    #
-    # Because selected IDs were already validated against
-    # presented IDs, this represents exactly what the user
-    # selected.
     # -----------------------------------------------------
 
     selected_id_set = set(
@@ -512,7 +533,9 @@ def evaluate_placement_words(
 
         if current_index == 0:
 
-            # Less than 50% of A1.
+            # The user did not reach A1.
+            #
+            # This is now a REAL PRE_A1 placement.
             preliminary_level = "PRE_A1"
 
         else:
@@ -540,13 +563,10 @@ def evaluate_placement_words(
 # Get confirmation quiz
 # =========================================================
 #
-# Called ONCE, after the vocabulary screening stops
-# climbing, using `preliminary_level` returned above.
+# The confirmation quiz runs only for A1..C2.
 #
-# If `preliminary_level` is "PRE_A1", the client should NOT
-# call this endpoint — there is no level below A1 to test.
-# Instead it should call /placement/finalize directly with
-# level="A1".
+# PRE_A1 does NOT have a confirmation quiz because it is
+# already the lowest possible level.
 # =========================================================
 
 @router.get(
@@ -702,14 +722,19 @@ def evaluate_placement_quiz(
         final_level = request.level
 
     # =====================================================
-    # Not confirmed -> drop one level (floor is A1).
+    # Not confirmed.
+    #
+    # A1 -> PRE_A1
+    # A2 -> A1
+    # B1 -> A2
+    # ...
     # =====================================================
 
     else:
 
         if current_index == 0:
 
-            final_level = "A1"
+            final_level = "PRE_A1"
 
         else:
 
@@ -739,7 +764,9 @@ def evaluate_placement_quiz(
 # user's LearningProfile, creating it if it does not exist
 # yet, or updating it if the user retakes the test.
 #
-# This is the LAST step of onboarding.
+# Valid final levels:
+#
+# PRE_A1, A1, A2, B1, B2, C1, C2
 # =========================================================
 
 @router.post(
@@ -759,13 +786,13 @@ def finalize_placement(
 
     level = request.level.strip().upper()
 
-    if level not in LEVELS:
+    if level not in ALL_LEVELS:
 
         raise HTTPException(
             status_code=400,
             detail=(
                 f"Invalid level '{level}'. "
-                f"Must be one of: {', '.join(LEVELS)}."
+                f"Must be one of: {', '.join(ALL_LEVELS)}."
             ),
         )
 
@@ -793,7 +820,7 @@ def finalize_placement(
         profile.progress = 0.0
 
     # -----------------------------------------------------
-    # Keep the user's "current" learning language in sync
+    # Keep the user's current learning language in sync
     # with the language they just completed placement for.
     # -----------------------------------------------------
 

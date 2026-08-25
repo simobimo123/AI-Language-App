@@ -46,8 +46,6 @@ class User(Base):
         nullable=False
     )
 
-    # Google account unique identifier.
-    # This stores Google's "sub" value.
     google_id: Mapped[str | None] = mapped_column(
         String(255),
         unique=True,
@@ -111,7 +109,7 @@ class LearningProfile(Base):
     )
 
     level: Mapped[str] = mapped_column(
-        String(2),
+        String(10),
         default="A1",
         nullable=False,
         index=True
@@ -148,18 +146,6 @@ class LearningProfile(Base):
 # =========================================================
 # Vocabulary Entry
 # =========================================================
-#
-# The main lexical item.
-#
-# Example:
-#
-# language = "en"
-# lemma = "case"
-# part_of_speech = "noun"
-#
-# The same word can have multiple meanings.
-# Those meanings are stored in VocabularySense.
-# =========================================================
 
 class VocabularyEntry(Base):
     __tablename__ = "vocabulary_entries"
@@ -168,67 +154,46 @@ class VocabularyEntry(Base):
         primary_key=True
     )
 
-    # Language code:
-    # en, ar, fr, es, de, tr, ja, ko, zh, ...
     language: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
         index=True
     )
 
-    # Base dictionary form.
-    # Example:
-    # running -> run
     lemma: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
         index=True
     )
 
-    # Optional displayed form.
-    # Usually equal to lemma, but useful for inflected forms.
     word: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True
     )
 
-    # noun, verb, adjective, adverb, ...
     part_of_speech: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         index=True
     )
 
-    # IPA or another pronunciation representation.
     pronunciation: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True
     )
 
-    # Optional numerical frequency rank.
-    #
-    # Lower rank can represent a more frequent word,
-    # depending on the source.
     frequency_rank: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         index=True
     )
 
-    # Where this entry came from.
-    #
-    # Examples:
-    # CEFR-J
-    # UniversalCEFR
-    # imported_dataset
-    # manual
     source: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         index=True
     )
 
-    # Dataset/source version.
     source_version: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True
@@ -265,19 +230,155 @@ class VocabularyEntry(Base):
 
 
 # =========================================================
-# Vocabulary Sense
+# Vocabulary Relation
 # =========================================================
-#
-# One word can have multiple meanings.
-#
-# Example:
-#
-# case
-#   -> situation
-#   -> legal matter
-#   -> container
-#
-# Each meaning can have its own CEFR level.
+
+class VocabularyRelation(Base):
+    __tablename__ = "vocabulary_relations"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    source_entry_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_entries.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    target_entry_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_entries.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    relation_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True
+    )
+
+    language: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        index=True
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+        index=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_entry_id",
+            "target_entry_id",
+            "relation_type",
+            name="uq_vocabulary_relation"
+        ),
+    )
+
+
+# =========================================================
+# Vocabulary Form
+# =========================================================
+
+class VocabularyForm(Base):
+    __tablename__ = "vocabulary_forms"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    vocabulary_entry_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_entries.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    form: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True
+    )
+
+    normalized_form: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True
+    )
+
+    grammatical_features: Mapped[dict | None] = mapped_column(
+        JSON,
+        nullable=True
+    )
+
+    source: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True
+    )
+
+    source_version: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+        index=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "vocabulary_entry_id",
+            "form",
+            name="uq_vocabulary_form_entry_form"
+        ),
+    )
+
+
+# =========================================================
+# Vocabulary Sense
 # =========================================================
 
 class VocabularySense(Base):
@@ -296,37 +397,40 @@ class VocabularySense(Base):
         index=True
     )
 
-    # Meaning written in a language understandable by the learner.
+    # Legacy fields.
+    #
+    # These remain temporarily for compatibility with
+    # existing development data.
+    #
+    # New localized data should use
+    # VocabularySenseLocalization.
+
     meaning: Mapped[str | None] = mapped_column(
         Text,
         nullable=True
     )
 
-    # Dictionary-style definition in the target language.
     definition: Mapped[str | None] = mapped_column(
         Text,
         nullable=True
     )
 
-    # Optional translation.
+    # =====================================================
+    # Current / selected CEFR level
+    # =====================================================
     #
-    # This may depend on the user's native language, so it is
-    # not necessarily globally unique.
-    translation: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True
-    )
-
-    # CEFR level for THIS meaning.
+    # This is the CEFR level currently used by the
+    # application.
     #
-    # A1, A2, B1, B2, C1, C2
+    # Detailed assessments are stored separately in
+    # VocabularyCEFRAssessment.
+    #
     cefr_level: Mapped[str | None] = mapped_column(
-        String(2),
+        String(10),
         nullable=True,
         index=True
     )
 
-    # Optional frequency for this particular sense.
     frequency_rank: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
@@ -355,20 +459,220 @@ class VocabularySense(Base):
 
 
 # =========================================================
-# Vocabulary Example
+# Vocabulary CEFR Assessment
 # =========================================================
 #
-# Examples are linked to a meaning, not only to a word.
+# Stores every CEFR assessment made for a sense.
 #
-# This allows:
+# One sense can have multiple assessments:
 #
-# case -> "a situation"
-# example:
-# "This is a difficult case."
+# dataset -> A1 -> 0.95
+# ai      -> A2 -> 0.72
+# manual  -> A1 -> 1.00
 #
-# case -> "a container"
-# example:
-# "Put the glasses in the case."
+# VocabularySense.cefr_level remains the currently
+# selected / accepted level.
+# =========================================================
+
+class VocabularyCEFRAssessment(Base):
+    __tablename__ = "vocabulary_cefr_assessments"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    vocabulary_sense_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_senses.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    cefr_level: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        index=True
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        index=True
+    )
+
+    source_version: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    confidence: Mapped[float] = mapped_column(
+        Float,
+        default=1.0,
+        nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "vocabulary_sense_id",
+            "cefr_level",
+            "source",
+            "source_version",
+            name="uq_vocabulary_cefr_assessment"
+        ),
+    )
+
+
+# =========================================================
+# Vocabulary Sense Localization
+# =========================================================
+
+class VocabularySenseLocalization(Base):
+    __tablename__ = "vocabulary_sense_localizations"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    vocabulary_sense_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_senses.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    language: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        index=True
+    )
+
+    meaning: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    definition: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    source: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True
+    )
+
+    source_version: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "vocabulary_sense_id",
+            "language",
+            name="uq_vocabulary_sense_localization"
+        ),
+    )
+
+
+# =========================================================
+# Vocabulary Translation
+# =========================================================
+
+class VocabularyTranslation(Base):
+    __tablename__ = "vocabulary_translations"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    vocabulary_sense_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_senses.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    language: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        index=True
+    )
+
+    translation: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
+
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
+    source: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "vocabulary_sense_id",
+            "language",
+            "translation",
+            name="uq_vocabulary_translation"
+        ),
+    )
+
+
+# =========================================================
+# Vocabulary Example
 # =========================================================
 
 class VocabularyExample(Base):
@@ -392,14 +696,8 @@ class VocabularyExample(Base):
         nullable=False
     )
 
-    translation: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True
-    )
-
-    # Optional CEFR level for this example.
     level: Mapped[str | None] = mapped_column(
-        String(2),
+        String(10),
         nullable=True,
         index=True
     )
@@ -424,19 +722,72 @@ class VocabularyExample(Base):
 
 
 # =========================================================
-# Vocabulary Media
+# Vocabulary Example Translation
 # =========================================================
-#
-# Media belongs to a specific sense.
-#
-# type can be:
-#
-# image
-# audio
-# video
-# animation
-#
-# We store URLs/paths, not the binary files themselves.
+
+class VocabularyExampleTranslation(Base):
+    __tablename__ = "vocabulary_example_translations"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    vocabulary_example_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "vocabulary_examples.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    language: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        index=True
+    )
+
+    translation: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
+
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
+    source: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "vocabulary_example_id",
+            "language",
+            "translation",
+            name="uq_vocabulary_example_translation"
+        ),
+    )
+
+
+# =========================================================
+# Vocabulary Media
 # =========================================================
 
 class VocabularyMedia(Base):
@@ -498,16 +849,6 @@ class VocabularyMedia(Base):
 # =========================================================
 # Legacy Placement Vocabulary
 # =========================================================
-#
-# TEMPORARY COMPATIBILITY TABLE
-#
-# The current placement_test.py still uses this table.
-#
-# We will migrate the placement system to the new
-# VocabularyEntry/VocabularySense structure later.
-#
-# Do NOT delete this table yet.
-# =========================================================
 
 class PlacementVocabulary(Base):
     __tablename__ = "placement_vocabulary"
@@ -523,7 +864,7 @@ class PlacementVocabulary(Base):
     )
 
     level: Mapped[str] = mapped_column(
-        String(2),
+        String(10),
         nullable=False,
         index=True
     )
@@ -558,20 +899,6 @@ class PlacementVocabulary(Base):
 # =========================================================
 # Placement Quiz Question
 # =========================================================
-#
-# This is the "real" confirmation test used after the user
-# stops climbing levels in the quick vocabulary screening.
-#
-# Unlike PlacementVocabulary (single words, yes/no known),
-# this holds grammar/comprehension multiple-choice questions
-# for a specific language + level.
-#
-# `choices` is stored as a JSON array of strings, e.g.:
-# ["is", "are", "am", "be"]
-#
-# `correct_index` is the 0-based index of the right answer
-# inside `choices`.
-# =========================================================
 
 class PlacementQuizQuestion(Base):
     __tablename__ = "placement_quiz_questions"
@@ -587,7 +914,7 @@ class PlacementQuizQuestion(Base):
     )
 
     level: Mapped[str] = mapped_column(
-        String(2),
+        String(10),
         nullable=False,
         index=True
     )
@@ -648,7 +975,7 @@ class CourseLesson(Base):
     )
 
     level: Mapped[str] = mapped_column(
-        String(2),
+        String(10),
         nullable=False,
         index=True
     )
@@ -776,14 +1103,6 @@ class UserLessonProgress(Base):
 # =========================================================
 # User Word
 # =========================================================
-#
-# This is the user's personal vocabulary.
-#
-# It remains separate from the global vocabulary database.
-#
-# A user can save a word/meaning from the global vocabulary
-# or create their own word.
-# =========================================================
 
 class Word(Base):
     __tablename__ = "words"
@@ -826,10 +1145,37 @@ class Word(Base):
         index=True
     )
 
+    vocabulary_entry_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_entries.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True,
+        index=True
+    )
+
+    vocabulary_form_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_forms.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True,
+        index=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "learning_profile_id",
+            "vocabulary_form_id",
+            name="uq_word_user_profile_form"
+        ),
     )
 
 

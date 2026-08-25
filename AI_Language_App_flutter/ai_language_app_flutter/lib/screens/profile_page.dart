@@ -7,6 +7,7 @@ import '../services/storage_service.dart';
 import '../services/theme_controller.dart';
 import '../services/learning_language_controller.dart';
 import 'login_page.dart';
+import 'placement_test_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final ThemeController themeController;
@@ -92,6 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _currentLearningLanguageCode = language;
 
       final profile = _getProfile(language);
+
       _currentLearningLevel = profile?['level']?.toString();
     });
   }
@@ -99,11 +101,13 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> loadProfile() async {
     try {
       final user = await apiService.getCurrentUser();
+
       final profiles = await apiService.getLearningProfiles();
 
       if (!mounted) return;
 
       final nativeCode = user['native_language']?.toString();
+
       final currentLanguage = user['learning_language']?.toString();
 
       dynamic currentProfile;
@@ -119,13 +123,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
       setState(() {
         name = user['name'] ?? 'Learner';
+
         email = user['email'] ?? '';
+
         userId = user['id']?.toString() ?? '';
 
         _nativeLanguageCode = nativeCode;
+
         nativeLanguage = _learningLanguageName(nativeCode, l10n);
 
         _currentLearningLanguageCode = currentLanguage;
+
         _currentLearningLevel = currentProfile?['level']?.toString();
 
         _learningProfiles = profiles;
@@ -136,7 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (currentLanguage != null) {
         learningLanguageController.setLanguage(currentLanguage);
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       setState(() {
@@ -150,22 +158,31 @@ class _ProfilePageState extends State<ProfilePage> {
     switch (code) {
       case 'ar':
         return l10n.arabic;
+
       case 'en':
         return l10n.english;
+
       case 'fr':
         return l10n.french;
+
       case 'es':
         return l10n.spanish;
+
       case 'zh':
         return l10n.chinese;
+
       case 'ja':
         return l10n.japanese;
+
       case 'ko':
         return l10n.korean;
+
       case 'de':
         return _germanName(l10n);
+
       case 'tr':
         return _turkishName(l10n);
+
       default:
         return code ?? '';
     }
@@ -175,16 +192,22 @@ class _ProfilePageState extends State<ProfilePage> {
     switch (widget.languageController.locale.languageCode) {
       case 'ar':
         return 'الألمانية';
+
       case 'fr':
         return 'Allemand';
+
       case 'es':
         return 'Alemán';
+
       case 'ja':
         return 'ドイツ語';
+
       case 'ko':
         return '독일어';
+
       case 'zh':
         return '德语';
+
       case 'en':
       default:
         return 'German';
@@ -195,16 +218,22 @@ class _ProfilePageState extends State<ProfilePage> {
     switch (widget.languageController.locale.languageCode) {
       case 'ar':
         return 'التركية';
+
       case 'fr':
         return 'Turc';
+
       case 'es':
         return 'Turco';
+
       case 'ja':
         return 'トルコ語';
+
       case 'ko':
         return '터키어';
+
       case 'zh':
         return '土耳其语';
+
       case 'en':
       default:
         return 'Turkish';
@@ -213,18 +242,27 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _levelName(String? level, AppLocalizations l10n) {
     switch (level) {
+      case 'PRE_A1':
+        return 'Pre-A1';
+
       case 'A1':
         return l10n.levelA1;
+
       case 'A2':
         return l10n.levelA2;
+
       case 'B1':
         return l10n.levelB1;
+
       case 'B2':
         return l10n.levelB2;
+
       case 'C1':
         return l10n.levelC1;
+
       case 'C2':
         return l10n.levelC2;
+
       default:
         return level ?? '';
     }
@@ -234,18 +272,25 @@ class _ProfilePageState extends State<ProfilePage> {
     switch (code) {
       case 'ar':
         return l10n.arabic;
+
       case 'en':
         return l10n.english;
+
       case 'fr':
         return l10n.french;
+
       case 'es':
         return l10n.spanish;
+
       case 'zh':
         return l10n.chinese;
+
       case 'ja':
         return l10n.japanese;
+
       case 'ko':
         return l10n.korean;
+
       default:
         return code;
     }
@@ -275,6 +320,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _showAppLanguages() async {
     final l10n = AppLocalizations.of(context)!;
+
     final currentLanguage = widget.languageController.locale.languageCode;
 
     final selectedLanguage = await showModalBottomSheet<String>(
@@ -284,6 +330,7 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) {
         final theme = Theme.of(context);
+
         final maxHeight = MediaQuery.of(context).size.height * 0.78;
 
         return SafeArea(
@@ -387,7 +434,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
       setState(() {
         _currentLearningLanguageCode = language;
+
         _currentLearningLevel = result['level']?.toString();
+
         _isChangingLanguage = false;
       });
 
@@ -431,6 +480,7 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) {
         final theme = Theme.of(context);
+
         final maxHeight = MediaQuery.of(context).size.height * 0.78;
 
         return SafeArea(
@@ -544,6 +594,17 @@ class _ProfilePageState extends State<ProfilePage> {
     await _changeLearningLanguage(selectedLanguage);
   }
 
+  // =========================================================
+  // Add new learning language
+  // =========================================================
+  //
+  // IMPORTANT:
+  //
+  // The user chooses ONLY the language.
+  //
+  // The level is determined by PlacementTestPage.
+  // =========================================================
+
   Future<void> _showAddLanguageDialog() async {
     if (_isChangingLanguage || _isAddingLanguage) {
       return;
@@ -552,7 +613,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final l10n = AppLocalizations.of(context)!;
 
     String? selectedLanguage;
-    String selectedLevel = 'A1';
 
     final existingLanguages = _learningProfiles
         .map((profile) => profile['language']?.toString())
@@ -574,7 +634,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    final result = await showDialog<_AddLanguageResult>(
+    final selected = await showDialog<String>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -584,57 +644,25 @@ class _ProfilePageState extends State<ProfilePage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedLanguage,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: l10n.learningLanguage,
-                      prefixIcon: const Icon(Icons.language_rounded),
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: availableLanguages.map((code) {
-                      return DropdownMenuItem<String>(
-                        value: code,
-                        child: Text(_learningLanguageName(code, l10n)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedLanguage = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedLevel,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: l10n.yourLearningLevel,
-                      prefixIcon: const Icon(Icons.bar_chart_rounded),
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
-                      DropdownMenuItem(value: 'A1', child: Text(l10n.levelA1)),
-                      DropdownMenuItem(value: 'A2', child: Text(l10n.levelA2)),
-                      DropdownMenuItem(value: 'B1', child: Text(l10n.levelB1)),
-                      DropdownMenuItem(value: 'B2', child: Text(l10n.levelB2)),
-                      DropdownMenuItem(value: 'C1', child: Text(l10n.levelC1)),
-                      DropdownMenuItem(value: 'C2', child: Text(l10n.levelC2)),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
-
-                      setDialogState(() {
-                        selectedLevel = value;
-                      });
-                    },
-                  ),
-                ],
+              content: DropdownButtonFormField<String>(
+                initialValue: selectedLanguage,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: l10n.learningLanguage,
+                  prefixIcon: const Icon(Icons.language_rounded),
+                  border: const OutlineInputBorder(),
+                ),
+                items: availableLanguages.map((code) {
+                  return DropdownMenuItem<String>(
+                    value: code,
+                    child: Text(_learningLanguageName(code, l10n)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setDialogState(() {
+                    selectedLanguage = value;
+                  });
+                },
               ),
               actions: [
                 TextButton(
@@ -647,13 +675,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: selectedLanguage == null
                       ? null
                       : () {
-                          Navigator.pop(
-                            context,
-                            _AddLanguageResult(
-                              language: selectedLanguage!,
-                              level: selectedLevel,
-                            ),
-                          );
+                          Navigator.pop(context, selectedLanguage);
                         },
                   child: Text(l10n.add),
                 ),
@@ -664,36 +686,97 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-    if (result == null || !mounted) {
+    if (selected == null || !mounted) {
       return;
     }
 
-    await _addLearningLanguage(language: result.language, level: result.level);
+    await _startPlacementForLanguage(selected);
   }
 
-  Future<void> _addLearningLanguage({
-    required String language,
-    required String level,
-  }) async {
+  // =========================================================
+  // Start placement for a new language
+  // =========================================================
+
+  Future<void> _startPlacementForLanguage(String language) async {
+    if (_isChangingLanguage || _isAddingLanguage) {
+      return;
+    }
+
     setState(() {
       _isAddingLanguage = true;
     });
 
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlacementTestPage(
+          themeController: widget.themeController,
+          languageController: widget.languageController,
+          language: language,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    // -------------------------------------------------------
+    // PlacementTestPage finalizes the profile on the backend.
+    //
+    // If the user leaves the test before finishing, there is
+    // no profile yet, so we simply stay in the current screen.
+    // -------------------------------------------------------
+
+    if (result == null || result.isEmpty) {
+      setState(() {
+        _isAddingLanguage = false;
+      });
+
+      return;
+    }
+
     try {
-      final profile = await apiService.createLearningProfile(
-        language: language,
-        level: level,
-      );
+      // -----------------------------------------------------
+      // Refresh all profiles after placement.
+      // -----------------------------------------------------
+
+      final profiles = await apiService.getLearningProfiles();
+
+      // -----------------------------------------------------
+      // The finalize endpoint also switches the backend
+      // current learning language.
+      //
+      // We make the local state match that result.
+      // -----------------------------------------------------
+
+      learningLanguageController.setLanguage(language);
 
       if (!mounted) return;
 
+      dynamic newProfile;
+
+      for (final profile in profiles) {
+        if (profile['language'] == language) {
+          newProfile = profile;
+          break;
+        }
+      }
+
       setState(() {
-        _learningProfiles = [..._learningProfiles, profile];
+        _learningProfiles = profiles;
+
+        _currentLearningLanguageCode = language;
+
+        _currentLearningLevel = newProfile?['level']?.toString();
 
         _isAddingLanguage = false;
       });
 
-      await _changeLearningLanguage(language);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10nLearningLanguageAdded(language)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -708,6 +791,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
     }
+  }
+
+  String l10nLearningLanguageAdded(String language) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return l10n.learningLanguageChanged(_learningLanguageName(language, l10n));
   }
 
   Future<void> logout() async {
@@ -732,6 +821,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final l10n = AppLocalizations.of(context)!;
 
     final currentProfile = _currentLearningLanguageCode == null
@@ -905,12 +995,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class _AddLanguageResult {
-  final String language;
-  final String level;
-
-  const _AddLanguageResult({required this.language, required this.level});
-}
+// =========================================================
+// App language card
+// =========================================================
 
 class _AppLanguageCard extends StatelessWidget {
   final String language;
@@ -921,6 +1008,7 @@ class _AppLanguageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final l10n = AppLocalizations.of(context)!;
 
     return InkWell(
@@ -994,6 +1082,10 @@ class _AppLanguageCard extends StatelessWidget {
   }
 }
 
+// =========================================================
+// Profile info card
+// =========================================================
+
 class _ProfileInfoCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -1060,6 +1152,10 @@ class _ProfileInfoCard extends StatelessWidget {
   }
 }
 
+// =========================================================
+// Learning language card
+// =========================================================
+
 class _LearningLanguageCard extends StatelessWidget {
   final String language;
   final String level;
@@ -1078,6 +1174,7 @@ class _LearningLanguageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final l10n = AppLocalizations.of(context)!;
 
     return InkWell(
@@ -1176,6 +1273,10 @@ class _LearningLanguageCard extends StatelessWidget {
   }
 }
 
+// =========================================================
+// Theme settings
+// =========================================================
+
 class _ThemeSettingsCard extends StatelessWidget {
   final ThemeController themeController;
 
@@ -1183,44 +1284,56 @@ class _ThemeSettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    return AnimatedBuilder(
+      animation: themeController,
+      builder: (context, _) {
+        final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: SegmentedButton<ThemeMode>(
-        segments: [
-          ButtonSegment(
-            value: ThemeMode.system,
-            icon: const Icon(Icons.brightness_auto_rounded),
-            label: Text(l10n.auto),
+        final l10n = AppLocalizations.of(context)!;
+
+        return Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
-          ButtonSegment(
-            value: ThemeMode.light,
-            icon: const Icon(Icons.light_mode_outlined),
-            label: Text(l10n.light),
+          child: SegmentedButton<ThemeMode>(
+            segments: [
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.system,
+                icon: const Icon(Icons.brightness_auto_rounded),
+                label: Text(l10n.auto),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.light,
+                icon: const Icon(Icons.light_mode_outlined),
+                label: Text(l10n.light),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.dark,
+                icon: const Icon(Icons.dark_mode_outlined),
+                label: Text(l10n.dark),
+              ),
+            ],
+            selected: <ThemeMode>{themeController.themeMode},
+            onSelectionChanged: (selection) {
+              if (selection.isEmpty) {
+                return;
+              }
+
+              final selectedMode = selection.first;
+
+              themeController.setThemeMode(selectedMode);
+            },
+            showSelectedIcon: false,
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              textStyle: WidgetStatePropertyAll(theme.textTheme.labelMedium),
+            ),
           ),
-          ButtonSegment(
-            value: ThemeMode.dark,
-            icon: const Icon(Icons.dark_mode_outlined),
-            label: Text(l10n.dark),
-          ),
-        ],
-        selected: {themeController.themeMode},
-        onSelectionChanged: (selection) {
-          themeController.setThemeMode(selection.first);
-        },
-        showSelectedIcon: false,
-        style: ButtonStyle(
-          visualDensity: VisualDensity.compact,
-          textStyle: WidgetStatePropertyAll(theme.textTheme.labelMedium),
-        ),
-      ),
+        );
+      },
     );
   }
 }

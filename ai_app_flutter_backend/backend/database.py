@@ -49,19 +49,6 @@ def get_db():
 # =========================================================
 # Create tables
 # =========================================================
-#
-# This creates all tables defined in models.py that do not
-# already exist.
-#
-# This now includes the new global vocabulary structure:
-#
-# - vocabulary_entries
-# - vocabulary_senses
-# - vocabulary_examples
-# - vocabulary_media
-#
-# It also keeps the existing tables.
-# =========================================================
 
 Base.metadata.create_all(
     engine
@@ -90,10 +77,6 @@ with engine.connect() as connection:
         for column in user_columns
     ]
 
-    # =====================================================
-    # native_language
-    # =====================================================
-
     if "native_language" not in user_column_names:
 
         connection.execute(
@@ -111,10 +94,6 @@ with engine.connect() as connection:
         print(
             "Added 'native_language' column to users table."
         )
-
-    # =====================================================
-    # learning_language
-    # =====================================================
 
     if "learning_language" not in user_column_names:
 
@@ -134,10 +113,6 @@ with engine.connect() as connection:
             "Added 'learning_language' column to users table."
         )
 
-    # =====================================================
-    # google_id
-    # =====================================================
-
     if "google_id" not in user_column_names:
 
         connection.execute(
@@ -154,10 +129,6 @@ with engine.connect() as connection:
         print(
             "Added 'google_id' column to users table."
         )
-
-    # =====================================================
-    # Unique Google ID index
-    # =====================================================
 
     connection.execute(
         text(
@@ -191,10 +162,6 @@ with engine.connect() as connection:
         for column in columns
     ]
 
-    # =====================================================
-    # learned
-    # =====================================================
-
     if "learned" not in column_names:
 
         connection.execute(
@@ -213,10 +180,6 @@ with engine.connect() as connection:
             "Added 'learned' column to words table."
         )
 
-    # =====================================================
-    # learning_profile_id
-    # =====================================================
-
     if "learning_profile_id" not in column_names:
 
         connection.execute(
@@ -233,14 +196,6 @@ with engine.connect() as connection:
         print(
             "Added 'learning_profile_id' column to words table."
         )
-
-        # -------------------------------------------------
-        # Old database:
-        #
-        # If the old words table had a language column,
-        # try to match words with the corresponding
-        # LearningProfile.
-        # -------------------------------------------------
 
         if "language" in column_names:
 
@@ -263,12 +218,6 @@ with engine.connect() as connection:
                 "Assigned existing words using their old language."
             )
 
-        # -------------------------------------------------
-        # Fallback:
-        #
-        # Use the user's current learning language.
-        # -------------------------------------------------
-
         connection.execute(
             text(
                 """
@@ -290,9 +239,39 @@ with engine.connect() as connection:
             "Applied fallback learning profiles to existing words."
         )
 
-    # =====================================================
-    # Check remaining words without profile
-    # =====================================================
+    if "vocabulary_entry_id" not in column_names:
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE words
+                ADD COLUMN vocabulary_entry_id INTEGER
+                """
+            )
+        )
+
+        connection.commit()
+
+        print(
+            "Added 'vocabulary_entry_id' column to words table."
+        )
+
+    if "vocabulary_form_id" not in column_names:
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE words
+                ADD COLUMN vocabulary_form_id INTEGER
+                """
+            )
+        )
+
+        connection.commit()
+
+        print(
+            "Added 'vocabulary_form_id' column to words table."
+        )
 
     remaining = connection.execute(
         text(
@@ -313,11 +292,6 @@ with engine.connect() as connection:
 
     else:
 
-        # -------------------------------------------------
-        # Only make the column required when every existing
-        # row has a value.
-        # -------------------------------------------------
-
         connection.execute(
             text(
                 """
@@ -332,10 +306,6 @@ with engine.connect() as connection:
         print(
             "Made 'learning_profile_id' column required."
         )
-
-    # =====================================================
-    # Remove old language column
-    # =====================================================
 
     inspector = inspect(connection)
 
@@ -364,10 +334,6 @@ with engine.connect() as connection:
         print(
             "Removed old 'language' column from words table."
         )
-
-    # =====================================================
-    # Learning profile foreign key
-    # =====================================================
 
     inspector = inspect(connection)
 
@@ -403,6 +369,232 @@ with engine.connect() as connection:
         print(
             "Added learning_profile foreign key to words table."
         )
+
+    inspector = inspect(connection)
+
+    foreign_keys = inspector.get_foreign_keys(
+        "words"
+    )
+
+    has_vocabulary_entry_fk = any(
+        fk.get("referred_table") == "vocabulary_entries"
+        and "vocabulary_entry_id" in fk.get(
+            "constrained_columns",
+            []
+        )
+        for fk in foreign_keys
+    )
+
+    if not has_vocabulary_entry_fk:
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE words
+                ADD CONSTRAINT fk_words_vocabulary_entry
+                FOREIGN KEY (vocabulary_entry_id)
+                REFERENCES vocabulary_entries(id)
+                ON DELETE SET NULL
+                """
+            )
+        )
+
+        connection.commit()
+
+        print(
+            "Added vocabulary entry foreign key to words table."
+        )
+
+    inspector = inspect(connection)
+
+    foreign_keys = inspector.get_foreign_keys(
+        "words"
+    )
+
+    has_vocabulary_form_fk = any(
+        fk.get("referred_table") == "vocabulary_forms"
+        and "vocabulary_form_id" in fk.get(
+            "constrained_columns",
+            []
+        )
+        for fk in foreign_keys
+    )
+
+    if not has_vocabulary_form_fk:
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE words
+                ADD CONSTRAINT fk_words_vocabulary_form
+                FOREIGN KEY (vocabulary_form_id)
+                REFERENCES vocabulary_forms(id)
+                ON DELETE SET NULL
+                """
+            )
+        )
+
+        connection.commit()
+
+        print(
+            "Added vocabulary form foreign key to words table."
+        )
+
+    connection.execute(
+        text(
+            """
+            CREATE INDEX IF NOT EXISTS
+            ix_words_vocabulary_entry_id
+            ON words (vocabulary_entry_id)
+            """
+        )
+    )
+
+    connection.execute(
+        text(
+            """
+            CREATE INDEX IF NOT EXISTS
+            ix_words_vocabulary_form_id
+            ON words (vocabulary_form_id)
+            """
+        )
+    )
+
+    connection.commit()
+
+    print(
+        "Ensured vocabulary relationship indexes exist."
+    )
+
+    # =====================================================
+    # PRE-A1 level column upgrade
+    # =====================================================
+
+    level_columns = [
+        ("learning_profiles", "level"),
+        ("vocabulary_senses", "cefr_level"),
+        ("vocabulary_examples", "level"),
+        ("placement_vocabulary", "level"),
+        ("placement_quiz_questions", "level"),
+        ("course_lessons", "level"),
+    ]
+
+    for table_name, column_name in level_columns:
+
+        inspector = inspect(connection)
+
+        table_columns = inspector.get_columns(
+            table_name
+        )
+
+        target_column = next(
+            (
+                column
+                for column in table_columns
+                if column["name"] == column_name
+            ),
+            None,
+        )
+
+        if target_column is None:
+            continue
+
+        current_type = str(
+            target_column["type"]
+        ).upper()
+
+        if "VARCHAR(2)" in current_type:
+
+            connection.execute(
+                text(
+                    f"""
+                    ALTER TABLE {table_name}
+                    ALTER COLUMN {column_name}
+                    TYPE VARCHAR(10)
+                    USING {column_name}::VARCHAR(10)
+                    """
+                )
+            )
+
+            connection.commit()
+
+            print(
+                f"Expanded {table_name}.{column_name} "
+                "to VARCHAR(10) for PRE_A1 support."
+            )
+
+    # =====================================================
+    # Vocabulary CEFR assessments
+    # =====================================================
+    #
+    # Base.metadata.create_all() creates this table for
+    # existing databases without affecting existing data.
+    #
+    # The following check makes the upgrade visible and
+    # verifies that the table exists.
+    # =====================================================
+
+    inspector = inspect(connection)
+
+    table_names = inspector.get_table_names()
+
+    if "vocabulary_cefr_assessments" in table_names:
+
+        assessment_columns = inspector.get_columns(
+            "vocabulary_cefr_assessments"
+        )
+
+        assessment_column_names = [
+            column["name"]
+            for column in assessment_columns
+        ]
+
+        required_assessment_columns = {
+            "vocabulary_sense_id",
+            "cefr_level",
+            "source",
+            "source_version",
+            "confidence",
+        }
+
+        missing_assessment_columns = (
+            required_assessment_columns
+            - set(assessment_column_names)
+        )
+
+        if missing_assessment_columns:
+
+            raise RuntimeError(
+                "Vocabulary CEFR assessment table is missing "
+                f"columns: {sorted(missing_assessment_columns)}"
+            )
+
+        print(
+            "Vocabulary CEFR assessment table is ready."
+        )
+
+    else:
+
+        raise RuntimeError(
+            "Vocabulary CEFR assessment table was not created."
+        )
+
+    # =====================================================
+    # Verify level columns
+    # =====================================================
+
+    print()
+    print(
+        "Level column upgrade check completed."
+    )
+
+    print(
+        "Supported levels:"
+    )
+
+    print(
+        "PRE_A1, A1, A2, B1, B2, C1, C2"
+    )
 
 
 # =========================================================

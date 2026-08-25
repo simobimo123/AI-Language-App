@@ -25,7 +25,19 @@ router = APIRouter(
 )
 
 
+# =========================================================
+# Learning levels
+# =========================================================
+#
+# PRE_A1 is the beginner level before A1.
+#
+# Order:
+#
+# PRE_A1 -> A1 -> A2 -> B1 -> B2 -> C1 -> C2
+# =========================================================
+
 LEVELS = [
+    "PRE_A1",
     "A1",
     "A2",
     "B1",
@@ -50,6 +62,31 @@ SUPPORTED_LEARNING_LANGUAGES = [
 # =========================================================
 
 LEVEL_TOPICS = {
+    # -----------------------------------------------------
+    # PRE-A1
+    # -----------------------------------------------------
+    #
+    # This level is for complete beginners.
+    #
+    # We intentionally avoid making it dependent on one
+    # specific writing system because the application
+    # supports multiple languages.
+    #
+    "PRE_A1": [
+        ("sounds_and_letters", 1),
+        ("basic_greetings", 2),
+        ("numbers_0_10", 3),
+        ("colors", 4),
+        ("family_basics", 5),
+        ("everyday_objects", 6),
+        ("very_basic_phrases", 7),
+        ("level_test", 8),
+    ],
+
+    # -----------------------------------------------------
+    # A1
+    # -----------------------------------------------------
+
     "A1": [
         ("alphabet", 1),
         ("basic_words", 2),
@@ -60,6 +97,11 @@ LEVEL_TOPICS = {
         ("simple_sentences", 7),
         ("level_test", 8),
     ],
+
+    # -----------------------------------------------------
+    # A2
+    # -----------------------------------------------------
+
     "A2": [
         ("daily_life", 1),
         ("past_tense", 2),
@@ -70,6 +112,11 @@ LEVEL_TOPICS = {
         ("describing_people", 7),
         ("level_test", 8),
     ],
+
+    # -----------------------------------------------------
+    # B1
+    # -----------------------------------------------------
+
     "B1": [
         ("daily_conversations", 1),
         ("telling_stories", 2),
@@ -80,6 +127,11 @@ LEVEL_TOPICS = {
         ("extended_conversations", 7),
         ("level_test", 8),
     ],
+
+    # -----------------------------------------------------
+    # B2
+    # -----------------------------------------------------
+
     "B2": [
         ("debates", 1),
         ("arguments", 2),
@@ -90,6 +142,11 @@ LEVEL_TOPICS = {
         ("presentations", 7),
         ("level_test", 8),
     ],
+
+    # -----------------------------------------------------
+    # C1
+    # -----------------------------------------------------
+
     "C1": [
         ("language_nuance", 1),
         ("advanced_grammar", 2),
@@ -100,6 +157,11 @@ LEVEL_TOPICS = {
         ("critical_discussion", 7),
         ("level_test", 8),
     ],
+
+    # -----------------------------------------------------
+    # C2
+    # -----------------------------------------------------
+
     "C2": [
         ("language_mastery", 1),
         ("rhetoric", 2),
@@ -119,6 +181,8 @@ def seed_learning_content(
     """
     ينشئ محتوى المسار الأساسي مرة واحدة.
     إذا كان موجودًا، لا ينشئ نسخًا أخرى.
+
+    PRE_A1 أصبح الآن مستوى حقيقيًا مثل بقية المستويات.
     """
 
     for language in SUPPORTED_LEARNING_LANGUAGES:

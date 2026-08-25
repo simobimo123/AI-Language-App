@@ -19,6 +19,9 @@ from routers.ai import router as ai_router
 from routers.placement_test import (
     router as placement_router,
 )
+from routers.vocabulary import (
+    router as vocabulary_router,
+)
 
 
 @asynccontextmanager
@@ -61,6 +64,7 @@ app.include_router(learning_router)
 app.include_router(learning_path_router)
 app.include_router(ai_router)
 app.include_router(placement_router)
+app.include_router(vocabulary_router)
 
 
 # uvicorn main:app --reload

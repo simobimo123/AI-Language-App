@@ -59,6 +59,16 @@ class AppBottomNavBar extends StatelessWidget {
             ),
             label: l10n.home,
           ),
+
+          NavigationDestination(
+            icon: const Icon(Icons.route_outlined),
+            selectedIcon: Icon(
+              Icons.route_rounded,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+            label: _learningPathLabel(context),
+          ),
+
           NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: Icon(
@@ -67,6 +77,7 @@ class AppBottomNavBar extends StatelessWidget {
             ),
             label: l10n.words,
           ),
+
           NavigationDestination(
             icon: const Icon(Icons.person_outline_rounded),
             selectedIcon: Icon(
@@ -78,5 +89,25 @@ class AppBottomNavBar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _learningPathLabel(BuildContext context) {
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'ar':
+        return 'المسار';
+      case 'fr':
+        return 'Parcours';
+      case 'es':
+        return 'Ruta';
+      case 'zh':
+        return '学习路径';
+      case 'ja':
+        return '学習パス';
+      case 'ko':
+        return '학습 경로';
+      case 'en':
+      default:
+        return 'Path';
+    }
   }
 }
