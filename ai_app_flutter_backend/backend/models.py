@@ -1,16 +1,17 @@
-from datetime import datetime, date
+from datetime import date, datetime
 
 from sqlalchemy import (
-    String,
-    DateTime,
-    ForeignKey,
     Boolean,
-    Float,
-    Integer,
-    UniqueConstraint,
     Date,
-    Text,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
     JSON,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -21,6 +22,45 @@ from sqlalchemy.orm import (
 
 class Base(DeclarativeBase):
     pass
+
+
+# =========================================================
+# Shared constants
+# =========================================================
+
+SUPPORTED_LANGUAGE_CODES = (
+    "ar",
+    "de",
+    "en",
+    "es",
+    "fa",
+    "fr",
+    "hi",
+    "id",
+    "it",
+    "ja",
+    "ko",
+    "nl",
+    "pl",
+    "pt",
+    "ru",
+    "th",
+    "tr",
+    "uk",
+    "vi",
+    "zh",
+)
+
+
+SUPPORTED_CEFR_LEVELS = (
+    "PRE_A1",
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1",
+    "C2",
+)
 
 
 # =========================================================
@@ -71,6 +111,7 @@ class User(Base):
     )
 
     is_active: Mapped[bool] = mapped_column(
+        Boolean,
         default=True,
         nullable=False
     )
@@ -146,6 +187,23 @@ class LearningProfile(Base):
 # =========================================================
 # Vocabulary Entry
 # =========================================================
+#
+# Represents one lexical entry in one language.
+#
+# Example:
+#
+# English:
+#     eat
+#
+# French:
+#     manger
+#
+# Japanese:
+#     食べる
+#
+# The entry is connected to senses, forms, relations,
+# translations and examples.
+# =========================================================
 
 class VocabularyEntry(Base):
     __tablename__ = "vocabulary_entries"
@@ -163,6 +221,12 @@ class VocabularyEntry(Base):
     lemma: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
+        index=True
+    )
+
+    normalized_lemma: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
         index=True
     )
 
@@ -199,6 +263,34 @@ class VocabularyEntry(Base):
         nullable=True
     )
 
+    # -----------------------------------------------------
+    # Enrichment state
+    # -----------------------------------------------------
+
+    enrichment_status: Mapped[str] = mapped_column(
+        String(30),
+        default="partial",
+        nullable=False,
+        index=True
+    )
+
+    quality_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
+    last_enriched_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -225,6 +317,11 @@ class VocabularyEntry(Base):
             "lemma",
             "part_of_speech",
             name="uq_vocabulary_entry_language_lemma_pos"
+        ),
+        Index(
+            "ix_vocabulary_entry_language_normalized_lemma",
+            "language",
+            "normalized_lemma",
         ),
     )
 
@@ -258,6 +355,24 @@ class VocabularyRelation(Base):
         index=True
     )
 
+    source_sense_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_senses.id",
+            ondelete="CASCADE"
+        ),
+        nullable=True,
+        index=True
+    )
+
+    target_sense_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_senses.id",
+            ondelete="CASCADE"
+        ),
+        nullable=True,
+        index=True
+    )
+
     relation_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -270,11 +385,28 @@ class VocabularyRelation(Base):
         index=True
     )
 
+    is_bidirectional: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
         nullable=False,
         index=True
+    )
+
+    source: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True
+    )
+
+    source_version: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -296,6 +428,14 @@ class VocabularyRelation(Base):
             "target_entry_id",
             "relation_type",
             name="uq_vocabulary_relation"
+        ),
+        Index(
+            "ix_vocabulary_relation_source_sense",
+            "source_sense_id",
+        ),
+        Index(
+            "ix_vocabulary_relation_target_sense",
+            "target_sense_id",
         ),
     )
 
@@ -337,6 +477,19 @@ class VocabularyForm(Base):
         nullable=True
     )
 
+    form_type: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        index=True
+    )
+
+    is_lemma: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
     source: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
@@ -374,6 +527,11 @@ class VocabularyForm(Base):
             "form",
             name="uq_vocabulary_form_entry_form"
         ),
+        Index(
+            "ix_vocabulary_form_entry_normalized_form",
+            "vocabulary_entry_id",
+            "normalized_form",
+        ),
     )
 
 
@@ -397,14 +555,7 @@ class VocabularySense(Base):
         index=True
     )
 
-    # Legacy fields.
-    #
-    # These remain temporarily for compatibility with
-    # existing development data.
-    #
-    # New localized data should use
-    # VocabularySenseLocalization.
-
+    # Legacy compatibility fields.
     meaning: Mapped[str | None] = mapped_column(
         Text,
         nullable=True
@@ -415,16 +566,6 @@ class VocabularySense(Base):
         nullable=True
     )
 
-    # =====================================================
-    # Current / selected CEFR level
-    # =====================================================
-    #
-    # This is the CEFR level currently used by the
-    # application.
-    #
-    # Detailed assessments are stored separately in
-    # VocabularyCEFRAssessment.
-    #
     cefr_level: Mapped[str | None] = mapped_column(
         String(10),
         nullable=True,
@@ -435,6 +576,30 @@ class VocabularySense(Base):
         Integer,
         nullable=True,
         index=True
+    )
+
+    enrichment_status: Mapped[str] = mapped_column(
+        String(30),
+        default="partial",
+        nullable=False,
+        index=True
+    )
+
+    quality_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
+    last_enriched_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True
     )
 
     is_active: Mapped[bool] = mapped_column(
@@ -457,21 +622,17 @@ class VocabularySense(Base):
         nullable=False
     )
 
+    __table_args__ = (
+        Index(
+            "ix_vocabulary_sense_entry_level",
+            "vocabulary_entry_id",
+            "cefr_level",
+        ),
+    )
+
 
 # =========================================================
 # Vocabulary CEFR Assessment
-# =========================================================
-#
-# Stores every CEFR assessment made for a sense.
-#
-# One sense can have multiple assessments:
-#
-# dataset -> A1 -> 0.95
-# ai      -> A2 -> 0.72
-# manual  -> A1 -> 1.00
-#
-# VocabularySense.cefr_level remains the currently
-# selected / accepted level.
 # =========================================================
 
 class VocabularyCEFRAssessment(Base):
@@ -513,6 +674,13 @@ class VocabularyCEFRAssessment(Base):
         nullable=False
     )
 
+    is_selected: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -533,6 +701,11 @@ class VocabularyCEFRAssessment(Base):
             "source",
             "source_version",
             name="uq_vocabulary_cefr_assessment"
+        ),
+        Index(
+            "ix_vocabulary_cefr_assessment_sense_confidence",
+            "vocabulary_sense_id",
+            "confidence",
         ),
     )
 
@@ -581,6 +754,30 @@ class VocabularySenseLocalization(Base):
 
     source_version: Mapped[str | None] = mapped_column(
         String(100),
+        nullable=True
+    )
+
+    enrichment_status: Mapped[str] = mapped_column(
+        String(30),
+        default="partial",
+        nullable=False,
+        index=True
+    )
+
+    quality_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
+    last_enriched_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
         nullable=True
     )
 
@@ -637,14 +834,41 @@ class VocabularyTranslation(Base):
         nullable=False
     )
 
+    translated_entry_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_entries.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True,
+        index=True
+    )
+
     is_primary: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     source: Mapped[str | None] = mapped_column(
         String(100),
+        nullable=True
+    )
+
+    source_version: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
+    quality_score: Mapped[float | None] = mapped_column(
+        Float,
         nullable=True
     )
 
@@ -707,6 +931,18 @@ class VocabularyExample(Base):
         nullable=True
     )
 
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
+    quality_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -718,6 +954,14 @@ class VocabularyExample(Base):
         DateTime,
         default=datetime.utcnow,
         nullable=False
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_vocabulary_example_sense_level",
+            "vocabulary_sense_id",
+            "level",
+        ),
     )
 
 
@@ -755,11 +999,29 @@ class VocabularyExampleTranslation(Base):
     is_primary: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     source: Mapped[str | None] = mapped_column(
         String(100),
+        nullable=True
+    )
+
+    source_version: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
+    quality_score: Mapped[float | None] = mapped_column(
+        Float,
         nullable=True
     )
 
@@ -832,6 +1094,13 @@ class VocabularyMedia(Base):
         nullable=True
     )
 
+    generated_by_ai: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -845,9 +1114,18 @@ class VocabularyMedia(Base):
         nullable=False
     )
 
+    __table_args__ = (
+        UniqueConstraint(
+            "vocabulary_sense_id",
+            "media_type",
+            "url",
+            name="uq_vocabulary_media"
+        ),
+    )
+
 
 # =========================================================
-# Legacy Placement Vocabulary
+# Placement Vocabulary
 # =========================================================
 
 class PlacementVocabulary(Base):
@@ -874,6 +1152,24 @@ class PlacementVocabulary(Base):
         nullable=False
     )
 
+    vocabulary_sense_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_senses.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True,
+        index=True
+    )
+
+    vocabulary_form_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "vocabulary_forms.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True,
+        index=True
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -892,6 +1188,11 @@ class PlacementVocabulary(Base):
             "level",
             "word",
             name="uq_placement_vocabulary"
+        ),
+        Index(
+            "ix_placement_vocabulary_sense_level",
+            "vocabulary_sense_id",
+            "level",
         ),
     )
 
@@ -934,6 +1235,18 @@ class PlacementQuizQuestion(Base):
         nullable=False
     )
 
+    explanation: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    question_type: Mapped[str] = mapped_column(
+        String(30),
+        default="multiple_choice",
+        nullable=False,
+        index=True
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
@@ -953,6 +1266,199 @@ class PlacementQuizQuestion(Base):
             "level",
             "question",
             name="uq_placement_quiz_question"
+        ),
+    )
+
+
+# =========================================================
+# Placement Attempt
+# =========================================================
+
+class PlacementAttempt(Base):
+    __tablename__ = "placement_attempts"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    language: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        index=True
+    )
+
+    stage: Mapped[str] = mapped_column(
+        String(30),
+        default="vocabulary",
+        nullable=False,
+        index=True
+    )
+
+    preliminary_level: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
+        index=True
+    )
+
+    final_level: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
+        index=True
+    )
+
+    vocabulary_percentage: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
+    confirmation_percentage: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="active",
+        nullable=False,
+        index=True
+    )
+
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+
+# =========================================================
+# Placement Attempt Word
+# =========================================================
+
+class PlacementAttemptWord(Base):
+    __tablename__ = "placement_attempt_words"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    attempt_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "placement_attempts.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    placement_vocabulary_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "placement_vocabulary.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    position: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    was_selected: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "attempt_id",
+            "placement_vocabulary_id",
+            name="uq_placement_attempt_word"
+        ),
+        UniqueConstraint(
+            "attempt_id",
+            "position",
+            name="uq_placement_attempt_word_position"
+        ),
+    )
+
+
+# =========================================================
+# Placement Attempt Question
+# =========================================================
+
+class PlacementAttemptQuestion(Base):
+    __tablename__ = "placement_attempt_questions"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
+
+    attempt_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "placement_attempts.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    placement_question_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "placement_quiz_questions.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    position: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    selected_index: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    is_correct: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "attempt_id",
+            "placement_question_id",
+            name="uq_placement_attempt_question"
+        ),
+        UniqueConstraint(
+            "attempt_id",
+            "position",
+            name="uq_placement_attempt_question_position"
         ),
     )
 
@@ -1210,6 +1716,36 @@ class AIUsage(Base):
         nullable=False
     )
 
+    api_call_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    prompt_tokens: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    completion_tokens: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    total_tokens: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    estimated_cost: Mapped[float] = mapped_column(
+        Float,
+        default=0.0,
+        nullable=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -1252,6 +1788,12 @@ class AIConversationMessage(Base):
         index=True
     )
 
+    conversation_id: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True
+    )
+
     role: Mapped[str] = mapped_column(
         String(20),
         nullable=False
@@ -1267,4 +1809,13 @@ class AIConversationMessage(Base):
         default=datetime.utcnow,
         nullable=False,
         index=True
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_ai_conversation_user_conversation_created",
+            "user_id",
+            "conversation_id",
+            "created_at",
+        ),
     )

@@ -26,39 +26,32 @@ from models import (
 # =========================================================
 # Supported application languages
 # =========================================================
-#
-# هذه هي اللغات التي سيدعمها التطبيق في قاعدة المفردات.
-#
-# أي لغة أخرى موجودة في Wiktextract سيتم تجاهلها أثناء
-# الاستيراد.
-# =========================================================
 
 SUPPORTED_LANGUAGES = {
-    "ar",  # Arabic
-    "de",  # German
-    "en",  # English
-    "es",  # Spanish
-    "fa",  # Persian
-    "fr",  # French
-    "hi",  # Hindi
-    "id",  # Indonesian
-    "it",  # Italian
-    "ja",  # Japanese
-    "ko",  # Korean
-    "nl",  # Dutch
-    "pl",  # Polish
-    "pt",  # Portuguese
-    "ru",  # Russian
-    "th",  # Thai
-    "tr",  # Turkish
-    "uk",  # Ukrainian
-    "vi",  # Vietnamese
-    "zh",  # Chinese
+    "ar",
+    "de",
+    "en",
+    "es",
+    "fa",
+    "fr",
+    "hi",
+    "id",
+    "it",
+    "ja",
+    "ko",
+    "nl",
+    "pl",
+    "pt",
+    "ru",
+    "th",
+    "tr",
+    "uk",
+    "vi",
+    "zh",
 }
 
 
 LANGUAGE_CODE_ALIASES = {
-    # Chinese
     "cmn": "zh",
     "cmn-hans": "zh",
     "cmn-hant": "zh",
@@ -67,73 +60,37 @@ LANGUAGE_CODE_ALIASES = {
     "zh-hant": "zh",
     "nan-hbl": "zh",
 
-    # Persian
     "fa-ira": "fa",
     "fa-afg": "fa",
 
-    # Portuguese
     "pt-br": "pt",
     "pt-pt": "pt",
 
-    # Arabic
     "arb": "ar",
     "ara": "ar",
 
-    # Indonesian
     "ind": "id",
-
-    # Japanese
     "jpn": "ja",
-
-    # Korean
     "kor": "ko",
-
-    # Vietnamese
     "vie": "vi",
-
-    # Thai
     "tha": "th",
-
-    # Hindi
     "hin": "hi",
-
-    # Turkish
     "tur": "tr",
-
-    # Ukrainian
     "ukr": "uk",
-
-    # Russian
     "rus": "ru",
-
-    # German
     "deu": "de",
-
-    # French
     "fra": "fr",
-
-    # Italian
     "ita": "it",
-
-    # Spanish
     "spa": "es",
-
-    # Polish
     "pol": "pl",
-
-    # Dutch
     "nld": "nl",
-
-    # Portuguese
     "por": "pt",
-
-    # English
     "eng": "en",
 }
 
 
 # =========================================================
-# Supported CEFR levels
+# CEFR
 # =========================================================
 
 CEFR_LEVELS = {
@@ -152,18 +109,21 @@ CEFR_LEVELS = {
 # =========================================================
 
 WIKTEXTRACT_SOURCE = "wiktextract"
-WIKTEXTRACT_SOURCE_VERSION = "raw-wiktextract-data"
+
+WIKTEXTRACT_SOURCE_VERSION = (
+    "raw-wiktextract-data"
+)
 
 
 # =========================================================
-# Import performance
+# Performance
 # =========================================================
 
 COMMIT_EVERY = 2500
 
 
 # =========================================================
-# Relation types
+# Relations
 # =========================================================
 
 RELATION_FIELDS = {
@@ -180,16 +140,16 @@ RELATION_FIELDS = {
 }
 
 
+BIDIRECTIONAL_RELATIONS = {
+    "synonym",
+    "antonym",
+    "related",
+    "coordinate_term",
+}
+
+
 # =========================================================
 # Runtime caches
-# =========================================================
-#
-# الهدف الأساسي:
-# تقليل استعلامات PostgreSQL المتكررة أثناء الاستيراد
-# الضخم.
-#
-# بعض البيانات مثل الترجمة أو form أو relation لا تحتاج
-# إلى إعادة التحقق من قاعدة البيانات بعد أول مرة.
 # =========================================================
 
 entry_cache: dict[
@@ -207,15 +167,11 @@ sense_cache: dict[
     VocabularySense,
 ] = {}
 
-# Cache for all candidate senses of:
-# (entry_id, cefr_level)
 sense_candidates_cache: dict[
     tuple[int, str | None],
     list[VocabularySense],
 ] = {}
 
-# Cache normalized localization contents:
-# (sense_id, language) -> (normalized_meaning, normalized_definition)
 sense_localization_cache: dict[
     tuple[int, str],
     tuple[str, str],
@@ -256,7 +212,7 @@ cefr_assessment_cache: set[
 
 
 # =========================================================
-# Counters for cache statistics
+# Statistics
 # =========================================================
 
 cache_stats = {
@@ -276,7 +232,7 @@ cache_stats = {
 
 
 # =========================================================
-# Helpers
+# Generic helpers
 # =========================================================
 
 def clean(
@@ -308,7 +264,10 @@ def normalize_level(
     if value.startswith("CEFR:"):
         value = value[5:].strip()
 
-    value = value.replace("-", "_")
+    value = value.replace(
+        "-",
+        "_",
+    )
 
     if value not in CEFR_LEVELS:
         return None
@@ -363,7 +322,7 @@ def normalize_glosses(
     if not isinstance(value, list):
         return []
 
-    result = []
+    result: list[str] = []
 
     for item in value:
 
@@ -391,14 +350,12 @@ def normalize_text_for_matching(
         " and ",
     )
 
-    # Remove parenthetical content.
     text = re.sub(
         r"\([^)]*\)",
         " ",
         text,
     )
 
-    # Keep Unicode letters/numbers from all languages.
     text = re.sub(
         r"[^\w\s]",
         " ",
@@ -421,11 +378,15 @@ def glosses_match(
 ) -> bool:
 
     left_normalized = (
-        normalize_text_for_matching(left)
+        normalize_text_for_matching(
+            left
+        )
     )
 
     right_normalized = (
-        normalize_text_for_matching(right)
+        normalize_text_for_matching(
+            right
+        )
     )
 
     if (
@@ -470,14 +431,35 @@ def glosses_match(
         return len(intersection) == smaller
 
     overlap = (
-        len(intersection) / smaller
+        len(intersection)
+        / smaller
     )
 
     return overlap >= 0.75
 
 
+def parse_frequency_rank(
+    value: Any,
+) -> int | None:
+
+    value = clean(value)
+
+    if value is None:
+        return None
+
+    try:
+        return int(
+            float(value)
+        )
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return None
+
+
 # =========================================================
-# CSV aliases
+# CSV field aliases
 # =========================================================
 
 FIELD_ALIASES = {
@@ -606,7 +588,9 @@ def find_field(
     logical_name: str,
 ) -> Any:
 
-    aliases = FIELD_ALIASES[logical_name]
+    aliases = FIELD_ALIASES[
+        logical_name
+    ]
 
     lowered = {
         str(key).strip().lower(): value
@@ -635,7 +619,9 @@ def load_csv(
         newline="",
     ) as file:
 
-        reader = csv.DictReader(file)
+        reader = csv.DictReader(
+            file
+        )
 
         return [
             dict(row)
@@ -676,8 +662,96 @@ def load_json(
     )
 
 
+def iter_wiktextract_records(
+    path: Path,
+) -> Iterator[dict[str, Any]]:
+
+    with path.open(
+        "r",
+        encoding="utf-8-sig",
+    ) as file:
+
+        for (
+            line_number,
+            line,
+        ) in enumerate(
+            file,
+            start=1,
+        ):
+
+            line = line.strip()
+
+            if not line:
+                continue
+
+            try:
+
+                row = json.loads(
+                    line
+                )
+
+            except json.JSONDecodeError as exc:
+
+                print(
+                    f"Skipping invalid JSONL line "
+                    f"#{line_number}: {exc}"
+                )
+
+                continue
+
+            if not isinstance(
+                row,
+                dict,
+            ):
+                continue
+
+            converted_records = (
+                convert_wiktextract_record(
+                    row
+                )
+            )
+
+            for record in converted_records:
+                yield record
+
+
+def iter_records(
+    path: Path,
+) -> Iterator[dict[str, Any]]:
+
+    suffix = path.suffix.lower()
+
+    if suffix == ".jsonl":
+
+        yield from iter_wiktextract_records(
+            path
+        )
+
+        return
+
+    if suffix == ".csv":
+
+        yield from load_csv(
+            path
+        )
+
+        return
+
+    if suffix == ".json":
+
+        yield from load_json(
+            path
+        )
+
+        return
+
+    raise ValueError(
+        "Supported files are CSV, JSON and JSONL."
+    )
+
+
 # =========================================================
-# Wiktextract pronunciation
+# Wiktextract extraction
 # =========================================================
 
 def extract_wiktextract_pronunciation(
@@ -700,10 +774,6 @@ def extract_wiktextract_pronunciation(
     return None
 
 
-# =========================================================
-# Wiktextract media
-# =========================================================
-
 def extract_wiktextract_media(
     row: dict[str, Any],
 ) -> list[dict[str, Any]]:
@@ -712,7 +782,11 @@ def extract_wiktextract_media(
         row.get("sounds")
     )
 
-    media = []
+    media: list[
+        dict[str, Any]
+    ] = []
+
+    seen_urls: set[str] = set()
 
     for sound in sounds:
 
@@ -732,6 +806,13 @@ def extract_wiktextract_media(
         if audio_url is None:
             continue
 
+        if audio_url in seen_urls:
+            continue
+
+        seen_urls.add(
+            audio_url
+        )
+
         media.append(
             {
                 "media_type": "audio",
@@ -742,39 +823,24 @@ def extract_wiktextract_media(
             }
         )
 
-    unique_media = []
+    return media
 
-    seen_urls = set()
-
-    for item in media:
-
-        url = item["url"]
-
-        if url in seen_urls:
-            continue
-
-        seen_urls.add(url)
-
-        unique_media.append(item)
-
-    return unique_media
-
-
-# =========================================================
-# Wiktextract examples
-# =========================================================
 
 def extract_wiktextract_examples(
     sense_data: dict[str, Any],
 ) -> list[dict[str, Any]]:
 
     raw_examples = normalize_list(
-        sense_data.get("examples")
+        sense_data.get(
+            "examples"
+        )
     )
 
-    examples = []
+    examples: list[
+        dict[str, Any]
+    ] = []
 
-    seen_sentences = set()
+    seen_sentences: set[str] = set()
 
     for example in raw_examples:
 
@@ -801,21 +867,85 @@ def extract_wiktextract_examples(
             normalized_sentence
         )
 
+        example_language = normalize_language(
+            example.get(
+                "lang_code"
+            )
+            or example.get(
+                "language"
+            )
+        )
+
+        translations: list[
+            dict[str, Any]
+        ] = []
+
+        translation_data = normalize_list(
+            example.get(
+                "translations"
+            )
+        )
+
+        for translation in translation_data:
+
+            translation_language = normalize_language(
+                translation.get(
+                    "lang_code"
+                )
+                or translation.get(
+                    "language"
+                )
+            )
+
+            translation_text = clean(
+                translation.get(
+                    "text"
+                )
+                or translation.get(
+                    "translation"
+                )
+                or translation.get(
+                    "word"
+                )
+            )
+
+            if (
+                translation_language is None
+                or translation_text is None
+            ):
+                continue
+
+            translations.append(
+                {
+                    "language": translation_language,
+                    "translation": translation_text,
+                    "is_primary": (
+                        len(translations)
+                        == 0
+                    ),
+                    "source": WIKTEXTRACT_SOURCE,
+                }
+            )
+
         examples.append(
             {
                 "sentence": sentence,
-                "level": None,
+                "language": (
+                    example_language
+                    or "unknown"
+                ),
+                "level": normalize_level(
+                    example.get(
+                        "level"
+                    )
+                ),
                 "source": WIKTEXTRACT_SOURCE,
-                "translations": [],
+                "translations": translations,
             }
         )
 
     return examples
 
-
-# =========================================================
-# Translation sense matching
-# =========================================================
 
 def translation_belongs_to_sense(
     translation: dict[str, Any],
@@ -843,10 +973,6 @@ def translation_belongs_to_sense(
     return False
 
 
-# =========================================================
-# Wiktextract translations
-# =========================================================
-
 def extract_wiktextract_translations(
     row: dict[str, Any],
     glosses: list[str],
@@ -857,11 +983,17 @@ def extract_wiktextract_translations(
         row.get("translations")
     )
 
-    result = []
+    result: list[
+        dict[str, Any]
+    ] = []
 
-    seen = set()
+    seen: set[
+        tuple[str, str]
+    ] = set()
 
-    primary_languages = set()
+    primary_languages: set[
+        str
+    ] = set()
 
     for translation in translations:
 
@@ -872,8 +1004,12 @@ def extract_wiktextract_translations(
             continue
 
         raw_language = (
-            translation.get("lang_code")
-            or translation.get("code")
+            translation.get(
+                "lang_code"
+            )
+            or translation.get(
+                "code"
+            )
         )
 
         language = normalize_language(
@@ -884,7 +1020,9 @@ def extract_wiktextract_translations(
             continue
 
         word = clean(
-            translation.get("word")
+            translation.get(
+                "word"
+            )
         )
 
         if word is None:
@@ -903,7 +1041,9 @@ def extract_wiktextract_translations(
         if key in seen:
             continue
 
-        seen.add(key)
+        seen.add(
+            key
+        )
 
         is_primary = (
             language
@@ -927,10 +1067,6 @@ def extract_wiktextract_translations(
     return result
 
 
-# =========================================================
-# Wiktextract forms
-# =========================================================
-
 def extract_wiktextract_forms(
     row: dict[str, Any],
 ) -> list[dict[str, Any]]:
@@ -939,9 +1075,11 @@ def extract_wiktextract_forms(
         row.get("forms")
     )
 
-    result = []
+    result: list[
+        dict[str, Any]
+    ] = []
 
-    seen = set()
+    seen: set[str] = set()
 
     for form_data in forms:
 
@@ -964,7 +1102,9 @@ def extract_wiktextract_forms(
         if normalized in seen:
             continue
 
-        seen.add(normalized)
+        seen.add(
+            normalized
+        )
 
         tags = form_data.get(
             "tags",
@@ -977,18 +1117,25 @@ def extract_wiktextract_forms(
         ):
             tags = []
 
-        cleaned_tags = [
-            clean(tag)
-            for tag in tags
-            if clean(tag) is not None
-        ]
+        cleaned_tags = []
+
+        for tag in tags:
+
+            tag_text = clean(tag)
+
+            if tag_text is not None:
+                cleaned_tags.append(
+                    tag_text
+                )
 
         grammatical_features = {
-            "tags": cleaned_tags,
+            "tags": cleaned_tags
         }
 
         source = clean(
-            form_data.get("source")
+            form_data.get(
+                "source"
+            )
         )
 
         if source is None:
@@ -1000,6 +1147,12 @@ def extract_wiktextract_forms(
                 "grammatical_features": (
                     grammatical_features
                 ),
+                "form_type": (
+                    cleaned_tags[0]
+                    if cleaned_tags
+                    else None
+                ),
+                "is_lemma": False,
                 "source": source,
                 "source_version": (
                     WIKTEXTRACT_SOURCE_VERSION
@@ -1010,15 +1163,13 @@ def extract_wiktextract_forms(
     return result
 
 
-# =========================================================
-# Wiktextract relations
-# =========================================================
-
 def extract_wiktextract_relations(
     row: dict[str, Any],
 ) -> list[dict[str, Any]]:
 
-    result = []
+    result: list[
+        dict[str, Any]
+    ] = []
 
     seen = set()
 
@@ -1080,7 +1231,9 @@ def extract_wiktextract_relations(
             if key in seen:
                 continue
 
-            seen.add(key)
+            seen.add(
+                key
+            )
 
             result.append(
                 {
@@ -1154,7 +1307,9 @@ def convert_wiktextract_record(
         row
     )
 
-    converted = []
+    converted: list[
+        dict[str, Any]
+    ] = []
 
     for (
         sense_index,
@@ -1165,7 +1320,9 @@ def convert_wiktextract_record(
     ):
 
         glosses = normalize_glosses(
-            sense_data.get("glosses")
+            sense_data.get(
+                "glosses"
+            )
         )
 
         if not glosses:
@@ -1222,14 +1379,22 @@ def convert_wiktextract_record(
             "source_version": (
                 WIKTEXTRACT_SOURCE_VERSION
             ),
+
             "cefr_level": None,
             "cefr_assessments": [],
+
             "localizations": localizations,
+
             "translations": translations,
+
             "examples": examples,
+
             "media": media,
+
             "forms": forms,
+
             "relations": relations,
+
             "_wiktextract_sense_index": (
                 sense_index
             ),
@@ -1240,100 +1405,6 @@ def convert_wiktextract_record(
         )
 
     return converted
-
-
-# =========================================================
-# JSONL iterator
-# =========================================================
-
-def iter_wiktextract_records(
-    path: Path,
-) -> Iterator[dict[str, Any]]:
-
-    with path.open(
-        "r",
-        encoding="utf-8-sig",
-    ) as file:
-
-        for (
-            line_number,
-            line,
-        ) in enumerate(
-            file,
-            start=1,
-        ):
-
-            line = line.strip()
-
-            if not line:
-                continue
-
-            try:
-
-                row = json.loads(
-                    line
-                )
-
-            except json.JSONDecodeError as exc:
-
-                print(
-                    f"Skipping invalid JSONL line "
-                    f"#{line_number}: {exc}"
-                )
-
-                continue
-
-            if not isinstance(
-                row,
-                dict,
-            ):
-                continue
-
-            converted_records = (
-                convert_wiktextract_record(
-                    row
-                )
-            )
-
-            for record in converted_records:
-                yield record
-
-
-# =========================================================
-# Unified iterator
-# =========================================================
-
-def iter_records(
-    path: Path,
-) -> Iterator[dict[str, Any]]:
-
-    suffix = path.suffix.lower()
-
-    if suffix == ".jsonl":
-
-        yield from iter_wiktextract_records(
-            path
-        )
-
-        return
-
-    if suffix == ".csv":
-
-        for record in load_csv(path):
-            yield record
-
-        return
-
-    if suffix == ".json":
-
-        for record in load_json(path):
-            yield record
-
-        return
-
-    raise ValueError(
-        "Supported files are CSV, JSON and JSONL."
-    )
 
 
 # =========================================================
@@ -1355,6 +1426,7 @@ def get_or_create_entry(
     )
 
     if language is None:
+
         raise ValueError(
             "Unsupported or missing vocabulary language."
         )
@@ -1390,8 +1462,21 @@ def get_or_create_entry(
         lemma = word
 
     if lemma is None:
+
         raise ValueError(
             "Missing lemma/word."
+        )
+
+    normalized_lemma = (
+        normalize_text_for_matching(
+            lemma
+        )
+    )
+
+    if not normalized_lemma:
+
+        raise ValueError(
+            "Lemma cannot be normalized."
         )
 
     cache_key = (
@@ -1406,10 +1491,10 @@ def get_or_create_entry(
 
     if cached is not None:
 
-        cache_stats["entry_hits"] += 1
+        cache_stats[
+            "entry_hits"
+        ] += 1
 
-        # Update only fields that may differ between
-        # duplicate Wiktextract records.
         pronunciation = clean(
             row.get("pronunciation")
             if "pronunciation" in row
@@ -1420,23 +1505,22 @@ def get_or_create_entry(
         )
 
         if pronunciation is not None:
-            cached.pronunciation = pronunciation
+            cached.pronunciation = (
+                pronunciation
+            )
 
         return cached
 
-    cache_stats["entry_misses"] += 1
-
-    # -----------------------------------------------------
-    # IMPORTANT PERFORMANCE OPTIMIZATION
-    #
-    # no_autoflush prevents unrelated pending INSERTs from
-    # being flushed before every lookup query.
-    # -----------------------------------------------------
+    cache_stats[
+        "entry_misses"
+    ] += 1
 
     with db.no_autoflush:
 
         statement = (
-            select(VocabularyEntry)
+            select(
+                VocabularyEntry
+            )
             .where(
                 VocabularyEntry.language
                 == language,
@@ -1447,9 +1531,12 @@ def get_or_create_entry(
             )
         )
 
-        entry = db.execute(
-            statement
-        ).scalar_one_or_none()
+        entry = (
+            db.execute(
+                statement
+            )
+            .scalar_one_or_none()
+        )
 
     pronunciation = clean(
         row.get("pronunciation")
@@ -1460,7 +1547,7 @@ def get_or_create_entry(
         )
     )
 
-    frequency_value = clean(
+    frequency_rank = parse_frequency_rank(
         row.get("frequency_rank")
         if "frequency_rank" in row
         else find_field(
@@ -1468,21 +1555,6 @@ def get_or_create_entry(
             "frequency_rank",
         )
     )
-
-    frequency_rank = None
-
-    if frequency_value is not None:
-
-        try:
-
-            frequency_rank = int(
-                float(
-                    frequency_value
-                )
-            )
-
-        except ValueError:
-            pass
 
     source = clean(
         row.get("source")
@@ -1504,6 +1576,10 @@ def get_or_create_entry(
 
     if entry is not None:
 
+        entry.normalized_lemma = (
+            normalized_lemma
+        )
+
         if word is not None:
             entry.word = word
 
@@ -1523,35 +1599,54 @@ def get_or_create_entry(
                 source_version
             )
 
-        entry_cache[cache_key] = entry
+        if not entry.enrichment_status:
+            entry.enrichment_status = (
+                "partial"
+            )
+
+        entry.generated_by_ai = False
+
+        entry_cache[
+            cache_key
+        ] = entry
 
         return entry
 
     entry = VocabularyEntry(
         language=language,
         lemma=lemma,
+        normalized_lemma=normalized_lemma,
         word=word,
         part_of_speech=part_of_speech,
         pronunciation=pronunciation,
         frequency_rank=frequency_rank,
-        source=source,
-        source_version=source_version,
+        source=(
+            source
+            or WIKTEXTRACT_SOURCE
+        ),
+        source_version=(
+            source_version
+            or WIKTEXTRACT_SOURCE_VERSION
+        ),
+        enrichment_status="partial",
+        quality_score=None,
+        generated_by_ai=False,
         is_active=True,
     )
 
     db.add(entry)
 
-    # We need the ID immediately because child tables depend
-    # on this entry.
     db.flush()
 
-    entry_cache[cache_key] = entry
+    entry_cache[
+        cache_key
+    ] = entry
 
     return entry
 
 
 # =========================================================
-# Related / target Entry
+# Related / target entry
 # =========================================================
 
 def get_or_create_relation_target_entry(
@@ -1575,11 +1670,15 @@ def get_or_create_relation_target_entry(
         return None
 
     target_pos = clean(
-        relation.get("part_of_speech")
+        relation.get(
+            "part_of_speech"
+        )
     )
 
     relation_type = clean(
-        relation.get("relation_type")
+        relation.get(
+            "relation_type"
+        )
     )
 
     if relation_type is None:
@@ -1587,7 +1686,10 @@ def get_or_create_relation_target_entry(
 
     if (
         target_pos is None
-        and relation_type in {
+        and target_language
+        == source_entry.language
+        and relation_type
+        in {
             "synonym",
             "antonym",
             "related",
@@ -1598,12 +1700,17 @@ def get_or_create_relation_target_entry(
             "coordinate_term",
             "see_also",
         }
-        and target_language
-        == source_entry.language
     ):
+
         target_pos = (
             source_entry.part_of_speech
         )
+
+    normalized_target = (
+        normalize_text_for_matching(
+            target_word
+        )
+    )
 
     cache_key = (
         target_language,
@@ -1623,8 +1730,6 @@ def get_or_create_relation_target_entry(
 
         return cached
 
-    # Entry cache can often resolve the same target
-    # without another DB query.
     cached_entry = entry_cache.get(
         cache_key
     )
@@ -1645,19 +1750,17 @@ def get_or_create_relation_target_entry(
         "relation_target_misses"
     ] += 1
 
-    # -----------------------------------------------------
-    # Exact POS match
-    # -----------------------------------------------------
-
     if target_pos is not None:
 
         exact_statement = (
-            select(VocabularyEntry)
+            select(
+                VocabularyEntry
+            )
             .where(
                 VocabularyEntry.language
                 == target_language,
-                VocabularyEntry.lemma
-                == target_word,
+                VocabularyEntry.normalized_lemma
+                == normalized_target,
                 VocabularyEntry.part_of_speech
                 == target_pos,
             )
@@ -1665,9 +1768,12 @@ def get_or_create_relation_target_entry(
 
         with db.no_autoflush:
 
-            exact_entry = db.execute(
-                exact_statement
-            ).scalar_one_or_none()
+            exact_entry = (
+                db.execute(
+                    exact_statement
+                )
+                .scalar_one_or_none()
+            )
 
         if exact_entry is not None:
 
@@ -1681,17 +1787,15 @@ def get_or_create_relation_target_entry(
 
             return exact_entry
 
-    # -----------------------------------------------------
-    # Same language + lemma fallback
-    # -----------------------------------------------------
-
     any_statement = (
-        select(VocabularyEntry)
+        select(
+            VocabularyEntry
+        )
         .where(
             VocabularyEntry.language
             == target_language,
-            VocabularyEntry.lemma
-            == target_word,
+            VocabularyEntry.normalized_lemma
+            == normalized_target,
         )
         .order_by(
             VocabularyEntry.id.asc()
@@ -1700,9 +1804,13 @@ def get_or_create_relation_target_entry(
 
     with db.no_autoflush:
 
-        existing_entries = db.execute(
-            any_statement
-        ).scalars().all()
+        existing_entries = (
+            db.execute(
+                any_statement
+            )
+            .scalars()
+            .all()
+        )
 
     if existing_entries:
 
@@ -1712,10 +1820,13 @@ def get_or_create_relation_target_entry(
 
         if target_pos is not None:
 
-            for existing_entry in existing_entries:
+            for existing_entry in (
+                existing_entries
+            ):
 
                 if (
-                    existing_entry.part_of_speech
+                    existing_entry
+                    .part_of_speech
                     == target_pos
                 ):
 
@@ -1739,13 +1850,10 @@ def get_or_create_relation_target_entry(
 
         return selected_entry
 
-    # -----------------------------------------------------
-    # Create lightweight target entry
-    # -----------------------------------------------------
-
     target_entry = VocabularyEntry(
         language=target_language,
         lemma=target_word,
+        normalized_lemma=normalized_target,
         word=target_word,
         part_of_speech=target_pos,
         pronunciation=None,
@@ -1754,10 +1862,14 @@ def get_or_create_relation_target_entry(
         source_version=(
             WIKTEXTRACT_SOURCE_VERSION
         ),
+        enrichment_status="partial",
+        quality_score=None,
+        generated_by_ai=False,
         is_active=True,
     )
 
     db.add(target_entry)
+
     db.flush()
 
     relation_target_cache[
@@ -1772,7 +1884,7 @@ def get_or_create_relation_target_entry(
 
 
 # =========================================================
-# Add Vocabulary Relation
+# Relation
 # =========================================================
 
 def add_vocabulary_relation(
@@ -1782,7 +1894,9 @@ def add_vocabulary_relation(
 ) -> bool:
 
     relation_type = clean(
-        relation.get("relation_type")
+        relation.get(
+            "relation_type"
+        )
     )
 
     if relation_type is None:
@@ -1799,7 +1913,10 @@ def add_vocabulary_relation(
     if target_entry is None:
         return False
 
-    if target_entry.id == source_entry.id:
+    if (
+        target_entry.id
+        == source_entry.id
+    ):
         return False
 
     cache_key = (
@@ -1810,22 +1927,31 @@ def add_vocabulary_relation(
 
     if cache_key in relation_cache:
 
-        cache_stats["relation_hits"] += 1
+        cache_stats[
+            "relation_hits"
+        ] += 1
 
         return False
 
     with db.no_autoflush:
 
-        existing = db.query(
-            VocabularyRelation
-        ).filter(
-            VocabularyRelation.source_entry_id
-            == source_entry.id,
-            VocabularyRelation.target_entry_id
-            == target_entry.id,
-            VocabularyRelation.relation_type
-            == relation_type,
-        ).first()
+        existing = (
+            db.query(
+                VocabularyRelation
+            )
+            .filter(
+                VocabularyRelation
+                .source_entry_id
+                == source_entry.id,
+                VocabularyRelation
+                .target_entry_id
+                == target_entry.id,
+                VocabularyRelation
+                .relation_type
+                == relation_type,
+            )
+            .first()
+        )
 
     if existing is not None:
 
@@ -1835,13 +1961,41 @@ def add_vocabulary_relation(
 
         return False
 
+    is_bidirectional = (
+        relation_type
+        in BIDIRECTIONAL_RELATIONS
+    )
+
     db.add(
         VocabularyRelation(
-            source_entry_id=source_entry.id,
-            target_entry_id=target_entry.id,
-            relation_type=relation_type,
-            language=source_entry.language,
+            source_entry_id=(
+                source_entry.id
+            ),
+            target_entry_id=(
+                target_entry.id
+            ),
+            source_sense_id=None,
+            target_sense_id=None,
+            relation_type=(
+                relation_type
+            ),
+            language=(
+                source_entry.language
+            ),
+            is_bidirectional=(
+                is_bidirectional
+            ),
             is_active=True,
+            source=clean(
+                relation.get(
+                    "source"
+                )
+            ) or WIKTEXTRACT_SOURCE,
+            source_version=clean(
+                relation.get(
+                    "source_version"
+                )
+            ) or WIKTEXTRACT_SOURCE_VERSION,
         )
     )
 
@@ -1853,7 +2007,7 @@ def add_vocabulary_relation(
 
 
 # =========================================================
-# Add Vocabulary Form
+# Forms
 # =========================================================
 
 def add_vocabulary_form(
@@ -1863,7 +2017,9 @@ def add_vocabulary_form(
 ) -> bool:
 
     form = clean(
-        form_data.get("form")
+        form_data.get(
+            "form"
+        )
     )
 
     if form is None:
@@ -1885,7 +2041,9 @@ def add_vocabulary_form(
 
     if cache_key in form_cache:
 
-        cache_stats["form_hits"] += 1
+        cache_stats[
+            "form_hits"
+        ] += 1
 
         return False
 
@@ -1902,7 +2060,9 @@ def add_vocabulary_form(
         grammatical_features = {}
 
     source = clean(
-        form_data.get("source")
+        form_data.get(
+            "source"
+        )
     )
 
     source_version = clean(
@@ -1911,16 +2071,34 @@ def add_vocabulary_form(
         )
     )
 
+    form_type = clean(
+        form_data.get(
+            "form_type"
+        )
+    )
+
+    is_lemma = bool(
+        form_data.get(
+            "is_lemma",
+            False,
+        )
+    )
+
     with db.no_autoflush:
 
-        existing = db.query(
-            VocabularyForm
-        ).filter(
-            VocabularyForm.vocabulary_entry_id
-            == entry.id,
-            VocabularyForm.form
-            == form,
-        ).first()
+        existing = (
+            db.query(
+                VocabularyForm
+            )
+            .filter(
+                VocabularyForm
+                .vocabulary_entry_id
+                == entry.id,
+                VocabularyForm.form
+                == form,
+            )
+            .first()
+        )
 
     if existing is not None:
 
@@ -1931,6 +2109,13 @@ def add_vocabulary_form(
         existing.grammatical_features = (
             grammatical_features
         )
+
+        existing.form_type = (
+            form_type
+        )
+
+        if is_lemma:
+            existing.is_lemma = True
 
         if source is not None:
             existing.source = source
@@ -1954,8 +2139,16 @@ def add_vocabulary_form(
             grammatical_features=(
                 grammatical_features
             ),
-            source=source,
-            source_version=source_version,
+            form_type=form_type,
+            is_lemma=is_lemma,
+            source=(
+                source
+                or WIKTEXTRACT_SOURCE
+            ),
+            source_version=(
+                source_version
+                or WIKTEXTRACT_SOURCE_VERSION
+            ),
             is_active=True,
         )
     )
@@ -1968,7 +2161,7 @@ def add_vocabulary_form(
 
 
 # =========================================================
-# Build localizations
+# Localizations
 # =========================================================
 
 def get_localization_records(
@@ -1976,7 +2169,9 @@ def get_localization_records(
 ) -> list[dict[str, Any]]:
 
     localizations = normalize_list(
-        row.get("localizations")
+        row.get(
+            "localizations"
+        )
     )
 
     if localizations:
@@ -2020,11 +2215,14 @@ def get_localization_records(
         language
         or definition_language
         or normalize_language(
-            row.get("language")
+            row.get(
+                "language"
+            )
         )
     )
 
     if language is None:
+
         raise ValueError(
             "A localization language is required."
         )
@@ -2046,12 +2244,14 @@ def get_localization_records(
                     "source_version",
                 )
             ),
+            "generated_by_ai": False,
+            "quality_score": None,
         }
     ]
 
 
 # =========================================================
-# Find or create Sense
+# Sense
 # =========================================================
 
 def get_or_create_sense(
@@ -2061,7 +2261,9 @@ def get_or_create_sense(
 ) -> VocabularySense | None:
 
     cefr_level = normalize_level(
-        row.get("cefr_level")
+        row.get(
+            "cefr_level"
+        )
         if "cefr_level" in row
         else find_field(
             row,
@@ -2081,9 +2283,13 @@ def get_or_create_sense(
     ):
         return None
 
-    source_language_localization = None
+    source_language_localization = (
+        None
+    )
 
-    for localization in localizations:
+    for localization in (
+        localizations
+    ):
 
         localization_language = (
             normalize_language(
@@ -2109,6 +2315,7 @@ def get_or_create_sense(
         is None
         and localizations
     ):
+
         source_language_localization = (
             localizations[0]
         )
@@ -2158,11 +2365,15 @@ def get_or_create_sense(
 
     if cached is not None:
 
-        cache_stats["sense_hits"] += 1
+        cache_stats[
+            "sense_hits"
+        ] += 1
 
         return cached
 
-    cache_stats["sense_misses"] += 1
+    cache_stats[
+        "sense_misses"
+    ] += 1
 
     candidate_cache_key = (
         entry.id,
@@ -2177,25 +2388,35 @@ def get_or_create_sense(
 
     if candidate_senses is None:
 
-        # IMPORTANT:
-        # Do not flush every pending INSERT before this lookup.
         with db.no_autoflush:
 
-            candidate_senses = db.query(
-                VocabularySense
-            ).filter(
-                VocabularySense.vocabulary_entry_id
-                == entry.id,
-                VocabularySense.cefr_level
-                == cefr_level,
-                VocabularySense.is_active.is_(
-                    True
-                ),
-            ).all()
+            candidate_senses = (
+                db.query(
+                    VocabularySense
+                )
+                .filter(
+                    VocabularySense
+                    .vocabulary_entry_id
+                    == entry.id,
+                    VocabularySense
+                    .cefr_level
+                    == cefr_level,
+                    VocabularySense
+                    .is_active.is_(True),
+                )
+                .order_by(
+                    VocabularySense.id.asc()
+                )
+                .all()
+            )
 
         sense_candidates_cache[
             candidate_cache_key
         ] = candidate_senses
+
+    # -----------------------------------------------------
+    # Exact meaning / definition match
+    # -----------------------------------------------------
 
     for candidate in candidate_senses:
 
@@ -2214,16 +2435,20 @@ def get_or_create_sense(
 
             with db.no_autoflush:
 
-                localization = db.query(
-                    VocabularySenseLocalization
-                ).filter(
-                    VocabularySenseLocalization
-                    .vocabulary_sense_id
-                    == candidate.id,
-                    VocabularySenseLocalization
-                    .language
-                    == entry.language,
-                ).first()
+                localization = (
+                    db.query(
+                        VocabularySenseLocalization
+                    )
+                    .filter(
+                        VocabularySenseLocalization
+                        .vocabulary_sense_id
+                        == candidate.id,
+                        VocabularySenseLocalization
+                        .language
+                        == entry.language,
+                    )
+                    .first()
+                )
 
             if localization is None:
 
@@ -2247,9 +2472,10 @@ def get_or_create_sense(
                 localization_key
             ] = cached_localization
 
-        candidate_meaning, candidate_definition = (
-            cached_localization
-        )
+        (
+            candidate_meaning,
+            candidate_definition,
+        ) = cached_localization
 
         if (
             candidate_meaning
@@ -2265,7 +2491,7 @@ def get_or_create_sense(
             return candidate
 
     # -----------------------------------------------------
-    # Legacy fallback
+    # If one candidate only has no localization, reuse it.
     # -----------------------------------------------------
 
     if len(candidate_senses) == 1:
@@ -2283,27 +2509,10 @@ def get_or_create_sense(
             )
         )
 
-        if cached_localization is None:
-
-            with db.no_autoflush:
-
-                localization_count = db.query(
-                    VocabularySenseLocalization
-                ).filter(
-                    VocabularySenseLocalization
-                    .vocabulary_sense_id
-                    == candidate.id
-                ).count()
-
-            if localization_count == 0:
-
-                sense_cache[
-                    cache_key
-                ] = candidate
-
-                return candidate
-
-        elif cached_localization == ("", ""):
+        if cached_localization == (
+            "",
+            "",
+        ):
 
             sense_cache[
                 cache_key
@@ -2315,8 +2524,10 @@ def get_or_create_sense(
     # Create new sense
     # -----------------------------------------------------
 
-    frequency_value = clean(
-        row.get("frequency_rank")
+    frequency_rank = parse_frequency_rank(
+        row.get(
+            "frequency_rank"
+        )
         if "frequency_rank" in row
         else find_field(
             row,
@@ -2324,39 +2535,34 @@ def get_or_create_sense(
         )
     )
 
-    frequency_rank = None
-
-    if frequency_value is not None:
-
-        try:
-
-            frequency_rank = int(
-                float(
-                    frequency_value
-                )
-            )
-
-        except ValueError:
-            pass
-
     sense = VocabularySense(
-        vocabulary_entry_id=entry.id,
+        vocabulary_entry_id=(
+            entry.id
+        ),
         meaning=None,
         definition=None,
-        cefr_level=cefr_level,
-        frequency_rank=frequency_rank,
+        cefr_level=(
+            cefr_level
+        ),
+        frequency_rank=(
+            frequency_rank
+        ),
+        enrichment_status="partial",
+        quality_score=None,
+        generated_by_ai=False,
         is_active=True,
     )
 
     db.add(sense)
+
     db.flush()
 
-    # Update candidate cache immediately so a later sense
-    # with the same entry/level sees the new sense.
     sense_candidates_cache.setdefault(
         candidate_cache_key,
         [],
-    ).append(sense)
+    ).append(
+        sense
+    )
 
     sense_cache[
         cache_key
@@ -2366,7 +2572,7 @@ def get_or_create_sense(
 
 
 # =========================================================
-# Localization
+# Localizations
 # =========================================================
 
 def upsert_localization(
@@ -2376,7 +2582,9 @@ def upsert_localization(
 ) -> bool:
 
     language = normalize_language(
-        localization.get("language")
+        localization.get(
+            "language"
+        )
     )
 
     if language is None:
@@ -2388,11 +2596,15 @@ def upsert_localization(
     )
 
     meaning = clean(
-        localization.get("meaning")
+        localization.get(
+            "meaning"
+        )
     )
 
     definition = clean(
-        localization.get("definition")
+        localization.get(
+            "definition"
+        )
     )
 
     if (
@@ -2402,7 +2614,9 @@ def upsert_localization(
         return False
 
     source = clean(
-        localization.get("source")
+        localization.get(
+            "source"
+        )
     )
 
     source_version = clean(
@@ -2421,24 +2635,50 @@ def upsert_localization(
 
     with db.no_autoflush:
 
-        existing = db.query(
-            VocabularySenseLocalization
-        ).filter(
-            VocabularySenseLocalization
-            .vocabulary_sense_id
-            == sense.id,
-            VocabularySenseLocalization
-            .language
-            == language,
-        ).first()
+        existing = (
+            db.query(
+                VocabularySenseLocalization
+            )
+            .filter(
+                VocabularySenseLocalization
+                .vocabulary_sense_id
+                == sense.id,
+                VocabularySenseLocalization
+                .language
+                == language,
+            )
+            .first()
+        )
 
     if existing is not None:
 
-        existing.meaning = meaning
-        existing.definition = definition
-        existing.source = source
-        existing.source_version = (
-            source_version
+        if meaning is not None:
+            existing.meaning = meaning
+
+        if definition is not None:
+            existing.definition = definition
+
+        if source is not None:
+            existing.source = source
+
+        if source_version is not None:
+            existing.source_version = (
+                source_version
+            )
+
+        existing.generated_by_ai = (
+            bool(
+                localization.get(
+                    "generated_by_ai",
+                    False,
+                )
+            )
+        )
+
+        existing.quality_score = (
+            localization.get(
+                "quality_score"
+            )
         )
 
         localization_cache.add(
@@ -2449,10 +2689,10 @@ def upsert_localization(
             cache_key
         ] = (
             normalize_text_for_matching(
-                meaning
+                existing.meaning
             ),
             normalize_text_for_matching(
-                definition
+                existing.definition
             ),
         )
 
@@ -2460,12 +2700,29 @@ def upsert_localization(
 
     db.add(
         VocabularySenseLocalization(
-            vocabulary_sense_id=sense.id,
+            vocabulary_sense_id=(
+                sense.id
+            ),
             language=language,
             meaning=meaning,
             definition=definition,
-            source=source,
-            source_version=source_version,
+            source=(
+                source
+                or WIKTEXTRACT_SOURCE
+            ),
+            source_version=(
+                source_version
+                or WIKTEXTRACT_SOURCE_VERSION
+            ),
+            enrichment_status=(
+                "complete"
+            ),
+            quality_score=(
+                localization.get(
+                    "quality_score"
+                )
+            ),
+            generated_by_ai=False,
         )
     )
 
@@ -2498,7 +2755,9 @@ def add_translation(
 ) -> bool:
 
     language = normalize_language(
-        translation.get("language")
+        translation.get(
+            "language"
+        )
     )
 
     if language is None:
@@ -2526,7 +2785,21 @@ def add_translation(
     )
 
     source = clean(
-        translation.get("source")
+        translation.get(
+            "source"
+        )
+    )
+
+    source_version = clean(
+        translation.get(
+            "source_version"
+        )
+    )
+
+    translated_entry_id = (
+        translation.get(
+            "translated_entry_id"
+        )
     )
 
     is_primary = bool(
@@ -2546,25 +2819,41 @@ def add_translation(
 
     with db.no_autoflush:
 
-        existing = db.query(
-            VocabularyTranslation
-        ).filter(
-            VocabularyTranslation
-            .vocabulary_sense_id
-            == sense.id,
-            VocabularyTranslation.language
-            == language,
-            VocabularyTranslation.translation
-            == translation_text,
-        ).first()
+        existing = (
+            db.query(
+                VocabularyTranslation
+            )
+            .filter(
+                VocabularyTranslation
+                .vocabulary_sense_id
+                == sense.id,
+                VocabularyTranslation
+                .language
+                == language,
+                VocabularyTranslation
+                .translation
+                == translation_text,
+            )
+            .first()
+        )
 
     if existing is not None:
+
+        if translated_entry_id is not None:
+            existing.translated_entry_id = (
+                translated_entry_id
+            )
 
         if is_primary:
             existing.is_primary = True
 
         if source is not None:
             existing.source = source
+
+        if source_version is not None:
+            existing.source_version = (
+                source_version
+            )
 
         translation_cache.add(
             cache_key
@@ -2576,29 +2865,75 @@ def add_translation(
 
         with db.no_autoflush:
 
-            existing_primary = db.query(
-                VocabularyTranslation
-            ).filter(
-                VocabularyTranslation
-                .vocabulary_sense_id
-                == sense.id,
-                VocabularyTranslation.language
-                == language,
-                VocabularyTranslation
-                .is_primary.is_(True),
-            ).first()
+            existing_primary = (
+                db.query(
+                    VocabularyTranslation
+                )
+                .filter(
+                    VocabularyTranslation
+                    .vocabulary_sense_id
+                    == sense.id,
+                    VocabularyTranslation
+                    .language
+                    == language,
+                    VocabularyTranslation
+                    .is_primary.is_(True),
+                )
+                .first()
+            )
 
         is_primary = (
             existing_primary is None
         )
 
+    if is_primary:
+
+        (
+            db.query(
+                VocabularyTranslation
+            )
+            .filter(
+                VocabularyTranslation
+                .vocabulary_sense_id
+                == sense.id,
+                VocabularyTranslation
+                .language
+                == language,
+            )
+            .update(
+                {
+                    VocabularyTranslation
+                    .is_primary: False,
+                },
+                synchronize_session=False,
+            )
+        )
+
     db.add(
         VocabularyTranslation(
-            vocabulary_sense_id=sense.id,
+            vocabulary_sense_id=(
+                sense.id
+            ),
             language=language,
-            translation=translation_text,
-            is_primary=is_primary,
-            source=source,
+            translation=(
+                translation_text
+            ),
+            translated_entry_id=(
+                translated_entry_id
+            ),
+            is_primary=(
+                is_primary
+            ),
+            source=(
+                source
+                or WIKTEXTRACT_SOURCE
+            ),
+            source_version=(
+                source_version
+                or WIKTEXTRACT_SOURCE_VERSION
+            ),
+            generated_by_ai=False,
+            quality_score=None,
         )
     )
 
@@ -2624,7 +2959,9 @@ def add_example(
 ] | None:
 
     sentence = clean(
-        example_data.get("sentence")
+        example_data.get(
+            "sentence"
+        )
     )
 
     if sentence is None:
@@ -2645,11 +2982,15 @@ def add_example(
     )
 
     level = normalize_level(
-        example_data.get("level")
+        example_data.get(
+            "level"
+        )
     )
 
     source = clean(
-        example_data.get("source")
+        example_data.get(
+            "source"
+        )
     )
 
     existing = example_cache.get(
@@ -2660,7 +3001,9 @@ def add_example(
 
     if existing is not None:
 
-        cache_stats["example_hits"] += 1
+        cache_stats[
+            "example_hits"
+        ] += 1
 
         example = existing
 
@@ -2668,15 +3011,20 @@ def add_example(
 
         with db.no_autoflush:
 
-            example = db.query(
-                VocabularyExample
-            ).filter(
-                VocabularyExample
-                .vocabulary_sense_id
-                == sense.id,
-                VocabularyExample.sentence
-                == sentence,
-            ).first()
+            example = (
+                db.query(
+                    VocabularyExample
+                )
+                .filter(
+                    VocabularyExample
+                    .vocabulary_sense_id
+                    == sense.id,
+                    VocabularyExample
+                    .sentence
+                    == sentence,
+                )
+                .first()
+            )
 
         if example is not None:
 
@@ -2687,14 +3035,22 @@ def add_example(
         else:
 
             example = VocabularyExample(
-                vocabulary_sense_id=sense.id,
+                vocabulary_sense_id=(
+                    sense.id
+                ),
                 sentence=sentence,
                 level=level,
-                source=source,
+                source=(
+                    source
+                    or WIKTEXTRACT_SOURCE
+                ),
+                generated_by_ai=False,
+                quality_score=None,
                 is_active=True,
             )
 
             db.add(example)
+
             db.flush()
 
             example_cache[
@@ -2722,7 +3078,9 @@ def add_example(
     for translation in translations:
 
         language = normalize_language(
-            translation.get("language")
+            translation.get(
+                "language"
+            )
         )
 
         translation_text = clean(
@@ -2750,7 +3108,9 @@ def add_example(
         )
 
         source_translation = clean(
-            translation.get("source")
+            translation.get(
+                "source"
+            )
         )
 
         is_primary = bool(
@@ -2786,10 +3146,7 @@ def add_example(
                 .first()
             )
 
-        if (
-            existing_translation
-            is not None
-        ):
+        if existing_translation is not None:
 
             if is_primary:
                 existing_translation.is_primary = True
@@ -2830,6 +3187,29 @@ def add_example(
                 existing_primary is None
             )
 
+        if is_primary:
+
+            (
+                db.query(
+                    VocabularyExampleTranslation
+                )
+                .filter(
+                    VocabularyExampleTranslation
+                    .vocabulary_example_id
+                    == example.id,
+                    VocabularyExampleTranslation
+                    .language
+                    == language,
+                )
+                .update(
+                    {
+                        VocabularyExampleTranslation
+                        .is_primary: False,
+                    },
+                    synchronize_session=False,
+                )
+            )
+
         db.add(
             VocabularyExampleTranslation(
                 vocabulary_example_id=(
@@ -2839,8 +3219,18 @@ def add_example(
                 translation=(
                     translation_text
                 ),
-                is_primary=is_primary,
-                source=source_translation,
+                is_primary=(
+                    is_primary
+                ),
+                source=(
+                    source_translation
+                    or WIKTEXTRACT_SOURCE
+                ),
+                source_version=(
+                    WIKTEXTRACT_SOURCE_VERSION
+                ),
+                generated_by_ai=False,
+                quality_score=None,
             )
         )
 
@@ -2868,7 +3258,9 @@ def add_media(
 ) -> bool:
 
     media_url = clean(
-        media_data.get("url")
+        media_data.get(
+            "url"
+        )
         or media_data.get(
             "media_url"
         )
@@ -2878,7 +3270,9 @@ def add_media(
         return False
 
     media_type = clean(
-        media_data.get("media_type")
+        media_data.get(
+            "media_type"
+        )
     )
 
     if media_type is None:
@@ -2894,7 +3288,9 @@ def add_media(
 
     if cache_key in media_cache:
 
-        cache_stats["media_hits"] += 1
+        cache_stats[
+            "media_hits"
+        ] += 1
 
         return False
 
@@ -2905,29 +3301,39 @@ def add_media(
     )
 
     alt_text = clean(
-        media_data.get("alt_text")
+        media_data.get(
+            "alt_text"
+        )
         or media_data.get(
             "media_alt_text"
         )
     )
 
     source = clean(
-        media_data.get("source")
+        media_data.get(
+            "source"
+        )
     )
 
     with db.no_autoflush:
 
-        existing = db.query(
-            VocabularyMedia
-        ).filter(
-            VocabularyMedia
-            .vocabulary_sense_id
-            == sense.id,
-            VocabularyMedia.media_type
-            == media_type,
-            VocabularyMedia.url
-            == media_url,
-        ).first()
+        existing = (
+            db.query(
+                VocabularyMedia
+            )
+            .filter(
+                VocabularyMedia
+                .vocabulary_sense_id
+                == sense.id,
+                VocabularyMedia
+                .media_type
+                == media_type,
+                VocabularyMedia
+                .url
+                == media_url,
+            )
+            .first()
+        )
 
     if existing is not None:
 
@@ -2939,12 +3345,18 @@ def add_media(
 
     db.add(
         VocabularyMedia(
-            vocabulary_sense_id=sense.id,
+            vocabulary_sense_id=(
+                sense.id
+            ),
             media_type=media_type,
             url=media_url,
             thumbnail_url=thumbnail_url,
             alt_text=alt_text,
-            source=source,
+            source=(
+                source
+                or WIKTEXTRACT_SOURCE
+            ),
+            generated_by_ai=False,
             is_active=True,
         )
     )
@@ -2957,7 +3369,7 @@ def add_media(
 
 
 # =========================================================
-# CEFR Assessments
+# CEFR assessments
 # =========================================================
 
 def add_cefr_assessments(
@@ -2967,17 +3379,23 @@ def add_cefr_assessments(
 ) -> int:
 
     assessments = normalize_list(
-        row.get("cefr_assessments")
+        row.get(
+            "cefr_assessments"
+        )
     )
 
     if not assessments:
 
         cefr_level = normalize_level(
-            row.get("cefr_level")
+            row.get(
+                "cefr_level"
+            )
         )
 
         source = clean(
-            row.get("source")
+            row.get(
+                "source"
+            )
         )
 
         source_version = clean(
@@ -2988,13 +3406,13 @@ def add_cefr_assessments(
 
         if cefr_level is not None:
 
-            if source is None:
-                source = "dataset"
-
             assessments = [
                 {
                     "cefr_level": cefr_level,
-                    "source": source,
+                    "source": (
+                        source
+                        or "dataset"
+                    ),
                     "source_version": (
                         source_version
                     ),
@@ -3073,31 +3491,39 @@ def add_cefr_assessments(
             )
         )
 
-        if cache_key in cefr_assessment_cache:
+        if cache_key in (
+            cefr_assessment_cache
+        ):
 
             if selected:
-                sense.cefr_level = cefr_level
+                sense.cefr_level = (
+                    cefr_level
+                )
 
             continue
 
         with db.no_autoflush:
 
-            existing = db.query(
-                VocabularyCEFRAssessment
-            ).filter(
-                VocabularyCEFRAssessment
-                .vocabulary_sense_id
-                == sense.id,
-                VocabularyCEFRAssessment
-                .cefr_level
-                == cefr_level,
-                VocabularyCEFRAssessment
-                .source
-                == source,
-                VocabularyCEFRAssessment
-                .source_version
-                == source_version,
-            ).first()
+            existing = (
+                db.query(
+                    VocabularyCEFRAssessment
+                )
+                .filter(
+                    VocabularyCEFRAssessment
+                    .vocabulary_sense_id
+                    == sense.id,
+                    VocabularyCEFRAssessment
+                    .cefr_level
+                    == cefr_level,
+                    VocabularyCEFRAssessment
+                    .source
+                    == source,
+                    VocabularyCEFRAssessment
+                    .source_version
+                    == source_version,
+                )
+                .first()
+            )
 
         if existing is not None:
 
@@ -3122,6 +3548,7 @@ def add_cefr_assessments(
                     confidence=(
                         confidence
                     ),
+                    is_selected=False,
                 )
             )
 
@@ -3132,9 +3559,145 @@ def add_cefr_assessments(
         created_or_updated += 1
 
         if selected:
-            sense.cefr_level = cefr_level
+            sense.cefr_level = (
+                cefr_level
+            )
 
     return created_or_updated
+
+
+# =========================================================
+# Determine sense completeness
+# =========================================================
+
+def refresh_sense_quality(
+    sense: VocabularySense,
+    db: Session,
+) -> None:
+
+    localization_count = (
+        db.query(
+            VocabularySenseLocalization
+        )
+        .filter(
+            VocabularySenseLocalization
+            .vocabulary_sense_id
+            == sense.id
+        )
+        .count()
+    )
+
+    translation_count = (
+        db.query(
+            VocabularyTranslation
+        )
+        .filter(
+            VocabularyTranslation
+            .vocabulary_sense_id
+            == sense.id
+        )
+        .count()
+    )
+
+    example_count = (
+        db.query(
+            VocabularyExample
+        )
+        .filter(
+            VocabularyExample
+            .vocabulary_sense_id
+            == sense.id,
+            VocabularyExample.is_active.is_(True),
+        )
+        .count()
+    )
+
+    if (
+        localization_count > 0
+        and translation_count > 0
+        and example_count > 0
+        and sense.cefr_level is not None
+    ):
+
+        sense.enrichment_status = (
+            "complete"
+        )
+
+        if sense.quality_score is None:
+            sense.quality_score = 0.9
+
+    else:
+
+        sense.enrichment_status = (
+            "partial"
+        )
+
+
+def refresh_entry_quality(
+    entry: VocabularyEntry,
+    db: Session,
+) -> None:
+
+    senses = (
+        db.query(
+            VocabularySense
+        )
+        .filter(
+            VocabularySense
+            .vocabulary_entry_id
+            == entry.id,
+            VocabularySense.is_active.is_(True),
+        )
+        .all()
+    )
+
+    if not senses:
+
+        entry.enrichment_status = (
+            "partial"
+        )
+
+        return
+
+    for sense in senses:
+
+        refresh_sense_quality(
+            sense=sense,
+            db=db,
+        )
+
+    if all(
+        sense.enrichment_status
+        == "complete"
+        for sense in senses
+    ):
+
+        entry.enrichment_status = (
+            "complete"
+        )
+
+        quality_values = [
+            sense.quality_score
+            for sense in senses
+            if sense.quality_score is not None
+        ]
+
+        if quality_values:
+
+            entry.quality_score = (
+                sum(
+                    quality_values
+                )
+                / len(
+                    quality_values
+                )
+            )
+
+    else:
+
+        entry.enrichment_status = (
+            "partial"
+        )
 
 
 # =========================================================
@@ -3165,7 +3728,9 @@ def import_record(
     # -----------------------------------------------------
 
     forms = normalize_list(
-        row.get("forms")
+        row.get(
+            "forms"
+        )
     )
 
     for form_data in forms:
@@ -3175,6 +3740,7 @@ def import_record(
             form_data=form_data,
             db=db,
         ):
+
             form_count += 1
 
     # -----------------------------------------------------
@@ -3182,7 +3748,9 @@ def import_record(
     # -----------------------------------------------------
 
     relations = normalize_list(
-        row.get("relations")
+        row.get(
+            "relations"
+        )
     )
 
     for relation in relations:
@@ -3192,6 +3760,7 @@ def import_record(
             relation=relation,
             db=db,
         ):
+
             relation_count += 1
 
     # -----------------------------------------------------
@@ -3199,6 +3768,11 @@ def import_record(
     # -----------------------------------------------------
 
     if sense is None:
+
+        refresh_entry_quality(
+            entry=entry,
+            db=db,
+        )
 
         return {
             "entries": 1,
@@ -3214,9 +3788,13 @@ def import_record(
         }
 
     localization_count = 0
+
     translation_count = 0
+
     example_count = 0
+
     example_translation_count = 0
+
     media_count = 0
 
     # -----------------------------------------------------
@@ -3224,7 +3802,9 @@ def import_record(
     # -----------------------------------------------------
 
     for localization in (
-        get_localization_records(row)
+        get_localization_records(
+            row
+        )
     ):
 
         if upsert_localization(
@@ -3232,6 +3812,7 @@ def import_record(
             localization=localization,
             db=db,
         ):
+
             localization_count += 1
 
     # -----------------------------------------------------
@@ -3239,7 +3820,9 @@ def import_record(
     # -----------------------------------------------------
 
     translations = normalize_list(
-        row.get("translations")
+        row.get(
+            "translations"
+        )
     )
 
     for translation in translations:
@@ -3249,6 +3832,7 @@ def import_record(
             translation=translation,
             db=db,
         ):
+
             translation_count += 1
 
     # -----------------------------------------------------
@@ -3256,7 +3840,9 @@ def import_record(
     # -----------------------------------------------------
 
     examples = normalize_list(
-        row.get("examples")
+        row.get(
+            "examples"
+        )
     )
 
     for example_data in examples:
@@ -3271,7 +3857,7 @@ def import_record(
             continue
 
         (
-            example,
+            _example,
             created,
             created_translation_count,
         ) = result
@@ -3288,7 +3874,9 @@ def import_record(
     # -----------------------------------------------------
 
     media_items = normalize_list(
-        row.get("media")
+        row.get(
+            "media"
+        )
     )
 
     for media_data in media_items:
@@ -3298,6 +3886,7 @@ def import_record(
             media_data=media_data,
             db=db,
         ):
+
             media_count += 1
 
     # -----------------------------------------------------
@@ -3312,40 +3901,85 @@ def import_record(
         )
     )
 
+    # -----------------------------------------------------
+    # Mark imported information as source data,
+    # not AI-generated data.
+    # -----------------------------------------------------
+
+    entry.generated_by_ai = False
+
+    sense.generated_by_ai = False
+
+    refresh_sense_quality(
+        sense=sense,
+        db=db,
+    )
+
+    refresh_entry_quality(
+        entry=entry,
+        db=db,
+    )
+
     return {
         "entries": 1,
         "senses": 1,
-        "localizations": localization_count,
-        "translations": translation_count,
-        "examples": example_count,
+        "localizations": (
+            localization_count
+        ),
+        "translations": (
+            translation_count
+        ),
+        "examples": (
+            example_count
+        ),
         "example_translations": (
             example_translation_count
         ),
-        "media": media_count,
-        "assessments": assessment_count,
-        "forms": form_count,
-        "relations": relation_count,
+        "media": (
+            media_count
+        ),
+        "assessments": (
+            assessment_count
+        ),
+        "forms": (
+            form_count
+        ),
+        "relations": (
+            relation_count
+        ),
     }
 
 
 # =========================================================
-# Reset caches
+# Clear caches
 # =========================================================
 
 def clear_runtime_caches() -> None:
 
     entry_cache.clear()
+
     relation_target_cache.clear()
+
     sense_cache.clear()
+
     sense_candidates_cache.clear()
+
     sense_localization_cache.clear()
+
     localization_cache.clear()
+
     translation_cache.clear()
+
     example_cache.clear()
+
     example_translation_cache.clear()
+
     media_cache.clear()
+
     form_cache.clear()
+
     relation_cache.clear()
+
     cefr_assessment_cache.clear()
 
 
@@ -3381,7 +4015,9 @@ def import_records(
         start=1,
     ):
 
-        counters["records"] += 1
+        counters[
+            "records"
+        ] += 1
 
         try:
 
@@ -3391,11 +4027,18 @@ def import_records(
             )
 
             for key in result:
-                counters[key] += result[key]
+
+                counters[
+                    key
+                ] += result[
+                    key
+                ]
 
         except Exception as exc:
 
-            counters["skipped"] += 1
+            counters[
+                "skipped"
+            ] += 1
 
             print(
                 f"Skipped record #{index}: {exc}"
@@ -3403,13 +4046,15 @@ def import_records(
 
             db.rollback()
 
-            # ORM objects may now be expired/invalid after
-            # rollback, so caches must be cleared.
             clear_runtime_caches()
+
+            continue
 
         if index % COMMIT_EVERY == 0:
 
             db.commit()
+
+            clear_runtime_caches()
 
             print(
                 f"Processed {index} converted records..."
@@ -3417,13 +4062,18 @@ def import_records(
 
     db.commit()
 
+    clear_runtime_caches()
+
     print()
+
     print(
         "=============================================="
     )
+
     print(
         "Vocabulary import completed."
     )
+
     print(
         "=============================================="
     )
@@ -3564,8 +4214,7 @@ def import_records(
     )
 
     print(
-        "=============================================="
-    )
+        "==============================================")
 
 
 # =========================================================
@@ -3576,7 +4225,9 @@ def main():
 
     if len(sys.argv) != 2:
 
-        print("Usage:")
+        print(
+            "Usage:"
+        )
 
         print(
             "python import_vocabulary.py "
@@ -3607,6 +4258,14 @@ def main():
 
         print(
             f"File not found: {file_path}"
+        )
+
+        raise SystemExit(1)
+
+    if not file_path.is_file():
+
+        print(
+            f"Not a file: {file_path}"
         )
 
         raise SystemExit(1)
@@ -3652,6 +4311,8 @@ def main():
     except Exception:
 
         db.rollback()
+
+        clear_runtime_caches()
 
         print(
             "Vocabulary import failed."
