@@ -388,7 +388,7 @@ class _WordsPageState extends State<WordsPage> {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.auto_stories_rounded, size: 30),
@@ -425,7 +425,7 @@ class _WordsPageState extends State<WordsPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.65),
+          color: Colors.white.withValues(alpha: 0.65),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(

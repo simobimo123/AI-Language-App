@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/google_auth_service.dart';
-import '../services/language_controller.dart';
-import '../services/storage_service.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+import '../core/storage/storage_service.dart';
+import '../core/theme/theme_controller.dart';
 import 'register_page.dart';
 import 'splash_page.dart';
 
@@ -155,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
             left: -100,
             child: _BackgroundCircle(
               size: 280,
-              color: colorScheme.primary.withOpacity(isDark ? 0.12 : 0.08),
+              color: colorScheme.primary.withValues(alpha: isDark ? 0.12 : 0.08),
             ),
           ),
           Positioned(
@@ -163,7 +163,7 @@ class _LoginPageState extends State<LoginPage> {
             right: -140,
             child: _BackgroundCircle(
               size: 300,
-              color: colorScheme.secondary.withOpacity(isDark ? 0.10 : 0.07),
+              color: colorScheme.secondary.withValues(alpha: isDark ? 0.10 : 0.07),
             ),
           ),
           Positioned(
@@ -171,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
             left: -80,
             child: _BackgroundCircle(
               size: 300,
-              color: colorScheme.primary.withOpacity(isDark ? 0.08 : 0.05),
+              color: colorScheme.primary.withValues(alpha: isDark ? 0.08 : 0.05),
             ),
           ),
           SafeArea(
@@ -185,7 +185,7 @@ class _LoginPageState extends State<LoginPage> {
                       DecoratedBox(
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest
-                              .withOpacity(0.7),
+                              .withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: IconButton(
@@ -258,11 +258,11 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(28),
                                   border: Border.all(
                                     color: colorScheme.outlineVariant
-                                        .withOpacity(0.45),
+                                        .withValues(alpha: 0.45),
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(
+                                      color: Colors.black.withValues(alpha: 
                                         isDark ? 0.18 : 0.06,
                                       ),
                                       blurRadius: 30,
@@ -306,7 +306,7 @@ class _LoginPageState extends State<LoginPage> {
                                         filled: true,
                                         fillColor: colorScheme
                                             .surfaceContainerHighest
-                                            .withOpacity(0.45),
+                                            .withValues(alpha: 0.45),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             16,
@@ -319,7 +319,7 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                           borderSide: BorderSide(
                                             color: colorScheme.outlineVariant
-                                                .withOpacity(0.35),
+                                                .withValues(alpha: 0.35),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
@@ -384,7 +384,7 @@ class _LoginPageState extends State<LoginPage> {
                                         filled: true,
                                         fillColor: colorScheme
                                             .surfaceContainerHighest
-                                            .withOpacity(0.45),
+                                            .withValues(alpha: 0.45),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             16,
@@ -397,7 +397,7 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                           borderSide: BorderSide(
                                             color: colorScheme.outlineVariant
-                                                .withOpacity(0.35),
+                                                .withValues(alpha: 0.35),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
@@ -484,7 +484,7 @@ class _LoginPageState extends State<LoginPage> {
                                         Expanded(
                                           child: Divider(
                                             color: colorScheme.outlineVariant
-                                                .withOpacity(0.5),
+                                                .withValues(alpha: 0.5),
                                           ),
                                         ),
                                         Padding(
@@ -504,7 +504,7 @@ class _LoginPageState extends State<LoginPage> {
                                         Expanded(
                                           child: Divider(
                                             color: colorScheme.outlineVariant
-                                                .withOpacity(0.5),
+                                                .withValues(alpha: 0.5),
                                           ),
                                         ),
                                       ],
@@ -565,7 +565,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.surfaceContainerHighest
-                                      .withOpacity(0.35),
+                                      .withValues(alpha: 0.35),
                                   borderRadius: BorderRadius.circular(18),
                                 ),
                                 child: Row(
@@ -670,7 +670,7 @@ class _AppLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.25),
+            color: primaryColor.withValues(alpha: 0.25),
             blurRadius: 28,
             offset: const Offset(0, 12),
           ),
@@ -726,7 +726,7 @@ class _ErrorMessage extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: colorScheme.error.withOpacity(0.15)),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.15)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

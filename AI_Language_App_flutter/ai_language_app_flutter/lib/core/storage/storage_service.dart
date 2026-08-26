@@ -6,7 +6,6 @@ class StorageService {
 
   final FlutterSecureStorage storage = FlutterSecureStorage();
 
-
   Future<void> saveToken(String token) async {
     await storage.write(
       key: tokenKey,
@@ -14,13 +13,11 @@ class StorageService {
     );
   }
 
-
   Future<String?> getToken() async {
     return await storage.read(
       key: tokenKey,
     );
   }
-
 
   Future<void> deleteToken() async {
     await storage.delete(

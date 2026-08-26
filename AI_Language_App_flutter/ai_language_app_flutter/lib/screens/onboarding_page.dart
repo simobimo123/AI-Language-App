@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+
+import '../core/theme/theme_controller.dart';
 import 'home_page.dart';
 import 'placement_test_page.dart';
 
@@ -415,13 +416,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected
-              ? theme.colorScheme.primary.withOpacity(0.10)
+              ? theme.colorScheme.primary.withValues(alpha: 0.10)
               : theme.cardColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: selected
                 ? theme.colorScheme.primary
-                : theme.dividerColor.withOpacity(0.35),
+                : theme.dividerColor.withValues(alpha: 0.35),
             width: selected ? 2 : 1,
           ),
         ),
@@ -514,13 +515,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         decoration: BoxDecoration(
           color: selected
-              ? theme.colorScheme.primary.withOpacity(0.10)
+              ? theme.colorScheme.primary.withValues(alpha: 0.10)
               : theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected
                 ? theme.colorScheme.primary
-                : theme.dividerColor.withOpacity(0.35),
+                : theme.dividerColor.withValues(alpha: 0.35),
             width: selected ? 2 : 1,
           ),
         ),
@@ -644,7 +645,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           decoration: BoxDecoration(
                             color: active
                                 ? theme.colorScheme.primary
-                                : theme.dividerColor.withOpacity(0.30),
+                                : theme.dividerColor.withValues(alpha: 0.30),
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
@@ -670,7 +671,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(
+                        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 
                           0.70,
                         ),
                       ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
-import '../services/storage_service.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+import '../core/storage/storage_service.dart';
+import '../core/theme/theme_controller.dart';
 import 'home_page.dart';
 import 'login_page.dart';
 import 'onboarding_page.dart';
@@ -116,7 +116,7 @@ class _SplashPageState extends State<SplashPage> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.22),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.22),
                     blurRadius: 28,
                     offset: const Offset(0, 12),
                   ),

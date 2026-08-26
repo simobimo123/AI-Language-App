@@ -3,8 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/app_localizations.dart';
 import 'screens/splash_page.dart';
-import 'services/language_controller.dart';
-import 'services/theme_controller.dart';
+import 'core/language/language_controller.dart';
+import 'core/theme/theme_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
+import '../core/language/language_controller.dart';
 import '../services/learning_language_controller.dart';
-import '../services/storage_service.dart';
-import '../services/theme_controller.dart';
+import '../core/storage/storage_service.dart';
+import '../core/theme/theme_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/home/learning_progress_card.dart';
 import '../widgets/home/quick_action_card.dart';
@@ -369,7 +369,7 @@ class _CurrentLearningLanguageCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface.withOpacity(0.85),
+                  color: theme.colorScheme.surface.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
@@ -410,7 +410,7 @@ class _CurrentLearningLanguageCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface.withOpacity(0.85),
+                  color: theme.colorScheme.surface.withValues(alpha: 0.85),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -491,7 +491,7 @@ class _StatCard extends StatelessWidget {
         border: Border.all(color: theme.colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.04),
+            color: theme.colorScheme.shadow.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -633,7 +633,7 @@ class _DailyTip extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.14),
+              color: Colors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -663,7 +663,7 @@ class _DailyTip extends StatelessWidget {
                 Text(
                   l10n.dailyTipDescription,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     height: 1.45,
                     fontSize: 13,
                   ),

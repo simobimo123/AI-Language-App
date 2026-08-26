@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../screens/profile_page.dart';
-import '../../services/language_controller.dart';
-import '../../services/theme_controller.dart';
+import '../../core/language/language_controller.dart';
+import '../../core/theme/theme_controller.dart';
 
 class WelcomeHeader extends StatelessWidget {
   final String userName;

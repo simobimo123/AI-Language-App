@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+import '../core/theme/theme_controller.dart';
 import '../services/learning_language_controller.dart';
 
 class LearningPathPage extends StatefulWidget {
@@ -420,7 +420,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
     } else if (completed) {
       cardColor = theme.colorScheme.surface;
     } else if (!unlocked) {
-      cardColor = theme.colorScheme.surfaceContainerHighest.withOpacity(0.55);
+      cardColor = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
     } else {
       cardColor = theme.colorScheme.surface;
     }
@@ -440,15 +440,15 @@ class _LearningPathPageState extends State<LearningPathPage> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: current
-                ? theme.colorScheme.primary.withOpacity(0.5)
-                : theme.colorScheme.outlineVariant.withOpacity(
+                ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 
                     unlocked ? 0.9 : 0.55,
                   ),
             width: current ? 1.7 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(
+              color: Colors.black.withValues(alpha: 
                 theme.brightness == Brightness.dark ? 0.12 : 0.045,
               ),
               blurRadius: current ? 14 : 9,
@@ -674,14 +674,14 @@ class _LearningPathPageState extends State<LearningPathPage> {
           boxShadow: current
               ? [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.28),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.28),
                     blurRadius: 16,
                     spreadRadius: 3,
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(
+                    color: Colors.black.withValues(alpha: 
                       theme.brightness == Brightness.dark ? 0.15 : 0.07,
                     ),
                     blurRadius: 7,
@@ -750,7 +750,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.20),
+            color: theme.colorScheme.primary.withValues(alpha: 0.20),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -766,7 +766,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -889,7 +889,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -1379,7 +1379,7 @@ class _ConnectorPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.5
       ..strokeCap = StrokeCap.round
-      ..color = locked ? color.withOpacity(0.45) : color.withOpacity(0.75);
+      ..color = locked ? color.withValues(alpha: 0.45) : color.withValues(alpha: 0.75);
 
     final path = Path();
 
@@ -1399,7 +1399,7 @@ class _ConnectorPainter extends CustomPainter {
     if (locked) {
       final dotPaint = Paint()
         ..style = PaintingStyle.fill
-        ..color = color.withOpacity(0.5);
+        ..color = color.withValues(alpha: 0.5);
 
       canvas.drawCircle(Offset(centerX, size.height / 2), 3, dotPaint);
     }

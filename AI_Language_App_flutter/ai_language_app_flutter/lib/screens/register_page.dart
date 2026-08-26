@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
-import '../services/storage_service.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+import '../core/storage/storage_service.dart';
+import '../core/theme/theme_controller.dart';
 import 'splash_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -194,7 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: theme.dividerColor.withOpacity(0.2),
+                          color: theme.dividerColor.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(

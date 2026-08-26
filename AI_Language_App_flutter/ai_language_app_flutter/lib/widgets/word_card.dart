@@ -76,7 +76,7 @@ class WordCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: learned
               ? theme.colorScheme.primaryContainer
-              : Colors.green.withOpacity(0.12),
+              : Colors.green.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
         ),
         alignment: Alignment.centerRight,
@@ -117,7 +117,7 @@ class WordCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
             color: learned
-                ? Colors.green.withOpacity(0.25)
+                ? Colors.green.withValues(alpha: 0.25)
                 : Colors.grey.shade200,
           ),
         ),
@@ -131,7 +131,7 @@ class WordCard extends StatelessWidget {
                 height: 56,
                 decoration: BoxDecoration(
                   color: learned
-                      ? Colors.green.withOpacity(0.12)
+                      ? Colors.green.withValues(alpha: 0.12)
                       : theme.colorScheme.secondaryContainer,
                   borderRadius: BorderRadius.circular(17),
                 ),
@@ -196,8 +196,8 @@ class WordCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: learned
-                            ? Colors.green.withOpacity(0.10)
-                            : theme.colorScheme.primary.withOpacity(0.08),
+                            ? Colors.green.withValues(alpha: 0.10)
+                            : theme.colorScheme.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(

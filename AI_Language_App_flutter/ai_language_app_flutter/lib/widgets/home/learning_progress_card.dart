@@ -71,7 +71,7 @@ class LearningProgressCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: safeProgress,
               minHeight: 8,
-              backgroundColor: Colors.white.withOpacity(0.25),
+              backgroundColor: Colors.white.withValues(alpha: 0.25),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),

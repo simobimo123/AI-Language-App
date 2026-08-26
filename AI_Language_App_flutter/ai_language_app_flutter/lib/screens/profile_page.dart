@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
-import '../services/storage_service.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+import '../core/storage/storage_service.dart';
+import '../core/theme/theme_controller.dart';
 import '../services/learning_language_controller.dart';
 import 'login_page.dart';
 import 'placement_test_page.dart';

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
-import '../services/language_controller.dart';
-import '../services/theme_controller.dart';
+import '../core/language/language_controller.dart';
+import '../core/theme/theme_controller.dart';
+
 
 class PlacementTestPage extends StatefulWidget {
   final ThemeController themeController;
