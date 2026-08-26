@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -29,250 +29,30 @@ from schemas import (
 )
 
 from routers.auth import get_current_user
+from services.placement.config import (
+    LEVELS,
+    PASS_THRESHOLD,
+    QUIZ_PASS_THRESHOLD,
+    QUIZ_QUESTIONS_PER_TEST,
+    WORDS_PER_LEVEL,
+)
+from services.placement.leveling import (
+    calculate_next_level,
+    calculate_previous_level,
+    normalize_language,
+    normalize_level,
+)
+from services.placement.quiz_generator import (
+    get_random_level_words,
+    get_random_quiz_questions,
+)
+from services.placement.repository import get_attempt_or_404
 
 
 router = APIRouter(
     prefix="/placement",
     tags=["Placement Test"],
 )
-
-
-# =========================================================
-# Configuration
-# =========================================================
-
-LEVELS = [
-    "A1",
-    "A2",
-    "B1",
-    "B2",
-    "C1",
-    "C2",
-]
-
-ALL_LEVELS = [
-    "PRE_A1",
-    *LEVELS,
-]
-
-PASS_THRESHOLD = 50.0
-
-WORDS_PER_LEVEL = 20
-
-QUIZ_QUESTIONS_PER_TEST = 10
-
-QUIZ_PASS_THRESHOLD = 50.0
-
-
-# =========================================================
-# Helpers
-# =========================================================
-
-def normalize_language(
-    language: str,
-) -> str:
-    return (
-        language
-        .strip()
-        .lower()
-    )
-
-
-def normalize_level(
-    level: str,
-) -> str:
-    normalized = (
-        level
-        .strip()
-        .upper()
-    )
-
-    if normalized not in ALL_LEVELS:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"Invalid level '{normalized}'."
-            ),
-        )
-
-    return normalized
-
-
-def get_attempt_or_404(
-    attempt_id: int,
-    current_user: User,
-    db: Session,
-) -> PlacementAttempt:
-
-    attempt = (
-        db.query(PlacementAttempt)
-        .filter(
-            PlacementAttempt.id == attempt_id,
-            PlacementAttempt.user_id
-            == current_user.id,
-        )
-        .first()
-    )
-
-    if attempt is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Placement attempt not found.",
-        )
-
-    return attempt
-
-
-def get_random_level_words(
-    language: str,
-    level: str,
-    db: Session,
-) -> list[PlacementVocabulary]:
-
-    statement = (
-        select(
-            PlacementVocabulary
-        )
-        .where(
-            PlacementVocabulary.language
-            == language,
-            PlacementVocabulary.level
-            == level,
-            PlacementVocabulary.is_active.is_(True),
-        )
-        .order_by(
-            func.random()
-        )
-        .limit(
-            WORDS_PER_LEVEL
-        )
-    )
-
-    words = (
-        db.execute(
-            statement
-        )
-        .scalars()
-        .all()
-    )
-
-    if len(words) < WORDS_PER_LEVEL:
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"Not enough active vocabulary "
-                f"for {language}/{level}. "
-                f"Required: {WORDS_PER_LEVEL}, "
-                f"available: {len(words)}."
-            ),
-        )
-
-    return words
-
-
-def get_random_quiz_questions(
-    language: str,
-    level: str,
-    db: Session,
-) -> list[PlacementQuizQuestion]:
-
-    statement = (
-        select(
-            PlacementQuizQuestion
-        )
-        .where(
-            PlacementQuizQuestion.language
-            == language,
-            PlacementQuizQuestion.level
-            == level,
-            PlacementQuizQuestion.is_active.is_(True),
-        )
-        .order_by(
-            func.random()
-        )
-        .limit(
-            QUIZ_QUESTIONS_PER_TEST
-        )
-    )
-
-    questions = (
-        db.execute(
-            statement
-        )
-        .scalars()
-        .all()
-    )
-
-    if len(questions) < QUIZ_QUESTIONS_PER_TEST:
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"Not enough active quiz questions "
-                f"for {language}/{level}. "
-                f"Required: "
-                f"{QUIZ_QUESTIONS_PER_TEST}, "
-                f"available: {len(questions)}."
-            ),
-        )
-
-    return questions
-
-
-def get_current_learning_profile(
-    language: str,
-    current_user: User,
-    db: Session,
-) -> LearningProfile | None:
-
-    return (
-        db.query(
-            LearningProfile
-        )
-        .filter(
-            LearningProfile.user_id
-            == current_user.id,
-            LearningProfile.language
-            == language,
-        )
-        .first()
-    )
-
-
-def calculate_previous_level(
-    level: str,
-) -> str:
-
-    if level == "A1":
-        return "PRE_A1"
-
-    index = LEVELS.index(
-        level
-    )
-
-    if index == 0:
-        return "PRE_A1"
-
-    return LEVELS[
-        index - 1
-    ]
-
-
-def calculate_next_level(
-    level: str,
-) -> str | None:
-
-    index = LEVELS.index(
-        level
-    )
-
-    if index >= len(LEVELS) - 1:
-        return None
-
-    return LEVELS[
-        index + 1
-    ]
 
 
 # =========================================================

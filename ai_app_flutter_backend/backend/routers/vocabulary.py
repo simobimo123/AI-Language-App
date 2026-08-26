@@ -1,5 +1,3 @@
-import os
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -46,6 +44,24 @@ from schemas import (
 )
 
 from routers.auth import get_current_user
+from services.vocabulary.normalization import (
+    clean_optional_text,
+    normalize_form,
+    normalize_language,
+    normalize_lemma,
+    normalize_level,
+)
+from services.vocabulary.repository import (
+    get_entry_or_404,
+    get_example_or_404,
+    get_form_or_404,
+    get_sense_or_404,
+    require_vocabulary_editor,
+)
+from services.vocabulary.cefr import (
+    _clear_selected_cefr_assessments,
+    _select_cefr_assessment,
+)
 
 
 router = APIRouter(
@@ -53,254 +69,6 @@ router = APIRouter(
     tags=["Vocabulary"],
 )
 
-
-# =========================================================
-# Constants
-# =========================================================
-
-SUPPORTED_LANGUAGES = {
-    "ar",
-    "de",
-    "en",
-    "es",
-    "fa",
-    "fr",
-    "hi",
-    "id",
-    "it",
-    "ja",
-    "ko",
-    "nl",
-    "pl",
-    "pt",
-    "ru",
-    "th",
-    "tr",
-    "uk",
-    "vi",
-    "zh",
-}
-
-SUPPORTED_LEVELS = {
-    "PRE_A1",
-    "A1",
-    "A2",
-    "B1",
-    "B2",
-    "C1",
-    "C2",
-}
-
-
-# =========================================================
-# Vocabulary editor authorization
-# =========================================================
-
-VOCABULARY_EDITOR_EMAILS = {
-    email.strip().lower()
-    for email in os.getenv(
-        "VOCABULARY_EDITOR_EMAILS",
-        "",
-    ).split(",")
-    if email.strip()
-}
-
-
-# =========================================================
-# Normalization helpers
-# =========================================================
-
-def normalize_language(
-    language: str,
-) -> str:
-
-    normalized = language.strip().lower()
-
-    if normalized not in SUPPORTED_LANGUAGES:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"Unsupported language '{normalized}'. "
-                f"Supported languages: "
-                f"{', '.join(sorted(SUPPORTED_LANGUAGES))}"
-            ),
-        )
-
-    return normalized
-
-
-def normalize_level(
-    level: str,
-) -> str:
-
-    normalized = level.strip().upper()
-
-    if normalized not in SUPPORTED_LEVELS:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"Unsupported level '{normalized}'. "
-                f"Supported levels: "
-                f"{', '.join(sorted(SUPPORTED_LEVELS))}"
-            ),
-        )
-
-    return normalized
-
-
-def normalize_form(
-    form: str,
-) -> str:
-
-    return " ".join(
-        form.strip().casefold().split()
-    )
-
-
-def normalize_lemma(
-    lemma: str,
-) -> str:
-
-    return " ".join(
-        lemma.strip().casefold().split()
-    )
-
-
-def clean_optional_text(
-    value: str | None,
-) -> str | None:
-
-    if value is None:
-        return None
-
-    value = value.strip()
-
-    return value if value else None
-
-
-# =========================================================
-# Authorization
-# =========================================================
-
-def require_vocabulary_editor(
-    current_user: User = Depends(
-        get_current_user
-    ),
-) -> User:
-
-    email = current_user.email.strip().lower()
-
-    if email not in VOCABULARY_EDITOR_EMAILS:
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Vocabulary database modification is restricted "
-                "to authorized editors."
-            ),
-        )
-
-    return current_user
-
-
-# =========================================================
-# Get helpers
-# =========================================================
-
-def get_entry_or_404(
-    entry_id: int,
-    db: Session,
-) -> VocabularyEntry:
-
-    entry = (
-        db.query(VocabularyEntry)
-        .filter(
-            VocabularyEntry.id == entry_id,
-            VocabularyEntry.is_active.is_(True),
-        )
-        .first()
-    )
-
-    if entry is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vocabulary entry not found.",
-        )
-
-    return entry
-
-
-def get_form_or_404(
-    form_id: int,
-    db: Session,
-) -> VocabularyForm:
-
-    form = (
-        db.query(VocabularyForm)
-        .filter(
-            VocabularyForm.id == form_id,
-            VocabularyForm.is_active.is_(True),
-        )
-        .first()
-    )
-
-    if form is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vocabulary form not found.",
-        )
-
-    return form
-
-
-def get_sense_or_404(
-    sense_id: int,
-    db: Session,
-) -> VocabularySense:
-
-    sense = (
-        db.query(VocabularySense)
-        .filter(
-            VocabularySense.id == sense_id,
-            VocabularySense.is_active.is_(True),
-        )
-        .first()
-    )
-
-    if sense is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vocabulary sense not found.",
-        )
-
-    return sense
-
-
-def get_example_or_404(
-    example_id: int,
-    db: Session,
-) -> VocabularyExample:
-
-    example = (
-        db.query(VocabularyExample)
-        .filter(
-            VocabularyExample.id == example_id,
-            VocabularyExample.is_active.is_(True),
-        )
-        .first()
-    )
-
-    if example is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vocabulary example not found.",
-        )
-
-    return example
-
-
-# =========================================================
-# Entry lookup
-# =========================================================
 
 @router.get(
     "/lookup",
@@ -1930,81 +1698,6 @@ def list_vocabulary_cefr_assessments(
         )
         .all()
     )
-
-
-def _clear_selected_cefr_assessments(
-    sense_id: int,
-    db: Session,
-) -> None:
-
-    (
-        db.query(
-            VocabularyCEFRAssessment
-        )
-        .filter(
-            VocabularyCEFRAssessment
-            .vocabulary_sense_id
-            == sense_id,
-            VocabularyCEFRAssessment
-            .is_selected.is_(True),
-        )
-        .update(
-            {
-                VocabularyCEFRAssessment
-                .is_selected: False,
-            },
-            synchronize_session=False,
-        )
-    )
-
-
-def _select_cefr_assessment(
-    sense_id: int,
-    assessment_id: int,
-    db: Session,
-) -> VocabularySense:
-
-    sense = get_sense_or_404(
-        sense_id,
-        db,
-    )
-
-    assessment = (
-        db.query(
-            VocabularyCEFRAssessment
-        )
-        .filter(
-            VocabularyCEFRAssessment.id
-            == assessment_id,
-            VocabularyCEFRAssessment
-            .vocabulary_sense_id
-            == sense_id,
-        )
-        .first()
-    )
-
-    if assessment is None:
-
-        raise HTTPException(
-            status_code=404,
-            detail="CEFR assessment not found.",
-        )
-
-    _clear_selected_cefr_assessments(
-        sense_id=sense_id,
-        db=db,
-    )
-
-    assessment.is_selected = True
-
-    sense.cefr_level = (
-        assessment.cefr_level
-    )
-
-    db.commit()
-    db.refresh(sense)
-
-    return sense
 
 
 @router.post(

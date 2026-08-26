@@ -1,0 +1,21 @@
+LEVELS = [
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1",
+    "C2",
+]
+
+ALL_LEVELS = [
+    "PRE_A1",
+    *LEVELS,
+]
+
+PASS_THRESHOLD = 50.0
+
+WORDS_PER_LEVEL = 20
+
+QUIZ_QUESTIONS_PER_TEST = 10
+
+QUIZ_PASS_THRESHOLD = 50.0

@@ -1,0 +1,1 @@
+"""Vocabulary-domain application services."""

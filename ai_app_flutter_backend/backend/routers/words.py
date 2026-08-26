@@ -10,7 +10,6 @@ from schemas import (
 from models import (
     Word,
     User,
-    LearningProfile,
     VocabularyForm,
     VocabularyEntry,
     VocabularySense,
@@ -18,6 +17,7 @@ from models import (
 )
 from database import get_db
 from routers.auth import get_current_user
+from services.learning.profile import get_current_learning_profile
 
 
 router = APIRouter(
@@ -38,18 +38,10 @@ def get_current_profile(
     db: Session,
     current_user: User
 ):
-    profile = db.query(LearningProfile).filter(
-        LearningProfile.user_id == current_user.id,
-        LearningProfile.language == current_user.learning_language
-    ).first()
-
-    if profile is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Current learning profile not found"
-        )
-
-    return profile
+    return get_current_learning_profile(
+        db=db,
+        current_user=current_user,
+    )
 
 
 # =========================

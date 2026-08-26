@@ -1,0 +1,28 @@
+# Environment & secrets
+.env
+*.env
+
+# Virtual environments
+.venv/
+.venv-1/
+.venv-2/
+.venv-3/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Refactoring backups (temporary)
+_backup_*
+*_legacy.bak
+*.bak
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
