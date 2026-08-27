@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../services/api_service.dart';
+import '../services/api/api_service.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/word_card.dart';
 
