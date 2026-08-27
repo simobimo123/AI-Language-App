@@ -5,11 +5,13 @@ from .users import (
     UserResponse,
     UserUpdate,
 )
+
 from .profiles import (
     LearningProfileCreate,
     LearningProfileResponse,
     LearningProfileUpdate,
 )
+
 from .words_learning import (
     CompleteLessonRequest,
     CompleteLessonResponse,
@@ -19,6 +21,7 @@ from .words_learning import (
     WordFromVocabularyCreate,
     WordResponse,
 )
+
 from .vocabulary import (
     VocabularyCEFRAssessmentCreate,
     VocabularyCEFRAssessmentResponse,
@@ -44,6 +47,7 @@ from .vocabulary import (
     VocabularyTranslationCreate,
     VocabularyTranslationResponse,
 )
+
 from .placement import (
     PlacementAttemptCreate,
     PlacementAttemptQuestionResponse,
@@ -61,10 +65,15 @@ from .placement import (
     PlacementWordEvaluationResponse,
     PlacementWordsResponse,
 )
+
 from .ai import (
     AIConversationMessageResponse,
     AIUsageResponse,
     VocabularyEnrichmentFieldStatus,
     VocabularyEnrichmentRequest,
     VocabularyEnrichmentResponse,
+)
+
+from .stats import (
+    HomeStatsResponse,
 )

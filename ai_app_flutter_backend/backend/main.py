@@ -8,19 +8,30 @@ from database import SessionLocal
 from routers.auth import router as auth_router
 from routers.users import router as users_router
 from routers.words import router as words_router
+
 from routers.learning_profiles import (
     router as learning_router,
 )
+
 from routers.learning_path import (
     router as learning_path_router,
     seed_learning_content,
 )
-from routers.ai import router as ai_router
+
+from routers.ai import (
+    router as ai_router,
+)
+
 from routers.placement_test import (
     router as placement_router,
 )
+
 from routers.vocabulary import (
     router as vocabulary_router,
+)
+
+from routers.stats import (
+    router as stats_router,
 )
 
 
@@ -57,14 +68,25 @@ def home():
     }
 
 
+# =========================================================
+# Routers
+# =========================================================
+
 app.include_router(users_router)
+
 app.include_router(auth_router)
+
 app.include_router(words_router)
+
 app.include_router(learning_router)
+
 app.include_router(learning_path_router)
+
 app.include_router(ai_router)
+
 app.include_router(placement_router)
+
 app.include_router(vocabulary_router)
 
-
+app.include_router(stats_router)
 # python -m uvicorn main:app --reload --host 0.0.0.0
