@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/errors/error_message.dart';
 import '../models/placement_models.dart';
 import '../repositories/placement_repository.dart';
 
@@ -55,9 +56,9 @@ class PlacementTestController extends ChangeNotifier {
 
       words = result.words;
       isLoading = false;
-    } catch (e) {
+    } catch (error) {
       isLoading = false;
-      errorMessage = _message(e);
+      errorMessage = ErrorMessage.from(error);
     }
 
     notifyListeners();
@@ -109,9 +110,9 @@ class PlacementTestController extends ChangeNotifier {
       }
 
       await loadQuiz(currentLevel);
-    } catch (e) {
+    } catch (error) {
       isEvaluating = false;
-      errorMessage = _message(e);
+      errorMessage = ErrorMessage.from(error);
       notifyListeners();
     }
   }
@@ -139,9 +140,9 @@ class PlacementTestController extends ChangeNotifier {
       quizQuestions = result.questions;
       isLoading = false;
       isQuizMode = true;
-    } catch (e) {
+    } catch (error) {
       isLoading = false;
-      errorMessage = _message(e);
+      errorMessage = ErrorMessage.from(error);
     }
 
     notifyListeners();
@@ -182,9 +183,9 @@ class PlacementTestController extends ChangeNotifier {
       }
 
       await finalizeLevel(result.finalLevel);
-    } catch (e) {
+    } catch (error) {
       isEvaluating = false;
-      errorMessage = _message(e);
+      errorMessage = ErrorMessage.from(error);
       notifyListeners();
     }
   }
@@ -200,9 +201,9 @@ class PlacementTestController extends ChangeNotifier {
       isEvaluating = false;
       isFinished = true;
       notifyListeners();
-    } catch (e) {
+    } catch (error) {
       isEvaluating = false;
-      errorMessage = _message(e);
+      errorMessage = ErrorMessage.from(error);
       notifyListeners();
     }
   }
@@ -210,12 +211,5 @@ class PlacementTestController extends ChangeNotifier {
   Future<void> retry() async {
     if (isEvaluating) return;
     await loadWords();
-  }
-
-  String _message(Object error) {
-    final message = error.toString();
-    return message.startsWith('Exception: ')
-        ? message.substring('Exception: '.length)
-        : message;
   }
 }
