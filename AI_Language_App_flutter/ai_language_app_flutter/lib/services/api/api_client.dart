@@ -49,7 +49,6 @@ class ApiClient {
       final detail = data['detail'];
       final apiMessage = data['message'];
       final error = data['error'];
-
       final value = detail ?? apiMessage ?? error;
 
       if (value != null && value.toString().trim().isNotEmpty) {
@@ -79,9 +78,15 @@ class ApiClient {
     }
 
     try {
-      return await request(requestHeaders).timeout(
+      final response = await request(requestHeaders).timeout(
         const Duration(seconds: 30),
       );
+
+      if (authenticated && response.statusCode == 401) {
+        await storageService.deleteToken();
+      }
+
+      return response;
     } on TimeoutException catch (e) {
       throw TimeoutException(cause: e);
     } on http.ClientException catch (e) {
