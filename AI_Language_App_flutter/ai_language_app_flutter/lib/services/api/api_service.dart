@@ -3,6 +3,7 @@ import 'auth_api_service.dart';
 import 'learning_api_service.dart';
 import 'placement_api_service.dart';
 import 'word_api_service.dart';
+import '../../models/placement_models.dart';
 
 class ApiService {
   static const String baseUrl = ApiClient.baseUrl;
@@ -23,10 +24,6 @@ class ApiService {
     _words = WordApiService(_client);
   }
 
-  // =========================================================
-  // Test connection
-  // =========================================================
-
   Future<String> testConnection() async {
     try {
       final response = await _client.get('/');
@@ -43,19 +40,9 @@ class ApiService {
         statusCode: response.statusCode,
       );
     } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception(
-        'Failed to connect to backend: $e',
-      );
+      rethrow;
     }
   }
-
-  // =========================================================
-  // Auth
-  // =========================================================
 
   Future<Map<String, dynamic>> register({
     required String name,
@@ -104,10 +91,6 @@ class ApiService {
       learningLanguage: learningLanguage,
     );
   }
-
-  // =========================================================
-  // Learning
-  // =========================================================
 
   Future<List<dynamic>> getLearningProfiles() {
     return _learning.getLearningProfiles();
@@ -161,11 +144,7 @@ class ApiService {
     );
   }
 
-  // =========================================================
-  // Placement
-  // =========================================================
-
-  Future<Map<String, dynamic>> getPlacementWords({
+  Future<PlacementWordsResponse> getPlacementWords({
     required String language,
     required String level,
   }) {
@@ -175,7 +154,7 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> evaluatePlacementWords({
+  Future<PlacementWordEvaluation> evaluatePlacementWords({
     required String language,
     required String level,
     required List<int> presentedWordIds,
@@ -189,7 +168,7 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> getPlacementQuiz({
+  Future<PlacementQuizResponse> getPlacementQuiz({
     required String language,
     required String level,
   }) {
@@ -199,7 +178,7 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> evaluatePlacementQuiz({
+  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({
     required String language,
     required String level,
     required List<Map<String, int>> answers,
@@ -211,7 +190,7 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> finalizePlacement({
+  Future<PlacementFinalizeResponse> finalizePlacement({
     required String language,
     required String level,
   }) {
@@ -220,10 +199,6 @@ class ApiService {
       level: level,
     );
   }
-
-  // =========================================================
-  // Words
-  // =========================================================
 
   Future<Map<String, dynamic>> createWord({
     required String word,
@@ -257,10 +232,6 @@ class ApiService {
     );
   }
 
-  // =========================================================
-  // Home statistics
-  // =========================================================
-
   Future<Map<String, dynamic>> getHomeStats() async {
     final response = await _client.get(
       '/stats',
@@ -278,7 +249,7 @@ class ApiService {
         return Map<String, dynamic>.from(data);
       }
 
-      throw Exception(
+      throw const ApiException(
         'Invalid response format from home stats endpoint',
       );
     }
