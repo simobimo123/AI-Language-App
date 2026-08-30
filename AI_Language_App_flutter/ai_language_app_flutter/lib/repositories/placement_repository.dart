@@ -1,3 +1,4 @@
+import '../models/placement_models.dart';
 import '../services/api/api_service.dart';
 
 class PlacementRepository {
@@ -7,7 +8,7 @@ class PlacementRepository {
     ApiService? apiService,
   }) : apiService = apiService ?? ApiService();
 
-  Future<Map<String, dynamic>> getPlacementWords({
+  Future<PlacementWordsResponse> getPlacementWords({
     required String language,
     required String level,
   }) {
@@ -17,7 +18,7 @@ class PlacementRepository {
     );
   }
 
-  Future<Map<String, dynamic>> evaluatePlacementWords({
+  Future<PlacementWordEvaluation> evaluatePlacementWords({
     required String language,
     required String level,
     required List<int> presentedWordIds,
@@ -31,7 +32,7 @@ class PlacementRepository {
     );
   }
 
-  Future<Map<String, dynamic>> getPlacementQuiz({
+  Future<PlacementQuizResponse> getPlacementQuiz({
     required String language,
     required String level,
   }) {
@@ -41,7 +42,7 @@ class PlacementRepository {
     );
   }
 
-  Future<Map<String, dynamic>> evaluatePlacementQuiz({
+  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({
     required String language,
     required String level,
     required List<Map<String, int>> answers,
@@ -53,7 +54,7 @@ class PlacementRepository {
     );
   }
 
-  Future<Map<String, dynamic>> finalizePlacement({
+  Future<PlacementFinalizeResponse> finalizePlacement({
     required String language,
     required String level,
   }) {
