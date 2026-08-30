@@ -26,17 +26,16 @@ class ApiException implements Exception {
 }
 
 class NetworkException extends ApiException {
-  const NetworkException(
-    String message, {
-    Object? cause,
-  }) : super(message, cause: cause);
+  const NetworkException({
+    super.message,
+    super.cause,
+  });
 }
 
 class TimeoutException extends NetworkException {
   const TimeoutException({
-    Object? cause,
-  }) : super(
-          'The request timed out. Please check your connection and try again.',
-          cause: cause,
-        );
+    super.message =
+        'The request timed out. Please check your connection and try again.',
+    super.cause,
+  });
 }
