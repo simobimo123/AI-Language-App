@@ -1,13 +1,14 @@
 import 'dart:convert';
 
-import '../api/api_client.dart';
+import '../../models/placement_models.dart';
+import 'api_client.dart';
 
 class PlacementApiService {
   final ApiClient client;
 
   PlacementApiService(this.client);
 
-  Future<Map<String, dynamic>> getPlacementWords({
+  Future<PlacementWordsResponse> getPlacementWords({
     required String language,
     required String level,
   }) async {
@@ -19,7 +20,13 @@ class PlacementApiService {
     final data = client.decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(data as Map);
+      if (data is! Map) {
+        throw const ApiException('Invalid placement words response');
+      }
+
+      return PlacementWordsResponse.fromJson(
+        Map<String, dynamic>.from(data),
+      );
     }
 
     throw client.apiException(
@@ -29,7 +36,7 @@ class PlacementApiService {
     );
   }
 
-  Future<Map<String, dynamic>> evaluatePlacementWords({
+  Future<PlacementWordEvaluation> evaluatePlacementWords({
     required String language,
     required String level,
     required List<int> presentedWordIds,
@@ -50,7 +57,13 @@ class PlacementApiService {
     final data = client.decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(data as Map);
+      if (data is! Map) {
+        throw const ApiException('Invalid placement word evaluation response');
+      }
+
+      return PlacementWordEvaluation.fromJson(
+        Map<String, dynamic>.from(data),
+      );
     }
 
     throw client.apiException(
@@ -60,7 +73,7 @@ class PlacementApiService {
     );
   }
 
-  Future<Map<String, dynamic>> getPlacementQuiz({
+  Future<PlacementQuizResponse> getPlacementQuiz({
     required String language,
     required String level,
   }) async {
@@ -72,7 +85,13 @@ class PlacementApiService {
     final data = client.decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(data as Map);
+      if (data is! Map) {
+        throw const ApiException('Invalid placement quiz response');
+      }
+
+      return PlacementQuizResponse.fromJson(
+        Map<String, dynamic>.from(data),
+      );
     }
 
     throw client.apiException(
@@ -82,7 +101,7 @@ class PlacementApiService {
     );
   }
 
-  Future<Map<String, dynamic>> evaluatePlacementQuiz({
+  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({
     required String language,
     required String level,
     required List<Map<String, int>> answers,
@@ -101,7 +120,13 @@ class PlacementApiService {
     final data = client.decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(data as Map);
+      if (data is! Map) {
+        throw const ApiException('Invalid placement quiz evaluation response');
+      }
+
+      return PlacementQuizEvaluation.fromJson(
+        Map<String, dynamic>.from(data),
+      );
     }
 
     throw client.apiException(
@@ -111,7 +136,7 @@ class PlacementApiService {
     );
   }
 
-  Future<Map<String, dynamic>> finalizePlacement({
+  Future<PlacementFinalizeResponse> finalizePlacement({
     required String language,
     required String level,
   }) async {
@@ -128,7 +153,13 @@ class PlacementApiService {
     final data = client.decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(data as Map);
+      if (data is! Map) {
+        throw const ApiException('Invalid placement finalize response');
+      }
+
+      return PlacementFinalizeResponse.fromJson(
+        Map<String, dynamic>.from(data),
+      );
     }
 
     throw client.apiException(
