@@ -1,15 +1,15 @@
+import '../../core/errors/api_exception.dart';
+import '../../models/placement_models.dart';
 import 'api_client.dart';
 import 'auth_api_service.dart';
 import 'learning_api_service.dart';
 import 'placement_api_service.dart';
 import 'word_api_service.dart';
-import '../../models/placement_models.dart';
 
 class ApiService {
   static const String baseUrl = ApiClient.baseUrl;
 
   late final ApiClient _client;
-
   late final AuthApiService _auth;
   late final LearningApiService _learning;
   late final PlacementApiService _placement;
@@ -17,7 +17,6 @@ class ApiService {
 
   ApiService() {
     _client = ApiClient();
-
     _auth = AuthApiService(_client);
     _learning = LearningApiService(_client);
     _placement = PlacementApiService(_client);
@@ -25,23 +24,19 @@ class ApiService {
   }
 
   Future<String> testConnection() async {
-    try {
-      final response = await _client.get('/');
+    final response = await _client.get('/');
 
-      if (response.statusCode == 200) {
-        return response.body;
-      }
-
-      final data = _client.decodeResponse(response);
-
-      throw _client.apiException(
-        data,
-        'Failed to connect to backend',
-        statusCode: response.statusCode,
-      );
-    } catch (e) {
-      rethrow;
+    if (response.statusCode == 200) {
+      return response.body;
     }
+
+    final data = _client.decodeResponse(response);
+
+    throw _client.apiException(
+      data,
+      'Failed to connect to backend',
+      statusCode: response.statusCode,
+    );
   }
 
   Future<Map<String, dynamic>> register({
