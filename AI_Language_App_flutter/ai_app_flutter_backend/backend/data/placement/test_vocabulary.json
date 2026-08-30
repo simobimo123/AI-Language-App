@@ -1,0 +1,16 @@
+{
+  "de": {
+    "A1": [
+      "Hallo", "Guten Morgen", "Guten Tag", "Guten Abend", "Tschüss", "Danke", "Bitte", "Entschuldigung", "ja", "nein",
+      "ich", "du", "er", "sie", "wir", "ihr", "Sie", "mein", "dein", "sein",
+      "Haus", "Wohnung", "Zimmer", "Tür", "Fenster", "Tisch", "Stuhl", "Bett", "Küche", "Bad",
+      "Mutter", "Vater", "Bruder", "Schwester", "Familie", "Kind", "Freund", "Freundin", "Mann", "Frau",
+      "Name", "Alter", "Stadt", "Land", "Straße", "Schule", "Arbeit", "Büro", "Geschäft", "Bahnhof",
+      "Auto", "Bus", "Zug", "Fahrrad", "Flugzeug", "Ticket", "Weg", "links", "rechts", "geradeaus",
+      "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn",
+      "heute", "morgen", "gestern", "jetzt", "später", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag",
+      "Samstag", "Sonntag", "Essen", "Wasser", "Brot", "Milch", "Kaffee", "Tee", "Apfel", "Banane",
+      "gut", "schlecht", "groß", "klein", "neu", "alt", "schnell", "langsam", "kommen", "gehen"
+    ]
+  }
+}
