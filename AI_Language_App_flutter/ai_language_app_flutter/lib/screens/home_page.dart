@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/home_stats_controller.dart';
 import '../core/language/language_controller.dart';
 import '../core/theme/theme_controller.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api/api_service.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -35,7 +36,6 @@ class _HomePageState extends State<HomePage> {
   late final List<Widget> pages;
 
   int currentIndex = 0;
-  String userName = 'Learner';
 
   @override
   void initState() {
@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
         languageController: widget.languageController,
         onLearningPathPressed: _openLearningPath,
         onWordsPressed: _openWords,
-        onPracticePressed: _viewController.showAiPracticeMessage,
+        onPracticePressed: _openAiPractice,
       ),
       LearningPathPage(
         themeController: widget.themeController,
@@ -84,36 +84,33 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onViewChanged() {
-    if (!mounted) return;
-    setState(() {
-      userName = _viewController.userName;
-    });
+    if (mounted) setState(() {});
   }
 
   void _onLearningLanguageChanged() {
-    if (!mounted) return;
-    _viewController.refresh();
+    if (mounted) _viewController.refresh();
   }
 
-  void _openLearningPath() {
-    setState(() => currentIndex = 1);
-  }
+  void _openLearningPath() => setState(() => currentIndex = 1);
 
-  void _openWords() {
-    setState(() => currentIndex = 2);
-  }
+  void _openWords() => setState(() => currentIndex = 2);
 
-  void onNavigationChanged(int index) {
-    setState(() => currentIndex = index);
+  void onNavigationChanged(int index) => setState(() => currentIndex = index);
+
+  void _openAiPractice() {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.aiConversationComingSoon),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: currentIndex, children: pages),
       bottomNavigationBar: AppBottomNavBar(
         currentIndex: currentIndex,
         onItemSelected: onNavigationChanged,
