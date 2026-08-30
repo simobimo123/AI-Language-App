@@ -9,7 +9,6 @@ from schemas import (
 )
 from models import (
     User,
-    LearningProfile,
 )
 from database import get_db
 from routers.auth import get_current_user
@@ -110,56 +109,6 @@ def normalize_level(
     return normalized
 
 
-def get_or_create_learning_profile(
-    db: Session,
-    user_id: int,
-    language: str,
-    level: str = "A1",
-) -> LearningProfile:
-    """
-    Return the user's profile for a language.
-
-    Important:
-    We never delete an existing profile just because the user
-    changes their current learning language.
-
-    This allows one user to maintain progress in multiple
-    languages.
-
-    Example:
-
-        Arabic -> learning profile
-        English -> learning profile
-        Japanese -> learning profile
-    """
-
-    existing_profile = (
-        db.query(LearningProfile)
-        .filter(
-            LearningProfile.user_id == user_id,
-            LearningProfile.language == language,
-        )
-        .first()
-    )
-
-    if existing_profile is not None:
-        return existing_profile
-
-    profile = LearningProfile(
-        user_id=user_id,
-        language=language,
-        level=level,
-        progress=0.0,
-    )
-
-    db.add(profile)
-
-    # The caller may need the profile ID immediately.
-    db.flush()
-
-    return profile
-
-
 def user_response_dict(
     user: User,
 ) -> dict:
@@ -176,6 +125,14 @@ def user_response_dict(
 # =========================================================
 # Create user
 # =========================================================
+#
+# IMPORTANT:
+#
+# Creating an account must NOT create a LearningProfile.
+#
+# The learning profile is created only after the Placement
+# Test has determined the user's actual level.
+# =========================================================
 
 @router.post("")
 def create_user(
@@ -188,10 +145,6 @@ def create_user(
 
     learning_language = normalize_language(
         user.learning_language
-    )
-
-    learning_level = normalize_level(
-        user.learning_level
     )
 
     # -----------------------------------------------------
@@ -243,25 +196,12 @@ def create_user(
     db.add(new_user)
 
     try:
-        db.flush()
-
         # -------------------------------------------------
-        # Create the initial learning profile.
+        # Create ONLY the user.
         #
-        # This uses the level supplied during registration.
-        #
-        # Placement can later replace this level with the
-        # measured level.
+        # No LearningProfile is created here.
+        # The Placement Test will create it later.
         # -------------------------------------------------
-
-        learning_profile = LearningProfile(
-            user_id=new_user.id,
-            language=learning_language,
-            level=learning_level,
-            progress=0.0,
-        )
-
-        db.add(learning_profile)
 
         db.commit()
 
@@ -281,7 +221,6 @@ def create_user(
     return {
         "message": "User created successfully",
         **user_response_dict(new_user),
-        "learning_level": learning_level,
     }
 
 
@@ -302,6 +241,16 @@ def get_my_profile(
 
 # =========================================================
 # Update current user profile
+# =========================================================
+#
+# This endpoint updates only the User record.
+#
+# IMPORTANT:
+#
+# It must NOT create a LearningProfile.
+#
+# During onboarding the user chooses the languages first,
+# then the Placement Test creates the learning profile.
 # =========================================================
 
 @router.put("/me")
@@ -361,12 +310,10 @@ def update_my_profile(
             detail="Email already registered.",
         )
 
-    old_learning_language = (
-        current_user.learning_language
-    )
-
     # -----------------------------------------------------
-    # Update the user.
+    # Update ONLY the user.
+    #
+    # No LearningProfile is created here.
     # -----------------------------------------------------
 
     current_user.name = (
@@ -384,24 +331,6 @@ def update_my_profile(
     )
 
     try:
-        # -------------------------------------------------
-        # When the user switches to another learning
-        # language, ensure that a profile exists for it.
-        #
-        # We do NOT delete the previous language profile.
-        # -------------------------------------------------
-
-        if (
-            old_learning_language
-            != new_learning_language
-        ):
-            get_or_create_learning_profile(
-                db=db,
-                user_id=current_user.id,
-                language=new_learning_language,
-                level="A1",
-            )
-
         db.commit()
 
     except IntegrityError:
