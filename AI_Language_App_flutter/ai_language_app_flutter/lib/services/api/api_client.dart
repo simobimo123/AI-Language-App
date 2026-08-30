@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:async' as async;
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -87,7 +87,7 @@ class ApiClient {
       }
 
       return response;
-    } on TimeoutException catch (e) {
+    } on async.TimeoutException catch (e) {
       throw TimeoutException(cause: e);
     } on http.ClientException catch (e) {
       throw NetworkException(
