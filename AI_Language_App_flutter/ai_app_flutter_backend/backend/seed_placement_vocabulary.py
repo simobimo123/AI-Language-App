@@ -1,4 +1,6 @@
+import json
 from collections import defaultdict
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
@@ -11,18 +13,6 @@ from models import (
 )
 
 
-# =========================================================
-# Supported learning levels
-# =========================================================
-#
-# Placement vocabulary is derived from the main vocabulary
-# database.
-#
-# Order:
-#
-# PRE_A1 -> A1 -> A2 -> B1 -> B2 -> C1 -> C2
-# =========================================================
-
 LEVELS = [
     "PRE_A1",
     "A1",
@@ -33,48 +23,17 @@ LEVELS = [
     "C2",
 ]
 
+VOCABULARY_BANK_SIZE = 100
 
-# =========================================================
-# Build placement vocabulary from the main vocabulary DB
-# =========================================================
-#
-# The old version of this script imported:
-#
-# from routers.placement_test import VOCABULARY_BANK
-#
-# That variable no longer exists in the current project.
-#
-# Instead of keeping a second vocabulary database, this script
-# now derives the placement vocabulary from:
-#
-# VocabularyEntry
-# +
-# VocabularySense
-#
-# This keeps the placement test synchronized with the main
-# vocabulary system.
-# =========================================================
+DATA_FILE = (
+    Path(__file__).resolve().parent
+    / "data"
+    / "placement"
+    / "test_vocabulary.json"
+)
 
-def get_source_vocabulary(
-    db,
-) -> dict[str, dict[str, set[str]]]:
-    """
-    Return vocabulary grouped as:
 
-    {
-        "en": {
-            "PRE_A1": {"hello", "yes", ...},
-            "A1": {"house", "water", ...},
-            ...
-        },
-        "fr": {
-            ...
-        },
-    }
-
-    Only active entries and active senses are used.
-    """
-
+def get_source_vocabulary(db) -> dict[str, dict[str, set[str]]]:
     statement = (
         select(
             VocabularyEntry.language,
@@ -84,8 +43,7 @@ def get_source_vocabulary(
         )
         .join(
             VocabularySense,
-            VocabularySense.vocabulary_entry_id
-            == VocabularyEntry.id,
+            VocabularySense.vocabulary_entry_id == VocabularyEntry.id,
         )
         .where(
             VocabularyEntry.is_active.is_(True),
@@ -100,17 +58,8 @@ def get_source_vocabulary(
         lambda: defaultdict(set)
     )
 
-    for (
-        language,
-        word,
-        lemma,
-        level,
-    ) in rows:
-
-        if not language:
-            continue
-
-        if not level:
+    for language, word, lemma, level in rows:
+        if not language or not level:
             continue
 
         normalized_language = language.strip().lower()
@@ -119,74 +68,103 @@ def get_source_vocabulary(
         if normalized_level not in LEVELS:
             continue
 
-        # Prefer the displayed word.
-        #
-        # If it is missing, use lemma.
         source_word = word or lemma
-
-        if source_word is None:
-            continue
-
-        source_word = source_word.strip()
-
         if not source_word:
             continue
 
-        vocabulary[
-            normalized_language
-        ][
-            normalized_level
-        ].add(source_word)
+        source_word = source_word.strip()
+        if source_word:
+            vocabulary[normalized_language][normalized_level].add(source_word)
 
     return vocabulary
 
 
-# =========================================================
-# Seed placement vocabulary
-# =========================================================
+def get_file_vocabulary() -> dict[str, dict[str, set[str]]]:
+    """Load explicit placement banks used when the main vocabulary DB is incomplete."""
+    if not DATA_FILE.exists():
+        return {}
+
+    with DATA_FILE.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    result: dict[str, dict[str, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
+
+    if not isinstance(data, dict):
+        return result
+
+    for language, levels in data.items():
+        if not isinstance(levels, dict):
+            continue
+
+        language_code = str(language).strip().lower()
+        if not language_code:
+            continue
+
+        for level, words in levels.items():
+            normalized_level = str(level).strip().upper()
+            if normalized_level not in LEVELS or not isinstance(words, list):
+                continue
+
+            for word in words:
+                if word is None:
+                    continue
+                value = str(word).strip()
+                if value:
+                    result[language_code][normalized_level].add(value)
+
+    return result
+
+
+def merge_vocabulary(
+    source: dict[str, dict[str, set[str]]],
+    fallback: dict[str, dict[str, set[str]]],
+) -> None:
+    """Supplement the database vocabulary with explicit placement banks."""
+    for language, levels in fallback.items():
+        for level, words in levels.items():
+            source[language][level].update(words)
+
 
 def seed_placement_vocabulary():
     db = SessionLocal()
 
     try:
-
-        source_vocabulary = get_source_vocabulary(
-            db
-        )
+        source_vocabulary = get_source_vocabulary(db)
+        file_vocabulary = get_file_vocabulary()
+        merge_vocabulary(source_vocabulary, file_vocabulary)
 
         inserted_count = 0
         skipped_count = 0
+        incomplete: list[str] = []
 
-        # Statistics for the final output.
-        level_counts: dict[
-            str,
-            dict[str, int]
-        ] = defaultdict(
+        level_counts: dict[str, dict[str, int]] = defaultdict(
             lambda: defaultdict(int)
         )
 
-        # -------------------------------------------------
-        # Convert the main vocabulary database into
-        # placement vocabulary rows.
-        # -------------------------------------------------
+        for language, levels in sorted(source_vocabulary.items()):
+            for level in LEVELS:
+                words = sorted(levels.get(level, set()))
+                if not words:
+                    continue
 
-        for language, levels in source_vocabulary.items():
+                # Placement requires a complete 100-word bank.
+                # Do not silently create a smaller bank.
+                if len(words) < VOCABULARY_BANK_SIZE:
+                    incomplete.append(
+                        f"{language}/{level}: {len(words)}/{VOCABULARY_BANK_SIZE}"
+                    )
+                    continue
 
-            for level, words in levels.items():
-
-                for word in sorted(words):
-
-                    normalized_word = word.strip()
-
-                    if not normalized_word:
-                        continue
-
+                # Keep exactly the first 100 deterministic words in the bank.
+                for word in words[:VOCABULARY_BANK_SIZE]:
                     statement = (
                         insert(PlacementVocabulary)
                         .values(
                             language=language,
                             level=level,
-                            word=normalized_word,
+                            word=word,
                             is_active=True,
                         )
                         .on_conflict_do_nothing(
@@ -194,18 +172,10 @@ def seed_placement_vocabulary():
                         )
                     )
 
-                    result = db.execute(
-                        statement
-                    )
-
+                    result = db.execute(statement)
                     if result.rowcount == 1:
                         inserted_count += 1
-                        level_counts[
-                            language
-                        ][
-                            level
-                        ] += 1
-
+                        level_counts[language][level] += 1
                     else:
                         skipped_count += 1
 
@@ -215,79 +185,30 @@ def seed_placement_vocabulary():
         print("==============================================")
         print("Placement vocabulary seeding completed.")
         print("==============================================")
+        print(f"Data file: {DATA_FILE}")
 
-        if not source_vocabulary:
+        for language in sorted(source_vocabulary):
+            print(f"\nLanguage: {language}")
+            for level in LEVELS:
+                count = len(source_vocabulary[language].get(level, set()))
+                if count:
+                    print(f"  {level}: {count} available")
 
-            print(
-                "No active vocabulary with a supported "
-                "CEFR level was found."
-            )
+        if incomplete:
+            print("\nIncomplete banks were skipped:")
+            for item in incomplete:
+                print(f"  - {item}")
 
-            print(
-                "Import vocabulary data first."
-            )
-
-        else:
-
-            for language in sorted(
-                source_vocabulary.keys()
-            ):
-
-                print()
-                print(
-                    f"Language: {language}"
-                )
-
-                for level in LEVELS:
-
-                    count = len(
-                        source_vocabulary[
-                            language
-                        ].get(
-                            level,
-                            set()
-                        )
-                    )
-
-                    inserted_for_level = level_counts[
-                        language
-                    ].get(
-                        level,
-                        0
-                    )
-
-                    if count == 0:
-                        continue
-
-                    print(
-                        f"  {level}: "
-                        f"{count} source words, "
-                        f"{inserted_for_level} inserted"
-                    )
-
-        print()
-        print("----------------------------------------------")
-        print(
-            f"Inserted: {inserted_count}"
-        )
-        print(
-            f"Skipped existing: {skipped_count}"
-        )
+        print("\n----------------------------------------------")
+        print(f"Inserted: {inserted_count}")
+        print(f"Skipped existing: {skipped_count}")
         print("==============================================")
         print()
 
     except Exception:
-
         db.rollback()
-
-        print(
-            "Placement vocabulary seeding failed."
-        )
-
         raise
-
     finally:
-
         db.close()
 
 
