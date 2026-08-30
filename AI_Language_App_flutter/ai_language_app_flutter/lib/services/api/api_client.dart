@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import '../../core/config/app_config.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/storage/storage_service.dart';
 
 class ApiClient {
@@ -18,7 +20,7 @@ class ApiClient {
     final token = await storageService.getToken();
 
     if (token == null || token.isEmpty) {
-      throw Exception('No access token found');
+      throw const ApiException('No access token found');
     }
 
     return token;
@@ -36,44 +38,35 @@ class ApiClient {
     }
   }
 
-  Exception apiException(
+  ApiException apiException(
     dynamic data,
     String fallback, {
     int? statusCode,
   }) {
-    if (data is Map<String, dynamic>) {
+    String message = fallback;
+
+    if (data is Map) {
       final detail = data['detail'];
-
-      if (detail != null && detail.toString().trim().isNotEmpty) {
-        return Exception(detail.toString());
-      }
-
-      final message = data['message'];
-
-      if (message != null && message.toString().trim().isNotEmpty) {
-        return Exception(message.toString());
-      }
-
+      final apiMessage = data['message'];
       final error = data['error'];
 
-      if (error != null && error.toString().trim().isNotEmpty) {
-        return Exception(error.toString());
+      final value = detail ?? apiMessage ?? error;
+
+      if (value != null && value.toString().trim().isNotEmpty) {
+        message = value.toString().trim();
       }
+    } else if (data is String && data.trim().isNotEmpty) {
+      message = data.trim();
     }
 
-    if (data is String && data.trim().isNotEmpty) {
-      return Exception(data.trim());
-    }
-
-    if (statusCode != null) {
-      return Exception('$fallback (HTTP $statusCode)');
-    }
-
-    return Exception(fallback);
+    return ApiException(
+      message,
+      statusCode: statusCode,
+    );
   }
 
-  Future<http.Response> get(
-    String path, {
+  Future<http.Response> _send(
+    Future<http.Response> Function(Map<String, String> headers) request, {
     bool authenticated = false,
     Map<String, String>? headers,
   }) async {
@@ -82,15 +75,42 @@ class ApiClient {
     };
 
     if (authenticated) {
-      requestHeaders['Authorization'] =
-          'Bearer ${await getToken()}';
+      requestHeaders['Authorization'] = 'Bearer ${await getToken()}';
     }
 
-    return http.get(
-      Uri.parse('$baseUrl$path'),
-      headers: requestHeaders.isEmpty
-          ? null
-          : requestHeaders,
+    try {
+      return await request(requestHeaders).timeout(
+        const Duration(seconds: 30),
+      );
+    } on TimeoutException catch (e) {
+      throw TimeoutException(cause: e);
+    } on http.ClientException catch (e) {
+      throw NetworkException(
+        'Unable to connect to the server. Please check your internet connection.',
+        cause: e,
+      );
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw NetworkException(
+        'A network error occurred. Please try again.',
+        cause: e,
+      );
+    }
+  }
+
+  Future<http.Response> get(
+    String path, {
+    bool authenticated = false,
+    Map<String, String>? headers,
+  }) {
+    return _send(
+      (requestHeaders) => http.get(
+        Uri.parse('$baseUrl$path'),
+        headers: requestHeaders.isEmpty ? null : requestHeaders,
+      ),
+      authenticated: authenticated,
+      headers: headers,
     );
   }
 
@@ -99,20 +119,15 @@ class ApiClient {
     dynamic body,
     bool authenticated = false,
     Map<String, String>? headers,
-  }) async {
-    final requestHeaders = <String, String>{
-      ...?headers,
-    };
-
-    if (authenticated) {
-      requestHeaders['Authorization'] =
-          'Bearer ${await getToken()}';
-    }
-
-    return http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: requestHeaders,
-      body: body,
+  }) {
+    return _send(
+      (requestHeaders) => http.post(
+        Uri.parse('$baseUrl$path'),
+        headers: requestHeaders,
+        body: body,
+      ),
+      authenticated: authenticated,
+      headers: headers,
     );
   }
 
@@ -121,20 +136,15 @@ class ApiClient {
     dynamic body,
     bool authenticated = false,
     Map<String, String>? headers,
-  }) async {
-    final requestHeaders = <String, String>{
-      ...?headers,
-    };
-
-    if (authenticated) {
-      requestHeaders['Authorization'] =
-          'Bearer ${await getToken()}';
-    }
-
-    return http.put(
-      Uri.parse('$baseUrl$path'),
-      headers: requestHeaders,
-      body: body,
+  }) {
+    return _send(
+      (requestHeaders) => http.put(
+        Uri.parse('$baseUrl$path'),
+        headers: requestHeaders,
+        body: body,
+      ),
+      authenticated: authenticated,
+      headers: headers,
     );
   }
 
@@ -143,20 +153,15 @@ class ApiClient {
     dynamic body,
     bool authenticated = false,
     Map<String, String>? headers,
-  }) async {
-    final requestHeaders = <String, String>{
-      ...?headers,
-    };
-
-    if (authenticated) {
-      requestHeaders['Authorization'] =
-          'Bearer ${await getToken()}';
-    }
-
-    return http.patch(
-      Uri.parse('$baseUrl$path'),
-      headers: requestHeaders,
-      body: body,
+  }) {
+    return _send(
+      (requestHeaders) => http.patch(
+        Uri.parse('$baseUrl$path'),
+        headers: requestHeaders,
+        body: body,
+      ),
+      authenticated: authenticated,
+      headers: headers,
     );
   }
 
@@ -164,21 +169,14 @@ class ApiClient {
     String path, {
     bool authenticated = false,
     Map<String, String>? headers,
-  }) async {
-    final requestHeaders = <String, String>{
-      ...?headers,
-    };
-
-    if (authenticated) {
-      requestHeaders['Authorization'] =
-          'Bearer ${await getToken()}';
-    }
-
-    return http.delete(
-      Uri.parse('$baseUrl$path'),
-      headers: requestHeaders.isEmpty
-          ? null
-          : requestHeaders,
+  }) {
+    return _send(
+      (requestHeaders) => http.delete(
+        Uri.parse('$baseUrl$path'),
+        headers: requestHeaders.isEmpty ? null : requestHeaders,
+      ),
+      authenticated: authenticated,
+      headers: headers,
     );
   }
 
