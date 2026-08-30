@@ -148,6 +148,7 @@ class ProfileController extends ChangeNotifier {
   Future<void> changeLearningLanguage(BuildContext context, String language) async {
     if (currentLearningLanguageCode == language) return;
     final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.maybeOf(context);
     isChangingLanguage = true;
     notifyListeners();
     try {
@@ -157,21 +158,17 @@ class ProfileController extends ChangeNotifier {
       isChangingLanguage = false;
       learningLanguageController.setLanguage(language);
       notifyListeners();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l10n.learningLanguageChanged(languageName(language, l10n))),
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
+      messenger?.showSnackBar(SnackBar(
+        content: Text(l10n.learningLanguageChanged(languageName(language, l10n))),
+        behavior: SnackBarBehavior.floating,
+      ));
     } catch (e) {
       isChangingLanguage = false;
       notifyListeners();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
+      messenger?.showSnackBar(SnackBar(
+        content: Text(e.toString()),
+        behavior: SnackBarBehavior.floating,
+      ));
     }
   }
 
@@ -198,6 +195,9 @@ class ProfileController extends ChangeNotifier {
       return;
     }
 
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+
     try {
       final profiles = await apiService.getLearningProfiles();
       learningLanguageController.setLanguage(language);
@@ -207,15 +207,14 @@ class ProfileController extends ChangeNotifier {
       currentLearningLevel = profile?['level']?.toString();
       isAddingLanguage = false;
       notifyListeners();
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      messenger?.showSnackBar(SnackBar(
         content: Text(l10n.learningLanguageChanged(languageName(language, l10n))),
         behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
       isAddingLanguage = false;
       notifyListeners();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      messenger?.showSnackBar(SnackBar(
         content: Text(e.toString()),
         behavior: SnackBarBehavior.floating,
       ));
