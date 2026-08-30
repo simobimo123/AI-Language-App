@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:ai_language_app_flutter/core/errors/api_exception.dart';
+
 import '../../models/placement_models.dart';
 import 'api_client.dart';
 
