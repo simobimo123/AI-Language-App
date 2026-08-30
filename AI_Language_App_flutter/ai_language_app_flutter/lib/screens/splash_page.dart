@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../services/api/api_service.dart';
+import '../core/errors/api_exception.dart';
 import '../core/language/language_controller.dart';
 import '../core/storage/storage_service.dart';
 import '../core/theme/theme_controller.dart';
+import '../services/api/api_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
 import 'onboarding_page.dart';
@@ -29,7 +30,6 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-
     checkLogin();
   }
 
@@ -38,57 +38,75 @@ class _SplashPageState extends State<SplashPage> {
 
     if (!mounted) return;
 
-    // ---------------------------------------------------------
-    // No token -> Login
-    // ---------------------------------------------------------
-
     if (token == null || token.isEmpty) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LoginPage(
-            themeController: widget.themeController,
-            languageController: widget.languageController,
-          ),
-        ),
-      );
-
+      _goToLogin();
       return;
     }
-
-    // ---------------------------------------------------------
-    // Token exists -> check onboarding status
-    // ---------------------------------------------------------
 
     try {
       await apiService.getCurrentLearningProfile();
 
       if (!mounted) return;
-
-      // Learning profile exists -> onboarding completed
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(
-            themeController: widget.themeController,
-            languageController: widget.languageController,
-          ),
-        ),
-      );
-    } catch (_) {
+      _goToHome();
+    } on ApiException catch (e) {
       if (!mounted) return;
 
-      // No learning profile yet -> new user
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OnboardingPage(
-            themeController: widget.themeController,
-            languageController: widget.languageController,
-          ),
-        ),
-      );
+      if (e.isUnauthorized) {
+        _goToLogin();
+      } else if (e.isNotFound) {
+        _goToOnboarding();
+      } else {
+        _showStartupError(e);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showStartupError(e);
     }
+  }
+
+  void _goToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LoginPage(
+          themeController: widget.themeController,
+          languageController: widget.languageController,
+        ),
+      ),
+    );
+  }
+
+  void _goToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HomePage(
+          themeController: widget.themeController,
+          languageController: widget.languageController,
+        ),
+      ),
+    );
+  }
+
+  void _goToOnboarding() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OnboardingPage(
+          themeController: widget.themeController,
+          languageController: widget.languageController,
+        ),
+      ),
+    );
+  }
+
+  void _showStartupError(Object error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error.toString()),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
