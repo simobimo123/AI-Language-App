@@ -27,6 +27,7 @@ class PlacementTestController extends ChangeNotifier {
   String? finalLevel;
 
   int get quizAnsweredCount => quizAnswers.length;
+
   bool get canSubmitQuiz =>
       quizQuestions.isNotEmpty &&
       quizAnswers.length == quizQuestions.length &&
@@ -91,24 +92,30 @@ class PlacementTestController extends ChangeNotifier {
         selectedWordIds: selectedWordIds.toList(),
       );
 
+      // If the user knows fewer than 50% of the words at A1,
+      // the result is immediately Pre-A1. There is no lower
+      // confirmation level to test.
       if (!result.passed && result.preliminaryLevel == 'PRE_A1') {
         await finalizeLevel('PRE_A1');
         return;
       }
 
+      // Vocabulary below 50% means the candidate level is the
+      // previous level. Confirm that candidate with the quiz.
       if (!result.passed) {
         await loadQuiz(result.preliminaryLevel);
         return;
       }
 
+      // Vocabulary at or above 50% means the user qualifies for
+      // the next level. The quiz confirms that new level before
+      // the final placement is saved.
       if (result.nextLevel != null) {
-        currentLevel = result.nextLevel!;
-        isEvaluating = false;
-        notifyListeners();
-        await loadWords();
+        await loadQuiz(result.nextLevel!);
         return;
       }
 
+      // C2 has no higher level, so confirm C2 itself.
       await loadQuiz(currentLevel);
     } catch (error) {
       isEvaluating = false;
