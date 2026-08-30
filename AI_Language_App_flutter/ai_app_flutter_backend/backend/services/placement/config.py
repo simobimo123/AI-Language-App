@@ -16,10 +16,11 @@ ALL_LEVELS = [
 # to pass vocabulary screening for a level.
 PASS_THRESHOLD = 50.0
 
-# Each level contains a bank of 100 words.
-# Only 20 random words are presented in each placement test.
+# Each level must have a bank of 100 active words.
+# The placement test randomly presents only 20 words
+# from that bank for each attempt.
 VOCABULARY_BANK_SIZE = 100
-WORDS_PER_TEST = 20
+WORDS_PER_LEVEL = 20
 
 QUIZ_QUESTIONS_PER_TEST = 10
 QUIZ_PASS_THRESHOLD = 50.0
