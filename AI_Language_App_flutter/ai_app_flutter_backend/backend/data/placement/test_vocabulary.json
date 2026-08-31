@@ -1,16 +1,1286 @@
 {
-  "de": {
-    "A1": [
-      "Hallo", "Guten Morgen", "Guten Tag", "Guten Abend", "Tschüss", "Danke", "Bitte", "Entschuldigung", "ja", "nein",
-      "ich", "du", "er", "sie", "wir", "ihr", "Sie", "mein", "dein", "sein",
-      "Haus", "Wohnung", "Zimmer", "Tür", "Fenster", "Tisch", "Stuhl", "Bett", "Küche", "Bad",
-      "Mutter", "Vater", "Bruder", "Schwester", "Familie", "Kind", "Freund", "Freundin", "Mann", "Frau",
-      "Name", "Alter", "Stadt", "Land", "Straße", "Schule", "Arbeit", "Büro", "Geschäft", "Bahnhof",
-      "Auto", "Bus", "Zug", "Fahrrad", "Flugzeug", "Ticket", "Weg", "links", "rechts", "geradeaus",
-      "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn",
-      "heute", "morgen", "gestern", "jetzt", "später", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag",
-      "Samstag", "Sonntag", "Essen", "Wasser", "Brot", "Milch", "Kaffee", "Tee", "Apfel", "Banane",
-      "gut", "schlecht", "groß", "klein", "neu", "alt", "schnell", "langsam", "kommen", "gehen"
-    ]
-  }
+"de": {
+"A1": [
+  "Arzt","Arbeit","Auto","Bahnhof","Bank","Baum","Bett","Bild","Buch","Café",
+  "Computer","Dorf","Ei","Eltern","Ende","Fahrrad","Fenster","Frage","Garten","Geld",
+  "Geschäft","Glück","Hand","Haus","Hund","Jahr","Kaffee","Karte","Katze","kaufen",
+  "Küche","Land","Lampe","Leben","Lied","Leute","Markt","Meer","Milch","Minute",
+  "Monat","Musik","Nummer","Ort","Papier","Park","Problem","Preis","Reise","Schule",
+  "Schuh","Straße","Stadt","Stuhl","Stunde","Tasche","Telefon","Tisch","Tür","Uhr",
+  "Urlaub","Vater","Vogel","Woche","Wohnung","Wort","Zeit","Zug","Zimmer","Apfel",
+  "Banane","Birne","Orange","Kartoffel","Tomate","Fleisch","Fisch","Käse","Reis","Saft",
+  "Wasser","Flasche","Teller","Messer","Löffel","Gabel","Sohn","Tochter","Bad","Schlafzimmer",
+  "Boden","Wand","Bus","Flughafen","Koffer","Hotel","Frühstück","Mittagessen","Abendessen","Tee"
+],
+
+"A2": [
+  "Abendessen","Adresse","Alltag","Angebot","Antwort","Aufgabe","Ausflug","Bahnhofsbahnhof","Beziehung","Beruf",
+  "Besprechung","Besuch","Bewegung","Brief","Büro","Chance","Chef","Datum","Deutsch","Einkauf",
+  "Einladung","Erfahrung","Ferien","Fehler","Film","Firma","Freizeit","Frühstück","Geburtstag","Gesundheit",
+  "Gespräch","Getränk","Geschichte","Hilfe","Hotel","Idee","Information","Internet","Interesse","Kleidung",
+  "Kunde","Laden","Meinung","Nachricht","Nachbar","Nähe","Person","Plan","Platz","Polizei",
+  "Post","Problem","Prüfung","Rezept","Restaurant","Richtung","Sache","Satz","Urlaub","Verein",
+  "Verkäufer","Verkehr","Wohnung","Wetter","Wochenende","Zeitung","Ziel","Zukunft","Anfang","Angst",
+  "Arztpraxis","Ausbildung","Bahnhofshaltestelle","Bewerbung","Einladungskosten","Abfahrt","Ankunft","Reiseplan","Fahrkarte","Flughafen",
+  "Unterkunft","Zimmerreservierung","Sehenswürdigkeit","Stadtzentrum","Innenstadt","Vorort","Umgebung","Entfernung","Kreuzung","Brücke",
+  "Haltestelle","Buslinie","Fahrplan","Wetterbericht","Temperatur","Regen","Schnee","Sonne","Wolke","Wind"
+],
+
+"B1": [
+  "Absicht","Abteilung","Abschluss","Änderung","Ankunft","Anwendung","Arbeitgeber","Arbeitnehmer","Ausbildung","Bedeutung",
+  "Bedingung","Bereich","Bericht","Entscheidung","Entwicklung","Erfolg","Ergebnis","Erklärung","Möglichkeit","Erfahrung",
+  "Fähigkeit","Forschung","Fortschritt","Gesellschaft","Gewohnheit","Grund","Haltung","Herausforderung","Inhalt","Kenntnis",
+  "Kontakt","Kultur","Leistung","Lösung","Meinung","Mittelpunkt","Organisation","Persönlichkeit","Pflicht","Politik",
+  "Produktion","Projekt","Qualität","Realität","Regel","Sicherheit","Situation","Sprache","Studium","Teilnehmer",
+  "Thema","Umwelt","Verantwortung","Vergleich","Vorteil","Vereinbarung","Verhalten","Verhältnis","Vorbereitung","Vorstellung",
+  "Voraussetzung","Wirkung","Wirtschaft","Wissenschaft","Zusammenarbeit","Zusammenhang","Zugang","Zielgruppe","Bewerbungsgespräch","Dienstleistung",
+  "Einkommen","Entscheidungsspielraum","Einfluss","Empfehlung","Erinnerung","Genehmigung","Anmeldung","Antrag","Arbeitsvertrag","Gehalt",
+  "Urlaubstage","Arbeitszeit","Arbeitsplatz","Kollege","Kollegin","Präsentation","Frist","Diskussion","Vorschlag","Beispiel",
+  "Kommunikation","Unterricht","Universität","Veränderung","Verbesserung","Planung","Durchführung","Nachrichtensystem","Zuständigkeit",
+"Zuverlässigkeit"
+],
+
+"B2": [
+  "Abhängigkeit","Anerkennung","Anspruch","Auffassung","Auswirkung","Befragung","Beteiligung","Betrachtung","Beweis","Charakter",
+  "Darstellung","Durchführung","Eigenschaft","Einschränkung","Einstellung","Einfluss","Entstehung","Erkenntnis","Ermittlung","Erscheinung",
+  "Erweiterung","Forderung","Förderung","Grundlage","Herausforderung","Zusammenhang","Herstellung","Herkunft","Identität","Interpretation",
+  "Investition","Kritik","Leistung","Maßnahme","Motivation","Nachhaltigkeit","Nachfrage","Nachweis","Notwendigkeit","Perspektive",
+  "Prävention","Reaktion","Reform","Region","Ressource","Rücksicht","Schwierigkeit","Selbstständigkeit","Stellung","Strategie",
+  "Struktur","Tendenz","Umsetzung","Untersuchung","Unterschied","Ursache","Verhandlung","Voraussetzung","Wahrnehmung","Wettbewerb",
+  "Widerspruch","Zusammenarbeit","Zuverlässigkeit","Zweck","Auswertung","Belastung","Beschwerde","Analyse","Argumentation","Behauptung",
+  "Bewertung","Betrachtungsweise","Datenbasis","Definition","Diskussion","Erkenntnisentwicklung","Einflussfaktor","Ergebnisdarstellung","Forschungsfrage","Forschungsergebnis",
+  "Gegenstand","Informationsquelle","Kriterium","Leitbild","Methode","Modell","Nachteil","Perspektivwechsel","Problemstellung","Prozess",
+  "Rahmenbedingung","Standpunkt","Studie","Theorie","Überprüfung","Verfahren","Vorgehensweise","Wirkungsweise","Zielsetzung","Akzeptanz"
+],
+
+"C1": [
+  "Abgrenzung","Abwägung","Annahme","Anforderung","Argumentation","Ausarbeitung","Auslegung","Befugnis","Begründung","Berücksichtigung",
+  "Bewusstsein","Differenzierung","Einordnung","Einschätzung","Einsicht","Entschädigung","Entschlossenheit","Erfordernis","Erörterung","Etablierung",
+  "Fachkenntnis","Fehlinterpretation","Fragestellung","Gegenstand","Gegebenheit","Gewährleistung","Gleichgewicht","Glaubwürdigkeit","Herangehensweise","Hinterfragung",
+  "Implikation","Infragestellung","Integration","Kohärenz","Konsequenz","Kontroverse","Legitimität","Methodik","Nachhaltigkeit","Neigung",
+  "Nuance","Offenlegung","Optimierung","Präzision","Priorität","Problematik","Prognose","Schlussfolgerung","Sensibilität","Spezialisierung",
+  "Stellungnahme","Substanz","Synthese","Tragweite","Transparenz","Überzeugung","Verbindlichkeit","Verflechtung","Vielschichtigkeit","Voraussetzung",
+  "Widerlegung","Zielsetzung","Zugeständnis","Abhandlung","Abweichung","Anhaltspunkt","Anordnung","Anspruchsberechtigung","Argumentationslinie","Ausführung",
+  "Ausmaß","Befund","Begebenheit","Beleg","Beurteilungskriterium","Diskurs","Einbettung","Einspruch","Entfaltung","Erfassung",
+  "Erwägung","Exaktheit","Fachbereich","Gegenposition","Geltungsbereich","Gesetzgebung","Handlungsoption","Hervorhebung","Hypothese","Identifizierung",
+  "Konsolidierung","Kontext","Koordination","Korrelation","Leitfrage","Maßstab","Nachvollziehbarkeit","Objektivität","Priorisierung","Rechenschaft"
+],
+
+"C2": [
+  "Abstraktion","Ambiguität","Anfechtung","Angemessenheit","Annäherung","Antizipation","Auseinandersetzung","Autonomie","Befangenheit","Befürwortung",
+  "Beeinträchtigung","Beurteilung","Differenzierung","Diskrepanz","Disposition","Evidenz","Extrapolation","Falsifizierung","Fragilität","Gegenargument",
+  "Gegenüberstellung","Generalisierung","Grundsatz","Hypothese","Implikation","Inkonsistenz","Kausalität","Komplexität","Konzeption","Konsens",
+  "Konstellation","Kontinuität","Legitimation","Marginalisierung","Mehrdeutigkeit","Metaebene","Methodologie","Paradigma","Plausibilität","Präzedenzfall",
+  "Problematisierung","Relevanz","Reproduktion","Resilienz","Restriktion","Revision","Sachverhalt","Schlussfolgerung","Spektrum","Spezifikation",
+  "Subjektivität","Synthese","Systematik","Terminologie","Transfer","Transformation","Unvereinbarkeit","Validität","Verallgemeinerung","Verschränkung",
+  "Widersprüchlichkeit","Zielorientierung","Zweckmäßigkeit","Zwangsläufigkeit","Abhängigkeitserklärung","Abstraktionsgrad","Akzentuierung","Ambivalenz","Analogie","Anfechtbarkeit",
+  "Angriffsfläche","Anschlussfähigkeit","Argumentationsstruktur","Ausdifferenzierung","Begründungszusammenhang","Beweisführung","Begrifflichkeit","Bezeichnungsweise","Diskursanalyse","Erkenntnistheorie",
+  "Ermessensspielraum","Exemplarität","Fokussierung","Generalisierbarkeit","Gegenstandsbereich","Grundannahme","Handlungsmaxime","Herleitung","Hypothesenbildung","Interpretationsspielraum",
+  "Kausalzusammenhang","Kohärenzproblem","Kompatibilität","Kontradiktion","Konvergenz","Limitierung","Metaanalyse","Methodenkritik","Nachweisbarkeit","Normativität"
+]
+},
+"en": {
+  "A1": [
+    "apple","banana","orange","pear","potato","tomato","meat","fish","cheese","rice",
+    "juice","milk","coffee","tea","bottle","plate","knife","spoon","fork","breakfast",
+    "lunch","dinner","bed","bedroom","bathroom","floor","wall","window","door","table",
+    "chair","garden","tree","flower","dog","cat","bird","horse","car","bus",
+    "train","airport","station","hotel","ticket","bag","suitcase","street","city","village",
+    "country","shop","market","bank","hospital","doctor","office","computer","phone","book",
+    "picture","letter","paper","money","price","question","answer","problem","idea","work",
+    "job","student","class","lesson","language","music","film","game","sport","weather",
+    "rain","snow","sun","cloud","wind","summer","winter","spring","autumn","weekend",
+    "week","month","year","hour","minute","time","birthday","holiday","family","home"
+  ],
+
+  "A2": [
+    "address","advice","agreement","appointment","area","article","attention","background","behavior","building",
+    "business","chance","change","choice","conversation","customer","decision","difference","direction","education",
+    "email","event","experience","explanation","feeling","future","gift","health","history","information",
+    "interest","internet","invitation","journey","knowledge","letter","meeting","message","neighbor","news",
+    "opinion","order","plan","place","police","practice","preparation","reason","recipe","restaurant",
+    "result","room","service","shopping","sign","story","subject","success","travel","trip",
+    "university","vacation","vehicle","visit","weather","weekend","workplace","world","accident","activity",
+    "adventure","airport","arrival","departure","entrance","exit","map","road","bridge","crossing",
+    "bus","train","station","passenger","driver","flight","hotel","reservation","tourist","museum",
+    "park","beach","mountain","river","lake","forest","island","center","corner","square"
+  ],
+
+  "B1": [
+  "ability","absence","access","achievement","advantage","advice","agreement","application","argument","arrival",
+  "attitude","benefit","career","challenge","communication","community","comparison","competition","condition","confidence",
+  "connection","contact","culture","customer","development","difference","discussion","education","effect","employment",
+  "environment","event","experience","factor","feature","freedom","government","growth","habit","health",
+  "improvement","industry","influence","information","knowledge","language","leadership","management","method","mistake",
+  "opportunity","organization","participant","performance","permission","personality","population","position","possibility","presentation",
+  "process","product","progress","project","quality","relationship","research","responsibility","result","risk",
+  "role","safety","service","society","solution","source","strategy","success","support","technology",
+  "tradition","training","transport","treatment","understanding","value","variety","victory","volunteer","waste",
+  "wealth","website","appointment","decision","recommendation","requirement","schedule","membership","workplace","workforce"
+],
+
+  "B2": [
+    "accessibility","accountability","analysis","assumption","awareness","barrier","capacity","circumstance","consequence","consideration",
+    "contribution","controversy","criteria","debate","decline","definition","demand","demonstration","distribution","diversity",
+    "economy","efficiency","emphasis","establishment","evaluation","evidence","expansion","explanation","failure","framework",
+    "generation","guideline","impact","implementation","implication","independence","indicator","innovation","interpretation","investment",
+    "limitation","majority","minority","motivation","objective","observation","outcome","perspective","policy","priority",
+    "procedure","production","profession","proportion","proposal","recognition","reduction","reform","regulation","reputation",
+    "requirement","resource","response","restriction","revenue","selection","significance","standard","statement","structure",
+    "substance","suggestion","supply","survey","tendency","theory","threat","trend","variation","version",
+    "weakness","workforce","workload","analysis","argument","assessment","comparison","conclusion","context","discussion",
+    "investigation","measurement","prediction","principle","reference","relevance","strategy","technique","validity","viewpoint","credibility"
+  ],
+
+  "C1": [
+    "abstraction","accuracy","acknowledgment","adaptation","advocacy","ambiguity","anticipation","appraisal","articulation","assertion",
+    "assumption","attribution","coherence","collaboration","compensation","competence","complexity","compliance","conception","concession",
+    "confidentiality","configuration","confrontation","consensus","constraint","consultation","contradiction","coordination","credibility","criticism",
+    "deduction","deliberation","distinction","documentation","elaboration","emergence","empowerment","enforcement","enhancement","equivalence",
+    "examination","exception","exclusion","exposure","formulation","foundation","fulfillment","hierarchy","hypothesis","identification",
+    "ideology","illustration","incentive","inclination","inclusion","infrastructure","insight","integration","intervention","justification",
+    "legislation","legitimacy","likelihood","maintenance","mechanism","methodology","modification","negotiation","notion","obligation",
+    "optimization","orientation","paradigm","participation","precision","presumption","proposition","rationale","reconciliation","refinement",
+    "relevance","reliability","representation","resolution","restraint","scrutiny","specification","substitution","sustainability","transparency",
+    "uncertainty","understanding","validation","verification","vulnerability","interpretation","prioritization","generalization","differentiation","implication"
+  ],
+
+  "C2": [
+    "abstraction","ambiguity","analogous","antithesis","arbitrary","artifice","autonomy","axiom","causality","circumstantial",
+    "conjecture","connotation","contradiction","convergence","corollary","deconstruction","deduction","dialectic","discrepancy","discourse",
+    "disposition","divergence","epistemology","equilibrium","extrapolation","fallacy","falsification","formulation","generalization","hermeneutics",
+    "hypothetical","ideological","implication","inconsistency","indeterminacy","inference","interdependence","intricacy","juxtaposition","legitimacy",
+    "metaphor","methodological","multidimensional","nuance","objectivity","ontological","paradigm","paradox","plausibility","precedent",
+    "presupposition","proposition","rationality","reconciliation","reconstruction","refutation","relativism","representation","retrospective","rigor",
+    "semantics","specification","subjectivity","substantive","synthesis","systematic","taxonomy","terminology","theoretical","transcendence",
+    "transformation","unambiguity","underlying","universality","validity","verifiability","conceptualization","contextualization","counterargument","deconstruction",
+    "differentiation","discursive","epistemological","explanatory","generalizability","interpretive","interdisciplinary","metacognition","methodology","normative",
+    "ontological","operationalization","phenomenon","problematization","reconceptualization","self-reflection","subsequent","transcendent","unprecedented","worldview","counterfactual","incommensurability"
+  ]
+},
+ "es": {
+    "A1": ["casa", "agua", "amigo", "comer", "sol", "tiempo", "libro", "grande", "siempre", "trabajar",
+    "familia", "ciudad", "nombre", "decir", "pequeño", "perro", "gato", "madre", "padre", "hijo",
+    "hija", "hermano", "hermana", "niño", "niña", "día", "noche", "mañana", "tarde", "hoy",
+    "ayer", "gracias", "hola", "adiós", "pan", "leche", "manzana", "mesa", "silla", "puerta",
+    "ventana", "auto", "tren", "calle", "plaza", "parque", "escuela", "profesor", "estudiante", "año",
+    "mes", "semana", "hora", "minuto", "mucho", "poco", "bueno", "malo", "nuevo", "viejo",
+    "feliz", "triste", "estar", "ser", "tener", "hacer", "ir", "venir", "ver", "oír",
+    "hablar", "escribir", "leer", "comprar", "pagar", "querer", "poder", "necesitar", "saber", "conocer",
+    "dar", "tomar", "poner", "llevar", "salir", "entrar", "abrir", "cerrar", "buscar", "mirar",
+    "pensar", "sentir", "gustar", "cantar", "bailar", "jugar", "dormir", "beber", "camisa", "zapato"],
+
+
+    "A2": ["viajar", "aprender", "olvidar", "salud", "película", "explicar", "cambiar", "lugar", "encontrar", "decidir",
+    "peligro", "entender", "recomendar", "empresa", "compartir", "cocina", "jardín", "viaje", "costumbre", "equipo",
+    "respuesta", "pregunta", "diferente", "importante", "difícil", "fácil", "suficiente", "temprano", "después", "antes",
+    "cerca", "lejos", "encima", "debajo", "izquierda", "derecha", "intentar", "lograr", "empezar", "terminar",
+    "continuar", "perder", "ganar", "enviar", "recibir", "vender", "alquilar", "cocinar", "arreglar", "romper",
+    "llamar", "preguntar", "responder", "recordar", "seguir", "cruzar", "doblar", "llegar", "correr", "caminar",
+    "nadar", "volar", "conducir", "subir", "bajar", "vestir", "lavar", "limpiar", "descansar", "despertar",
+    "acostarse", "ducharse", "peinarse", "cenar", "desayunar", "precio", "dinero", "billetera", "tarjeta", "descuento",
+    "oferta", "mercado", "tienda", "ropa", "sombrero", "abrigo", "pantalón", "comida", "almuerzo", "cena",
+    "postre", "fruta", "verdura", "carne", "pescado", "bebida", "estación", "pueblo", "campo", "playa"],
+
+
+    "B1": ["desarrollar", "expresar", "solución", "contexto", "influir", "mantener", "habilidad", "requerir", "eventualmente", "ventaja",
+    "amenaza", "justificar", "asumir", "proyecto", "proponer", "fomentar", "actitud", "calidad", "cantidad", "ambiente",
+    "posibilidad", "consecuencia", "estrategia", "estructura", "función", "proceso", "resultado", "beneficio", "inconveniente", "opción",
+    "objetivo", "meta", "recurso", "sistema", "técnica", "tendencia", "variación", "alternativa", "aspecto", "capacidad",
+    "característica", "condición", "conflicto", "experiencia", "impacto", "necesidad", "opinión", "perspectiva", "principio", "prioridad",
+    "relación", "riesgo", "seguridad", "situación", "desventaja", "acuerdo", "compromiso", "debate", "discusión", "efecto",
+    "esfuerzo", "progreso", "propuesta", "recomendación", "responsabilidad", "sugerencia", "adquirir", "adaptar", "analizar", "comparar",
+    "considerar", "contribuir", "crear", "definir", "demostrar", "describir", "diseñar", "evaluar", "examinar", "identificar",
+    "implementar", "mejorar", "organizar", "planificar", "promover", "proteger", "reducir", "resolver", "transformar", "valorar",
+    "calificar", "clasificar", "confirmar", "contrastar", "determinar", "establecer", "garantizar", "integrar", "interpretar", "investigar"],
+
+
+    "B2": ["imprescindible", "desafío", "argumentar", "sostenible", "coherente", "desempeñar", "repercusión", "criterio", "matiz", "trascendencia",
+    "abordar", "restringir", "predominar", "acelerar", "acumular", "adecuar", "adentrarse", "afianzar", "agilizar", "alentar",
+    "alterar", "amortiguar", "anticipar", "apaciguar", "apelar", "aportar", "apreciar", "articular", "aspirar", "atenuar",
+    "atribuir", "augurar", "avalar", "matizar", "cohesionar", "coincidir", "colisionar", "compensar", "compaginar", "concebir",
+    "conciliar", "concretar", "condicionar", "consolidar", "constatar", "contemplar", "cuestionar", "deducir", "delimitar", "denotar",
+    "derivar", "desacreditar", "desencadenar", "desestimar", "desglosar", "desmantelar", "desmentir", "desplazar", "difundir", "dilucidar",
+    "dinamizar", "disipar", "distorsionar", "diversificar", "divulgar", "elaborar", "eludir", "emanar", "emerger", "emitir",
+    "enfatizar", "enmarcar", "enriquecer", "entrañar", "equiparar", "esbozar", "especificar", "especular", "estipular", "estructurar",
+    "evidenciar", "eximir", "exponer", "extrapolar", "favorecer", "fluctuar", "formular", "fundamentar", "faccionar", "focalizar",
+    "frenar", "fusionar", "generalizar", "hipotecar", "ilustrar", "imputar", "incentivar", "incurrir", "inducir", "inferir"],
+
+
+    "C1": ["efímero", "ineludible", "intrínseco", "exacerbar", "paulatino", "soslayar", "sesgo", "paradigma", "desentrañar", "discrepancia",
+    "prolijo", "subyacente", "menoscabar", "premisa", "incoherencia", "verosímil", "reivindicar", "ambigüedad", "aberración", "acendrado",
+    "aseverar", "atávico", "atenuante", "beligerancia", "celeridad", "circunscribir", "coercitivo", "conjetura", "conmensurable", "connotación",
+    "consustancial", "contingencia", "contraproducente", "corroborar", "cosmovisión", "decrepitud", "disyuntiva", "eclosión", "elocuencia", "empírico",
+    "encrucijada", "enigma", "entelequia", "equiparable", "erogación", "escéptico", "eufemismo", "exégesis", "exiguo", "fehaciente",
+    "fidedigno", "hegemónico", "idoneidad", "imponderable", "imperante", "inalienable", "inalienabilidad", "inarticulado", "inaudito", "inerte",
+    "inherente", "inmanente", "inmutable", "inescrutable", "insondable", "intangible", "intrincado", "irrefutable", "disonancia", "lacónico",
+    "latente", "medular", "meticuloso", "mitigación", "ostensible", "paradoja", "perentorio", "permear", "pernicioso", "plausibilidad",
+    "preponderante", "prerrogativa", "presunción", "prolífico", "proscrito", "quimérico", "recíproco", "redundancia", "reestructuración", "refractario",
+    "soslayo", "tácito", "tangible", "tangencial", "vehemencia", "veracidad", "vituperio", "volubilidad", "yuxtaposición", "anacronismo"],
+
+
+    "C2": ["inefable", "idiosincrasia", "simbiosis", "ecuanimidad", "ubicuidad", "aquerenciarse", "oropel", "perorata", "pusilánime", "sempiterno",
+    "impunemente", "verborrea", "quimera", "inextricable", "circunloquio", "deleznable", "melifluo", "execrable", "abrogar", "abstruso",
+    "abulia", "acendrar", "acritud", "adocenado", "advenedizo", "alevosía", "anatema", "anfractuoso", "apócrifo", "apotegma",
+    "apoteosis", "aquiescencia", "arcano", "argucia", "asertividad", "ataraxia", "atribular", "baladí", "baratillo", "barahúnda",
+    "basamento", "bizantino", "cacofonía", "casuística", "catarsis", "chovinismo", "connatural", "consuetudinario", "denuesto", "desacato",
+    "desembarazarse", "diatriba", "dicotomía", "disquisición", "eubolia", "expiación", "fausto", "flemático", "gnoseología", "hermenéutica",
+    "ignominia", "inmarcesible", "inane", "inopia", "iniquidad", "insidia", "intempestivo", "introito", "invectiva", "lapidario",
+    "loquacidad", "mecenazgo", "mefítico", "mesmerismo", "nefasto", "neófito", "nihilismo", "óbice", "obnubilar", "obsecuente",
+    "ominoso", "onírico", "ontología", "ostentación", "palíndromo", "panspermia", "paracronismo", "parsimonia", "petulancia", "pusilanimidad",
+    "reconditez", "resiliencia", "sapientísimo", "solipsismo", "tautología", "tergiversación", "vaticinio", "vorágine", "vorticismo", "zeitgeist"]
+  },
+
+  "fr": {
+    
+  "A1": [
+    "maison", "eau", "ami", "manger", "soleil", "temps", "livre", "grand", "toujours", "travailler",
+    "famille", "ville", "nom", "dire", "petit", "chien", "chat", "mère", "père", "fils",
+    "fille", "frère", "sœur", "enfant", "jour", "nuit", "matin", "soir", "aujourd'hui", "hier",
+    "merci", "bonjour", "pain", "lait", "pomme", "table", "chaise", "porte", "fenêtre", "voiture",
+    "train", "rue", "place", "parc", "école", "professeur", "étudiant", "an", "mois", "semaine",
+    "heure", "minute", "beaucoup", "peu", "bon", "mauvais", "nouveau", "vieux", "heureux", "triste",
+    "être", "avoir", "faire", "aller", "venir", "voir", "entendre", "parler", "écrire", "lire",
+    "acheter", "payer", "vouloir", "pouvoir", "devoir", "savoir", "connaître", "donner", "prendre", "mettre",
+    "porter", "sortir", "entrer", "ouvrir", "fermer", "chercher", "regarder", "penser", "aimer", "chanter",
+    "danser", "jouer", "dormir", "boire", "chemise", "chaussure", "lit", "sac", "argent", "route"
+  ],
+  "A2": [
+    "voyager", "apprendre", "oublier", "santé", "film", "expliquer", "changer", "lieu", "trouver", "décider",
+    "danger", "comprendre", "recommander", "entreprise", "partager", "cuisine", "jardin", "voyage", "habitude", "équipe",
+    "réponse", "question", "différent", "important", "difficile", "facile", "suffisant", "tôt", "tard", "avant",
+    "près", "loin", "dessus", "dessous", "gauche", "droite", "essayer", "réussir", "commencer", "finir",
+    "continuer", "perdre", "gagner", "envoyer", "recevoir", "vendre", "louer", "cuisiner", "réparer", "casser",
+    "appeler", "demander", "répondre", "rappeler", "suivre", "traverser", "tourner", "arriver", "courir", "marcher",
+    "nager", "voler", "conduire", "monter", "descendre", "habiller", "laver", "nettoyer", "reposer", "réveiller",
+    "coucher", "doucher", "peigner", "dîner", "déjeuner", "prix", "portefeuille", "carte", "réduction", "offre",
+    "marché", "magasin", "vêtement", "chapeau", "manteau", "pantalon", "nourriture", "repas", "dessert", "fruit",
+    "légume", "viande", "poisson", "boisson", "gare", "village", "campagne", "plage", "hôtel", "billet"
+  ],
+  "B1": [
+    "développer", "exprimer", "solution", "contexte", "influencer", "maintenir", "compétence", "exiger", "finalement", "avantage",
+    "menace", "justifier", "assumer", "projet", "proposer", "encourager", "attitude", "qualité", "quantité", "environnement",
+    "possibilité", "conséquence", "stratégie", "structure", "fonction", "processus", "résultat", "bénéfice", "inconvénient", "option",
+    "objectif", "but", "ressource", "système", "technique", "tendance", "variation", "alternative", "aspect", "capacité",
+    "caractéristique", "condition", "conflit", "expérience", "impact", "besoin", "opinion", "perspective", "principe", "priorité",
+    "relation", "risque", "sécurité", "situation", "désavantage", "accord", "engagement", "débat", "discussion", "effet",
+    "effort", "progrès", "proposition", "recommandation", "responsabilité", "suggestion", "acquérir", "adapter", "analyser", "comparer",
+    "considérer", "contribuer", "créer", "définir", "démontrer", "décrire", "concevoir", "évaluer", "examiner", "identifier",
+    "appliquer", "améliorer", "organiser", "planifier", "promouvoir", "protéger", "réduire", "résoudre", "transformer", "valoriser",
+    "qualifier", "classer", "confirmer", "contraster", "déterminer", "établir", "garantir", "intégrer", "interpréter", "rechercher"
+  ],
+  "B2": [
+    "indispensable", "défi", "argumenter", "durable", "cohérent", "exercer", "répercussion", "critère", "nuance", "portée",
+    "aborder", "restreindre", "prédominer", "accélérer", "accumuler", "approfondir", "consolider", "faciliter", "inciter", "modifier",
+    "atténuer", "anticiper", "apaiser", "solliciter", "apporter", "apprécier", "articuler", "aspirer", "adoucir", "attribuer",
+    "prédire", "soutenir", "nuancer", "unir", "coïncider", "heurter", "compenser", "concilier", "accorder", "concrétiser",
+    "conditionner", "renforcer", "constater", "contempler", "contester", "déduire", "délimiter", "désigner", "découler", "discréditer",
+    "déclencher", "rejeter", "détailler", "démanteler", "démentir", "déplacer", "diffuser", "élucider", "dynamiser", "dissiper",
+    "déformer", "diversifier", "divulguer", "élaborer", "éluder", "émaner", "émerger", "émettre", "accentuer", "encadrer",
+    "enrichir", "impliquer", "égaler", "esquisser", "spécifier", "spéculer", "stipuler", "structurer", "souligner", "exempter",
+    "exposer", "extrapoler", "favoriser", "fluctuer", "formuler", "fonder", "diviser", "cibler", "freiner", "fusionner",
+    "généraliser", "compromettre", "illustrer", "imputer", "encourir", "induire", "inférer", "simuler", "subir", "transmettre"
+  ],
+  "C1": [
+    "éphémère", "inéluctable", "intrinsèque", "exacerber", "graduel", "esquiver", "biais", "paradigme", "déchiffrer", "divergence",
+    "minutieux", "sous-jacent", "altérer", "prémisse", "incohérence", "vraisemblable", "revendiquer", "ambiguïté", "aberration", "épuré",
+    "asséner", "atavique", "atténuant", "belligérance", "célérité", "circonscrire", "coercitif", "conjecture", "commensurable", "connotation",
+    "consubstantiel", "contingence", "contre-productif", "corroborer", "décrépitude", "dilemme", "éclosion", "éloquence", "empirique", "carrefour",
+    "énigme", "entéléchie", "équivalant", "dépense", "sceptique", "euphémisme", "exégèse", "exigu", "irréfutable", "probant",
+    "hégémonique", "adéquation", "impondérable", "prévalant", "inaliénable", "inaliénabilité", "inarticulé", "inouï", "inerte", "inhérent",
+    "immanent", "immuable", "impénétrable", "insondable", "intangible", "intriqué", "incontestable", "dissonance", "laconique", "latent",
+    "névralgique", "méticuleux", "atténuation", "ostensible", "paradoxe", "péremptoire", "imprégner", "pernicieux", "plausibilité", "préponderant",
+    "prérogative", "présomption", "prolifique", "proscrit", "chimérique", "réciproque", "redondance", "restructuration", "réfractaire", "détournement",
+    "tacite", "tangible", "tangentiel", "véhémence", "véracité", "blâme", "versatilité", "juxtaposition", "anachronisme", "obsolescence"
+  ],
+  "C2": [
+    "ineffable", "idiosyncrasie", "symbiose", "équanimité", "ubiquité", "accoutumance", "oripeaux", "péroraison", "pusillanime", "sempiternel",
+    "impunément", "verbiage", "chimère", "inextricable", "circonlocution", "abject", "melliflu", "exécrable", "abroger", "abstrus",
+    "aboulie", "épurer", "acrimonie", "suranné", "parvenu", "félonie", "anathème", "anfractueux", "apocryphe", "apophtegme",
+    "apothéose", "acquiescement", "arcane", "subterfuge", "assertivité", "ataraxie", "affliger", "futilité", "tintamarre", "soubassement",
+    "byzantin", "cacophonie", "casuistique", "catharsis", "chauvinisme", "inné", "coutumier", "invective", "outrage", "affranchissement",
+    "diatribe", "dichotomie", "disquisition", "sagacité", "expiation", "faste", "flegmatique", "gnoséologie", "herméneutique", "ignominie",
+    "impérissable", "inanité", "indigence", "iniquité", "perfidie", "intempestif", "prologue", "réquisitoire", "lapidaire", "loquacité",
+    "mécénat", "mephitique", "mesmérisme", "funeste", "néophyte", "nihilisme", "écueil", "obnubiler", "obséquieux", "augural",
+    "onirique", "ontologie", "ostentation", "palindrome", "panspermie", "parachronisme", "parcimonie", "pétulance", "pusillanimité", "recondidité",
+    "résilience", "omniscient", "solipsisme", "tautologie", "altération", "présage", "tourbillon", "vorticisme", "zeitgeist", "inanition"
+  ]
+  },
+
+  "id": {
+  "A1": [
+    "rumah", "air", "teman", "makan", "matahari", "waktu", "buku", "besar", "selalu", "kerja",
+    "keluarga", "kota", "nama", "bicara", "kecil", "anjing", "kucing", "ibu", "ayah", "anak",
+    "kakak", "adik", "hari", "malam", "pagi", "sore", "sekarang", "kemarin", "minum", "halo",
+    "selamat", "roti", "susu", "apel", "meja", "kursi", "pintu", "jendela", "mobil", "kereta",
+    "jalan", "taman", "sekolah", "guru", "murid", "tahun", "bulan", "minggu", "jam", "menit",
+    "banyak", "sedikit", "baik", "buruk", "baru", "lama", "senang", "sedih", "ada", "punya",
+    "buat", "pergi", "datang", "lihat", "dengar", "tulis", "baca", "beli", "bayar", "mau",
+    "bisa", "harus", "tahu", "kenal", "beri", "ambil", "taruh", "bawa", "keluar", "masuk",
+    "buka", "tutup", "cari", "tatap", "pikir", "rasa", "suka", "nyanyi", "tari", "main",
+    "tidur", "baju", "sepatu", "kasur", "tas", "uang", "nasi", "ikan", "ayam", "pasar"
+  ],
+  "A2": [
+    "belajar", "lupa", "sehat", "film", "jelaskan", "ubah", "tempat", "temukan", "putuskan", "bahaya",
+    "paham", "saran", "kantor", "bagi", "dapur", "kebun", "liburan", "kebiasaan", "tim", "jawab",
+    "tanya", "beda", "penting", "susah", "mudah", "cukup", "awal", "akhir", "sebelum", "sesudah",
+    "dekat", "jauh", "atas", "bawah", "kiri", "kanan", "coba", "menang", "kalah", "kirim",
+    "terima", "jual", "sewa", "masak", "perbaiki", "rusak", "panggil", "ingat", "ikut", "seberang",
+    "belok", "sampai", "lari", "renang", "terbang", "kemudi", "naik", "turun", "pakai", "cuci",
+    "bersih", "istirahat", "bangun", "mandi", "sisir", "sarapan", "harga", "dompet", "kartu", "diskon",
+    "obral", "toko", "pakaian", "topi", "jaket", "celana", "makanan", "hidangan", "buah", "sayur",
+    "daging", "minuman", "stasiun", "desa", "pantai", "hotel", "tiket", "jadwal", "pesan", "kumpul",
+    "janji", "cuaca", "hujan", "panas", "dingin", "angin", "awan", "berita", "acara", "foto"
+  ],
+  "B1": [
+    "mengembangkan", "mengungkapkan", "solusi", "konteks", "mempengaruhi", "memelihara", "kemampuan", "memerlukan", "akhirnya", "keuntungan",
+    "ancaman", "pembenaran", "menganggap", "proyek", "mengusulkan", "mendorong", "sikap", "kualitas", "kuantitas", "lingkungan",
+    "kemungkinan", "akibat", "strategi", "struktur", "fungsi", "proses", "hasil", "manfaat", "kelemahan", "pilihan",
+    "tujuan", "sasaran", "sumber", "sistem", "teknik", "kecenderungan", "variasi", "alternatif", "aspek", "kapasitas",
+    "karakteristik", "kondisi", "konflik", "pengalaman", "dampak", "kebutuhan", "pendapat", "pandangan", "prinsip", "prioritas",
+    "hubungan", "risiko", "keamanan", "situasi", "kerugian", "kesepakatan", "komitmen", "perdebatan", "diskusi", "pengaruh",
+    "upaya", "kemajuan", "usulan", "rekomendasi", "tanggungjawab", "anjuran", "memperoleh", "menyesuaikan", "menganalisis", "membandingkan",
+    "mempertimbangkan", "menyumbang", "menciptakan", "mendefinisikan", "membuktikan", "menggambarkan", "merancang", "menilai", "memeriksa", "mengidentifikasi",
+    "menerapkan", "meningkatkan", "mengorganisasi", "merencanakan", "mempromosikan", "melindungi", "mengurangi", "menyelesaikan", "mentransformasi", "menghargai",
+    "mengkualifikasi", "mengklasifikasikan", "menegaskan", "mempertentangkan", "menentukan", "menetapkan", "menjamin", "mengintegrasikan", "menerjemahkan", "meneliti"
+  ],
+  "B2": [
+    "krusial", "tantangan", "berargumen", "berkelanjutan", "koheren", "menjalankan", "kriteria", "nuansa", "signifikansi", "membahas",
+    "membatasi", "mendominasi", "mempercepat", "mengakumulasi", "mengadaptasi", "mendalami", "memperkuat", "mempermudah", "meredam", "mengantisipasi",
+    "meredakan", "memohon", "mengapresiasi", "menyelaraskan", "beraspirasi", "meringankan", "atribusi", "meramalkan", "mengesahkan", "memperjelas",
+    "menyatu", "bertepatan", "berbenturan", "mengimbangi", "memadukan", "konsepsi", "mendamaikan", "mengonkretkan", "mengondisikan", "konsolidasi",
+    "konfirmasi", "kontemplasi", "sanggahan", "deduksi", "delimitasi", "denotasi", "derivasi", "diskredit", "memicu", "mengesampingkan",
+    "rincian", "membongkar", "pergeseran", "difusi", "klarifikasi", "dinamika", "disipasi", "distorsi", "diversifikasi", "divulgasi",
+    "elaborasi", "elusi", "emanasi", "emergensi", "emisi", "penekanan", "bingkai", "pengayaan", "implikasi", "komparasi",
+    "sketsa", "spesifikasi", "spekulasi", "estipulasi", "struktural", "evidensi", "pembebasan", "paparan", "ekstrapolasi", "favoritisme",
+    "fluktuasi", "formulasi", "fundamen", "faksi", "fokus", "hambatan", "fusi", "generalisasi", "hipotek", "ilustrasi",
+    "imputasi", "insentif", "induksi", "inferensi", "akselerasi", "artikulasi", "asimilasi", "asumsi", "distribusi", "dominasi"
+  ],
+  "C1": [
+    "keniscayaan", "intrinsik", "kebijakan", "kebas", "bias", "paradigma", "diskrepansi", "premisa", "inkoherensi", "ambiguitas",
+    "aberasi", "konjektur", "konotasi", "kontingensi", "kontraproduktif", "koroborasi", "dekadensi", "dilema", "empiris", "enigma",
+    "ekuivalensi", "skeptisisme", "eufemisme", "faktual", "otentik", "inerte", "inheren", "immanen", "imutabel", "intangibel",
+    "disonansi", "laten", "mitigasi", "paradoks", "performatif", "plausibilitas", "prerogatif", "presumsi", "prolifik", "resiprositas",
+    "redundansi", "restrukturisasi", "tersirat", "tangibel", "tangensial", "verasitas", "juksotaposisi", "anakronisme", "akuntabilitas", "alokasi",
+    "asimetris", "dikotomi", "sinkronisasi", "deskriptif", "dialektika", "dikotomis", "disparitas", "diversitas", "efisiensi", "eksistensial",
+    "eksplisit", "implisit", "indikatotif", "inovatif", "integrasi", "interaktif", "interferensi", "interpretasi", "intervensi", "kolektif",
+    "kompatibel", "komprehensif", "konseptual", "kontemporer", "kontradiksi", "kualitatif", "kuantitatif", "legitimasi", "manufaktur", "metodologi",
+    "normatif", "objektivitas", "orientasi", "parameter", "perspektif", "pluralisme", "pragmatis", "progresif", "proyeksi", "rasionalitas",
+    "relevansi", "signifikan", "subjektivitas", "transendental", "volatilitas", "fleksibilitas", "kredibilitas", "kreativitas", "substansial", "akomodatif"
+  ],
+  "C2": [
+    "inefabel", "idiosinkrasi", "simbiosis", "ekuanimitas", "ubikuitas", "oropel", "perorasi", "pusilanimitas", "sempiternal", "impunitas",
+    "verborse", "kimera", "ineksplikasi", "sirkumlokusi", "abjek", "melifluus", "eksekrabel", "abrogasi", "abstrus", "abulia",
+    "akrimoni", "advenedis", "alevosia", "anatema", "anfraktuar", "apokrif", "apotegma", "apoteosis", "akuisensi", "arkana",
+    "ataraksia", "kakofoni", "kasuistis", "katarsis", "sovinisme", "konsuetudiner", "diatribe", "disquisisi", "ekspiasi", "flegmatis",
+    "gnoseologi", "ignominia", "inanitas", "inikuitas", "insidia", "invektif", "lapidaris", "lokuasitas", "mefenis", "neofit",
+    "nihilisme", "obnubilasi", "obsekuen", "ominos", "onirik", "ontologi", "ostentasi", "palindrom", "panspermia", "parsimoni",
+    "petulansi", "resiliensi", "solipsisme", "tergiversasi", "zeitgeist", "teleologi", "epistemologi", "aksiologi", "etiologi", "prosodi",
+    "eskatologi", "semantik", "semiotika", "fenomenologi", "dekonstruksi", "eksistensialisme", "pragmatisme", "antropomorfisme", "panoptikon", "hiperbola",
+    "metamorfosis", "neologisme", "otonomi", "sinkretisme", "taksonomi", "verifikasi", "falsifikasi", "heksitas", "homonim", "polisemi",
+    "palimpsest", "metafora", "metonimi", "sinekdoke", "oksimoron", "aporia", "hermeneutik", "isomorfisme", "monadologi", "heuristik"
+  ]
+},
+
+  "it": {
+  "A1": [
+    "casa", "acqua", "amico", "mangiare", "sole", "tempo", "libro", "grande", "sempre", "lavorare",
+    "famiglia", "città", "nome", "dire", "piccolo", "cane", "gatto", "madre", "padre", "figlio",
+    "figlia", "fratello", "sorella", "bambino", "giorno", "notte", "mattina", "sera", "oggi", "ieri",
+    "grazie", "ciao", "pane", "latte", "mela", "tavolo", "sedia", "porta", "finestra", "macchina",
+    "treno", "strada", "piazza", "parco", "scuola", "professore", "studente", "anno", "mese", "settimana",
+    "ora", "minuto", "molto", "poco", "buono", "cattivo", "nuovo", "vecchio", "felice", "triste",
+    "essere", "avere", "fare", "andare", "venire", "vedere", "sentire", "parlare", "scrivere", "leggere",
+    "comprare", "pagare", "volere", "potere", "dovere", "sapere", "conoscere", "dare", "prendere", "mettere",
+    "portare", "uscire", "entrare", "aprire", "chiudere", "cercare", "guardare", "pensare", "amare", "cantare",
+    "ballare", "giocare", "dormire", "bere", "camicia", "scarpa", "letto", "borsa", "soldo", "via"
+  ],
+  "A2": [
+    "viaggiare", "imparare", "dimenticare", "salute", "film", "spiegare", "cambiare", "luogo", "trovare", "decidere",
+    "pericolo", "capire", "consigliare", "azienda", "condividere", "cucina", "giardino", "viaggio", "abitudine", "squadra",
+    "risposta", "domanda", "diverso", "importante", "difficile", "facile", "sufficiente", "presto", "tardi", "prima",
+    "vicino", "lontano", "sopra", "sotto", "sinistra", "destra", "provare", "vincere", "perdere", "mandare",
+    "ricevere", "vendere", "affittare", "cucinare", "riparare", "rompere", "chiamare", "chiedere", "rispondere", "ricordarsi",
+    "seguire", "attraversare", "girare", "arrivare", "correre", "camminare", "nuotare", "volare", "guidare", "salire",
+    "scendere", "vestire", "lavare", "pulire", "riposare", "svegliarsi", "coricarsi", "pettinarsi", "cenare", "pranzare",
+    "prezzo", "portafoglio", "carta", "sconto", "offerta", "mercato", "negozio", "vestito", "cappello", "cappotto",
+    "pantaloni", "cibo", "pasto", "dolce", "frutta", "verdura", "carne", "pesce", "bevanda", "stazione",
+    "paese", "campagna", "spiaggia", "albergo", "biglietto", "orario", "prenotare", "incontrare", "promettere", "meteo"
+  ],
+  "B1": [
+    "sviluppare", "esprimere", "soluzione", "contesto", "influenzare", "mantenere", "abilità", "richiedere", "finalmente", "vantaggio",
+    "minaccia", "giustificare", "assumere", "progetto", "proporre", "incoraggiare", "atteggiamento", "qualità", "quantità", "ambiente",
+    "possibilità", "conseguenza", "strategia", "struttura", "funzione", "processo", "risultato", "beneficio", "svantaggio", "opzione",
+    "obiettivo", "scopo", "risorsa", "sistema", "tecnica", "tendenza", "variazione", "alternativa", "aspetto", "capacità",
+    "caratteristica", "condizione", "conflitto", "esperienza", "impatto", "bisogno", "opinione", "prospettiva", "principio", "priorità",
+    "relazione", "rischio", "sicurezza", "situazione", "accordo", "impegno", "dibattito", "discussione", "effetto", "sforzo",
+    "progresso", "proposta", "raccomandazione", "responsabilità", "suggerimento", "acquisire", "adattare", "analizzare", "confrontare", "considerare",
+    "contribuire", "creare", "definire", "dimostrare", "descrivere", "progettare", "valutare", "esaminare", "identificare", "applicare",
+    "migliorare", "organizzare", "pianificare", "promuovere", "proteggere", "ridurre", "risolvere", "trasformare", "valorizzare", "qualificare",
+    "classificare", "confermare", "contrastare", "determinare", "stabilire", "garantire", "integrare", "interpretare", "indagare", "negoziare"
+  ],
+  "B2": [
+    "indispensabile", "sfida", "argomentare", "sostenibile", "coerente", "svolgere", "ripercussione", "criterio", "sfumatura", "portata",
+    "affrontare", "limitare", "predominare", "accelerare", "accumulare", "approfondire", "consolidare", "facilitare", "incitare", "modificare",
+    "attenuare", "anticipare", "placare", "sollecitare", "apportare", "apprezzare", "articolare", "aspirare", "addolcire", "attribuire",
+    "prevedere", "sostenere", "sfumare", "unire", "coincidere", "scontrarsi", "compensare", "conciliare", "accordare", "concretizzare",
+    "condizionare", "rafforzare", "constatare", "contemplare", "contestare", "dedurre", "delimitare", "designare", "derivare", "screditare",
+    "scatenare", "respingere", "dettagliare", "smantellare", "smentire", "spostare", "diffondere", "elucidare", "dinamizzare", "dissipare",
+    "distorcere", "diversificare", "divulgare", "elaborare", "eludere", "emanare", "emergere", "emettere", "accentuare", "inquadrare",
+    "arricchire", "implicare", "uguagliare", "abbozzare", "specificare", "speculare", "stipulare", "strutturare", "sottolineare", "esentare",
+    "esporre", "estrapolare", "favorire", "fluttuare", "formulare", "fondare", "dividere", "mirare", "frenare", "fondere",
+    "generalizzare", "compromettere", "illustrare", "imputare", "incorrere", "indurre", "inferire", "simulare", "subire", "trasmettere"
+  ],
+  "C1": [
+    "efimero", "ineludibile", "intrinseco", "esacerbare", "graduale", "pregiudizio", "paradigma", "decifrare", "discrepanza", "minuzioso",
+    "sottostante", "menomare", "premessa", "incoerenza", "verosimile", "rivendicare", "ambiguità", "aberrazione", "affinato", "asserire",
+    "atavico", "attenuante", "belligeranza", "celerità", "circoscrivere", "coercitivo", "congettura", "commensurabile", "connotazione", "consostanziale",
+    "contingenza", "controproducente", "corroborare", "decrepitudine", "dilemma", "schiusa", "eloquenza", "empirico", "bivio", "enigma",
+    "entelechia", "equiparabile", "erogazione", "scettico", "eufemismo", "esegesi", "esiguo", "irrefutabile", "probante", "egemonico",
+    "idoneità", "imponderabile", "prevalente", "inalienabile", "inalienabilità", "inarticolato", "inaudito", "inerte", "inerente", "immanente",
+    "immutabile", "imperscrutabile", "insondabile", "intangibile", "intricato", "incontestabile", "dissonanza", "laconico", "latente", "nevralgico",
+    "meticoloso", "mitigazione", "ostensibile", "paradosso", "perentorio", "permeare", "pernicioso", "plausibilità", "preponderante", "prerogativa",
+    "presunzione", "prolifico", "proscritto", "chimerico", "reciproco", "ridondanza", "ristrutturazione", "refrattario", "sviamento", "tacito",
+    "tangibile", "tangenziale", "veemenza", "veridicità", "riprovazione", "versatilità", "giustapposizione", "anacronismo", "obsolescenza", "affilato"
+  ],
+  "C2": [
+    "ineffabile", "idiosincrasia", "simbiosi", "equanimità", "ubiquità", "assuefazione", "orpello", "perorazione", "pusillanime", "sempiterno",
+    "impunemente", "verborrea", "chimera", "inestricabile", "circonlocuzione", "abietto", "mellifluo", "esecrabile", "abrogare", "abstruso",
+    "abulia", "affinamento", "acrimonia", "stantio", "avventizio", "fellonia", "anatema", "anfratto", "apocrifo", "apotegma",
+    "apoteosi", "acquiescenza", "arcano", "sotterfugio", "assertività", "atarassia", "affliggere", "futilità", "baccano", "basamento",
+    "bizantino", "cacofonia", "casistica", "catarsi", "sciovinismo", "innato", "consuetudinario", "invettiva", "oltraggio", "affrancamento",
+    "diatriba", "dicotomia", "disquisizione", "sagacia", "espiazione", "fasto", "flematico", "gnoseologia", "ermeneutica", "ignominia",
+    "imperituro", "inanità", "indigenza", "iniquità", "insidia", "intempestivo", "prologo", "requisitoria", "lapidario", "loquacità",
+    "mecenatismo", "mefitico", "mesmerismo", "funesto", "neofita", "nichilismo", "scoglio", "offuscare", "ossequioso", "augurale",
+    "onirico", "ontologia", "ostentazione", "palindromo", "panspermia", "paracronismo", "parcimonia", "petulanza", "pusillanimità", "reconditezza",
+    "resilienza", "onnisciente", "solipsismo", "tautologia", "alterazione", "presagio", "vortice", "vorticismo", "zeitgeist", "inanizione"
+  ]
+},
+
+  "ja": {
+  "A1": [
+    "家", "水", "友達", "食べる", "太陽", "時間", "本", "大きい", "いつも", "働く",
+    "家族", "町", "名前", "言う", "小さい", "犬", "猫", "母", "父", "息子",
+    "娘", "兄", "姉", "子供", "日", "夜", "朝", "夕方", "今日", "昨日",
+    "ありがとう", "こんにちは", "パン", "牛乳", "りんご", "机", "椅子", "ドア", "窓", "車",
+    "電車", "道", "公園", "学校", "先生", "学生", "年", "月", "週間", "分",
+    "多い", "少ない", "良い", "悪い", "新しい", "古い", "嬉しい", "悲しい", "ある", "いる",
+    "持つ", "作る", "行く", "来る", "見る", "聞く", "話す", "書く", "読む", "買う",
+    "払う", "欲しい", "知る", "あげる", "取る", "置く", "出る", "入る", "開ける", "閉める",
+    "探す", "考える", "感じる", "好き", "歌う", "踊る", "遊ぶ", "寝る", "飲む", "シャツ",
+    "靴", "ベッド", "鞄", "お金", "海", "山", "川", "花", "木", "空"
+  ],
+  "A2": [
+    "旅行", "覚える", "忘れる", "健康", "映画", "説明", "変える", "場所", "見つける", "決める",
+    "危険", "理解", "推薦", "会社", "共有", "台所", "庭", "習慣", "チーム", "返事",
+    "質問", "違う", "重要", "難しい", "簡単", "十分", "早い", "遅い", "前", "後",
+    "近く", "遠く", "上", "下", "左", "右", "試す", "勝つ", "負ける", "送る",
+    "受ける", "売る", "借りる", "料理", "直す", "壊す", "呼ぶ", "尋ねる", "答える", "思い出す",
+    "通る", "曲がる", "到着", "走る", "歩く", "泳ぐ", "飛ぶ", "運転", "登る", "降りる",
+    "着る", "洗う", "掃除", "休む", "起こす", "寝かす", "浴びる", "夕食", "朝食", "値段",
+    "財布", "カード", "割引", "市場", "店", "服", "帽子", "コート", "ズボン", "食品",
+    "食事", "デザート", "果物", "野菜", "肉", "魚", "飲料", "駅", "村", "海岸",
+    "ホテル", "切符", "予定", "予約", "集まる", "約束", "天気予報", "強風", "曇り", "病院"
+  ],
+  "B1": [
+    "開発", "表現", "解決", "文脈", "影響", "維持", "能力", "要求", "結局", "利点",
+    "脅威", "正当化", "引き受ける", "計画", "提案", "促進", "態度", "品質", "数量", "環境",
+    "可能性", "結果", "戦略", "構造", "機能", "過程", "成果", "利益", "短所", "選択肢",
+    "目的", "目標", "資源", "体系", "技術", "傾向", "変化", "代替", "側面", "容量",
+    "特徴", "条件", "紛争", "経験", "影響力", "必要性", "意見", "視点", "原則", "優先順位",
+    "関係", "リスク", "安全", "状況", "不利益", "合意", "コミットメント", "議論", "討論", "効果",
+    "努力", "進歩", "勧告", "責任", "獲得", "適応", "分析", "比較", "考慮", "貢献",
+    "創造", "定義", "証明", "描写", "設計", "評価", "調査", "特定", "適用", "改善",
+    "組織", "保護", "削減", "変革", "価値", "分類", "確認", "対比", "決定", "確立",
+    "保証", "統合", "解釈", "研究", "調整", "選択", "認識", "発展", "成長", "判断"
+  ],
+  "B2": [
+    "不可欠", "挑戦", "主張", "持続可能", "一貫性", "遂行", "波及", "基準", "微細", "適用範囲",
+    "対処", "制限", "凌駕", "加速", "蓄積", "深耕", "強固", "容易化", "誘発", "改変",
+    "緩和", "予測", "鎮静", "要請", "寄与", "鑑賞", "分節", "熱望", "軽減", "帰属",
+    "予見", "裏付け", "補正", "結合", "合致", "相克", "補填", "折衷", "容認", "具現",
+    "制約", "集約", "視察", "熟考", "異議", "帰結", "画定", "派生", "失墜", "勃発",
+    "棄却", "明細", "解体", "反証", "転移", "拡散", "解明", "活性", "払拭", "歪曲",
+    "多角化", "流布", "推敲", "回避", "発出", "顕現", "放射", "強調", "枠組み", "拡充",
+    "内包", "同等", "輪郭", "明記", "思惑", "規定", "構造化", "浮き彫り", "免除", "披瀝",
+    "推計", "優遇", "推移", "定式", "定着", "分割", "阻害", "融合", "総括", "担保",
+    "例証", "付与", "帰着", "誘引", "演繹", "擬似", "受容", "伝達", "模索", "介入"
+  ],
+  "C1": [
+    "儚い", "不可避", "内在的", "増幅する", "漸進的", "忌避する", "偏向", "パラダイム", "解読", "乖離",
+    "綿密", "底流", "損壊", "前提", "不整合", "真実味", "復権", "曖昧さ", "逸脱", "洗練",
+    "断定", "隔世遺伝", "情状酌量", "好戦的", "迅速", "局限", "強制力", "推測", "均衡", "含意",
+    "実質的", "偶発性", "逆効果", "世界観", "衰退", "ジレンマ", "開花", "雄弁", "実証的", "岐路",
+    "不可解", "理想像", "拠出", "懐疑的", "遠回し", "釈明", "僅少", "確実", "覇権", "適合性",
+    "不確定", "支配的", "不可譲", "不可侵", "不鮮明", "前代未聞", "不活性", "固有", "包摂", "不変",
+    "深遠", "無形", "複雑", "反論不能", "不協和", "簡潔", "潜在的", "中枢", "精密", "顕著",
+    "逆説", "決定的", "浸透", "有害", "妥当性", "優勢", "特権", "推定", "多産", "禁止",
+    "架空", "相互的", "冗長", "再編", "難治", "暗黙", "有形", "接線", "激しさ", "真実性",
+    "非難", "変心", "並置", "時代錯誤", "陳腐化", "逡巡", "脆弱", "糾弾", "隠蔽", "捏造"
+  ],
+  "C2": [
+    "泰然自若", "臥薪嘗胆", "切磋琢磨", "明鏡止水", "一期一会", "臨機応変", "乾坤一擲", "捲土重来", "百花繚乱", "疾風迅雷",
+    "支離滅裂", "試行錯誤", "自暴自棄", "四面楚歌", "和洋折衷", "本末転倒", "弱肉強食", "朝三暮四", "紆余曲折", "虚心坦懐",
+    "瓦解", "邂逅", "勃興", "闊達", "梗概", "敷衍", "斟酌", "忖度", "庇護", "畏怖",
+    "茫洋", "恬淡", "傲慢", "傲岸", "遜色", "卑劣", "狡猾", "苛烈", "苛酷", "熾烈",
+    "潤滑", "蹂躙", "招聘", "籠絡", "誅殺", "粛清", "宥和", "叙情", "叙事", "玄妙",
+    "幽玄", "侘び寂び", "諸行無常", "因果応報", "森羅万象", "会者定離", "南船北馬", "竜頭蛇尾", "画竜点睛", "蛇足",
+    "苛政", "鼎立", "割拠", "専横", "専制", "独裁", "僭越", "畏縮", "羞恥", "傀儡",
+    "讒言", "提言", "箴言", "警鐘", "警句", "金言", "格言", "寓話", "逸話", "逸品",
+    "奇才", "鬼才", "異端", "正統", "狂騒", "喧噪", "静寂", "静謐", "平穏", "安寧",
+    "隆盛", "栄枯盛衰", "盛者必衰", "千載一遇", "温故知新", "巧言令色", "一網打尽", "空前絶後", "傍若無人", "孤立無援"
+  ]
+},
+
+  "ko": {
+  "A1": [
+    "집", "물", "친구", "먹다", "해", "시간", "책", "크다", "항상", "일하다",
+    "가족", "도시", "이름", "말하다", "작다", "개", "고양이", "어머니", "아버지", "아들",
+    "딸", "형", "누나", "아이", "날", "밤", "아침", "저녁", "오늘", "어제",
+    "감사", "안녕", "빵", "우유", "사과", "책상", "의자", "문", "창문", "차",
+    "기차", "길", "공원", "학교", "선생님", "학생", "년", "월", "주", "분",
+    "많다", "적다", "좋다", "나쁘다", "새롭다", "오래되다", "기쁘다", "슬프다", "있다", "없다",
+    "만들다", "가다", "오다", "보다", "듣다", "쓰다", "읽다", "사다", "주다", "받다",
+    "원하다", "알다", "모르다", "놓다", "나가다", "들어오다", "열다", "닫다", "찾다", "생각하다",
+    "느끼다", "노래하다", "춤추다", "놀다", "자다", "마시다", "옷", "신발", "침대", "가방",
+    "돈", "산", "강", "꽃", "나무", "하늘", "비", "눈", "바람", "바다"
+  ],
+  "A2": [
+    "여행", "배우다", "잊다", "건강", "영화", "설명하다", "바꾸다", "장소", "결정하다", "위험",
+    "이해하다", "추천하다", "회사", "나누다", "부엌", "정원", "습관", "팀", "대답", "질문",
+    "다르다", "중요하다", "어렵다", "쉽다", "충분하다", "일찍", "늦게", "전", "후", "가깝다",
+    "멀다", "위", "아래", "왼쪽", "오른쪽", "시도하다", "이기다", "지다", "보내다", "고치다",
+    "부서지다", "부르다", "기억하다", "따르다", "건너다", "돌다", "도착하다", "달리다", "걷다", "수영하다",
+    "날다", "운전하다", "올라가다", "내려가다", "입다", "씻다", "청소하다", "쉬다", "일어나다", "목욕하다",
+    "가격", "지갑", "카드", "할인", "시장", "가게", "모자", "코트", "바지", "음식",
+    "식사", "과일", "채소", "고기", "생선", "음료수", "역", "시골", "해변", "호텔",
+    "표", "일정", "예약하다", "모이다", "약속", "날씨", "태풍", "병원", "약국", "은행",
+    "우체국", "도서관", "식당", "공항", "비행기", "버스", "지하철", "택시", "자전거", "사진"
+  ],
+  "B1": [
+    "개발하다", "표현하다", "해결", "문맥", "영향", "유지하다", "능력", "요구하다", "결국", "장점",
+    "위협", "정당화하다", "맡다", "프로젝트", "제안하다", "장려하다", "태도", "품질", "수량", "환경",
+    "가능성", "결과", "전략", "구조", "기능", "과정", "성과", "이익", "단점", "선택지",
+    "목적", "목표", "자원", "체계", "기술", "경향", "변화", "대안", "측면", "용량",
+    "특징", "조건", "갈등", "경험", "필요성", "의견", "관점", "원칙", "우선순위", "관계",
+    "위험성", "안전", "상황", "합의", "책임", "토론", "효과", "노력", "발전", "권고",
+    "제안", "획득하다", "적응하다", "분석하다", "비교하다", "고려하다", "기여하다", "창조하다", "정의하다", "증명하다",
+    "묘사하다", "설계하다", "평가하다", "조사하다", "특정하다", "적용하다", "개선하다", "조직하다", "계획하다", "홍보하다",
+    "보호하다", "줄이다", "해결하다", "변형하다", "존중하다", "분류하다", "확인하다", "대조하다", "확립하다", "보장하다",
+    "통합하다", "해석하다", "연구하다", "조정하다", "협상하다", "기회", "문제", "정보", "의도", "요소"
+  ],
+  "B2": [
+    "필수적이다", "도전", "주장하다", "지속가능하다", "일관되다", "수행하다", "파급효과", "기준", "뉘앙스", "중요성",
+    "다루다", "제한하다", "우세하다", "가속하다", "축적하다", "심화하다", "공고히하다", "용이하게하다", "자극하다", "수정하다",
+    "완화하다", "예측하다", "진정시키다", "요청하다", "제공하다", "감상하다", "연계하다", "열망하다", "부여하다", "예견하다",
+    "지지하다", "결합하다", "일치하다", "충돌하다", "보상하다", "타협하다", "수용하다", "구체화하다", "규정하다", "강화하다",
+    "관찰하다", "반론하다", "추론하다", "경계를정하다", "나타내다", "도출하다", "불신하다", "유발하다", "기각하다", "세부화하다",
+    "해체하다", "반박하다", "이동시키다", "전파하다", "규명하다", "활성화하다", "해소하다", "왜곡하다", "다각화하다", "공표하다",
+    "정립하다", "회피하다", "발산하다", "부상하다", "방출하다", "강조하다", "설정하다", "풍부하게하다", "수반하다", "동등하게하다",
+    "개요를잡다", "명시하다", "추측하다", "체계화하다", "부각하다", "면제하다", "제시하다", "외삽하다", "우대하다", "변동하다",
+    "공식화하다", "근거를두다", "분파하다", "초점을맞추다", "저지하다", "융합하다", "일반화하다", "담보하다", "예시하다", "귀속시키다",
+    "유인하다", "귀찰하다", "동화하다", "분배하다", "지배하다", "모방하다", "전달하다", "가공하다", "개입하다", "상쇄하다"
+  ],
+  "C1": [
+    "덧없다", "불가피하다", "본질적이다", "악화시키다", "점진적이다", "편향", "패러다임", "해독하다", "괴리", "치밀하다",
+    "잠재적이다", "손상시키다", "전제", "모순", "개연성", "복원하다", "모호성", "일탈", "세련되다", "단언하다",
+    "격세유전", "참작", "교전상태", "신속", "국한하다", "강제적인", "추측", "통용가능한", "함축", "통속적이다",
+    "우발성", "역효과", "입증하다", "쇠퇴", "딜레마", "도래", "웅변", "경험적이다", "분기점", "수수께끼",
+    "상응하다", "지출", "회의적이다", "돌려말하기", "주석", "근소하다", "명백하다", "패권", "적합성", "예측불가",
+    "팽배하다", "양도할수없는", "전대미문", "불활성", "내재하다", "초월적이다", "불변하다", "헤아릴수없는", "무형", "뒤얽히다",
+    "반박할수없는", "불협화음", "간결하다", "잠복하다", "중추적이다", "엄격하다", "완화", "현저하다", "역설", "단호하다",
+    "스며들다", "유해하다", "타당성", "압도적이다", "특권", "추정", "다작의", "금지되다", "환상적인", "상호적이다",
+    "중복", "재편", "난치성", "암묵적이다", "유형", "접선", "격렬함", "진실성", "비난", "변덕",
+    "병치", "시대착오", "진부화", "주저함", "취약성", "은폐", "가변성", "잠재력", "당위성", "수렴"
+  ],
+  "C2": [
+    "형언할수없다", "특이성", "공생", "평정심", "편재성", "겉치레", "장광설", "나약함", "영구불변", "무처벌",
+    "다언증", "불가해하다", "우회적표현", "비열하다", "감언이설", "가증스럽다", "폐지하다", "난해하다", "무기력", "통렬함",
+    "벼락부자", "배신", "파문", "굴곡진", "위작의", "격언", "신격화", "묵인", "비기", "궤변",
+    "자기주장성", "마음의평정", "괴롭히다", "사소함", "기초", "불협화음", "카타르시스", "배타적애국주의", "타고난", "관습적인",
+    "통렬한비판", "이분법", "상세한논의", "속죄", "호화로움", "침착함", "인식론", "해석학", "치욕", "시들지않는",
+    "공허", "빈곤", "불의", "음해", "부적절한", "서곡", "논박", "명쾌한", "수다스러움", "후원",
+    "유독한", "최면술", "비참한", "초심자", "허무주의", "장애물", "현혹시키다", "아첨하는", "불길한", "꿈의",
+    "존재론", "과시", "회문", "범자설", "검소함", "무례함", "회복탄력성", "전지전능", "유아론", "동의어반복",
+    "왜곡", "징조", "소용돌이", "시대정신", "기아", "목적론", "가치론", "원인론", "운율학", "종말론",
+    "기호학", "현상학", "해체주의", "실존주의", "실용주의", "의인화", "기어이", "허울", "절치부심", "타산지석"
+  ]
+},
+
+  "nl": {
+  "A1": [
+    "huis", "water", "vriend", "eten", "zon", "tijd", "boek", "groot", "altijd", "werken",
+    "familie", "stad", "naam", "zeggen", "klein", "hond", "kat", "moeder", "vader", "zoon",
+    "dochter", "broer", "zus", "kind", "dag", "nacht", "morgen", "avond", "vandaag", "gisteren",
+    "danken", "hallo", "brood", "melk", "appel", "tafel", "stoel", "deur", "raam", "auto",
+    "trein", "straat", "plein", "park", "school", "leraar", "student", "jaar", "maand", "week",
+    "uur", "minuut", "veel", "weinig", "goed", "slecht", "nieuw", "oud", "blij", "droevig",
+    "zijn", "hebben", "doen", "gaan", "komen", "zien", "horen", "spreken", "schrijven", "lezen",
+    "kopen", "betalen", "willen", "kunnen", "moeten", "weten", "kennen", "geven", "nemen", "zetten",
+    "dragen", "vertrekken", "binnengaan", "openen", "sluiten", "zoeken", "kijken", "denken", "voelen", "houden",
+    "zingen", "dansen", "spelen", "slapen", "drinken", "hemd", "schoen", "bed", "tas", "geld"
+  ],
+  "A2": [
+    "reizen", "leren", "vergeten", "gezondheid", "film", "uitleggen", "veranderen", "plek", "vinden", "beslissen",
+    "gevaar", "begrijpen", "aanbevelen", "bedrijf", "delen", "keuken", "tuin", "vakantie", "gewoonte", "team",
+    "antwoord", "vraag", "verschillend", "belangrijk", "moeilijk", "makkelijk", "genoeg", "vroeg", "laat", "voor",
+    "dichtbij", "ver", "boven", "beneden", "links", "rechts", "proberen", "winnen", "verliezen", "sturen",
+    "ontvangen", "verkopen", "huren", "koken", "repareren", "breken", "bellen", "onthouden", "volgen", "oversteken",
+    "draaien", "aankomen", "rennen", "wandelen", "zwemmen", "vliegen", "rijden", "klimmen", "dalen", "kleden",
+    "wassen", "schoonmaken", "rusten", "wakker", "douchen", "kammen", "dineren", "ontbijten", "prijs", "portemonnee",
+    "kaart", "korting", "aanbieding", "markt", "winkel", "kleding", "hoed", "jas", "broek", "voedsel",
+    "maaltijd", "toetje", "fruit", "groente", "vlees", "vis", "drank", "station", "dorp", "platteland",
+    "strand", "hotel", "ticket", "schema", "boeken", "ontmoeten", "beloven", "weer", "regen", "sneeuw"
+  ],
+  "B1": [
+    "ontwikkelen", "uitdrukken", "oplossing", "context", "beïnvloeden", "behouden", "vaardigheid", "vereisen", "uiteindelijk", "voordeel",
+    "dreiging", "rechtvaardigen", "aanvaarden", "project", "voorstellen", "stimuleren", "houding", "kwaliteit", "hoeveelheid", "omgeving",
+    "mogelijkheid", "gevolg", "strategie", "structuur", "functie", "proces", "resultaat", "nut", "nadeel", "optie",
+    "doel", "streven", "bron", "systeem", "techniek", "trend", "variatie", "alternatief", "aspect", "capaciteit",
+    "kenmerk", "voorwaarde", "conflict", "ervaring", "impact", "behoefte", "mening", "perspectief", "principe", "prioriteit",
+    "relatie", "risico", "veiligheid", "situatie", "overeenkomst", "inzet", "debat", "discussie", "effect", "inspanning",
+    "vooruitgang", "advies", "verantwoordelijkheid", "suggestie", "verwerven", "aanpassen", "analyseren", "vergelijken", "overwegen", "bijdragen",
+    "creëren", "definiëren", "bewijzen", "beschrijven", "ontwerpen", "evalueren", "onderzoeken", "identificeren", "toepassen", "verbeteren",
+    "organiseren", "plannen", "promoten", "beschermen", "verminderen", "oplossen", "transformeren", "waarderen", "kwalificeren", "categoriseren",
+    "bevestigen", "contrasteren", "bepalen", "vaststellen", "garanderen", "integreren", "interpreteren", "onderhandelen", "kans", "intentie"
+  ],
+  "B2": [
+    "onmisbaar", "uitdaging", "argumenteren", "duurzaam", "coherent", "uitvoeren", "weerslag", "criterium", "nuance", "reikwijdte",
+    "aanpakken", "beperken", "overheersen", "versnellen", "vergroten", "verdiepen", "versterken", "vergemakkelijken", "aanzetten", "wijzigen",
+    "verzachten", "anticiperen", "kalmeren", "verzoeken", "koesteren", "articuleren", "ambiëren", "verlichten", "toespreken", "voorspellen",
+    "ondersteunen", "nuanceren", "verenigen", "samenvallen", "botsen", "compenseren", "verzoenen", "afstemmen", "concretiseren", "conditioneren",
+    "consolideren", "constateren", "betwisten", "deduceren", "afbakenen", "aanduiden", "voortvloeien", "ontketenen", "verwerpen", "uitwerken",
+    "ontmantelen", "ontkennen", "verplaatsen", "verspreiden", "ophelderen", "verdrijven", "vervormen", "diversifiëren", "bekendmaken", "formuleren",
+    "ontwijken", "voortkomen", "ontstaan", "uitzenden", "benadrukken", "omkaderen", "verrijken", "inhouden", "evenaren", "schetsen",
+    "specificeren", "speculeren", "vastleggen", "structureren", "onderstrepen", "vrijstellen", "uiteenzetten", "extrapoleren", "bevoordelen", "fluctueren",
+    "funderen", "verdelen", "focussen", "remmen", "fuseren", "generaliseren", "compromitteren", "illustreren", "toeschrijven", "oplopen",
+    "induceren", "concluderen", "simuleren", "ondergaan", "overdragen", "beklemtonen", "aanmoedigen", "aanreiken", "beschouwen", "inbrengen"
+  ],
+  "C1": [
+    "vluchtig", "onvermijdelijk", "intrinsiek", "verergeren", "geleidelijk", "omzeilen", "vooringenomenheid", "paradigma", "ontcijferen", "discrepantie",
+    "nauwgezet", "onderliggend", "ondermijnen", "premisse", "inconsistentie", "aannemelijk", "opeisen", "ambiguïteit", "aberratie", "verfijnd",
+    "beweren", "atavistisch", "verzachtend", "strijdlust", "voortvarendheid", "afgrenzen", "dwingend", "vermoeden", "evenredig", "connotatie",
+    "wezenlijk", "averechts", "wereldbeeld", "verval", "dilemma", "ontluiking", "welbespraaktheid", "empirisch", "kruispunt", "raadsel",
+    "entelechie", "gelijkwaardig", "besteding", "sceptisch", "eufemisme", "exegese", "gering", "onweerlegbaar", "overtuigend", "hegemoniaal",
+    "geschiktheid", "onvoorspelbaar", "heersend", "onvervreemdbaar", "onvervreemdbaarheid", "onsamenhangend", "ongehoord", "inert", "inherent", "immanent",
+    "onveranderlijk", "ondoorgrondelijk", "peilloos", "ontastbaar", "ingewikkeld", "onbetwistbaar", "dissonantie", "lakonieker", "latent", "cruciaal",
+    "pijnlijk", "matiging", "omschreven", "paradox", "gebiedend", "doordringen", "nefast", "aannemelijkheid", "doorslaggevend", "prerogatief",
+    "veronderstelling", "vruchtbaar", "verbannen", "hersenschim", "wederzijds", "redundantie", "herstructurering", "weerspannig", "verhulling", "stilzwijgend",
+    "tastbaar", "zijdelings", "heftigheid", "waarachtigheid", "laken", "wispelturigheid", "juxtapositie", "anachronisme", "veroudering", "aarzeling"
+  ],
+  "C2": [
+    "onuitsprekelijk", "idiosyncrasie", "symbiose", "gelijkmoedigheid", "alomtegenwoordigheid", "klatergoud", "tirade", "kleinmoedig", "eeuwigdurend", "straffeloos",
+    "woordenvloed", "onontwarbaar", "omschrijving", "verwerpelijk", "zoetgevooisd", "afschuwelijk", "afschaffen", "abstruus", "abulie", "verfijnen",
+    "vinnigheid", "verouderd", "parvenu", "verraderlijkheid", "anathema", "kronkelig", "apocrief", "kernspreuk", "apotheose", "instemming",
+    "geheim", "uitvlucht", "assertiviteit", "ataraxie", "kwellen", "futiliteit", "kabaal", "fundament", "byzantijns", "wanklank",
+    "casuïstiek", "loutering", "sjovinisme", "aangeboren", "gebruikelijke", "scheldkanonnade", "smaad", "bevrijding", "schotschrift", "tweedeling",
+    "verhandeling", "scherpzinnigheid", "boetedoening", "pracht", "flegmatiek", "gnoseologie", "hermeneutiek", "schande", "onvergankelijk", "nietigheid",
+    "behoeftigheid", "onrecht", "valstrik", "ontijdig", "inleiding", "aanklacht", "kernachtig", "spraakzaamheid", "mecenatariaat", "mefitisch",
+    "mesmerisme", "rampspoedig", "nieuweling", "nihilisme", "klip", "verblinden", "gedwee", "onheilspellend", "dromerig", "ontologie",
+    "praalzucht", "palindroom", "panspermia", "parachronisme", "spaarzaamheid", "bijdehandheid", "veerkracht", "alwetend", "solipsisme", "tautologie",
+    "verdraaiing", "voorteken", "draaikolk", "tijdsgeest", "uitmergeling", "teleologie", "epistemologie", "axiologie", "etiologie", "prosodie"
+  ]
+},
+
+  "pl":{
+  "A1": [
+    "dom", "woda", "przyjaciel", "jeść", "słońce", "czas", "książka", "duży", "zawsze", "pracować",
+    "rodzina", "miasto", "imię", "mówić", "mały", "pies", "kot", "matka", "ojciec", "syn",
+    "córka", "brat", "siostra", "dziecko", "dzień", "noc", "rano", "wieczór", "dzisiaj", "wczoraj",
+    "dziękuję", "cześć", "chleb", "mleko", "jabłko", "stół", "krzesło", "drzwi", "okno", "samochód",
+    "pociąg", "ulica", "plac", "park", "szkoła", "nauczyciel", "student", "rok", "miesiąc", "tydzień",
+    "godzina", "minuta", "dużo", "mało", "dobry", "zły", "nowy", "stary", "wesoły", "smutny",
+    "być", "mieć", "robić", "iść", "przychodzić", "widzieć", "słyszeć", "rozmawiać", "pisać", "czytać",
+    "kupować", "płacić", "chcieć", "móc", "musieć", "wiedzieć", "znać", "dawać", "brać", "kłaść",
+    "nosić", "wychodzić", "wchodzić", "otwierać", "zamykać", "szukać", "patrzeć", "myśleć", "czuć", "lubić",
+    "śpiewać", "tańczyć", "grać", "spać", "pić", "koszula", "but", "łóżko", "torba", "pieniądze"
+  ],
+  "A2": [
+    "podróżować", "uczyć", "zapominać", "zdrowie", "film", "wyjaśniać", "zmieniać", "miejsce", "znajdować", "decydować",
+    "niebezpieczeństwo", "rozumieć", "polecać", "firma", "dzielić", "kuchnia", "ogród", "wakacje", "zwyczaj", "zespół",
+    "odpowiedź", "pytanie", "różny", "ważny", "trudny", "łatwy", "wystarczający", "wcześnie", "późno", "przed",
+    "blisko", "daleko", "góra", "dół", "lewy", "prawy", "próbować", "wygrywać", "przegrywać", "wysyłać",
+    "odbierać", "sprzedawać", "wynajmować", "gotować", "naprawiać", "psuć", "dzwonić", "pamiętać", "podążać", "przechodzić",
+    "skręcać", "docierać", "biegać", "spacerować", "pływać", "latać", "prowadzić", "wstawać", "schodzić", "ubierać",
+    "myć", "sprzątać", "odpoczywać", "budzić", "kąpać", "czesać", "cena", "portfel", "karta", "znożka",
+    "oferta", "rynek", "sklep", "ubranie", "kapelusz", "płaszcz", "spodnie", "jedzenie", "posiłek", "deser",
+    "owoc", "warzywo", "mięso", "ryba", "napój", "stacja", "wieś", "plaża", "hotel", "bilet",
+    "rozkład", "rezerwować", "obiecywać", "pogoda", "deszcz", "wiatr", "śnieg", "chmura", "lotnisko", "samolot"
+  ],
+  "B1": [
+    "rozwijać", "wyrażać", "rozwiązanie", "kontekst", "wpływać", "utrzymywać", "umiejętność", "wymagać", "ostatecznie", "zaleta",
+    "zagrożenie", "usprawiedliwiać", "zakładać", "projekt", "proponować", "wspierać", "postawa", "jakość", "ilość", "środowisko",
+    "możliwość", "skutek", "strategia", "struktura", "funkcja", "proces", "wynik", "korzyść", "wada", "opcja",
+    "cel", "dążenie", "źródło", "system", "technika", "trend", "zmienność", "alternatywa", "aspekt", "pojemność",
+    "cecha", "warunek", "konflikt", "doświadczenie", "wpływ", "potrzeba", "opinia", "perspektwa", "zasada", "priorytet",
+    "relacja", "ryzyko", "bezpieczeństwo", "sytuacja", "umowa", "zaangażowanie", "debata", "dyskusja", "efekt", "wysiłek",
+    "postęp", "rada", "odpowiedzialność", "sugestia", "nabywać", "dostosowywać", "analizować", "porównywać", "rozważać", "przyczyniać",
+    "tworzyć", "definiować", "dowodzić", "opisywać", "projektować", "oceniać", "badać", "identyfikować", "stosować", "ulepszać",
+    "organizować", "planować", "promować", "chronić", "redukować", "rozwiązywać", "przekształcać", "doceniać", "kwalifikować", "kategoryzować",
+    "potwierdzać", "kontrastować", "określać", "ustalać", "gwarantować", "integrować", "interpretować", "negocjować", "szansa", "zamiar"
+  ],
+  "B2": [
+    "niezbędny", "wyzwanie", "argumentować", "zrównoważony", "spójny", "wykonywać", "reperkusja", "kryterium", "niuans", "zasięg",
+    "poruszać", "ograniczać", "dominować", "przyspieszać", "gromadzić", "zgłębiać", "umacniać", "ułatwiać", "skłaniać", "modyfikować",
+    "łagodzić", "antycypować", "uspokajać", "wnioskować", "pielęgnować", "artykułować", "dążyć", "rozjaśniać", "przemawiać", "przewidywać",
+    "wspierać", "tonować", "jednoczyć", "pokrywać", "zderzać", "kompensować", "godzić", "dopasowywać", "konkretyzować", "warunkować",
+    "konsolidować", "stwierdzać", "podważać", "dedukować", "wyznaczać", "wskazywać", "wynikać", "wywoływać", "odrzucać", "doprecyzowywać",
+    "demontować", "zaprzeczać", "przemieszczać", "rozpowszechniać", "wyjaśniać", "rozpraszać", "zniekształcać", "dywersyfikować", "ujawniać", "formułować",
+    "unikać", "pochodzić", "powstawać", "emitować", "akcentować", "ramować", "wzbogacać", "pociągać", "dorównywać", "szkicować",
+    "precyzować", "spekulować", "zastrzegać", "strukturyzować", "podkreślać", "zwalniać", "naświetlać", "ekstrapolować", "faworyzować", "fluktuować",
+    "uzasadniać", "dzielić", "skupiać", "hamować", "łączyć", "generalizować", "kompromitować", "ilustrować", "przypisywać", "ponosić",
+    "indukować", "konkludować", "symulować", "znosić", "przekazywać", "uwypuklać", "zachęcać", "dostarczać", "rozpatrywać", "wnosić"
+  ],
+  "C1": [
+    "ulotny", "nieunikniony", "immanentny", "zaostrzać", "stopniowy", "omijać", "stronniczość", "paradygmat", "odszyfrowywać", "rozbieżność",
+    "skrupulatny", "leżący", "podkopywać", "przesłanka", "niespójność", "prawdopodobny", "roszczyć", "dwuznaczność", "aberracja", "wyrafinowany",
+    "twierdzić", "atawistyczny", "łagodzący", "wojowniczość", "skwapliwość", "określać", "przymusowy", "przypuszczenie", "współmierny", "konotacja",
+    "istotny", "przeciwskuteczny", "światopogląd", "upadek", "dylemat", "rozkwit", "retoryka", "empiryczny", "rozdroże", "zagadka",
+    "entelechia", "równoważny", "nakład", "sceptyczny", "eufemizm", "egzegeza", "znikomy", "bezsporny", "przekonujący", "hegemoniczny",
+    "przydatność", "nieprzewidywalny", "panujący", "nienaruszalny", "niezbywalność", "nieskładny", "niesłychany", "bezwładny", "inherentny", "niewzruszony",
+    "nieprzenikniony", "bezdenny", "nietykalny", "zawiły", "niepodważalny", "dysonans", "lakoniczny", "utajony", "kluczowy", "bolesny",
+    "złagodzenie", "jawny", "paradoks", "kategoryczny", "przenikać", "szkodliwy", "wiarygodność", "przeważający", "prerogatywa", "domniemanie",
+    "płodny", "wygnany", "miraż", "wzajemny", "nadmiarowość", "restrukturyzacja", "oporny", "zataiwanie", "milczący", "namacalny",
+    "styczny", "gwałtowność", "prawdomówność", "ganić", "zmienność", "zestawienie", "anachronizm", "przestarzałość", "wahanie", "wrażliwość"
+  ],
+  "C2": [
+    "niewyrażalny", "idiosynkrazja", "symbioza", "zrównoważenie", "wszechobecność", "błyskotka", "tyrada", "bojaźliwy", "wieczny", "bezkarne",
+    "wielomówność", "zawiły", "omówienie", "nędzny", "słodki", "obrzydliwy", "uchylać", "mętny", "abulia", "doskonalić",
+    "szorstkość", "przestarzały", "dorobkiewicz", "wiarołomstwo", "anathema", "kręty", "apokryficzny", "aforyzm", "apoteoza", "przyzwolenie",
+    "tajemnica", "wykręt", "asertywność", "ataraksja", "dręczyć", "błahostka", "zgiełk", "fundament", "bizantyjski", "fałsz",
+    "kazuistyka", "oczyszczenie", "szowinizm", "wrodzony", "zwyczajowy", "filipika", "zniewaga", "wyzwolenie", "paszkwil", "dwudzielność",
+    "traktat", "bystrość", "zaznanie", "przepych", "flegmatyczny", "gnoseologia", "hermeneutyka", "hańba", "niezniszczalny", "znikomość",
+    "nędza", "niegodziwość", "podstęp", "nieporęczny", "wstęp", "oskarżenie", "zwięzły", "gadatliwość", "mecenat", "mefityczny",
+    "mesmeryzm", "złowrogi", "nowicjusz", "nihilizm", "przeszkoda", "mamić", "czołobitny", "złowieszczy", "marzycielski", "ontologia",
+    "ostentacja", "palindrom", "panspermia", "parachronizm", "oszczędność", "uchodzenie", "sprężystość", "wszechwiedzący", "solipsyzm", "tautologia",
+    "przekręcanie", "zwiastun", "wir", "duch", "wycieńczenie", "teleologia", "epistemologia", "aksjologia", "etiologia", "prozodia"
+  ]
+},
+
+  "pt":{
+  "A1": [
+    "casa", "água", "amigo", "comer", "sol", "tempo", "livro", "grande", "sempre", "trabalhar",
+    "família", "cidade", "nome", "falar", "pequeno", "cão", "gato", "mãe", "pai", "filho",
+    "filha", "irmão", "irmã", "criança", "dia", "noite", "manhã", "tarde", "hoje", "ontem",
+    "obrigado", "olá", "pão", "leite", "maçã", "mesa", "cadeira", "porta", "janela", "carro",
+    "comboio", "rua", "praça", "parque", "escola", "professor", "estudante", "ano", "mês", "semana",
+    "hora", "minuto", "muito", "pouco", "bom", "mau", "novo", "velho", "feliz", "triste",
+    "ser", "estar", "ter", "fazer", "ir", "vir", "ver", "ouvir", "escrever", "ler",
+    "comprar", "pagar", "querer", "poder", "dever", "saber", "conhecer", "dar", "tomar", "pôr",
+    "levar", "sair", "entrar", "abrir", "fechar", "procurar", "olhar", "pensar", "gostar", "cantar",
+    "dançar", "jogar", "dormir", "beber", "camisa", "sapato", "cama", "bolsa", "dinheiro", "computador"
+  ],
+  "A2": [
+    "viajar", "aprender", "esquecer", "saúde", "filme", "explicar", "mudar", "lugar", "encontrar", "decidir",
+    "perigo", "recomendar", "empresa", "partilhar", "cozinha", "jardim", "férias", "costume", "equipa", "resposta",
+    "pergunta", "diferente", "importante", "difícil", "fácil", "suficiente", "cedo", "atrasado", "antes", "depois",
+    "perto", "longe", "acima", "abaixo", "esquerda", "direita", "tentar", "ganhar", "perder", "enviar",
+    "receber", "vender", "alugar", "cozinhar", "reparar", "partir", "chamar", "lembrar", "seguir", "atravessar",
+    "virar", "chegar", "correr", "caminhar", "nadar", "voar", "conduzir", "subir", "descer", "vestir",
+    "lavar", "limpar", "descansar", "acordar", "pentear", "almoçar", "jantar", "preço", "carteira", "cartão",
+    "desconto", "oferta", "mercado", "loja", "roupa", "chapéu", "casaco", "calças", "comida", "refeição",
+    "sobremesa", "fruta", "legume", "carne", "peixe", "bebida", "estação", "país", "campo", "praia",
+    "hotel", "bilhete", "horário", "reservar", "prometer", "clima", "chuva", "vento", "neve", "nuvem"
+  ],
+  "B1": [
+    "desenvolver", "expressar", "solução", "contexto", "influenciar", "manter", "habilidade", "exigir", "finalmente", "vantagem",
+    "ameaça", "justificar", "assumir", "projeto", "propor", "incentivar", "atitude", "qualidade", "quantidade", "ambiente",
+    "possibilidade", "consequência", "estratégia", "estrutura", "função", "processo", "resultado", "benefício", "desvantagem", "opção",
+    "objetivo", "propósito", "recurso", "sistema", "técnica", "tendência", "variação", "alternativa", "aspeto", "capacidade",
+    "característica", "condição", "conflito", "experiência", "impacto", "necessidade", "opiniao", "perspetiva", "princípio", "prioridade",
+    "relação", "risco", "segurança", "situação", "acordo", "compromisso", "debate", "discussão", "efeito", "esforço",
+    "progresso", "proposta", "recomendação", "responsabilidade", "sugestão", "adquirir", "adaptar", "analisar", "comparar", "considerar",
+    "contribuir", "criar", "definir", "demonstrar", "descrever", "desenhar", "avaliar", "examinar", "identificar", "aplicar",
+    "melhorar", "organizar", "planear", "promover", "proteger", "reduzir", "resolver", "transformar", "valorizar", "qualificar",
+    "classificar", "confirmar", "contrastar", "determinar", "estabelecer", "garantir", "integrar", "interpretar", "investigar", "negociar"
+  ],
+  "B2": [
+    "indispensável", "desafio", "argumentar", "sustentável", "coerente", "desempenhar", "repercussão", "critério", "nuance", "alcance",
+    "abordar", "limitar", "predominar", "acelerar", "acumular", "aprofundar", "consolidar", "facilitar", "incitar", "modificar",
+    "atenuar", "antecipar", "apaziguar", "solicitar", "aportar", "apreciar", "articular", "aspirar", "aliviar", "atribuir",
+    "prever", "sustentar", "matizar", "unir", "coincidir", "colidir", "compensar", "conciliar", "pactuar", "concretizar",
+    "condicionar", "reforçar", "constatar", "contemplar", "contestar", "deduzir", "delimitar", "denotar", "derivar", "desacreditar",
+    "desencadear", "rejeitar", "detalhar", "desmantelar", "desmentir", "deslocar", "divulgar", "elucidar", "dinamizar", "dissipar",
+    "distorcer", "diversificar", "elaborar", "eludir", "emanar", "emergir", "emitir", "enfatizar", "enquadrar", "enriquecer",
+    "comportar", "equiparar", "esboçar", "especificar", "especular", "estipular", "estruturar", "sublinhar", "isentar", "expor",
+    "extrapolar", "favorecer", "flutuar", "formular", "fundamentar", "fracionar", "focar", "travar", "fundir", "generalizar",
+    "comprometer", "ilustrar", "imputar", "incorrer", "induzir", "inferir", "simular", "sofrer", "transmitir", "evidenciar"
+  ],
+  "C1": [
+    "efémero", "inelutável", "intrínseco", "exacerbar", "paulatino", "soslaiar", "viés", "paradigma", "decifrar", "discrepância",
+    "escrupuloso", "subjacente", "minar", "premissa", "incongruência", "verosímil", "reivindicar", "ambiguidade", "aberração", "requintado",
+    "asseverar", "atávico", "atenuante", "beligerância", "celeridade", "circunscrever", "coercivo", "conjetura", "comensurável", "conotação",
+    "consubstancial", "contingência", "contraproducente", "corroborar", "decrepitude", "dilema", "eclosão", "eloquência", "empírico", "encruzilhada",
+    "enigma", "entelequia", "equiparável", "erogação", "cético", "eufemismo", "exegese", "exíguo", "irrefutável", "probante",
+    "hegemónico", "idoneidade", "imponderável", "imperante", "inalienável", "inalienabilidade", "inarticulado", "inaudito", "inerte", "inerente",
+    "imanente", "imutável", "impenetrável", "insondável", "intangível", "intrincado", "incontestável", "dissonância", "lacónico", "latente",
+    "neurálgico", "meticuloso", "mitigação", "ostensível", "paradoxo", "perentório", "permear", "pernicioso", "plausibilidade", "preponderante",
+    "prerrogativa", "presunção", "prolífico", "proscrito", "quimérico", "recíproco", "redundância", "reestruturação", "refratário", "desvio",
+    "tácito", "tangível", "tangencial", "veemência", "veracidade", "vitupério", "volubilidade", "justaposição", "anacronismo", "obsolescência"
+  ],
+  "C2": [
+    "inefável", "idiossincrasia", "simbiose", "equanimidade", "ubiquidade", "oripel", "filípica", "pusilânime", "sempiterno", "impunemente",
+    "verbosidade", "palingenesia", "inextrincável", "circunlóquio", "abjeto", "melífluo", "execrável", "revogar", "abstruso", "abulia",
+    "meandros", "acrimónia", "pueril", "parvenu", "felonia", "anátema", "anfrasto", "apócrifo", "apotegma", "apoteose",
+    "aquiescência", "arcano", "argúcia", "assertividade", "ataraxia", "atazanar", "futilidade", "algazarra", "embasamento", "bizantino",
+    "cacofonia", "casuística", "catarse", "chauvinismo", "congênito", "consuetudinário", "invectiva", "vilipêndio", "alforria", "diatribe",
+    "dicotomia", "disquisição", "sagacidade", "expiação", "fasto", "flegmático", "gnoseologia", "hermenêutica", "ignomínia", "imarcescível",
+    "inanidade", "indigência", "iniquidade", "insídia", "intempestivo", "intróito", "requisitória", "lapidar", "loquacidade", "mecenato",
+    "mefítico", "mesmerismo", "funesto", "neófito", "niilismo", "óbice", "ofuscar", "obsequioso", "ominoso", "onírico",
+    "ontologia", "ostentação", "palíndromo", "panspermia", "paracronismo", "parcimónia", "petulância", "reconditez", "resiliência",
+    "onisciente", "solipsismo", "tautologia", "tergiversação", "vaticínio", "voragem", "vorticismo", "zeitgeist", "inanição", "inapetência", "prolegómenos"
+  ]
+},
+
+  "ru": {
+  "A1": [
+    "дом", "вода", "друг", "есть", "солнце", "время", "книга", "большой", "всегда", "работать",
+    "семья", "город", "имя", "говорить", "маленький", "собака", "кот", "мать", "отец", "сын",
+    "дочь", "брат", "сестра", "ребёнок", "день", "ночь", "утро", "вечер", "сегодня", "вчера",
+    "спасибо", "привет", "хлеб", "молоко", "яблоко", "стол", "стул", "дверь", "окно", "машина",
+    "поезд", "улица", "площадь", "парк", "школа", "учитель", "студент", "год", "месяц", "неделя",
+    "час", "минута", "много", "мало", "хороший", "плохой", "новый", "старый", "весёлый", "грустный",
+    "быть", "иметь", "делать", "идти", "приходить", "видеть", "слышать", "писать", "читать", "покупать",
+    "платить", "хотеть", "мочь", "знать", "давать", "брать", "класть", "носить", "выходить", "входить",
+    "открывать", "закрывать", "искать", "смотреть", "думать", "любить", "петь", "танцевать", "играть", "спать",
+    "пить", "рубашка", "обувь", "кровать", "сумка", "деньги", "чай", "кофе", "море", "лето"
+  ],
+  "A2": [
+    "путешествовать", "учить", "забывать", "здоровье", "фильм", "объяснять", "менять", "место", "находить", "решать",
+    "опасность", "понимать", "советовать", "фирма", "делиться", "кухня", "сад", "отпуск", "привычка", "команда",
+    "ответ", "вопрос", "разный", "важный", "трудный", "лёгкий", "достаточный", "рано", "поздно", "до",
+    "близко", "далеко", "вверх", "вниз", "левый", "правый", "пробовать", "выигрывать", "проигрывать", "отправлять",
+    "получать", "продавать", "арендовать", "готовить", "чинить", "ломать", "звонить", "помнить", "следовать", "переходить",
+    "поворачивать", "приезжать", "бегать", "гулять", "плавать", "летать", "водить", "вставать", "спускаться", "одеваться",
+    "умываться", "убирать", "отдыхать", "просыпаться", "причесываться", "обедать", "ужинать", "цена", "кошелёк", "карта",
+    "скидка", "предложение", "рынок", "магазин", "одежда", "шляпа", "пальто", "брюки", "еда", "блюдо",
+    "десерт", "фрукты", "овощи", "мясо", "рыба", "напиток", "станция", "деревня", "пляж", "отель",
+    "билет", "расписание", "бронировать", "обещать", "погода", "дождь", "ветер", "снег", "облако", "аэропорт"
+  ],
+  "B1": [
+    "развивать", "выражать", "решение", "контекст", "влиять", "сохранять", "навык", "требовать", "результат", "преимущество",
+    "угроза", "оправдывать", "предполагать", "проект", "предлагать", "поддерживать", "отношение", "качество", "количество", "экология",
+    "возможность", "последствие", "стратегия", "структура", "функция", "процесс", "итог", "польза", "недостаток", "вариант",
+    "цель", "намерение", "источник", "система", "техника", "тенденция", "изменение", "альтернатива", "аспект", "вместимость",
+    "свойство", "условие", "конфликт", "опыт", "влияние", "потребность", "мнение", "перспектива", "принцип", "приоритет",
+    "связь", "риск", "безопасность", "ситуация", "соглашение", "обязательство", "дебаты", "обсуждение", "эффект", "усилие",
+    "прогресс", "совет", "рекомендация", "ответственность", "инициатива", "приобретать", "адаптировать", "анализировать", "сравнивать", "рассматривать",
+    "способствовать", "создавать", "определять", "доказывать", "описывать", "проектировать", "оценивать", "исследовать", "выявлять", "применять",
+    "улучшать", "организовывать", "планировать", "продвигать", "защищать", "сокращать", "устранять", "преобразовывать", "ценность", "квалификация",
+    "классифицировать", "подтверждать", "сопоставлять", "устанавливать", "гарантировать", "интегрировать", "интерпретировать", "расследовать", "вести", "шанс"
+  ],
+  "B2": [
+    "необходимый", "вызов", "аргументировать", "устойчивый", "последовательный", "выполнять", "резонанс", "критерий", "нюанс", "охват",
+    "затрагивать", "ограничивать", "преобладать", "ускорять", "накапливать", "углублять", "укреплять", "облегчать", "побуждать", "видоизменять",
+    "смягчать", "предвосхищать", "умиротворять", "запрашивать", "вносить", "ценить", "формулировать", "стремиться", "утолять", "приписывать",
+    "прогнозировать", "отстаивать", "сглаживать", "объединять", "совпадать", "сталкиваться", "компенсировать", "согласовывать", "утверждать", "конкретизировать",
+    "обусловливать", "подкреплять", "констатировать", "созерцать", "оспаривать", "подытоживать", "разграничивать", "обозначать", "вытекать", "дискредитировать",
+    "провоцировать", "отклонять", "детализировать", "демонтировать", "опровергать", "перемещать", "распространять", "разъяснять", "активизировать", "рассеивать",
+    "искажать", "диверсифицировать", "разглашать", "разрабатывать", "избегать", "исходить", "возникать", "излучать", "подчеркивать", "обрамлять",
+    "обогащать", "влечь", "приравнивать", "набрасывать", "уточнять", "спекулировать", "оговаривать", "структурировать", "акцентировать", "освобождать",
+    "излагать", "экстраполировать", "благоприятствовать", "колебаться", "обосновывать", "разделять", "фокусировать", "тормозить", "сливать", "обобщать",
+    "компрометировать", "иллюстрировать", "вменять", "подвергаться", "индуцировать", "заменять", "имитировать", "подвергать", "переносить", "передавать"
+  ],
+  "C1": [
+    "мимолётный", "неизбежный", "присущий", "обострять", "постепенный", "обходить", "предвзятость", "парадигма", "расшифровывать", "расхождение",
+    "скрупулёзный", "фундаментальный", "подрывать", "предпосылка", "нестыковка", "правдоподобный", "претендовать", "двусмысленность", "аберрация", "утончённый",
+    "декларировать", "атавистический", "смягчающий", "воинственность", "проворство", "очерчивать", "принудительный", "догадка", "соразмерный", "коннотация",
+    "существенный", "контрпродуктивный", "подпитывать", "дряхлость", "дилемма", "расцвет", "красноречие", "эмпирический", "перепутье", "загадка",
+    "энтелехия", "сопоставимый", "ассигнование", "скептический", "эвфемизм", "экзегеза", "скудный", "неопровержимый", "убедительный", "гегемонистский",
+    "пригодность", "непредсказуемый", "господствующий", "неотчуждаемый", "неотчуждаемость", "бессвязный", "неслыханный", "инертный", "инхерентный", "имманентный",
+    "неизменный", "непроницаемый", "непостижимый", "неосязаемый", "запутанный", "неоспоримый", "диссонанс", "лаконичный", "латентный", "ключевой",
+    "въедливый", "смягчение", "явный", "парадокс", "категоричный", "проникать", "пагубный", "правдоподобие", "преобладающий", "прерогатива",
+    "презумпция", "плодовитый", "изгнанный", "призрачный", "взаимный", "избыточность", "реструктуризация", "упорствующий", "уклонение", "молчаливый",
+    "осязаемый", "касательный", "ярость", "достоверность", "порицание", "изменчивость", "сопоставление", "анахронизм", "устаревание", "уязвимость"
+  ],
+  "C2": [
+    "невыразимый", "идиосинкразия", "симбиоз", "хладнокровие", "вездесущность", "мишура", "филиппика", "малодушный", "вечный", "безнаказанно",
+    "многословие", "палингенез", "неразрешимый", "иносказание", "гнусный", "елейный", "отвратительный", "упразднять", "заумный", "абулия",
+    "едкость", "ребяческий", "выскочка", "вероломство", "анафема", "извилина", "апокрифический", "афоризм", "апофеоз", "попустительство",
+    "таинство", "проницательность", "напористость", "атараксия", "изводить", "тщета", "шумиха", "византийский", "какофония", "казуистика",
+    "катарсис", "шовинизм", "врождённый", "традиционный", "инвектива", "поношение", "раскрепощение", "диорама", "дихотомия", "дискурс",
+    "дальновидность", "искупление", "пышность", "флегматичный", "гносеология", "герменевтика", "бесчестье", "нетленный", "ничтожность", "нищета",
+    "беззаконие", "коварство", "несвоевременный", "вступление", "чеканный", "болтливость", "меценатство", "вредоносный", "магнетизм", "зловещий",
+    "неофит", "нигилизм", "помеха", "затуманивать", "подобострастный", "сновидческий", "онтология", "кичливость", "палиндром", "панспермия",
+    "парахронизм", "бережливость", "дерзость", "затаённость", "жизнестойкость", "всеведущий", "солипсизм", "тавтология", "увиливание", "пророчество",
+    "пучина", "вортицизм", "истощение", "анорексия", "пролегомены", "этиология", "просодия", "аксиология", "эпистемология", "телеология"
+  ]
+},
+
+  "th": {
+  "A1": [
+    "บ้าน", "น้ำ", "เพื่อน", "กิน", "พระอาทิตย์", "เวลา", "หนังสือ", "ใหญ่", "เสมอ", "ทำงาน",
+    "ครอบครัว", "เมือง", "ชื่อ", "พูด", "เล็ก", "หมา", "แมว", "แม่", "พ่อ", "ลูกชาย",
+    "ลูกสาว", "พี่ชาย", "พี่สาว", "เด็ก", "วัน", "คืน", "เช้า", "เย็น", "วันนี้", "เมื่อวาน",
+    "ขอบคุณ", "สวัสดี", "ขนมปัง", "นม", "แอปเปิ้ล", "โต๊ะ", "เก้าอี้", "ประตู", "หน้าต่าง", "รถยนต์",
+    "รถไฟ", "ถนน", "ตลาด", "สวนสาธารณะ", "โรงเรียน", "ครู", "นักเรียน", "ปี", "เดือน", "สัปดาห์",
+    "ชั่วโมง", "นาที", "มาก", "น้อย", "ดี", "เลว", "ใหม่", "เก่า", "สนุก", "เศร้า",
+    "เป็น", "มี", "ทำ", "ไป", "มา", "เห็น", "ฟัง", "เขียน", "อ่าน", "ซื้อ",
+    "จ่าย", "อยาก", "สามารถ", "ต้อง", "รู้", "รู้จัก", "ให้", "เอา", "วาง", "ถือ",
+    "ออก", "เข้า", "เปิด", "ปิด", "หา", "ดู", "คิด", "ชอบ", "ร้องเพลง", "เต้น",
+    "เล่น", "นอน", "ดื่ม", "เสื้อ", "รองเท้า", "เตียง", "กระเป๋า", "เงิน", "ชา", "กาแฟ"
+  ],
+  "A2": [
+    "ท่องเที่ยว", "เรียน", "ลืม", "สุขภาพ", "ภาพยนตร์", "อธิบาย", "เปลี่ยน", "สถานที่", "พบ", "ตัดสินใจ",
+    "อันตราย", "แนะนำ", "บริษัท", "แบ่งปัน", "ห้องครัว", "สวน", "วันหยุด", "นิสัย", "ทีม", "คำตอบ",
+    "คำถาม", "ต่างกัน", "สำคัญ", "ยาก", "ง่าย", "เพียงพอ", "เช้าตรู่", "สาย", "ก่อน", "หลัง",
+    "ใกล้", "ไกล", "บน", "ล่าง", "ซ้าย", "ขวา", "พยายาม", "ชนะ", "แพ้", "ส่ง",
+    "รับ", "ขาย", "เช่า", "ทำอาหาร", "ซ่อม", "พัง", "โทรศัพท์", "จำ", "ตาม", "ข้าม",
+    "เลี้ยว", "ถึง", "วิ่ง", "เดิน", "ว่ายน้ำ", "บิน", "ขับรถ", "ตื่น", "อาบน้ำ", "แต่งตัว",
+    "แปรงฟัน", "ทำความสะอาด", "พักผ่อน", "หวีผม", "ทานข้าวเช้า", "ทานข้าวเที่ยง", "ราคา", "กระเป๋าสตางค์", "บัตร", "ส่วนลด",
+    "ข้อเสนอ", "ห้างสรรพสินค้า", "ร้านค้า", "เสื้อผ้า", "หมวก", "เสื้อกันหนาว", "กางเกง", "อาหาร", "มื้ออาหาร", "ของหวาน",
+    "ผลไม้", "ผัก", "เนื้อ", "ปลา", "เครื่องดื่ม", "สถานี", "ประเทศ", "ชนบท", "ชายหาด", "โรงแรม",
+    "ตั๋ว", "ตารางเวลา", "จอง", "สัญญา", "อากาศ", "ฝน", "ลม", "หิมะ", "เมฆ", "สนามบิน"
+  ],
+  "B1": [
+    "พัฒนา", "แสดงออก", "ทางออก", "บริบท", "ส่งผลกระทบ", "รักษา", "ทักษะ", "ต้องการ", "ในที่สุด", "ข้อดี",
+    "ภัยคุกคาม", "อธิบายเหตุผล", "สันนิษฐาน", "โครงการ", "เสนอ", "สนับสนุน", "ทัศนคติ", "คุณภาพ", "ปริมาณ", "สิ่งแวดล้อม",
+    "ความเป็นไปได้", "ผลตามมา", "ยุทธศาสตร์", "โครงสร้าง", "หน้าที่", "กระบวนการ", "ผลลัพธ์", "ประโยชน์", "ข้อเสีย", "ทางเลือก",
+    "เป้าหมาย", "วัตถุประสงค์", "ทรัพยากร", "ระบบ", "เทคนิค", "แนวโน้ม", "ความเปลี่ยนแปลง", "ทางเลือกอื่น", "แง่มุม", "ความจุ",
+    "คุณลักษณะ", "เงื่อนไข", "ความขัดแย้ง", "ประสบการณ์", "ผลกระทบ", "ความต้องการ", "ความคิดเห็น", "มุมมอง", "หลักการ", "ลำดับความสำคัญ",
+    "ความสัมพันธ์", "ความเสี่ยง", "ความปลอดภัย", "สถานการณ์", "ข้อตกลง", "ข้อผูกพัน", "การอภิปราย", "การหารือ", "ประสิทธิภาพ", "ความพยายาม",
+    "ความก้าวหน้า", "ข้อเสนอแนะ", "คำแนะนำ", "ความรับผิดชอบ", "ข้อเสนอ", "รับมา", "ปรับตัว", "วิเคราะห์", "เปรียบเทียบ", "พิจารณา",
+    "มีส่วนร่วม", "สร้างสรรค์", "กำหนด", "พิสูจน์", "บรรยาย", "ออกแบบ", "ประเมิน", "ตรวจสอบ", "ระบุ", "ประยุกต์ใช้",
+    "ปรับปรุง", "จัดระเบียบ", "วางแผน", "ส่งเสริม", "ปกป้อง", "ลดลง", "แก้ปัญหา", "เปลี่ยนแปลง", "ให้คุณค่า", "จัดประเภท",
+    "ยืนยัน", "เปรียบเทียบความต่าง", "ตัดสิน", "ก่อตั้ง", "รับประกัน", "ผสมผสาน", "ตีความ", "สืบสวน", "เจรจา", "โอกาส"
+  ],
+  "B2": [
+    "จำเป็นยิ่ง", "ความท้าทาย", "โต้แย้ง", "ยั่งยืน", "สอดคล้อง", "ปฏิบัติหน้าที่", "ผลสะท้อน", "เกณฑ์", "ความแตกต่างเล็กน้อย", "ขอบเขต",
+    "หยิบยก", "จำกัด", "มีอิทธิพลเหนือ", "เร่งรัด", "สะสม", "เจาะลึก", "เสริมสร้าง", "อำนวยความสะดวก", "กระตุ้น", "แก้ไขปรับปรุง",
+    "บรรเทา", "คาดการณ์", "ทำให้สงบ", "ร้องขอ", "สมทบ", "ซาบซึ้ง", "ออกเสียงชัดเจน", "มุ่งปรารถนา", "ผ่อนคลาย", "มอบหมาย",
+    "พยากรณ์", "ยึดมั่น", "แต่งเติม", "รวบรวม", "ตรงกัน", "ปะทะ", "ชดเชย", "ประสาน", "ตกลงร่วมกัน", "ทำให้เป็นรูปธรรม",
+    "กำหนดเงื่อนไข", "หนุนหลัง", "ตั้งข้อสังเกต", "ไตร่ตรอง", "โต้โต้แย้ง", "อนุมาน", "กำหนดเขต", "แสดงถึง", "สืบเนื่อง", "ดิสเครดิต",
+    "จุดชนวน", "ปฏิเสธ", "ลงรายละเอียด", "รื้อถอน", "หักล้าง", "ย้ายตำแหน่ง", "แพร่กระจาย", "ขยายความ", "เพิ่มพลัง", "ขจัด",
+    "บิดเบือน", "หลากหลายรูปแบบ", "ยกร่าง", "หลบเลี่ยง", "แผ่ออกมา", "ปรากฏขึ้น", "เปล่งออกมา", "เน้นย้ำ", "วางกรอบ", "ยกระดับ",
+    "นำมาซึ่ง", "เทียบเท่า", "ร่างคร่าวๆ", "เจาะจง", "คาดเดา", "กำหนดข้อบังคับ", "วางโครงสร้าง", "ขีดเส้นใต้", "ยกเว้น", "ชี้แจง",
+    "คาดการณ์ไกล", "เอื้ออำนวย", "ผันผวน", "ร่างกฎเกณฑ์", "วางรากฐาน", "แบ่งส่วน", "มุ่งเน้น", "ยับยั้ง", "หลอมรวม", "สรุปเหมา",
+    "ประนีประนอม", "ยกตัวอย่างประกอบ", "ปรักปรำ", "ประสบ", "ชักนำ", "สรุปความ", "จำลอง", "ทนรับ", "ถ่ายทอด", "แสดงให้เห็นชัดเจน"
+  ],
+  "C1": [
+    "ชั่วครู่", "เลี่ยงไม่ได้", "ฝังแน่น", "ซ้ำเติม", "ทีละน้อย", "หลีกเลี่ยง", "อคติ", "กระบวนทัศน์", "ถอดรหัส", "ความไม่สอดคล้องกัน",
+    "ละเอียดรอบคอบ", "ที่แฝงอยู่", "บั่นทอน", "ข้อสันนิษฐานเบื้องต้น", "ความไม่เข้ากัน", "น่าเชื่อถือ", "เรียกร้องสิทธิ์", "ความคลุมเครือ", "ความผิดปกติ", "ประณีต",
+    "แถลงยืนยัน", "ตกทอดทางพันธุกรรม", "เหตุบรรเทาโทษ", "ความกระหายสงคราม", "ความรวดเร็ว", "จำกัดขอบเขต", "การบังคับ", "การคาดเดา", "สมน้ำสมเนื้อ", "นัยความหมาย",
+    "เป็นสาระสำคัญร่วม", "ความไม่แน่นอน", "สวนทางกับผลลัพธ์", "ยืนยันหนักแน่น", "ความชราภาพ", "ภาวะกลืนไม่เข้าคายไม่ออก", "การผุดขึ้น", "วาทศิลป์", "เชิงประจักษ์", "ทางแยก",
+    "ปริศนา", "สภาวะสมบูรณ์", "เทียบเคียงได้", "การจัดสรร", "กังขา", "คำสุภาพ", "การอรรถาธิบาย", "เล็กน้อยยิ่ง", "หักล้างไม่ได้", "มีน้ำหนักน่าเชื่อ",
+    "ผู้ครอบงำ", "ความเหมาะสม", "ปัจจัยประเมินไม่ได้", "ครอบคลุม", "โอนย้ายไม่ได้", "สิทธิไม่อาจละเมิดได้", "ไม่เป็นภาษา", "ไม่เคยปรากฏมาก่อน", "เฉื่อยชา", "มีอยู่โดยธรรมชาติ",
+    "สถิตอยู่ภายใน", "ไม่เปลี่ยนแปลง", "ไม่สามารถผ่านได้", "หยั่งไม่ถึง", "จับต้องไม่ได้", "ซับซ้อนซ่อนเงื่อน", "ปฏิเสธไม่ได้", "ความไม่เข้ากันของเสียง", "พูดน้อยกระชับ", "แฝงอยู่",
+    "จุดยุทธศาสตร์", "พิถีพิถัน", "การบรรเทา", "เปิดเผยชัดเจน", "ความขัดแย้งในตัวเอง", "เด็ดขาด", "แทรกซึม", "เป็นโทษร้ายแรง", "ความสมเหตุสมผล", "มีบทบาทนำ",
+    "อภิสิทธิ์", "ข้อสันนิษฐาน", "ออกผลดก", "ถูกสั่งห้าม", "เพ้อฝัน", "ตอบสนองซึ่งกันและกัน", "ความซ้ำซ้อน", "การปรับโครงสร้าง", "หัวแข็งดื้อรั้น", "การเบี่ยงเบน",
+    "เป็นที่เข้าใจกัน", "จับต้องได้ชัดเจน", "เกี่ยวข้องเพียงเผินๆ", "ความรุนแรงหนักหน่วง", "ความสัจจะ", "การประณาม", "ความปรวนแปร", "การวางเคียงกัน", "การผิดยุคสมัย", "ความล้าสมัย"
+  ],
+  "C2": [
+    "สุดจะพรรณนา", "บุคลิกเฉพาะตน", "ภาวะพึ่งพาอาศัย", "ความอุเบกขา", "การปรากฏทุกหนแห่ง", "เครื่องประดับไร้ค่า", "สุนทรพจน์โจมตี", "ขี้ขลาดตาขาว", "ชั่วกัลปาวสาน", "โดยไม่โดนลงโทษ",
+    "การใช้คำรุ่มร่าม", "การกำเนิดใหม่", "แก้ไขไม่ได้", "การพูดอ้อมค้อม", "น่ารังเกียจอย่างยิ่ง", "เสแสร้งอ่อนหวาน", "น่าชั่วร้าย", "ยกเลิกกฎหมาย", "เข้าใจยากยิ่ง", "สภาวะไร้เจตจำนง",
+    "ส่วนเลี้ยวลดคดเคี้ยว", "ความวาจาเผ็ดร้อน", "ไร้เดียงสาเกินวัย", "เศรษฐีใหม่ไร้สกุล", "การทรยศหักหลัง", "คำสาปแช่ง", "ซอกมุมซับซ้อน", "เคลือบแคลงว่าจริงหรือไม่", "คติพจน์", "การยกย่องเป็นเทพ",
+    "การยินยอมโดยสงบ", "เงื่อนงำล้ำลึก", "ความเฉียบแหลม", "การยืนยันสิทธิ์อย่างมั่นใจ", "ความใจสงบไร้กิเลส", "ก่อกวนรังควาน", "เรื่องไร้สาระ", "เสียงอึกทึกครึกโครม", "รากฐานรองรับ", "ซับซ้อนซ่อนเงื่อนเกินจำเป็น",
+    "เสียงประสานที่ระคายหู", "การแก้เกี้ยวแบบข้างๆ คูๆ", "การปลดปล่อยอารมณ์", "คลั่งชาติอย่างหลับหูหลับตา", "เป็นมาแต่กำเนิด", "ตามจารีตประเพณี", "วาจาด่าทอ", "การหมิ่นประมาท", "การปลดปล่อยเป็นอิสระ", "บทความโจมตี",
+    "การแยกเป็นสองฝั่ง", "การวิเคราะห์อย่างละเอียด", "ความเฉลียวฉลาด", "การชดใช้บาป", "ความหรูหราโอ่อ่า", "เย็นชาเฉยชา", "ญาณวิทยา", "ตีความศาสตร์", "ความอัปยศอดสู", "ไม่รู้จักโรยรา",
+    "ความว่างเปล่าไร้สาระ", "ความยากจนข้นแค้น", "ความอยุติธรรมร้ายแรง", "กลอุบายหลอกลวง", "ไม่ถูกกาลเทศะ", "อารัมภบท", "คำฟ้องร้องรุนแรง", "สั้นกระชับลึกซึ้ง", "ความช่างพูดช่างคุย", "การอุปถัมภ์ศิลปะ",
+    "ส่งกลิ่นเหม็นเป็นพิษ", "อำนาจดึงดูดสะกดจิต", "อัปมงคลยิ่ง", "ผู้เข้าสู่ศาสนาใหม่", "ลัทธินิเสธนิยม", "อุปสรรคขัดขวาง", "ทำให้พร่ามัว", "พินอบพินเทา", "ลางร้าย", "เกี่ยวกับความฝัน",
+    "ภววิทยา", "การโอ้อวด", "คำอ่านย้อนกลับ", "สมมติฐานกำเนิดชีวิตจากอวกาศ", "การลำดับเวลาผิดยุค", "ความตระหนี่ถี่เหนียว", "ความก้าวร้าวอวดดี", "ความซ่อนเร้นลึกลับ", "ความยืดหยุ่นฟื้นตัว", "สัพพัญญู",
+    "เอกัตตนิยม", "การพูดซ้ำความเดิม", "การไถลบ่ายเบี่ยง", "คำทำนาย", "ห้วงเหวลึก", "ลัทธิเคลื่อนไหวเร็วจี๋", "จิตวิญญาณแห่งยุคสมัย", "ภาวะอดอยากจนอ่อนแรง", "สภาวะไม่อยากอาหาร", "อารัมภกถา"
+  ]
+},
+
+  "tr": {
+  "A1": [
+    "ev", "su", "arkadaş", "yemek", "güneş", "zaman", "kitap", "büyük", "daima", "çalışmak",
+    "aile", "şehir", "isim", "konuşmak", "küçük", "köpek", "kedi", "anne", "baba", "oğul",
+    "kız", "kardeş", "abla", "çocuk", "gün", "gece", "sabah", "akşam", "bugün", "dün",
+    "teşekkür", "selam", "ekmek", "süt", "elma", "masa", "sandalye", "kapı", "pencere", "araba",
+    "tren", "sokak", "meydan", "park", "okul", "öğretmen", "öğrenci", "yıl", "ay", "hafta",
+    "saat", "dakika", "çok", "az", "iyi", "kötü", "yeni", "eski", "mutlu", "üzgün",
+    "olmak", "yapmak", "gitmek", "gelmek", "görmek", "duymak", "yazmak", "okumak", "ödemek", "istemek",
+    "bilmek", "vermek", "almak", "koymak", "taşımak", "çıkmak", "girmek", "açmak", "kapatmak", "aramak",
+    "bakmak", "düşünmek", "sevmek", "oynamak", "uyumak", "içmek", "gömlek", "ayakkabı", "yatak", "çanta",
+    "para", "çay", "kahve", "deniz", "yaz", "kış", "hava", "kalem", "defter", "ırmak"
+  ],
+  "A2": [
+    "gezmek", "öğrenmek", "unutmak", "sağlık", "film", "açıklamak", "değişmek", "mekan", "bulmak", "kararlaştırmak",
+    "tehlike", "anlamak", "öneri", "şirket", "paylaşmak", "mutfak", "bahçe", "tatil", "alışkanlık", "takım",
+    "cevap", "soru", "farklı", "önemli", "zor", "kolay", "yeterli", "erken", "geç", "önce",
+    "sonra", "yakın", "uzak", "yukarı", "aşağı", "sol", "sağ", "düz", "denemek", "kazanmak",
+    "kaybetmek", "göndermek", "satmak", "kiralamak", "pişirmek", "onarmak", "bozmak", "hatırlamak", "izlemek", "geçmek",
+    "dönmek", "ulaşmak", "koşmak", "yürümek", "yüzmek", "uçmak", "sürmek", "kalkmak", "inmek", "giyinmek",
+    "yıkanmak", "temizlemek", "dinlenmek", "uyanmak", "taranmak", "fiyat", "cüzdan", "kart", "indirim", "teklif",
+    "pazar", "mağaza", "elbise", "şapka", "palto", "pantolon", "öğün", "tatlı", "meyve", "sebze",
+    "et", "balık", "içecek", "istasyon", "ülke", "köy", "plaj", "otel", "bilet", "tarife",
+    "sözleşme", "yağmur", "rüzgar", "kar", "bulut", "havalimanı", "gözlük", "bavul", "harita", "otobüs"
+  ],
+  "B1": [
+    "geliştirmek", "ifade", "çözüm", "bağlam", "etkilemek", "sürdürmek", "beceri", "gerekmek", "nihayet", "avantaj",
+    "tehdit", "gerekçelendirmek", "varsaymak", "proje", "önermek", "desteklemek", "tutum", "kalite", "miktar", "çevre",
+    "olasılık", "sonuç", "strateji", "yapı", "işlev", "süreç", "ürün", "fayda", "sakınca", "seçenek",
+    "hedef", "amaç", "kaynak", "sistem", "teknik", "eğilim", "değişim", "alternatif", "boyut", "kapasite",
+    "özellik", "koşul", "çatışma", "deneyim", "etki", "ihtiyaç", "görüş", "perspektif", "ilke", "öncelik",
+    "ilişki", "risk", "güvenlik", "durum", "anlaşma", "taahhüt", "tartışma", "görüşme", "tesir", "çaba",
+    "ilerleme", "sorumluluk", "tavsiye", "edinmek", "uyarlamak", "çözümlemek", "karşılaştırmak", "değerlendirmek", "katkı", "oluşturmak",
+    "tanımlamak", "kanıtlamak", "betimlemek", "tasarlamak", "ölçmek", "incelemek", "saptamak", "uygulamak", "güzelleştirmek", "düzenlemek",
+    "planlamak", "teşvik", "korumak", "azaltmak", "çözmek", "dönüştürmek", "sınıflandırmak", "onaylamak", "kıyaslamak", "belirlemek",
+    "kurmak", "güvence", "bütünleştirmek", "yorumlamak", "araştırmak", "müzakere", "fırsat", "yöntem", "kavram", "kavratmak"
+  ],
+  "B2": [
+    "vazgeçilmez", "çetin", "savunmak", "sürdürülebilir", "tutarlı", "yürütmek", "yansıma", "ölçüt", "nüans", "kapsam",
+    "sınırlamak", "hızlandırmak", "biriktirmek", "derinleştirmek", "pekiştirmek", "kolaylaştırmak", "kışkırtmak", "değiştirmek", "hafifletmek", "öngörmek",
+    "yatıştırmak", "arzulamak", "rahatlatmak", "atfetmek", "tahmin", "yumuşatmak", "birleştirmek", "çakışmak", "telafi", "uzlaştırmak",
+    "somutlaştırmak", "koşullandırmak", "güçlendirmek", "saptama", "itiraz", "sınırlandırmak", "belirtmek", "türemek", "tetiklemek", "reddetmek",
+    "ayrıntılandırmak", "sökmek", "yalanlamak", "yaymak", "aydınlatmak", "canlandırmak", "dağıtmak", "saptırmak", "çeşitlendirmek", "izah",
+    "hazırlamak", "kaçınmak", "belirmek", "vurgulamak", "çerçevelemek", "zenginleştirmek", "taslak", "belirginleştirmek", "yapılandırmak", "sergilemek",
+    "dalgalanmak", "temellendirmek", "bölmek", "odaklamak", "frenlemek", "eritmek", "genellemek", "örneklendirmek", "yüklemek", "maruziyet",
+    "uyarmak", "türetmek", "taklit", "katlanmak", "aktarmak", "bürünmek", "caydırmak", "çağrıştırmak", "çekinmek", "dengelemek",
+    "dindirmek", "direnmek", "kabullenmek", "kavramak", "kavuşmak", "kesintilemek", "kuşatmak", "manipüle", "nitelendirmek", "onaylatmak",
+    "oturtmak", "öne sürmek", "özümsemek", "paketlemek", "şekillendirmek", "üstlenmek", "vaat etmek", "yanılmak", "yaygınlaşmak", "yönlendirmek"
+  ],
+  "C1": [
+    "geçici", "kaçınılmaz", "özgün", "şiddetlendirmek", "kademeli", "bertaraf", "önyargı", "paradigma", "deşifre", "çelişki",
+    "titiz", "baltalamak", "öncül", "tutarsızlık", "makul", "belirsizlik", "sapma", "sofistike", "beyan", "atasal",
+    "hafifletici", "çabukluk", "zorlayıcı", "varsayım", "orantılı", "çağrışım", "özdeş", "olumsuz", "ikilem", "hitabet",
+    "ampirik", "muamma", "yetkinlik", "tahsisat", "kuşkucu", "örtmece", "tefsir", "yetersiz", "inandırıcı", "egemen",
+    "elverişlilik", "öngörülemez", "hakim", "devredilemez", "dokunulmazlık", "kopuk", "duyulmamış", "durgun", "sarsılmaz", "değişmez",
+    "karmaşık", "tartışmasız", "uyuşmazlık", "özlü", "gizil", "hayati", "azaltma", "aşikar", "çelişmece", "kesin",
+    "sinmek", "zararlı", "inanılırlık", "üstünlük", "ayrıcalık", "karine", "verimli", "sürgün", "hülya", "karşılıklı",
+    "fazlalık", "dirençli", "zımni", "somut", "teğetsel", "şiddet", "doğruluk", "kınama", "değişkenlik", "çağdışılık",
+    "eskime", "hassasiyet", "abartı", "ahenk", "aksaklık", "algılama", "arınma", "ayrışma", "bağdaşıklık", "feraset",
+    "bıkkınlık", "bütüncül", "caydırıcı", "çelişik", "derleme", "dinamiği", "edilgen", "eğreti", "eleştirel", "esneklik"
+  ],
+  "C2": [
+    "anlatılamaz", "idiyosinkrazi", "simbiyoz", "nesnellik", "omniprezans", "süsleme", "tirat", "ürkek", "sempiternal", "cezasızlık",
+    "lakırdı", "karmaşa", "dolambaç", "sefil", "riyakar", "tiksindirici", "lağvetmek", "girift", "abulya", "yetkinleşmek",
+    "hiddet", "metruk", "türedi", "hıyanet", "anatema", "dolaşık", "apokrif", "aforizma", "apoteoz", "biat",
+    "gizem", "demagoji", "ataklık", "ataraksiya", "eziyet", "teferruat", "kargaşa", "mesnet", "bizansvari", "kakofoni",
+    "kazuistik", "katarsis", "şovenizm", "müteferrik", "teamül", "filipik", "tahkir", "azat", "hicviye", "dikotomi",
+    "risale", "basiret", "kefaret", "debdebe", "flegmatik", "epistemoloji", "hermeneutik", "hüsnühat", "beka", "anlamsızlık",
+    "sefalet", "şenaat", "desise", "yersizlik", "mukaddeme", "ithamname", "veciz", "gevezelik", "mecenat", "mefitik",
+    "mesmerizm", "meşum", "müptedi", "nihilizm", "mani", "ketmetmek", "mürailik", "uğursuzluk", "onirik", "ontoloji",
+    "gösterişçilik", "palindrom", "panspermi", "anakronizm", "cimrilik", "arsızlık", "kuytu", "mukavemet", "alim", "solipsizm",
+    "totoloji", "tahrifat", "kehanet", "anafor", "zeitgeist", "derman", "anoreksiya", "prolegomena", "etiyoloji", "prozodi"
+  ]
+},
+
+  "uk": {
+  "A1": [
+    "дім", "вода", "друг", "їсти", "сонце", "час", "книга", "великий", "завжди", "працювати",
+    "сім'я", "місто", "ім'я", "говорити", "маленький", "пес", "кіт", "мати", "батько", "син",
+    "дочка", "брат", "сестра", "дитина", "день", "ніч", "ранок", "вечір", "сьогодні", "учора",
+    "дякую", "привіт", "хліб", "молоко", "яблуко", "стіл", "крісло", "двері", "вікно", "машина",
+    "поїзд", "вулиця", "площа", "парк", "школа", "вчитель", "студент", "рік", "місяць", "тиждень",
+    "година", "хвилина", "багато", "мало", "добрий", "поганий", "новий", "старий", "веселий", "сумний",
+    "бути", "робити", "йти", "приходити", "бачити", "чути", "писати", "читати", "купувати", "платити",
+    "хотіти", "могти", "знати", "давати", "брати", "класти", "носити", "виходити", "входити", "відкривати",
+    "закривати", "шукати", "дивитися", "думати", "любити", "співати", "танцювати", "грати", "спати", "пити",
+    "сорочка", "взуття", "ліжко", "сумка", "гроші", "чай", "кава", "море", "літо", "зима"
+  ],
+  "A2": [
+    "подорожувати", "вчити", "забувати", "здоров'я", "фільм", "пояснювати", "змінювати", "місце", "знаходити", "вирішувати",
+    "небезпека", "розуміти", "радити", "фірма", "ділитися", "кухня", "сад", "відпустка", "звичка", "команда",
+    "відповідь", "питання", "різний", "важливий", "важкий", "легкий", "достатній", "рано", "пізно", "до",
+    "близько", "далеко", "вгору", "вниз", "лівий", "правий", "пробувати", "вигравати", "програвати", "надсилати",
+    "отримувати", "продавати", "орендувати", "готувати", "лагодити", "ламати", "дзвонити", "пам'ятати", "слідувати", "переходити",
+    "повертати", "приїжджати", "бігати", "гуляти", "плавати", "літати", "водити", "вставати", "спускатися", "одягатися",
+    "вмиватися", "прибирати", "відпочивати", "прокидатися", "розчісуватися", "обідати", "вечеряти", "ціна", "гаманець", "картка",
+    "знижка", "пропозиція", "ринок", "магазин", "одяг", "капелюх", "пальто", "штани", "їжа", "страва",
+    "десерт", "фрукти", "овочі", "м'ясо", "риба", "напій", "станція", "село", "пляж", "готель",
+    "квиток", "розклад", "бронювати", "обіцяти", "погода", "дощ", "вітер", "сніг", "хмара", "аеропорт"
+  ],
+  "B1": [
+    "розвивати", "висловлювати", "рішення", "контекст", "впливати", "зберігати", "навичка", "вимагати", "результат", "перевага",
+    "загроза", "виправдовувати", "припускати", "проєкт", "пропонувати", "підтримувати", "ставлення", "якість", "кількість", "довкілля",
+    "можливість", "наслідок", "стратегія", "структура", "функція", "процес", "підсумок", "користь", "недолік", "варіант",
+    "мета", "намір", "джерело", "система", "техніка", "тенденція", "зміна", "альтернатива", "аспект", "місткість",
+    "властивість", "умова", "конфлікт", "досвід", "вплив", "потреба", "думка", "перспектива", "принцип", "пріоритет",
+    "зв'язок", "ризик", "безпека", "ситуація", "угода", "зобов'язання", "дебати", "обговорення", "ефект", "зусилля",
+    "прогрес", "порада", "рекомендація", "відповідальність", "ініціатива", "набувати", "адаптувати", "аналізувати", "порівнювати", "розглядати",
+    "сприяти", "створювати", "визначати", "доводити", "описувати", "проєктувати", "оцінювати", "досліджувати", "виявляти", "застосовувати",
+    "поліпшувати", "організовувати", "планувати", "просувати", "захищати", "скорочувати", "усувати", "перетворювати", "цінність", "кваліфікація",
+    "класифікувати", "підтверджувати", "зіставляти", "встановлювати", "гарантувати", "інтегрувати", "інтерпретувати", "розслідувати", "вести", "шанс"
+  ],
+  "B2": [
+    "необхідний", "виклик", "аргументувати", "сталий", "послідовний", "виконувати", "резонанс", "критерій", "нюанс", "охоплення",
+    "торкатися", "обмежувати", "переважати", "прискорювати", "накопичувати", "поглиблювати", "зміцнювати", "полегшувати", "спонукати", "видозмінювати",
+    "пом'якшувати", "передбачати", "умиротворювати", "запитувати", "вносити", "цінувати", "формулювати", "прагнути", "вмотивовувати", "приписувати",
+    "прогнозувати", "відстоювати", "згладжувати", "об'єднувати", "збігатися", "стикатися", "компенсувати", "узгоджувати", "стверджувати", "конкретизувати",
+    "обумовлювати", "підкріплювати", "констатувати", "споглядати", "оскаржувати", "підсумовувати", "розмежовувати", "позначати", "витікати", "дискредитувати",
+    "провокувати", "відхиляти", "деталізувати", "демонтувати", "спростовувати", "переміщати", "поширювати", "роз'яснювати", "активізувати", "розсіювати",
+    "спотворювати", "диверсифікувати", "розголошувати", "розробляти", "уникати", "виходити", "виникати", "випромінювати", "підкреслювати", "обрамляти",
+    "збагачувати", "спричиняти", "прирівнювати", "накидати", "уточнювати", "спекулювати", "застерігати", "структурувати", "акцентувати", "звільняти",
+    "викладати", "екстраполювати", "коливатися", "обґрунтовувати", "розділяти", "фокусувати", "гальмувати", "зливати", "узагальнювати", "компрометувати",
+    "ілюструвати", "інкримінувати", "зазнавати", "індукувати", "заміняти", "імітувати", "піддавати", "переносити", "передавати", "стримувати"
+  ],
+  "C1": [
+    "скороминущий", "неминучий", "притаманний", "загострювати", "поступовий", "оминати", "упередженість", "парадигма", "розшифровувати", "розбіжність",
+    "скрупульозний", "фундаментальний", "підривати", "передумова", "неузгодженість", "правдоподібний", "претендувати", "двозначність", "аберація", "витончений",
+    "декларувати", "атавістичний", "пом'якшувальний", "войовничість", "прудкість", "окреслювати", "примусовий", "здогад", "співмірний", "конотація",
+    "суттєвий", "контрпродуктивний", "підживлювати", "старість", "дилема", "розквіт", "красномовство", "емпіричний", "роздоріжжя", "загадка",
+    "ентелехія", "зіставний", "асигнування", "скептичний", "евфемізм", "екзегеза", "мізерний", "беззаперечний", "переконливий", "гегемоністський",
+    "придатність", "непередбачуваний", "панівний", "невідчужуваний", "невідчужуваність", "незв'язний", "нечуваний", "інертний", "інгарентний", "іманентний",
+    "незмінний", "непроникний", "незбагненний", "неосяжний", "заплутаний", "безсумнівний", "дисонанс", "лаконічний", "латентний", "ключовий",
+    "уїдливий", "послаблення", "явний", "парадокс", "категоричний", "проникати", "згубний", "вірогідність", "превалюючий", "прерогатива",
+    "презумпція", "плідний", "вигнаний", "примарний", "взаємний", "надмірність", "реструктуризація", "завзятий", "ухилення", "мовчазний",
+    "відчутний", "дотичний", "лють", "достовірність", "осуд", "мінливість", "зіставлення", "анакронізм", "застарілість", "вразливість"
+  ],
+  "C2": [
+    "невимовний", "ідіосинкразія", "симбіоз", "холоднокровність", "повсюдності", "мішура", "філіпіка", "малодушний", "вічний", "безкарно",
+    "багатослів'я", "палінгенез", "нерозв'язний", "іносказання", "мерзенний", "єлейний", "огидний", "скасовувати", "заумний", "абулія",
+    "їдкість", "дитячий", "вискочка", "віроломство", "анафема", "звивина", "апокрифічний", "афоризм", "апофеоз", "потурання",
+    "таїнство", "проникливість", "наполегливість", "атараксія", "ізводити", "марнота", "галас", "візантійський", "какофонія", "казуїстика",
+    "катарсис", "шовінізм", "вроджений", "традиційний", "інвектива", "зневаження", "розкріпачення", "діорама", "дихотомія", "дискурс",
+    "дальновидність", "спокута", "пишнота", "флегматичний", "гносеологія", "герменевтика", "безчестя", "нетлінний", "нікчемність", "злидні",
+    "беззаконня", "підступність", "несвоєчасний", "вступ", "карбований", "балакучість", "меценатство", "шкідливий", "магнетизм", "зловісний",
+    "неофіт", "нігілізм", "перешкода", "затьмарювати", "улесливий", "сновидницький", "онтологія", "чванливість", "паліндром", "панспермія",
+    "парахронізм", "бережливість", "зухвалість", "прихованість", "життєстійкість", "всевідаючий", "соліпсизм", "тавтологія", "викручування", "пророцтво",
+    "безодня", "вортицизм", "виснаження", "анорексія", "пролегомени", "етіологія", "просодія", "аксіологія", "епістемологія", "телеологія"
+  ]
+},
+
+  "vi":{
+  "A1": [
+    "nhà", "nước", "bạn", "ăn", "mặt trời", "thời gian", "sách", "lớn", "luôn luôn", "làm việc",
+    "gia đình", "thành phố", "tên", "nói", "nhỏ", "chó", "mèo", "mẹ", "bố", "con trai",
+    "con gái", "anh", "chị", "trẻ em", "ngày", "đêm", "sáng", "tối", "hôm nay", "hôm qua",
+    "cảm ơn", "xin chào", "bánh mì", "sữa", "táo", "bàn", "ghế", "cửa", "cửa sổ", "xe máy",
+    "xe đạp", "đường", "chợ", "công viên", "trường học", "giáo viên", "học sinh", "năm", "tháng", "tuần",
+    "giờ", "phút", "nhiều", "ít", "tốt", "xấu", "mới", "cũ", "vui", "buồn",
+    "là", "có", "làm", "đi", "đến", "thấy", "nghe", "viết", "đọc", "mua",
+    "trả", "muốn", "có thể", "phải", "biết", "quen", "cho", "lấy", "để", "cầm",
+    "ra", "vào", "mở", "đóng", "tìm", "nhìn", "nghĩ", "thích", "hát", "nhảy",
+    "chơi", "ngủ", "uống", "áo", "giày", "giường", "túi", "tiền", "trà", "cà phê"
+  ],
+  "A2": [
+    "du lịch", "học", "quên", "sức khỏe", "phim", "giải thích", "thay đổi", "địa điểm", "tìm thấy", "quyết định",
+    "nguy hiểm", "hiểu", "khuyên", "công ty", "chia sẻ", "nhà bếp", "khu vườn", "kỳ nghỉ", "thói quen", "đội",
+    "câu trả lời", "câu hỏi", "khác nhau", "quan trọng", "khó", "dễ", "đầy đủ", "sớm", "muộn", "trước",
+    "sau", "gần", "xa", "trên", "dưới", "trái", "phải", "cố gắng", "thắng", "thua",
+    "gửi", "nhận", "bán", "thuê", "nấu ăn", "sửa chữa", "hỏng", "gọi điện", "nhớ", "đi theo",
+    "băng qua", "rẽ", "đến nơi", "chạy", "đi bộ", "bơi", "bay", "lái xe", "thức dậy", "đi xuống",
+    "mặc quần áo", "rửa", "dọn dẹp", "nghỉ ngơi", "chải tóc", "giá cả", "ví tiền", "thẻ", "giảm giá", "đề nghị",
+    "cửa hàng", "quần áo", "mũ", "áo khoác", "quần", "thức ăn", "bữa ăn", "món tráng miệng", "hoa quả", "rau",
+    "thịt", "cá", "đồ uống", "nhà ga", "đất nước", "nông thôn", "bãi biển", "khách sạn", "vé", "lịch trình",
+    "đặt chỗ", "hứa", "thời tiết", "mưa", "gió", "tuyết", "mây", "sân bay", "kính", "vali"
+  ],
+  "B1": [
+    "phát triển", "thể hiện", "giải pháp", "bối cảnh", "ảnh hưởng", "duy trì", "kỹ năng", "yêu cầu", "cuối cùng", "lợi ích",
+    "mối đe dọa", "biện minh", "giả định", "dự án", "đề xuất", "khuyến khích", "thái độ", "chất lượng", "số lượng", "môi trường",
+    "khả năng", "hậu quả", "chiến lược", "cấu trúc", "chức năng", "quá trình", "kết quả", "thuận lợi", "bất lợi", "lựa chọn",
+    "mục tiêu", "mục đích", "tài nguyên", "hệ thống", "kỹ thuật", "xu hướng", "biến đổi", "thay thế", "khía cạnh", "dung lượng",
+    "đặc điểm", "điều kiện", "xung đột", "kinh nghiệm", "tác động", "nhu cầu", "ý kiến", "góc nhìn", "nguyên tắc", "ưu tiên",
+    "mối quan hệ", "rủi ro", "an toàn", "tình huống", "thỏa thuận", "cam kết", "tranh luận", "thảo luận", "hiệu ứng", "nỗ lực",
+    "tiến độ", "lời khuyên", "kiến nghị", "trách nhiệm", "sáng kiến", "tiếp thu", "thích ứng", "phân tích", "so sánh", "xem xét",
+    "đóng góp", "tạo ra", "định nghĩa", "chứng minh", "mô tả", "thiết kế", "đánh giá", "nghiên cứu", "xác định", "áp dụng",
+    "cải thiện", "tổ chức", "lập kế hoạch", "thúc đẩy", "bảo vệ", "cắt giảm", "giải quyết", "chuyển đổi", "giá trị", "trình độ",
+    "phân loại", "xác nhận", "đối chiếu", "thiết lập", "đảm bảo", "tích hợp", "diễn giải", "điều tra", "đàm phán", "cơ hội"
+  ],
+  "B2": [
+    "thiết yếu", "thách thức", "lập luận", "bền vững", "nhất quán", "thực hiện", "hệ lụy", "tiêu chí", "sắc thái", "phạm vi",
+    "đề cập", "giới hạn", "chi phối", "tăng tốc", "tích lũy", "đào sâu", "củng cố", "tạo điều kiện", "kích động", "sửa đổi",
+    "giảm nhẹ", "dự đoán", "xoa dịu", "yêu cầu chính thức", "đóng góp cá nhân", "trân trọng", "diễn đạt", "khao khát", "xoa dịu nỗi đau", "gán cho",
+    "dự báo", "ủng hộ nhiệt thành", "làm dịu", "đoàn kết", "trùng khớp", "va chạm", "đền bù", "hòa giải", "cam kết chung", "cụ thể hóa",
+    "ràng buộc", "gia tăng sức mạnh", "ghi nhận", "suy ngẫm", "phản bác", "suy luận", "ranh giới", "biểu thị", "bắt nguồn", "làm mất uy tín",
+    "châm ngòi", "từ chối", "đi vào chi tiết", "tháo dỡ", "phủ nhận", "dịch chuyển", "lan truyền", "làm rõ", "thúc đẩy chuyển động", "xua tan",
+    "bóp méo", "đa dạng hóa", "công bố", "soạn thảo", "né tránh", "phát ra", "nảy sinh", "phát tỏa", "nhấn mạnh", "định hình",
+    "làm phong phú", "kéo theo", "ngang bằng", "phác thảo", "làm rõ nét", "suy đoán", "quy định rõ", "cấu trúc hóa", "làm nổi bật", "miễn trừ",
+    "trình bày", "ngoại suy", "tạo thuận lợi", "biến động", "lập luận căn cứ", "chia nhỏ", "tập trung cao độ", "kìm hãm", "hòa tan", "khái quát hóa",
+    "thỏa hiệp", "minh họa", "đổ lỗi", "gánh chịu", "gây ra", "thay thế tạm thời", "mô phỏng", "chịu đựng", "truyền tải", "bộc lộ"
+  ],
+  "C1": [
+    "phù du", "tất yếu", "vốn có", "trầm trọng hóa", "tiệm tiến", "lách luật", "định kiến", "khuôn mẫu tư duy", "giải mã", "sự chênh lệch",
+    "tỉ mỉ", "tiềm ẩn", "xói mòn", "tiền đề", "sự bất hợp lý", "có khả năng thực thi", "đòi hỏi quyền lợi", "sự mập mờ", "sai lệch", "tinh tế",
+    "tuyên bố chính thức", "mang tính nguyên thủy", "tình tiết giảm nhẹ", "hiếu chiến", "sự nhanh nhẹn", "khoanh vùng", "mang tính cưỡng chế", "phỏng đoán", "tương thích", "hàm ý",
+    "bản chất cốt lõi", "tính biến động", "phản tác dụng", "củng cố lý lẽ", "sự suy tàn", "tiến lùi lưỡng nan", "bùng nổ", "thuật hùng biện", "thực nghiệm", "ngã rẽ",
+    "ẩn số", "trạng thái hoàn hảo", "có thể so sánh", "phân bổ kinh phí", "hoài nghi", "nói giảm nói tránh", "giải thích văn bản", "ít ỏi", "không thể chối cãi", "đầy thuyết phục",
+    "mang tính bá quyền", "tính thích hợp", "yếu tố khó lường", "thịnh hành", "không thể tước đoạt", "bất khả xâm phạm", "rời rạc", "chưa từng thấy", "trì trệ", "gắn liền",
+    "không thay đổi", "bất khả xâm nhập", "không thể thăm dò", "vô hình", "rắc rối phức tạp", "không thể bác bỏ", "sự bất hòa", "ngắn gọn súc tích", "âm thầm", "trọng yếu",
+    "sắc sảo", "sự xoa dịu", "rõ ràng", "nghịch lý", "quả quyết", "thẩm thấu", "độc hại", "độ tin cậy", "chiếm ưu thế", "đặc quyền",
+    "sự giả định", "sinh sản nhiều", "bị xua đuổi", "ảo ảnh", "tương hỗ", "sự dư thừa", "tái cấu trúc", "ngoan cố", "sự lảng tránh", "ngầm hiểu",
+    "hữu hình", "mang tính tiếp xúc", "sự dữ dội", "sự chân thực", "sự khiển trách", "tính biến đổi", "sự đặt cạnh nhau", "lỗi thời gian", "sự lạc hậu", "tính dễ tổn thương"
+  ],
+  "C2": [
+    "không thể diễn tả", "đặc ngộ tâm lý", "cộng sinh", "sự điềm tĩnh", "sự hiện diện khắp nơi", "đồ trang trí rẻ tiền", "bài phát biểu đả kích", "nhút nhát", "vĩnh hằng", "không bị trừng phạt",
+    "sự dài dòng", "sự luân hồi", "không thể gỡ rối", "sự nói vòng vo", "hèn hạ", "ngọt ngào giả tạo", "đáng khinh bỉ", "bãi bỏ luật", "thâm thúy khó hiểu", "sự mất ý chí",
+    "sự gay gắt", "ngây ngô", "kẻ mới phất", "sự phản bội", "sự nguyền rủa", "quanh co khúc khuỷu", "ngụy tác", "châm ngôn", "sự tôn vinh làm thần", "sự bằng lòng ngầm",
+    "bí ẩn sâu xa", "sự xảo biện", "tính quyết đoán", "sự thanh thản tâm hồn", "hành hạ", "chuyện vặt vãnh", "sự ồn ào hỗn loạn", "nền móng", "rườm rà kiểu Bizantin", "âm thanh chói tai",
+    "phương pháp biện chứng nghi vấn", "sự thanh lọc tâm hồn", "chủ nghĩa vị kỷ dân tộc", "bẩm sinh", "theo tập quán lâu đời", "lời lăng mạ", "sự phỉ báng", "sự giải phóng khỏi nô dịch", "bài viết bôi nhọ", "sự phân đôi",
+    "bài luận chuyên sâu", "sự sắc sảo tri thức", "sự đền tội", "sự xa hoa", "thản nhiên lạnh lùng", "nhận thức luận", "thông giáo thuyết", "sự ô danh", "bất tử không phai nhạt", "sự hư vô",
+    "sự nghèo khổ tột cùng", "sự tàn bạo", "mưu đồ bất chính", "không đúng lúc", "lời mở đầu", "cáo trạng rành rọt", "đúc kết cô đọng", "tính nói nhiều", "sự bảo trợ nghệ thuật", "hôi hám độc hại",
+    "sức hút mê hoặc", "điềm xấu", "người mới nhập môn", "chủ nghĩa hư vô", "chướng ngại vật", "che mắt", "khúm núm", "mang tính mộng mị", "bản thể học", "sự phô trương",
+    "từ đọc xuôi ngược đều giống nhau", "thuyết phạm thiên tạo", "sự nhầm lẫn thời đại", "tính keo kiệt", "sự hỗn láo", "sự che giấu kín đáo", "khả năng phục hồi tinh thần", "toàn năng toàn trí", "chủ nghĩa duy ngã", "sự lặp từ thừa thãi",
+    "sự thoái thác", "lời tiên đoán", "xoáy nước lớn", "chủ nghĩa vị lai nghệ thuật", "tinh thần thời đại", "sự kiệt sức vì nhịn ăn", "chứng chán ăn", "lời dạo đầu", "nguyên nhân luận", "âm luật học"
+  ]
+},
+
+  "zh": {
+  "A1": [
+    "家", "水", "朋友", "吃", "太阳", "时间", "书", "大", "总是", "工作",
+    "家庭", "城市", "名字", "说", "小", "狗", "猫", "妈妈", "爸爸", "儿子",
+    "女儿", "哥哥", "姐姐", "孩子", "天", "晚上", "早上", "今天", "昨天", "谢谢",
+    "你好", "面包", "牛奶", "苹果", "桌子", "椅子", "门", "窗户", "汽车", "火车",
+    "路", "广场", "公园", "学校", "老师", "学生", "年", "月", "星期", "小时",
+    "分钟", "多", "少", "好", "坏", "新", "旧", "高兴", "难过", "是",
+    "有", "做", "去", "来", "看", "听", "写", "读", "买", "付",
+    "想", "能", "要", "知道", "给", "拿", "放", "带", "出", "进",
+    "开", "关", "找", "爱", "唱歌", "跳舞", "玩", "睡觉", "喝", "衣服",
+    "鞋子", "床", "包", "钱", "茶", "咖啡", "大海", "夏天", "冬天", "天气"
+  ],
+  "A2": [
+    "旅游", "学习", "忘记", "健康", "电影", "解释", "改变", "地方", "找到", "决定",
+    "危险", "理解", "建议", "公司", "分享", "厨房", "花园", "假期", "习惯", "团队",
+    "回答", "问题", "不同", "重要", "困难", "简单", "足够", "早", "迟", "以前",
+    "以后", "附近", "远", "上面", "下面", "左边", "右边", "尝试", "赢", "输",
+    "寄", "收到", "卖", "租", "做饭", "修理", "弄坏", "打电话", "记得", "跟随",
+    "穿过", "转弯", "到达", "跑步", "散步", "游泳", "飞", "开车", "起床", "洗澡",
+    "穿衣", "刷牙", "打扫", "休息", "梳头", "价格", "钱包", "卡", "折扣", "优惠",
+    "商店", "服装", "帽子", "外套", "裤子", "食物", "餐", "甜点", "水果", "蔬菜",
+    "肉", "鱼", "饮料", "车站", "国家", "农村", "海滩", "酒店", "车票", "时间表",
+    "预订", "答应", "刮风", "下雨", "下雪", "云", "机场", "眼镜", "行李箱", "地图"
+  ],
+  "B1": [
+    "发展", "表达", "解决", "语境", "影响", "保持", "技能", "要求", "结果", "优势",
+    "威胁", "证明", "假设", "项目", "建议", "支持", "态度", "质量", "数量", "环境",
+    "可能性", "后果", "战略", "结构", "功能", "过程", "总结", "好处", "缺点", "选择",
+    "目标", "意图", "来源", "系统", "技术", "趋势", "变化", "替代", "方面", "容量",
+    "特征", "条件", "冲突", "经验", "印象", "需求", "观点", "视角", "原则", "优先",
+    "关系", "风险", "安全", "情况", "协议", "义务", "辩论", "讨论", "效果", "努力",
+    "进步", "意见", "推荐", "责任", "主动", "获得", "适应", "分析", "比较", "考虑",
+    "贡献", "创造", "定义", "证实", "描述", "设计", "评估", "调查", "确定", "应用",
+    "改善", "组织", "计划", "促进", "保护", "减少", "消除", "转变", "价值", "资格",
+    "分类", "确认", "对比", "建立", "保证", "整合", "诠释", "研究", "谈判", "机会"
+  ],
+  "B2": [
+    "必需", "挑战", "论证", "可持续", "一致", "执行", "反响", "标准", "细微差别", "范围",
+    "提及", "限制", "主导", "加速", "积累", "深化", "巩固", "促进", "刺激", "修改",
+    "缓解", "预测", "抚慰", "申请", "贡献", "欣赏", "阐述", "渴望", "减轻", "归因",
+    "预测", "捍卫", "平息", "合并", "重合", "冲突", "补偿", "协调", "达成一致", "具体化",
+    "约束", "加强", "陈述", "沉思", "质疑", "推论", "界限", "表明", "源于", "败坏",
+    "引发", "拒绝", "详述", "拆卸", "驳斥", "转移", "传播", "澄清", "激活", "驱散",
+    "扭曲", "多元化", "公布", "起草", "规避", "放射", "产生", "散发", "强调", "构架",
+    "丰富", "导致", "相等", "草拟", "明确", "推测", "规定", "结构化", "突出", "豁免",
+    "陈述", "推断", "有利于", "波动", "证实", "划分", "聚焦", "抑制", "融合", "概括",
+    "妥协", "举例说明", "归咎", "遭受", "诱导", "替代", "模拟", "忍受", "传递", "体现",
+    "承担", "适应"
+  ],
+  "C1": [
+    "短暂", "不可避免", "固有", "加剧", "渐进", "规避", "偏见", "范式", "破译", "差异",
+    "细致", "潜在", "侵蚀", "前提", "不一致", "切实可行", "主张", "模棱两可", "偏差", "精细",
+    "正式声明", "原始", "减轻情节", "好斗", "敏捷", "划定", "强制", "推测", "相称", "涵义",
+    "本质", "不确定性", "适得其反", "充实", "衰退", "困境", "兴起", "雄辩", "经验主义", "十字路口",
+    "谜团", "完善状态", "可比", "拨款", "怀疑", "委婉语", "诠释", "微薄", "无可辩驳", "令人信服",
+    "霸权", "适用性", "不可预测因素", "流行", "不可剥夺", "神圣不可侵犯", "脱节", "前所未有", "停滞", "内在",
+    "固有", "不变", "不可渗透", "不可测度", "无形", "错综复杂", "无可置疑", "不和谐", "精炼", "潜在",
+    "关键", "尖锐", "缓和", "明确", "悖论", "断然", "渗透", "有害", "真实性", "优势",
+    "特权", "假定", "多产", "驱逐", "幻象", "相互", "冗余", "重组", "顽固", "回避",
+    "默示", "有形", "相切", "剧烈", "真实", "谴责", "易变性", "并置", "时代错误", "淘汰",
+    "脆弱性", "隐晦"
+  ],
+  "C2": [
+    "难以言表", "特质", "共生", "沉着", "无所不在", "俗艳装饰", "抨击性演说", "怯懦", "永恒", "不受惩罚",
+    "冗长", "转世", "不可解", "迂回说法", "卑劣", "虚情假意", "可憎", "废除", "深奥", "意志缺失",
+    "严厉", "幼稚", "暴发户", "背叛", "诅咒", "曲折", "伪作", "格言", "神化", "默许",
+    "奥秘", "诡辩", "果断", "宁静", "折磨", "琐事", "喧嚣", "基石", "繁复", "刺耳声",
+    "辩证询问", "净化", "极端民族主义", "先天", "惯例", "骂人话", "诽谤", "解放", "讽刺文章", "二分法",
+    "专著", "睿智", "赎罪", "奢华", "冷漠", "认识论", "阐释学", "耻辱", "不朽", "虚无",
+    "贫困", "严重不公", "阴谋", "不合时宜", "序言", "严厉指控", "精炼总结", "多话", "艺术赞助", "有毒恶臭",
+    "迷人魅力", "凶兆", "新信徒", "虚无主义", "障碍", "遮蔽", "谄媚", "梦幻般", "本体论", "炫耀",
+    "回文", "宇宙胚种论", "年代误植", "吝啬", "傲慢", "隐蔽", "复原力", "全知", "唯我论", "同义反复",
+    "推诿", "预言", "漩涡", "未来主义", "时代精神", "绝食衰竭", "厌食症", "绪论", "病因学", "韵律学"
+  ]
+}
 }
