@@ -1,21 +1,16 @@
 {
   "@@locale": "ar",
-
   "appName": "مدرس اللغات بالذكاء الاصطناعي",
-
   "welcome": "مرحبًا",
   "welcomeBack": "أهلًا بعودتك 👋",
   "continueLearning": "هل أنت مستعد لمتابعة التعلّم؟",
-
   "home": "الرئيسية",
   "profile": "الملف الشخصي",
   "words": "كلماتي",
   "settings": "الإعدادات",
-
   "language": "اللغة",
   "appLanguage": "لغة التطبيق",
   "learningLanguage": "لغة التعلّم",
-
   "arabic": "العربية",
   "english": "الإنجليزية",
   "french": "الفرنسية",
@@ -23,7 +18,6 @@
   "chinese": "الصينية",
   "japanese": "اليابانية",
   "korean": "الكورية",
-
   "lightMode": "الوضع الفاتح",
   "darkMode": "الوضع الداكن",
   "systemMode": "إعدادات النظام",
@@ -31,29 +25,24 @@
   "light": "فاتح",
   "dark": "داكن",
   "appAppearance": "مظهر التطبيق",
-
   "startLearning": "ابدأ التعلّم",
   "practiceWithAI": "تدرّب مع الذكاء الاصطناعي",
   "practiceWithAIDescription": "طوّر لغتك من خلال محادثات طبيعية.",
   "myWords": "كلماتي",
   "myWordsDescription": "راجع الكلمات التي حفظتها أثناء التعلّم.",
   "yourLearning": "تعلّمك",
-
   "streakDays": "أيام متتالية",
   "learnedWords": "كلمات متعلّمة",
   "conversations": "محادثات",
-
   "dailyTip": "نصيحة يومية",
   "dailyTipDescription": "تدرّب قليلًا كل يوم؛ الاستمرارية هي مفتاح تطوير مهاراتك اللغوية.",
   "aiConversationComingSoon": "ستتوفر محادثة الذكاء الاصطناعي قريبًا.",
-
   "account": "حسابي",
   "name": "الاسم",
   "email": "البريد الإلكتروني",
   "userId": "رقم المستخدم",
   "nativeLanguage": "لغتك الأم",
   "logout": "تسجيل الخروج",
-
   "learningLanguages": "لغات التعلّم",
   "chooseLearningLanguage": "اختر إحدى لغاتك أو أضف لغة جديدة.",
   "noLearningLanguages": "لا توجد لغات تعلّم بعد.",
@@ -61,20 +50,17 @@
   "switchLearningLanguage": "اضغط لتبديل لغة التعلّم",
   "addOrChangeLearningLanguage": "اضغط لإضافة أو تغيير لغة",
   "learningLanguageChanged": "تم تغيير لغة التعلّم إلى {language}",
-
   "addLanguageTitle": "إضافة لغة جديدة",
   "yourLearningLevel": "مستواك في اللغة",
   "cancel": "إلغاء",
   "add": "إضافة",
   "noNewLanguagesAvailable": "لا توجد لغات جديدة متاحة للإضافة.",
-
   "levelA1": "A1 - مبتدئ",
   "levelA2": "A2 - أساسي",
   "levelB1": "B1 - متوسط",
   "levelB2": "B2 - فوق المتوسط",
   "levelC1": "C1 - متقدم",
   "levelC2": "C2 - متقن",
-
   "login": "تسجيل الدخول",
   "welcomeBackTitle": "مرحبًا بعودتك",
   "loginSubtitle": "سجّل دخولك وتابع رحلة تعلّمك.",
@@ -87,7 +73,8 @@
   "noAccount": "ليس لديك حساب؟",
   "createAccount": "أنشئ حسابًا",
   "loginError": "تعذّر تسجيل الدخول. تحقّق من البريد وكلمة المرور.",
-
+  "continueWithGoogle": "المتابعة باستخدام Google",
+  "or": "أو",
   "createYourAccount": "أنشئ حسابك",
   "createAccountSubtitle": "اختر لغاتك وابدأ تجربة تعلّم مصممة لك.",
   "usernameMinLength": "أدخل اسمًا من حرفين على الأقل.",
@@ -99,7 +86,6 @@
   "createAccountButton": "إنشاء الحساب",
   "accountCreated": "تم إنشاء الحساب. يمكنك تسجيل الدخول الآن.",
   "registrationError": "تعذّر إنشاء الحساب. قد يكون البريد مستخدمًا بالفعل.",
-
   "myVocabulary": "مفرداتك",
   "savedWordsCount": "{count} كلمة محفوظة",
   "learning": "جاري التعلّم...",
@@ -124,10 +110,8 @@
   "noSavedWords": "لا توجد كلمات محفوظة بعد",
   "saveWordsDuringConversation": "عند اكتشاف كلمة جديدة أثناء محادثة الذكاء الاصطناعي، أضفها إلى مفرداتك.",
   "learnNaturally": "تعلّم بصورة طبيعية من خلال المحادثة",
-
   "errorOccurred": "حدث خطأ ما",
   "tryAgain": "حاول مجددًا",
-
   "automatic": "تلقائي",
   "systemDefault": "افتراضي النظام"
 }
