@@ -14,6 +14,17 @@ class LanguageController extends ChangeNotifier {
     'zh',
     'ja',
     'ko',
+    'de',
+    'id',
+    'it',
+    'nl',
+    'pl',
+    'pt',
+    'ru',
+    'th',
+    'tr',
+    'uk',
+    'vi',
   };
 
   Locale _locale = const Locale('ar');
@@ -28,18 +39,14 @@ class LanguageController extends ChangeNotifier {
     if (savedLanguage != null &&
         savedLanguage.isNotEmpty &&
         _supportedLanguageCodes.contains(savedLanguage)) {
-      // المستخدم سبق له اختيار لغة داخل التطبيق.
       _locale = Locale(savedLanguage);
     } else {
-      // أول تشغيل: استخدم لغة الجهاز إذا كانت مدعومة.
       final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
-
       final deviceLanguageCode = deviceLocale.languageCode.toLowerCase();
 
       if (_supportedLanguageCodes.contains(deviceLanguageCode)) {
         _locale = Locale(deviceLanguageCode);
       } else {
-        // لغة الجهاز غير مدعومة.
         _locale = const Locale('ar');
       }
     }
@@ -59,9 +66,7 @@ class LanguageController extends ChangeNotifier {
     }
 
     _locale = Locale(normalizedCode);
-
     await _storage.write(key: _languageKey, value: normalizedCode);
-
     notifyListeners();
   }
 
@@ -69,7 +74,6 @@ class LanguageController extends ChangeNotifier {
     await _storage.delete(key: _languageKey);
 
     final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
-
     final deviceLanguageCode = deviceLocale.languageCode.toLowerCase();
 
     if (_supportedLanguageCodes.contains(deviceLanguageCode)) {
