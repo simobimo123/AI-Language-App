@@ -18,7 +18,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeBack => 'おかえりなさい 👋';
 
   @override
-  String get continueLearning => '学習を続ける準備はできていますか？';
+  String get continueLearning => '学習を続ける準備はできましたか？';
 
   @override
   String get home => 'ホーム';
@@ -87,10 +87,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get startLearning => '学習を始める';
 
   @override
-  String get practiceWithAI => 'AIと練習';
+  String get practiceWithAI => 'AIと練習する';
 
   @override
-  String get practiceWithAIDescription => '自然な会話を通して語学力を伸ばしましょう。';
+  String get practiceWithAIDescription => '自然な会話を通して語学力を向上させましょう。';
 
   @override
   String get myWords => 'マイ単語';
@@ -141,7 +141,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get learningLanguages => '学習言語';
 
   @override
-  String get chooseLearningLanguage => '学習中の言語を選択するか、新しい言語を追加してください。';
+  String get chooseLearningLanguage => '使用中の言語から選択するか、新しい言語を追加してください。';
 
   @override
   String get noLearningLanguages => '学習言語はまだありません。';
@@ -164,7 +164,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addLanguageTitle => '新しい言語を追加';
 
   @override
-  String get yourLearningLevel => 'あなたのレベル';
+  String get yourLearningLevel => 'あなたの言語レベル';
 
   @override
   String get cancel => 'キャンセル';
@@ -176,10 +176,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noNewLanguagesAvailable => '追加できる新しい言語はありません。';
 
   @override
-  String get levelA1 => 'A1 - 初心者';
+  String get levelA1 => 'A1 - 初級';
 
   @override
-  String get levelA2 => 'A2 - 初級';
+  String get levelA2 => 'A2 - 基礎';
 
   @override
   String get levelB1 => 'B1 - 中級';
@@ -227,19 +227,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get createAccount => 'アカウントを作成';
 
   @override
-  String get loginError => 'ログインできませんでした。メールアドレスとパスワードを確認してください。';
+  String get loginError => 'ログインできません。メールアドレスとパスワードを確認してください。';
 
   @override
-  String get continueWithGoogle => 'المتابعة باستخدام Google';
+  String get continueWithGoogle => 'Googleで続ける';
 
   @override
-  String get or => 'أو';
+  String get or => 'または';
 
   @override
-  String get createYourAccount => 'アカウントを作成';
+  String get createYourAccount => 'アカウントを作成しましょう';
 
   @override
-  String get createAccountSubtitle => '言語を選んで、あなたに合った学習体験を始めましょう。';
+  String get createAccountSubtitle => '言語を選択して、あなたのために設計された学習体験を始めましょう。';
 
   @override
   String get usernameMinLength => '2文字以上の名前を入力してください。';
@@ -251,30 +251,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passwordHelper => '8文字以上';
 
   @override
-  String get differentLanguages => '異なる2つの言語を選択してください。';
+  String get differentLanguages => '開始するには異なる2つの言語を選択してください。';
 
   @override
-  String get nativeLanguageLabel => '母語';
+  String get nativeLanguageLabel => 'あなたの母語';
 
   @override
-  String get languageYouWantToLearn => '学びたい言語';
+  String get languageYouWantToLearn => '学習したい言語';
 
   @override
   String get createAccountButton => 'アカウントを作成';
 
   @override
-  String get accountCreated => 'アカウントを作成しました。ログインできます。';
+  String get accountCreated => 'アカウントが作成されました。今すぐログインできます。';
 
   @override
   String get registrationError =>
-      'アカウントを作成できませんでした。メールアドレスがすでに使用されている可能性があります。';
+      'アカウントを作成できませんでした。このメールアドレスはすでに使用されている可能性があります。';
 
   @override
-  String get myVocabulary => 'あなたの単語';
+  String get myVocabulary => 'あなたの語彙';
 
   @override
   String savedWordsCount(Object count) {
-    return '$count 個の保存済み単語';
+    return '$count個の保存した単語';
   }
 
   @override
@@ -287,32 +287,32 @@ class AppLocalizationsJa extends AppLocalizations {
   String get all => 'すべて';
 
   @override
-  String get completeWord => '学習済みにしますか？';
+  String get completeWord => '完了としてマークしますか？';
 
   @override
   String get returnToLearning => '学習中に戻しますか？';
 
   @override
   String masteredWord(Object word) {
-    return '「$word」を習得しましたか？';
+    return '「$word」という単語をマスターしましたか？';
   }
 
   @override
   String returnWordToLearning(Object word) {
-    return '「$word」を学習中のリストに戻します。';
+    return '「$word」は学習中のリストに戻ります...';
   }
 
   @override
-  String get markCompleted => '学習済みにする';
+  String get markCompleted => '完了としてマーク';
 
   @override
-  String get returnToLearningButton => '学習中に戻す';
+  String get returnToLearningButton => '学習に戻す';
 
   @override
-  String get wordMovedToLearned => '単語を学習済みに移動しました。';
+  String get wordMovedToLearned => '単語を「学習済み」に移動しました。';
 
   @override
-  String get wordMovedToLearning => '単語を学習中に戻しました。';
+  String get wordMovedToLearning => '単語を「学習中」に移動しました。';
 
   @override
   String get deleteWordTitle => '単語を削除しますか？';
@@ -329,7 +329,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wordDeleted => '単語を削除しました。';
 
   @override
-  String get noLearnedWords => '学習済みの単語はまだありません';
+  String get noLearnedWords => 'まだ学習済みの単語はありません';
 
   @override
   String get noLearningWords => '学習中の単語はありません...';
@@ -341,16 +341,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wordsAddedDuringLearning => '学習中に追加した単語がここに表示されます。';
 
   @override
-  String get noSavedWords => '保存された単語はまだありません';
+  String get noSavedWords => '保存した単語はまだありません';
 
   @override
   String get saveWordsDuringConversation => 'AIとの会話中に新しい単語を見つけたら、語彙に追加しましょう。';
 
   @override
-  String get learnNaturally => '会話を通して自然に学びましょう';
+  String get learnNaturally => '会話を通して自然に学ぶ';
 
   @override
-  String get errorOccurred => '問題が発生しました';
+  String get errorOccurred => 'エラーが発生しました';
 
   @override
   String get tryAgain => 'もう一度試す';
@@ -359,7 +359,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get automatic => '自動';
 
   @override
-  String get systemDefault => 'システム設定';
+  String get systemDefault => 'システムのデフォルト';
 
   @override
   String get userInformationReadError => 'ユーザー情報を読み込めませんでした。';
@@ -371,7 +371,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placementTestTitle => 'レベル判定テスト';
 
   @override
-  String get placementTestDescription => '語学力を確認して、あなたに合ったレベルを見つけましょう。';
+  String get placementTestDescription => 'あなたの語学レベルを確認し、適切なレベルを判定します。';
 
   @override
   String get later => '後で';
@@ -383,10 +383,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chooseAppLanguage => 'アプリの言語を選択';
 
   @override
-  String get nativeLanguageQuestion => '母語は何ですか？';
+  String get nativeLanguageQuestion => 'あなたの母語は何ですか？';
 
   @override
-  String get learningLanguageQuestion => 'どの言語を学びたいですか？';
+  String get learningLanguageQuestion => '何語を学びたいですか？';
 
   @override
   String get chooseAppLanguageDescription => 'アプリのインターフェースで使用する言語を選択してください。';

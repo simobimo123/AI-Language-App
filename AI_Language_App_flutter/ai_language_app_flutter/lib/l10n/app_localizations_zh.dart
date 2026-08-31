@@ -69,7 +69,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get darkMode => '深色模式';
 
   @override
-  String get systemMode => '跟随系统';
+  String get systemMode => '系统设置';
 
   @override
   String get auto => '自动';
@@ -90,7 +90,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get practiceWithAI => '与 AI 练习';
 
   @override
-  String get practiceWithAIDescription => '通过自然对话提升你的语言能力。';
+  String get practiceWithAIDescription => '通过自然对话提高你的语言能力。';
 
   @override
   String get myWords => '我的单词';
@@ -105,7 +105,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get streakDays => '连续学习天数';
 
   @override
-  String get learnedWords => '已学习单词';
+  String get learnedWords => '已学单词';
 
   @override
   String get conversations => '对话';
@@ -141,7 +141,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get learningLanguages => '学习语言';
 
   @override
-  String get chooseLearningLanguage => '选择你正在学习的语言，或添加一种新语言。';
+  String get chooseLearningLanguage => '选择你的语言之一，或添加一种新语言。';
 
   @override
   String get noLearningLanguages => '还没有学习语言。';
@@ -206,7 +206,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get password => '密码';
 
   @override
-  String get enterEmail => '请输入有效的电子邮箱。';
+  String get enterEmail => '请输入有效的电子邮箱地址。';
 
   @override
   String get enterPassword => '请输入密码。';
@@ -227,22 +227,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createAccount => '创建账户';
 
   @override
-  String get loginError => '无法登录。请检查邮箱和密码。';
+  String get loginError => '无法登录。请检查你的邮箱和密码。';
 
   @override
-  String get continueWithGoogle => 'المتابعة باستخدام Google';
+  String get continueWithGoogle => '使用 Google 继续';
 
   @override
-  String get or => 'أو';
+  String get or => '或';
 
   @override
-  String get createYourAccount => '创建账户';
+  String get createYourAccount => '创建你的账户';
 
   @override
-  String get createAccountSubtitle => '选择你的语言，开始为你量身打造的学习体验。';
+  String get createAccountSubtitle => '选择你的语言，开始专为你设计的学习体验。';
 
   @override
-  String get usernameMinLength => '请输入至少两个字符的姓名。';
+  String get usernameMinLength => '请输入至少包含两个字符的姓名。';
 
   @override
   String get passwordMinLength => '密码必须至少包含 8 个字符。';
@@ -251,7 +251,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get passwordHelper => '至少 8 个字符';
 
   @override
-  String get differentLanguages => '请选择两种不同的语言。';
+  String get differentLanguages => '请选择两种不同的语言开始学习。';
 
   @override
   String get nativeLanguageLabel => '你的母语';
@@ -263,7 +263,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createAccountButton => '创建账户';
 
   @override
-  String get accountCreated => '账户创建成功。现在可以登录了。';
+  String get accountCreated => '账户已创建。你现在可以登录了。';
 
   @override
   String get registrationError => '无法创建账户。该邮箱可能已被使用。';
@@ -277,7 +277,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get learning => '学习中...';
+  String get learning => '正在学习...';
 
   @override
   String get learned => '已学会';
@@ -286,39 +286,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get all => '全部';
 
   @override
-  String get completeWord => '标记为已学会？';
+  String get completeWord => '标记为已完成？';
 
   @override
-  String get returnToLearning => '返回学习中？';
+  String get returnToLearning => '将其放回正在学习...？';
 
   @override
   String masteredWord(Object word) {
-    return '你已经掌握“$word”了吗？';
+    return '你已经掌握单词“$word”了吗？';
   }
 
   @override
   String returnWordToLearning(Object word) {
-    return '“$word”将返回到学习列表。';
+    return '单词“$word”将返回正在学习列表...';
   }
 
   @override
-  String get markCompleted => '标记为已学会';
+  String get markCompleted => '标记为已完成';
 
   @override
-  String get returnToLearningButton => '返回学习中';
+  String get returnToLearningButton => '重新开始学习';
 
   @override
-  String get wordMovedToLearned => '单词已移至已学会。';
+  String get wordMovedToLearned => '单词已移至“已学会”。';
 
   @override
-  String get wordMovedToLearning => '单词已返回学习中。';
+  String get wordMovedToLearning => '单词已移至“正在学习”。';
 
   @override
   String get deleteWordTitle => '删除单词？';
 
   @override
   String deleteWordConfirmation(Object word) {
-    return '要删除“$word”吗？此操作无法撤销。';
+    return '确定要删除单词“$word”吗？此操作无法撤销。';
   }
 
   @override
@@ -334,7 +334,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noLearningWords => '没有正在学习的单词...';
 
   @override
-  String get keepPracticing => '继续练习，你学会的单词会显示在这里。';
+  String get keepPracticing => '继续练习，你学习的单词会显示在这里。';
 
   @override
   String get wordsAddedDuringLearning => '你在学习过程中添加的单词会显示在这里。';
@@ -343,7 +343,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noSavedWords => '还没有保存的单词';
 
   @override
-  String get saveWordsDuringConversation => '在 AI 对话中发现新单词时，可以将其添加到你的词汇中。';
+  String get saveWordsDuringConversation => '在 AI 对话中发现新单词时，将其添加到你的词汇中。';
 
   @override
   String get learnNaturally => '通过对话自然地学习';
@@ -370,7 +370,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get placementTestTitle => '水平测试';
 
   @override
-  String get placementTestDescription => '测试你的语言能力，以确定适合你的水平。';
+  String get placementTestDescription => '测试你的语言水平，以便我们确定适合你的等级。';
 
   @override
   String get later => '稍后';
@@ -385,10 +385,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nativeLanguageQuestion => '你的母语是什么？';
 
   @override
-  String get learningLanguageQuestion => '你想学习哪种语言？';
+  String get learningLanguageQuestion => '你想学习什么语言？';
 
   @override
-  String get chooseAppLanguageDescription => '选择你希望用于应用界面的语言。';
+  String get chooseAppLanguageDescription => '选择你想用于应用界面的语言。';
 
   @override
   String get nativeLanguageDescription => '选择你的母语。';
@@ -397,7 +397,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get learningLanguageDescription => '选择你想学习的语言。';
 
   @override
-  String get nativeLanguageCannotBeLearningLanguage => '母语和学习语言不能相同。';
+  String get nativeLanguageCannotBeLearningLanguage => '你的母语和学习语言不能相同。';
 
   @override
   String get back => '返回';

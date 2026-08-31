@@ -18,7 +18,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get welcomeBack => 'Bon retour 👋';
 
   @override
-  String get continueLearning => 'Prêt à poursuivre votre apprentissage ?';
+  String get continueLearning => 'Prêt à continuer votre apprentissage ?';
 
   @override
   String get home => 'Accueil';
@@ -69,7 +69,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get darkMode => 'Mode sombre';
 
   @override
-  String get systemMode => 'Par défaut du système';
+  String get systemMode => 'Paramètres du système';
 
   @override
   String get auto => 'Automatique';
@@ -133,7 +133,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get email => 'E-mail';
 
   @override
-  String get userId => 'ID utilisateur';
+  String get userId => 'Identifiant utilisateur';
 
   @override
   String get nativeLanguage => 'Langue maternelle';
@@ -161,7 +161,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get addOrChangeLearningLanguage =>
-      'Appuyez pour ajouter ou changer une langue';
+      'Appuyez pour ajouter ou modifier une langue';
 
   @override
   String learningLanguageChanged(Object language) {
@@ -182,7 +182,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get noNewLanguagesAvailable =>
-      'Aucune nouvelle langue n\'est disponible à l\'ajout.';
+      'Aucune nouvelle langue disponible à l\'ajout.';
 
   @override
   String get levelA1 => 'A1 - Débutant';
@@ -194,32 +194,32 @@ class AppLocalizationsFr extends AppLocalizations {
   String get levelB1 => 'B1 - Intermédiaire';
 
   @override
-  String get levelB2 => 'B2 - Intermédiaire avancé';
+  String get levelB2 => 'B2 - Intermédiaire supérieur';
 
   @override
   String get levelC1 => 'C1 - Avancé';
 
   @override
-  String get levelC2 => 'C2 - Maîtrise';
+  String get levelC2 => 'C2 - Maîtrisé';
 
   @override
-  String get login => 'Connexion';
+  String get login => 'Se connecter';
 
   @override
   String get welcomeBackTitle => 'Bon retour';
 
   @override
   String get loginSubtitle =>
-      'Connectez-vous et poursuivez votre parcours d\'apprentissage.';
+      'Connectez-vous et continuez votre parcours d\'apprentissage.';
 
   @override
   String get password => 'Mot de passe';
 
   @override
-  String get enterEmail => 'Entrez une adresse e-mail valide.';
+  String get enterEmail => 'Saisissez une adresse e-mail valide.';
 
   @override
-  String get enterPassword => 'Entrez votre mot de passe.';
+  String get enterPassword => 'Saisissez votre mot de passe.';
 
   @override
   String get passwordVisibilityShow => 'Afficher le mot de passe';
@@ -241,10 +241,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de se connecter. Vérifiez votre e-mail et votre mot de passe.';
 
   @override
-  String get continueWithGoogle => 'المتابعة باستخدام Google';
+  String get continueWithGoogle => 'Continuer avec Google';
 
   @override
-  String get or => 'أو';
+  String get or => 'ou';
 
   @override
   String get createYourAccount => 'Créez votre compte';
@@ -254,7 +254,8 @@ class AppLocalizationsFr extends AppLocalizations {
       'Choisissez vos langues et commencez une expérience d\'apprentissage conçue pour vous.';
 
   @override
-  String get usernameMinLength => 'Entrez un nom d\'au moins deux caractères.';
+  String get usernameMinLength =>
+      'Saisissez un nom d\'au moins deux caractères.';
 
   @override
   String get passwordMinLength =>
@@ -271,14 +272,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get nativeLanguageLabel => 'Votre langue maternelle';
 
   @override
-  String get languageYouWantToLearn => 'Langue que vous souhaitez apprendre';
+  String get languageYouWantToLearn => 'La langue que vous souhaitez apprendre';
 
   @override
   String get createAccountButton => 'Créer le compte';
 
   @override
   String get accountCreated =>
-      'Compte créé. Vous pouvez maintenant vous connecter.';
+      'Votre compte a été créé. Vous pouvez maintenant vous connecter.';
 
   @override
   String get registrationError =>
@@ -293,7 +294,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get learning => 'En apprentissage...';
+  String get learning => 'En cours d\'apprentissage...';
 
   @override
   String get learned => 'Appris';
@@ -302,40 +303,41 @@ class AppLocalizationsFr extends AppLocalizations {
   String get all => 'Tous';
 
   @override
-  String get completeWord => 'Marquer comme appris ?';
+  String get completeWord => 'Marquer comme terminé ?';
 
   @override
-  String get returnToLearning => 'Revenir à l\'apprentissage... ?';
+  String get returnToLearning =>
+      'Le remettre dans En cours d\'apprentissage... ?';
 
   @override
   String masteredWord(Object word) {
-    return 'Avez-vous maîtrisé le mot \"$word\" ?';
+    return 'Maîtrisez-vous le mot « $word » ?';
   }
 
   @override
   String returnWordToLearning(Object word) {
-    return 'Le mot \"$word\" retournera dans votre liste d\'apprentissage...';
+    return 'Le mot « $word » retournera dans votre liste En cours d\'apprentissage...';
   }
 
   @override
-  String get markCompleted => 'Marquer comme appris';
+  String get markCompleted => 'Marquer comme terminé';
 
   @override
-  String get returnToLearningButton => 'Revenir à l\'apprentissage';
+  String get returnToLearningButton => 'Remettre en apprentissage';
 
   @override
-  String get wordMovedToLearned => 'Le mot a été déplacé vers les mots appris.';
+  String get wordMovedToLearned => 'Le mot a été déplacé vers Appris.';
 
   @override
   String get wordMovedToLearning =>
-      'Le mot a été remis dans la liste d\'apprentissage...';
+      'Le mot a été déplacé vers En cours d\'apprentissage.';
 
   @override
   String get deleteWordTitle => 'Supprimer le mot ?';
 
   @override
   String deleteWordConfirmation(Object word) {
-    return 'Voulez-vous supprimer le mot \"$word\" ? Cette action est irréversible.';
+    return 'Voulez-vous supprimer le mot « $word » ? Cette action est irréversible.';
   }
 
   @override
@@ -348,11 +350,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get noLearnedWords => 'Aucun mot appris pour le moment';
 
   @override
-  String get noLearningWords => 'Aucun mot en apprentissage...';
+  String get noLearningWords => 'Aucun mot en cours d\'apprentissage...';
 
   @override
   String get keepPracticing =>
-      'Continuez à pratiquer et les mots appris apparaîtront ici.';
+      'Continuez à pratiquer et les mots que vous apprenez apparaîtront ici.';
 
   @override
   String get wordsAddedDuringLearning =>
@@ -382,18 +384,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get userInformationReadError =>
-      'Impossible de lire les informations utilisateur.';
+      'Impossible de lire les informations de l\'utilisateur.';
 
   @override
   String get onboardingSaveError =>
-      'Impossible d’enregistrer vos paramètres. Réessayez.';
+      'Impossible d\'enregistrer vos paramètres. Veuillez réessayer.';
 
   @override
   String get placementTestTitle => 'Test de niveau';
 
   @override
   String get placementTestDescription =>
-      'Testez vos compétences pour trouver le niveau qui vous convient.';
+      'Évaluez votre niveau de langue afin que nous puissions déterminer le niveau qui vous convient.';
 
   @override
   String get later => 'Plus tard';
@@ -402,7 +404,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get startTest => 'Commencer le test';
 
   @override
-  String get chooseAppLanguage => 'Choisissez la langue de l’application';
+  String get chooseAppLanguage => 'Choisissez la langue de l\'application';
 
   @override
   String get nativeLanguageQuestion => 'Quelle est votre langue maternelle ?';
@@ -413,7 +415,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chooseAppLanguageDescription =>
-      'Choisissez la langue à utiliser pour l’interface de l’application.';
+      'Choisissez la langue que vous souhaitez utiliser pour l\'interface de l\'application.';
 
   @override
   String get nativeLanguageDescription => 'Choisissez votre langue maternelle.';
@@ -424,7 +426,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get nativeLanguageCannotBeLearningLanguage =>
-      'Votre langue maternelle et la langue d’apprentissage ne peuvent pas être identiques.';
+      'Votre langue maternelle et votre langue d\'apprentissage ne peuvent pas être identiques.';
 
   @override
   String get back => 'Retour';

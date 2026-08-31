@@ -6,11 +6,22 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_ar.dart';
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
 import 'app_localizations_fr.dart';
+import 'app_localizations_id.dart';
+import 'app_localizations_it.dart';
 import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
+import 'app_localizations_nl.dart';
+import 'app_localizations_pl.dart';
+import 'app_localizations_pt.dart';
+import 'app_localizations_ru.dart';
+import 'app_localizations_th.dart';
+import 'app_localizations_tr.dart';
+import 'app_localizations_uk.dart';
+import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -100,798 +111,809 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
+    Locale('de'),
     Locale('en'),
     Locale('es'),
     Locale('fr'),
+    Locale('id'),
+    Locale('it'),
     Locale('ja'),
     Locale('ko'),
+    Locale('nl'),
+    Locale('pl'),
+    Locale('pt'),
+    Locale('ru'),
+    Locale('th'),
+    Locale('tr'),
+    Locale('uk'),
+    Locale('vi'),
     Locale('zh'),
   ];
 
   /// No description provided for @appName.
   ///
-  /// In ar, this message translates to:
-  /// **'مدرس اللغات بالذكاء الاصطناعي'**
+  /// In en, this message translates to:
+  /// **'AI Language Tutor'**
   String get appName;
 
   /// No description provided for @welcome.
   ///
-  /// In ar, this message translates to:
-  /// **'مرحبًا'**
+  /// In en, this message translates to:
+  /// **'Welcome'**
   String get welcome;
 
   /// No description provided for @welcomeBack.
   ///
-  /// In ar, this message translates to:
-  /// **'أهلًا بعودتك 👋'**
+  /// In en, this message translates to:
+  /// **'Welcome back 👋'**
   String get welcomeBack;
 
   /// No description provided for @continueLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'هل أنت مستعد لمتابعة التعلّم؟'**
+  /// In en, this message translates to:
+  /// **'Are you ready to continue learning?'**
   String get continueLearning;
 
   /// No description provided for @home.
   ///
-  /// In ar, this message translates to:
-  /// **'الرئيسية'**
+  /// In en, this message translates to:
+  /// **'Home'**
   String get home;
 
   /// No description provided for @profile.
   ///
-  /// In ar, this message translates to:
-  /// **'الملف الشخصي'**
+  /// In en, this message translates to:
+  /// **'Profile'**
   String get profile;
 
   /// No description provided for @words.
   ///
-  /// In ar, this message translates to:
-  /// **'كلماتي'**
+  /// In en, this message translates to:
+  /// **'My Words'**
   String get words;
 
   /// No description provided for @settings.
   ///
-  /// In ar, this message translates to:
-  /// **'الإعدادات'**
+  /// In en, this message translates to:
+  /// **'Settings'**
   String get settings;
 
   /// No description provided for @language.
   ///
-  /// In ar, this message translates to:
-  /// **'اللغة'**
+  /// In en, this message translates to:
+  /// **'Language'**
   String get language;
 
   /// No description provided for @appLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'لغة التطبيق'**
+  /// In en, this message translates to:
+  /// **'App Language'**
   String get appLanguage;
 
   /// No description provided for @learningLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'لغة التعلّم'**
+  /// In en, this message translates to:
+  /// **'Learning Language'**
   String get learningLanguage;
 
   /// No description provided for @arabic.
   ///
-  /// In ar, this message translates to:
-  /// **'العربية'**
+  /// In en, this message translates to:
+  /// **'Arabic'**
   String get arabic;
 
   /// No description provided for @english.
   ///
-  /// In ar, this message translates to:
-  /// **'الإنجليزية'**
+  /// In en, this message translates to:
+  /// **'English'**
   String get english;
 
   /// No description provided for @french.
   ///
-  /// In ar, this message translates to:
-  /// **'الفرنسية'**
+  /// In en, this message translates to:
+  /// **'French'**
   String get french;
 
   /// No description provided for @spanish.
   ///
-  /// In ar, this message translates to:
-  /// **'الإسبانية'**
+  /// In en, this message translates to:
+  /// **'Spanish'**
   String get spanish;
 
   /// No description provided for @chinese.
   ///
-  /// In ar, this message translates to:
-  /// **'الصينية'**
+  /// In en, this message translates to:
+  /// **'Chinese'**
   String get chinese;
 
   /// No description provided for @japanese.
   ///
-  /// In ar, this message translates to:
-  /// **'اليابانية'**
+  /// In en, this message translates to:
+  /// **'Japanese'**
   String get japanese;
 
   /// No description provided for @korean.
   ///
-  /// In ar, this message translates to:
-  /// **'الكورية'**
+  /// In en, this message translates to:
+  /// **'Korean'**
   String get korean;
 
   /// No description provided for @lightMode.
   ///
-  /// In ar, this message translates to:
-  /// **'الوضع الفاتح'**
+  /// In en, this message translates to:
+  /// **'Light mode'**
   String get lightMode;
 
   /// No description provided for @darkMode.
   ///
-  /// In ar, this message translates to:
-  /// **'الوضع الداكن'**
+  /// In en, this message translates to:
+  /// **'Dark mode'**
   String get darkMode;
 
   /// No description provided for @systemMode.
   ///
-  /// In ar, this message translates to:
-  /// **'إعدادات النظام'**
+  /// In en, this message translates to:
+  /// **'System settings'**
   String get systemMode;
 
   /// No description provided for @auto.
   ///
-  /// In ar, this message translates to:
-  /// **'تلقائي'**
+  /// In en, this message translates to:
+  /// **'Automatic'**
   String get auto;
 
   /// No description provided for @light.
   ///
-  /// In ar, this message translates to:
-  /// **'فاتح'**
+  /// In en, this message translates to:
+  /// **'Light'**
   String get light;
 
   /// No description provided for @dark.
   ///
-  /// In ar, this message translates to:
-  /// **'داكن'**
+  /// In en, this message translates to:
+  /// **'Dark'**
   String get dark;
 
   /// No description provided for @appAppearance.
   ///
-  /// In ar, this message translates to:
-  /// **'مظهر التطبيق'**
+  /// In en, this message translates to:
+  /// **'App appearance'**
   String get appAppearance;
 
   /// No description provided for @startLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'ابدأ التعلّم'**
+  /// In en, this message translates to:
+  /// **'Start learning'**
   String get startLearning;
 
   /// No description provided for @practiceWithAI.
   ///
-  /// In ar, this message translates to:
-  /// **'تدرّب مع الذكاء الاصطناعي'**
+  /// In en, this message translates to:
+  /// **'Practice with AI'**
   String get practiceWithAI;
 
   /// No description provided for @practiceWithAIDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'طوّر لغتك من خلال محادثات طبيعية.'**
+  /// In en, this message translates to:
+  /// **'Improve your language through natural conversations.'**
   String get practiceWithAIDescription;
 
   /// No description provided for @myWords.
   ///
-  /// In ar, this message translates to:
-  /// **'كلماتي'**
+  /// In en, this message translates to:
+  /// **'My Words'**
   String get myWords;
 
   /// No description provided for @myWordsDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'راجع الكلمات التي حفظتها أثناء التعلّم.'**
+  /// In en, this message translates to:
+  /// **'Review the words you saved while learning.'**
   String get myWordsDescription;
 
   /// No description provided for @yourLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'تعلّمك'**
+  /// In en, this message translates to:
+  /// **'Your Learning'**
   String get yourLearning;
 
   /// No description provided for @streakDays.
   ///
-  /// In ar, this message translates to:
-  /// **'أيام متتالية'**
+  /// In en, this message translates to:
+  /// **'Streak days'**
   String get streakDays;
 
   /// No description provided for @learnedWords.
   ///
-  /// In ar, this message translates to:
-  /// **'كلمات متعلّمة'**
+  /// In en, this message translates to:
+  /// **'Learned words'**
   String get learnedWords;
 
   /// No description provided for @conversations.
   ///
-  /// In ar, this message translates to:
-  /// **'محادثات'**
+  /// In en, this message translates to:
+  /// **'Conversations'**
   String get conversations;
 
   /// No description provided for @dailyTip.
   ///
-  /// In ar, this message translates to:
-  /// **'نصيحة يومية'**
+  /// In en, this message translates to:
+  /// **'Daily Tip'**
   String get dailyTip;
 
   /// No description provided for @dailyTipDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'تدرّب قليلًا كل يوم؛ الاستمرارية هي مفتاح تطوير مهاراتك اللغوية.'**
+  /// In en, this message translates to:
+  /// **'Practice a little every day; consistency is the key to improving your language skills.'**
   String get dailyTipDescription;
 
   /// No description provided for @aiConversationComingSoon.
   ///
-  /// In ar, this message translates to:
-  /// **'ستتوفر محادثة الذكاء الاصطناعي قريبًا.'**
+  /// In en, this message translates to:
+  /// **'AI conversation will be available soon.'**
   String get aiConversationComingSoon;
 
   /// No description provided for @account.
   ///
-  /// In ar, this message translates to:
-  /// **'حسابي'**
+  /// In en, this message translates to:
+  /// **'My Account'**
   String get account;
 
   /// No description provided for @name.
   ///
-  /// In ar, this message translates to:
-  /// **'الاسم'**
+  /// In en, this message translates to:
+  /// **'Name'**
   String get name;
 
   /// No description provided for @email.
   ///
-  /// In ar, this message translates to:
-  /// **'البريد الإلكتروني'**
+  /// In en, this message translates to:
+  /// **'Email'**
   String get email;
 
   /// No description provided for @userId.
   ///
-  /// In ar, this message translates to:
-  /// **'رقم المستخدم'**
+  /// In en, this message translates to:
+  /// **'User ID'**
   String get userId;
 
   /// No description provided for @nativeLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'لغتك الأم'**
+  /// In en, this message translates to:
+  /// **'Native language'**
   String get nativeLanguage;
 
   /// No description provided for @logout.
   ///
-  /// In ar, this message translates to:
-  /// **'تسجيل الخروج'**
+  /// In en, this message translates to:
+  /// **'Log out'**
   String get logout;
 
   /// No description provided for @learningLanguages.
   ///
-  /// In ar, this message translates to:
-  /// **'لغات التعلّم'**
+  /// In en, this message translates to:
+  /// **'Learning Languages'**
   String get learningLanguages;
 
   /// No description provided for @chooseLearningLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر إحدى لغاتك أو أضف لغة جديدة.'**
+  /// In en, this message translates to:
+  /// **'Choose one of your languages or add a new language.'**
   String get chooseLearningLanguage;
 
   /// No description provided for @noLearningLanguages.
   ///
-  /// In ar, this message translates to:
-  /// **'لا توجد لغات تعلّم بعد.'**
+  /// In en, this message translates to:
+  /// **'No learning languages yet.'**
   String get noLearningLanguages;
 
   /// No description provided for @addNewLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'إضافة لغة جديدة'**
+  /// In en, this message translates to:
+  /// **'Add a new language'**
   String get addNewLanguage;
 
   /// No description provided for @switchLearningLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'اضغط لتبديل لغة التعلّم'**
+  /// In en, this message translates to:
+  /// **'Tap to switch learning language'**
   String get switchLearningLanguage;
 
   /// No description provided for @addOrChangeLearningLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'اضغط لإضافة أو تغيير لغة'**
+  /// In en, this message translates to:
+  /// **'Tap to add or change a language'**
   String get addOrChangeLearningLanguage;
 
   /// No description provided for @learningLanguageChanged.
   ///
-  /// In ar, this message translates to:
-  /// **'تم تغيير لغة التعلّم إلى {language}'**
+  /// In en, this message translates to:
+  /// **'Learning language changed to {language}'**
   String learningLanguageChanged(Object language);
 
   /// No description provided for @addLanguageTitle.
   ///
-  /// In ar, this message translates to:
-  /// **'إضافة لغة جديدة'**
+  /// In en, this message translates to:
+  /// **'Add a new language'**
   String get addLanguageTitle;
 
   /// No description provided for @yourLearningLevel.
   ///
-  /// In ar, this message translates to:
-  /// **'مستواك في اللغة'**
+  /// In en, this message translates to:
+  /// **'Your language level'**
   String get yourLearningLevel;
 
   /// No description provided for @cancel.
   ///
-  /// In ar, this message translates to:
-  /// **'إلغاء'**
+  /// In en, this message translates to:
+  /// **'Cancel'**
   String get cancel;
 
   /// No description provided for @add.
   ///
-  /// In ar, this message translates to:
-  /// **'إضافة'**
+  /// In en, this message translates to:
+  /// **'Add'**
   String get add;
 
   /// No description provided for @noNewLanguagesAvailable.
   ///
-  /// In ar, this message translates to:
-  /// **'لا توجد لغات جديدة متاحة للإضافة.'**
+  /// In en, this message translates to:
+  /// **'No new languages are available to add.'**
   String get noNewLanguagesAvailable;
 
   /// No description provided for @levelA1.
   ///
-  /// In ar, this message translates to:
-  /// **'A1 - مبتدئ'**
+  /// In en, this message translates to:
+  /// **'A1 - Beginner'**
   String get levelA1;
 
   /// No description provided for @levelA2.
   ///
-  /// In ar, this message translates to:
-  /// **'A2 - أساسي'**
+  /// In en, this message translates to:
+  /// **'A2 - Elementary'**
   String get levelA2;
 
   /// No description provided for @levelB1.
   ///
-  /// In ar, this message translates to:
-  /// **'B1 - متوسط'**
+  /// In en, this message translates to:
+  /// **'B1 - Intermediate'**
   String get levelB1;
 
   /// No description provided for @levelB2.
   ///
-  /// In ar, this message translates to:
-  /// **'B2 - فوق المتوسط'**
+  /// In en, this message translates to:
+  /// **'B2 - Upper-intermediate'**
   String get levelB2;
 
   /// No description provided for @levelC1.
   ///
-  /// In ar, this message translates to:
-  /// **'C1 - متقدم'**
+  /// In en, this message translates to:
+  /// **'C1 - Advanced'**
   String get levelC1;
 
   /// No description provided for @levelC2.
   ///
-  /// In ar, this message translates to:
-  /// **'C2 - متقن'**
+  /// In en, this message translates to:
+  /// **'C2 - Proficient'**
   String get levelC2;
 
   /// No description provided for @login.
   ///
-  /// In ar, this message translates to:
-  /// **'تسجيل الدخول'**
+  /// In en, this message translates to:
+  /// **'Log in'**
   String get login;
 
   /// No description provided for @welcomeBackTitle.
   ///
-  /// In ar, this message translates to:
-  /// **'مرحبًا بعودتك'**
+  /// In en, this message translates to:
+  /// **'Welcome back'**
   String get welcomeBackTitle;
 
   /// No description provided for @loginSubtitle.
   ///
-  /// In ar, this message translates to:
-  /// **'سجّل دخولك وتابع رحلة تعلّمك.'**
+  /// In en, this message translates to:
+  /// **'Log in and continue your learning journey.'**
   String get loginSubtitle;
 
   /// No description provided for @password.
   ///
-  /// In ar, this message translates to:
-  /// **'كلمة المرور'**
+  /// In en, this message translates to:
+  /// **'Password'**
   String get password;
 
   /// No description provided for @enterEmail.
   ///
-  /// In ar, this message translates to:
-  /// **'أدخل بريدًا إلكترونيًا صحيحًا.'**
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
   String get enterEmail;
 
   /// No description provided for @enterPassword.
   ///
-  /// In ar, this message translates to:
-  /// **'أدخل كلمة المرور.'**
+  /// In en, this message translates to:
+  /// **'Enter your password.'**
   String get enterPassword;
 
   /// No description provided for @passwordVisibilityShow.
   ///
-  /// In ar, this message translates to:
-  /// **'إظهار كلمة المرور'**
+  /// In en, this message translates to:
+  /// **'Show password'**
   String get passwordVisibilityShow;
 
   /// No description provided for @passwordVisibilityHide.
   ///
-  /// In ar, this message translates to:
-  /// **'إخفاء كلمة المرور'**
+  /// In en, this message translates to:
+  /// **'Hide password'**
   String get passwordVisibilityHide;
 
   /// No description provided for @loginButton.
   ///
-  /// In ar, this message translates to:
-  /// **'دخول'**
+  /// In en, this message translates to:
+  /// **'Log in'**
   String get loginButton;
 
   /// No description provided for @noAccount.
   ///
-  /// In ar, this message translates to:
-  /// **'ليس لديك حساب؟'**
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
   String get noAccount;
 
   /// No description provided for @createAccount.
   ///
-  /// In ar, this message translates to:
-  /// **'أنشئ حسابًا'**
+  /// In en, this message translates to:
+  /// **'Create an account'**
   String get createAccount;
 
   /// No description provided for @loginError.
   ///
-  /// In ar, this message translates to:
-  /// **'تعذّر تسجيل الدخول. تحقّق من البريد وكلمة المرور.'**
+  /// In en, this message translates to:
+  /// **'Unable to log in. Check your email and password.'**
   String get loginError;
 
   /// No description provided for @continueWithGoogle.
   ///
-  /// In ar, this message translates to:
-  /// **'المتابعة باستخدام Google'**
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
   String get continueWithGoogle;
 
   /// No description provided for @or.
   ///
-  /// In ar, this message translates to:
-  /// **'أو'**
+  /// In en, this message translates to:
+  /// **'or'**
   String get or;
 
   /// No description provided for @createYourAccount.
   ///
-  /// In ar, this message translates to:
-  /// **'أنشئ حسابك'**
+  /// In en, this message translates to:
+  /// **'Create your account'**
   String get createYourAccount;
 
   /// No description provided for @createAccountSubtitle.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر لغاتك وابدأ تجربة تعلّم مصممة لك.'**
+  /// In en, this message translates to:
+  /// **'Choose your languages and start a learning experience designed for you.'**
   String get createAccountSubtitle;
 
   /// No description provided for @usernameMinLength.
   ///
-  /// In ar, this message translates to:
-  /// **'أدخل اسمًا من حرفين على الأقل.'**
+  /// In en, this message translates to:
+  /// **'Enter a name with at least two characters.'**
   String get usernameMinLength;
 
   /// No description provided for @passwordMinLength.
   ///
-  /// In ar, this message translates to:
-  /// **'يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.'**
+  /// In en, this message translates to:
+  /// **'Password must contain at least 8 characters.'**
   String get passwordMinLength;
 
   /// No description provided for @passwordHelper.
   ///
-  /// In ar, this message translates to:
-  /// **'8 أحرف على الأقل'**
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
   String get passwordHelper;
 
   /// No description provided for @differentLanguages.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر لغتين مختلفتين للبدء.'**
+  /// In en, this message translates to:
+  /// **'Choose two different languages to get started.'**
   String get differentLanguages;
 
   /// No description provided for @nativeLanguageLabel.
   ///
-  /// In ar, this message translates to:
-  /// **'لغتك الأم'**
+  /// In en, this message translates to:
+  /// **'Your native language'**
   String get nativeLanguageLabel;
 
   /// No description provided for @languageYouWantToLearn.
   ///
-  /// In ar, this message translates to:
-  /// **'اللغة التي تريد تعلّمها'**
+  /// In en, this message translates to:
+  /// **'The language you want to learn'**
   String get languageYouWantToLearn;
 
   /// No description provided for @createAccountButton.
   ///
-  /// In ar, this message translates to:
-  /// **'إنشاء الحساب'**
+  /// In en, this message translates to:
+  /// **'Create account'**
   String get createAccountButton;
 
   /// No description provided for @accountCreated.
   ///
-  /// In ar, this message translates to:
-  /// **'تم إنشاء الحساب. يمكنك تسجيل الدخول الآن.'**
+  /// In en, this message translates to:
+  /// **'Your account has been created. You can log in now.'**
   String get accountCreated;
 
   /// No description provided for @registrationError.
   ///
-  /// In ar, this message translates to:
-  /// **'تعذّر إنشاء الحساب. قد يكون البريد مستخدمًا بالفعل.'**
+  /// In en, this message translates to:
+  /// **'Unable to create the account. The email may already be in use.'**
   String get registrationError;
 
   /// No description provided for @myVocabulary.
   ///
-  /// In ar, this message translates to:
-  /// **'مفرداتك'**
+  /// In en, this message translates to:
+  /// **'Your Vocabulary'**
   String get myVocabulary;
 
   /// No description provided for @savedWordsCount.
   ///
-  /// In ar, this message translates to:
-  /// **'{count} كلمة محفوظة'**
+  /// In en, this message translates to:
+  /// **'{count} saved words'**
   String savedWordsCount(Object count);
 
   /// No description provided for @learning.
   ///
-  /// In ar, this message translates to:
-  /// **'جاري التعلّم...'**
+  /// In en, this message translates to:
+  /// **'Currently learning...'**
   String get learning;
 
   /// No description provided for @learned.
   ///
-  /// In ar, this message translates to:
-  /// **'تم التعلّم'**
+  /// In en, this message translates to:
+  /// **'Learned'**
   String get learned;
 
   /// No description provided for @all.
   ///
-  /// In ar, this message translates to:
-  /// **'الكل'**
+  /// In en, this message translates to:
+  /// **'All'**
   String get all;
 
   /// No description provided for @completeWord.
   ///
-  /// In ar, this message translates to:
-  /// **'تحديد كمكتملة؟'**
+  /// In en, this message translates to:
+  /// **'Mark as completed?'**
   String get completeWord;
 
   /// No description provided for @returnToLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'إعادتها إلى جاري التعلّم...؟'**
+  /// In en, this message translates to:
+  /// **'Return it to currently learning...?'**
   String get returnToLearning;
 
   /// No description provided for @masteredWord.
   ///
-  /// In ar, this message translates to:
-  /// **'هل أتقنت كلمة \"{word}\"؟'**
+  /// In en, this message translates to:
+  /// **'Have you mastered the word \"{word}\"?'**
   String masteredWord(Object word);
 
   /// No description provided for @returnWordToLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'ستعود كلمة \"{word}\" إلى قائمة جاري التعلّم...'**
+  /// In en, this message translates to:
+  /// **'The word \"{word}\" will return to your currently learning list...'**
   String returnWordToLearning(Object word);
 
   /// No description provided for @markCompleted.
   ///
-  /// In ar, this message translates to:
-  /// **'تحديد كمكتملة'**
+  /// In en, this message translates to:
+  /// **'Mark as completed'**
   String get markCompleted;
 
   /// No description provided for @returnToLearningButton.
   ///
-  /// In ar, this message translates to:
-  /// **'إعادة إلى التعلّم'**
+  /// In en, this message translates to:
+  /// **'Return to learning'**
   String get returnToLearningButton;
 
   /// No description provided for @wordMovedToLearned.
   ///
-  /// In ar, this message translates to:
-  /// **'تم نقل الكلمة إلى تم التعلّم.'**
+  /// In en, this message translates to:
+  /// **'The word was moved to Learned.'**
   String get wordMovedToLearned;
 
   /// No description provided for @wordMovedToLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'تم نقل الكلمة إلى جاري التعلّم...'**
+  /// In en, this message translates to:
+  /// **'The word was moved to Currently Learning.'**
   String get wordMovedToLearning;
 
   /// No description provided for @deleteWordTitle.
   ///
-  /// In ar, this message translates to:
-  /// **'حذف الكلمة؟'**
+  /// In en, this message translates to:
+  /// **'Delete word?'**
   String get deleteWordTitle;
 
   /// No description provided for @deleteWordConfirmation.
   ///
-  /// In ar, this message translates to:
-  /// **'هل تريد حذف كلمة \"{word}\"؟ لا يمكن التراجع عن هذا الإجراء.'**
+  /// In en, this message translates to:
+  /// **'Do you want to delete the word \"{word}\"? This action cannot be undone.'**
   String deleteWordConfirmation(Object word);
 
   /// No description provided for @delete.
   ///
-  /// In ar, this message translates to:
-  /// **'حذف'**
+  /// In en, this message translates to:
+  /// **'Delete'**
   String get delete;
 
   /// No description provided for @wordDeleted.
   ///
-  /// In ar, this message translates to:
-  /// **'تم حذف الكلمة.'**
+  /// In en, this message translates to:
+  /// **'The word was deleted.'**
   String get wordDeleted;
 
   /// No description provided for @noLearnedWords.
   ///
-  /// In ar, this message translates to:
-  /// **'لا توجد كلمات تم التعلّم بعد'**
+  /// In en, this message translates to:
+  /// **'No learned words yet'**
   String get noLearnedWords;
 
   /// No description provided for @noLearningWords.
   ///
-  /// In ar, this message translates to:
-  /// **'لا توجد كلمات في جاري التعلّم...'**
+  /// In en, this message translates to:
+  /// **'No words currently being learned...'**
   String get noLearningWords;
 
   /// No description provided for @keepPracticing.
   ///
-  /// In ar, this message translates to:
-  /// **'واصل التدريب، وستظهر الكلمات التي تتعلمها هنا.'**
+  /// In en, this message translates to:
+  /// **'Keep practicing, and the words you learn will appear here.'**
   String get keepPracticing;
 
   /// No description provided for @wordsAddedDuringLearning.
   ///
-  /// In ar, this message translates to:
-  /// **'ستظهر هنا الكلمات التي تضيفها أثناء التعلّم.'**
+  /// In en, this message translates to:
+  /// **'The words you add while learning will appear here.'**
   String get wordsAddedDuringLearning;
 
   /// No description provided for @noSavedWords.
   ///
-  /// In ar, this message translates to:
-  /// **'لا توجد كلمات محفوظة بعد'**
+  /// In en, this message translates to:
+  /// **'No saved words yet'**
   String get noSavedWords;
 
   /// No description provided for @saveWordsDuringConversation.
   ///
-  /// In ar, this message translates to:
-  /// **'عند اكتشاف كلمة جديدة أثناء محادثة الذكاء الاصطناعي، أضفها إلى مفرداتك.'**
+  /// In en, this message translates to:
+  /// **'When you discover a new word during an AI conversation, add it to your vocabulary.'**
   String get saveWordsDuringConversation;
 
   /// No description provided for @learnNaturally.
   ///
-  /// In ar, this message translates to:
-  /// **'تعلّم بصورة طبيعية من خلال المحادثة'**
+  /// In en, this message translates to:
+  /// **'Learn naturally through conversation'**
   String get learnNaturally;
 
   /// No description provided for @errorOccurred.
   ///
-  /// In ar, this message translates to:
-  /// **'حدث خطأ ما'**
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
   String get errorOccurred;
 
   /// No description provided for @tryAgain.
   ///
-  /// In ar, this message translates to:
-  /// **'حاول مجددًا'**
+  /// In en, this message translates to:
+  /// **'Try again'**
   String get tryAgain;
 
   /// No description provided for @automatic.
   ///
-  /// In ar, this message translates to:
-  /// **'تلقائي'**
+  /// In en, this message translates to:
+  /// **'Automatic'**
   String get automatic;
 
   /// No description provided for @systemDefault.
   ///
-  /// In ar, this message translates to:
-  /// **'افتراضي النظام'**
+  /// In en, this message translates to:
+  /// **'System default'**
   String get systemDefault;
 
   /// No description provided for @userInformationReadError.
   ///
-  /// In ar, this message translates to:
-  /// **'تعذر قراءة معلومات المستخدم.'**
+  /// In en, this message translates to:
+  /// **'Unable to read user information.'**
   String get userInformationReadError;
 
   /// No description provided for @onboardingSaveError.
   ///
-  /// In ar, this message translates to:
-  /// **'تعذر حفظ إعداداتك. حاول مرة أخرى.'**
+  /// In en, this message translates to:
+  /// **'Unable to save your settings. Please try again.'**
   String get onboardingSaveError;
 
   /// No description provided for @placementTestTitle.
   ///
-  /// In ar, this message translates to:
-  /// **'اختبار تحديد المستوى'**
+  /// In en, this message translates to:
+  /// **'Placement Test'**
   String get placementTestTitle;
 
   /// No description provided for @placementTestDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'اختبر مستواك في اللغة لنحدد المستوى المناسب لك.'**
+  /// In en, this message translates to:
+  /// **'Test your language level so we can determine the right level for you.'**
   String get placementTestDescription;
 
   /// No description provided for @later.
   ///
-  /// In ar, this message translates to:
-  /// **'لاحقًا'**
+  /// In en, this message translates to:
+  /// **'Later'**
   String get later;
 
   /// No description provided for @startTest.
   ///
-  /// In ar, this message translates to:
-  /// **'ابدأ الاختبار'**
+  /// In en, this message translates to:
+  /// **'Start test'**
   String get startTest;
 
   /// No description provided for @chooseAppLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر لغة التطبيق'**
+  /// In en, this message translates to:
+  /// **'Choose app language'**
   String get chooseAppLanguage;
 
   /// No description provided for @nativeLanguageQuestion.
   ///
-  /// In ar, this message translates to:
-  /// **'ما لغتك الأم؟'**
+  /// In en, this message translates to:
+  /// **'What is your native language?'**
   String get nativeLanguageQuestion;
 
   /// No description provided for @learningLanguageQuestion.
   ///
-  /// In ar, this message translates to:
-  /// **'ما اللغة التي تريد تعلمها؟'**
+  /// In en, this message translates to:
+  /// **'What language do you want to learn?'**
   String get learningLanguageQuestion;
 
   /// No description provided for @chooseAppLanguageDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر اللغة التي تريد استخدامها في واجهة التطبيق.'**
+  /// In en, this message translates to:
+  /// **'Choose the language you want to use for the app interface.'**
   String get chooseAppLanguageDescription;
 
   /// No description provided for @nativeLanguageDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر لغتك الأم.'**
+  /// In en, this message translates to:
+  /// **'Choose your native language.'**
   String get nativeLanguageDescription;
 
   /// No description provided for @learningLanguageDescription.
   ///
-  /// In ar, this message translates to:
-  /// **'اختر اللغة التي تريد تعلمها.'**
+  /// In en, this message translates to:
+  /// **'Choose the language you want to learn.'**
   String get learningLanguageDescription;
 
   /// No description provided for @nativeLanguageCannotBeLearningLanguage.
   ///
-  /// In ar, this message translates to:
-  /// **'لا يمكن أن تكون اللغة الأم ولغة التعلّم متطابقتين.'**
+  /// In en, this message translates to:
+  /// **'Your native language and learning language cannot be the same.'**
   String get nativeLanguageCannotBeLearningLanguage;
 
   /// No description provided for @back.
   ///
-  /// In ar, this message translates to:
-  /// **'رجوع'**
+  /// In en, this message translates to:
+  /// **'Back'**
   String get back;
 
   /// No description provided for @setupYourAccount.
   ///
-  /// In ar, this message translates to:
-  /// **'إعداد حسابك'**
+  /// In en, this message translates to:
+  /// **'Set up your account'**
   String get setupYourAccount;
 
   /// No description provided for @saveAndContinue.
   ///
-  /// In ar, this message translates to:
-  /// **'حفظ ومتابعة'**
+  /// In en, this message translates to:
+  /// **'Save and continue'**
   String get saveAndContinue;
 
   /// No description provided for @continueButton.
   ///
-  /// In ar, this message translates to:
-  /// **'متابعة'**
+  /// In en, this message translates to:
+  /// **'Continue'**
   String get continueButton;
 }
 
@@ -907,11 +929,22 @@ class _AppLocalizationsDelegate
   @override
   bool isSupported(Locale locale) => <String>[
     'ar',
+    'de',
     'en',
     'es',
     'fr',
+    'id',
+    'it',
     'ja',
     'ko',
+    'nl',
+    'pl',
+    'pt',
+    'ru',
+    'th',
+    'tr',
+    'uk',
+    'vi',
     'zh',
   ].contains(locale.languageCode);
 
@@ -924,16 +957,38 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'ar':
       return AppLocalizationsAr();
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
     case 'fr':
       return AppLocalizationsFr();
+    case 'id':
+      return AppLocalizationsId();
+    case 'it':
+      return AppLocalizationsIt();
     case 'ja':
       return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
+    case 'nl':
+      return AppLocalizationsNl();
+    case 'pl':
+      return AppLocalizationsPl();
+    case 'pt':
+      return AppLocalizationsPt();
+    case 'ru':
+      return AppLocalizationsRu();
+    case 'th':
+      return AppLocalizationsTh();
+    case 'tr':
+      return AppLocalizationsTr();
+    case 'uk':
+      return AppLocalizationsUk();
+    case 'vi':
+      return AppLocalizationsVi();
     case 'zh':
       return AppLocalizationsZh();
   }

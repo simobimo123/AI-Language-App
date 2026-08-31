@@ -75,13 +75,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get auto => '자동';
 
   @override
-  String get light => '밝게';
+  String get light => '라이트';
 
   @override
-  String get dark => '어둡게';
+  String get dark => '다크';
 
   @override
-  String get appAppearance => '앱 모양';
+  String get appAppearance => '앱 화면';
 
   @override
   String get startLearning => '학습 시작';
@@ -96,10 +96,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myWords => '내 단어';
 
   @override
-  String get myWordsDescription => '학습 중 저장한 단어를 복습하세요.';
+  String get myWordsDescription => '학습하면서 저장한 단어를 복습하세요.';
 
   @override
-  String get yourLearning => '학습 현황';
+  String get yourLearning => '나의 학습';
 
   @override
   String get streakDays => '연속 학습 일수';
@@ -117,7 +117,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dailyTipDescription => '매일 조금씩 연습하세요. 꾸준함이 언어 실력을 향상시키는 열쇠입니다.';
 
   @override
-  String get aiConversationComingSoon => 'AI 대화 기능은 곧 제공될 예정입니다.';
+  String get aiConversationComingSoon => 'AI 대화 기능이 곧 제공될 예정입니다.';
 
   @override
   String get account => '내 계정';
@@ -141,7 +141,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get learningLanguages => '학습 언어';
 
   @override
-  String get chooseLearningLanguage => '학습 중인 언어를 선택하거나 새 언어를 추가하세요.';
+  String get chooseLearningLanguage => '사용 중인 언어 중 하나를 선택하거나 새 언어를 추가하세요.';
 
   @override
   String get noLearningLanguages => '아직 학습 언어가 없습니다.';
@@ -153,18 +153,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get switchLearningLanguage => '탭하여 학습 언어 변경';
 
   @override
-  String get addOrChangeLearningLanguage => '탭하여 언어를 추가하거나 변경';
+  String get addOrChangeLearningLanguage => '탭하여 언어 추가 또는 변경';
 
   @override
   String learningLanguageChanged(Object language) {
-    return '학습 언어가 $language(으)로 변경되었습니다.';
+    return '학습 언어가 $language(으)로 변경되었습니다';
   }
 
   @override
   String get addLanguageTitle => '새 언어 추가';
 
   @override
-  String get yourLearningLevel => '현재 언어 수준';
+  String get yourLearningLevel => '나의 언어 수준';
 
   @override
   String get cancel => '취소';
@@ -206,7 +206,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get password => '비밀번호';
 
   @override
-  String get enterEmail => '올바른 이메일 주소를 입력하세요.';
+  String get enterEmail => '유효한 이메일 주소를 입력하세요.';
 
   @override
   String get enterPassword => '비밀번호를 입력하세요.';
@@ -230,10 +230,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loginError => '로그인할 수 없습니다. 이메일과 비밀번호를 확인하세요.';
 
   @override
-  String get continueWithGoogle => 'المتابعة باستخدام Google';
+  String get continueWithGoogle => 'Google로 계속하기';
 
   @override
-  String get or => 'أو';
+  String get or => '또는';
 
   @override
   String get createYourAccount => '계정 만들기';
@@ -254,26 +254,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get differentLanguages => '시작하려면 서로 다른 두 언어를 선택하세요.';
 
   @override
-  String get nativeLanguageLabel => '모국어';
+  String get nativeLanguageLabel => '나의 모국어';
 
   @override
   String get languageYouWantToLearn => '배우고 싶은 언어';
 
   @override
-  String get createAccountButton => '계정 생성';
+  String get createAccountButton => '계정 만들기';
 
   @override
   String get accountCreated => '계정이 생성되었습니다. 이제 로그인할 수 있습니다.';
 
   @override
-  String get registrationError => '계정을 만들 수 없습니다. 이메일이 이미 사용 중일 수 있습니다.';
+  String get registrationError => '계정을 만들 수 없습니다. 해당 이메일이 이미 사용 중일 수 있습니다.';
 
   @override
-  String get myVocabulary => '내 단어';
+  String get myVocabulary => '나의 어휘';
 
   @override
   String savedWordsCount(Object count) {
-    return '저장된 단어 $count개';
+    return '$count개의 저장된 단어';
   }
 
   @override
@@ -286,26 +286,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get all => '전체';
 
   @override
-  String get completeWord => '학습 완료로 표시할까요?';
+  String get completeWord => '완료로 표시할까요?';
 
   @override
   String get returnToLearning => '학습 중으로 되돌릴까요?';
 
   @override
   String masteredWord(Object word) {
-    return '\"$word\" 단어를 익혔나요?';
+    return '\"$word\" 단어를 완전히 익혔나요?';
   }
 
   @override
   String returnWordToLearning(Object word) {
-    return '\"$word\" 단어가 학습 목록으로 돌아갑니다.';
+    return '\"$word\" 단어가 학습 중 목록으로 돌아갑니다...';
   }
 
   @override
-  String get markCompleted => '학습 완료로 표시';
+  String get markCompleted => '완료로 표시';
 
   @override
-  String get returnToLearningButton => '학습 중으로 되돌리기';
+  String get returnToLearningButton => '학습으로 되돌리기';
 
   @override
   String get wordMovedToLearned => '단어가 학습 완료로 이동되었습니다.';
@@ -318,7 +318,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String deleteWordConfirmation(Object word) {
-    return '\"$word\" 단어를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
+    return '\"$word\" 단어를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.';
   }
 
   @override
@@ -328,7 +328,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get wordDeleted => '단어가 삭제되었습니다.';
 
   @override
-  String get noLearnedWords => '아직 학습 완료된 단어가 없습니다';
+  String get noLearnedWords => '아직 학습한 단어가 없습니다';
 
   @override
   String get noLearningWords => '학습 중인 단어가 없습니다...';
@@ -337,17 +337,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get keepPracticing => '계속 연습하면 학습한 단어가 여기에 표시됩니다.';
 
   @override
-  String get wordsAddedDuringLearning => '학습 중 추가한 단어가 여기에 표시됩니다.';
+  String get wordsAddedDuringLearning => '학습하면서 추가한 단어가 여기에 표시됩니다.';
 
   @override
   String get noSavedWords => '아직 저장된 단어가 없습니다';
 
   @override
   String get saveWordsDuringConversation =>
-      'AI와 대화하는 중 새로운 단어를 발견하면 어휘에 추가하세요.';
+      'AI와 대화하는 동안 새로운 단어를 발견하면 어휘에 추가하세요.';
 
   @override
-  String get learnNaturally => '대화를 통해 자연스럽게 학습하세요';
+  String get learnNaturally => '대화를 통해 자연스럽게 배우기';
 
   @override
   String get errorOccurred => '문제가 발생했습니다';
@@ -371,7 +371,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get placementTestTitle => '레벨 테스트';
 
   @override
-  String get placementTestDescription => '언어 실력을 테스트하여 알맞은 레벨을 찾아보세요.';
+  String get placementTestDescription => '언어 수준을 테스트하여 적절한 레벨을 결정합니다.';
 
   @override
   String get later => '나중에';
@@ -383,7 +383,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chooseAppLanguage => '앱 언어 선택';
 
   @override
-  String get nativeLanguageQuestion => '모국어는 무엇인가요?';
+  String get nativeLanguageQuestion => '모국어가 무엇인가요?';
 
   @override
   String get learningLanguageQuestion => '어떤 언어를 배우고 싶나요?';
