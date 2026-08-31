@@ -46,6 +46,17 @@ class ProfileController extends ChangeNotifier {
     'zh': '中文',
     'ja': '日本語',
     'ko': '한국어',
+    'de': 'Deutsch',
+    'id': 'Bahasa Indonesia',
+    'it': 'Italiano',
+    'nl': 'Nederlands',
+    'pl': 'Polski',
+    'pt': 'Português',
+    'ru': 'Русский',
+    'th': 'ไทย',
+    'tr': 'Türkçe',
+    'uk': 'Українська',
+    'vi': 'Tiếng Việt',
   };
 
   void _onLearningLanguageChanged() {
@@ -106,21 +117,7 @@ class ProfileController extends ChangeNotifier {
       case 'zh': return l10n.chinese;
       case 'ja': return l10n.japanese;
       case 'ko': return l10n.korean;
-      case 'de': return _localizedName('الألمانية', 'Allemand', 'Alemán', 'ドイツ語', '독일어', '德语', 'German');
-      case 'tr': return _localizedName('التركية', 'Turc', 'Turco', 'トルコ語', '터키어', '土耳其语', 'Turkish');
-      default: return code ?? '';
-    }
-  }
-
-  String _localizedName(String ar, String fr, String es, String ja, String ko, String zh, String en) {
-    switch (languageController.locale.languageCode) {
-      case 'ar': return ar;
-      case 'fr': return fr;
-      case 'es': return es;
-      case 'ja': return ja;
-      case 'ko': return ko;
-      case 'zh': return zh;
-      default: return en;
+      default: return appLanguages[code] ?? code ?? '';
     }
   }
 
@@ -219,22 +216,6 @@ class ProfileController extends ChangeNotifier {
         behavior: SnackBarBehavior.floating,
       ));
     }
-  }
-
-  Future<void> logout(BuildContext context) async {
-    await storageService.deleteToken();
-    learningLanguageController.clear();
-    if (!context.mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => LoginPage(
-          themeController: themeController,
-          languageController: languageController,
-        ),
-      ),
-      (_) => false,
-    );
   }
 
   @override
