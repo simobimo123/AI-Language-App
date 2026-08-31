@@ -111,16 +111,18 @@ class PlacementTestController extends ChangeNotifier {
         selectedWordIds: selectedWordIds.toList(),
       );
 
-      // The server reports the level represented by the words that
-      // were just tested. A failed level is therefore confirmed at
-      // THAT SAME LEVEL; we must not silently move down before the quiz.
+      // IMPORTANT:
+      // If the user fails a level, that SAME level must be confirmed
+      // with the grammar/comprehension quiz. We must never move down
+      // to the previous level before the confirmation quiz.
       if (!result.passed) {
-        currentLevel = result.preliminaryLevel;
+        currentLevel = result.level;
         await _loadQuiz(id);
         return;
       }
 
-      // Passed this level. Continue progressively to the next level.
+      // The user passed the current level, so continue progressively
+      // to the next level.
       final nextLevel = result.nextLevel;
 
       if (nextLevel != null && nextLevel.isNotEmpty) {
@@ -129,8 +131,8 @@ class PlacementTestController extends ChangeNotifier {
         return;
       }
 
-      // C2 is the highest level. If the user passed it, placement is
-      // complete without a confirmation quiz.
+      // C2 is the highest level. Passing C2 completes placement
+      // without a confirmation quiz.
       await _finalize(id);
     } catch (error) {
       isEvaluating = false;
