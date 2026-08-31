@@ -48,26 +48,11 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      // -----------------------------------------------------
-      // Create account
-      //
-      // The user will choose:
-      // - App language
-      // - Native language
-      // - Learning language
-      //
-      // later in OnboardingPage.
-      // -----------------------------------------------------
-
       await _apiService.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
-      // -----------------------------------------------------
-      // Automatically log the user in
-      // -----------------------------------------------------
 
       final loginResult = await _apiService.login(
         email: _emailController.text.trim(),
@@ -85,14 +70,6 @@ class _RegisterPageState extends State<RegisterPage> {
       await _storageService.saveToken(accessToken);
 
       if (!mounted) return;
-
-      // -----------------------------------------------------
-      // Go through SplashPage
-      //
-      // SplashPage checks whether a LearningProfile exists.
-      // For a new user there should be none, so it opens
-      // OnboardingPage.
-      // -----------------------------------------------------
 
       Navigator.pushAndRemoveUntil(
         context,
@@ -131,30 +108,29 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        foregroundColor: theme.colorScheme.onSurface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         actions: [
           IconButton(
-            tooltip: theme.brightness == Brightness.dark
-                ? l10n.lightMode
-                : l10n.darkMode,
+            tooltip: isDark ? l10n.lightMode : l10n.darkMode,
             onPressed: _isLoading
                 ? null
                 : () {
                     widget.themeController.setThemeMode(
-                      theme.brightness == Brightness.dark
-                          ? ThemeMode.light
-                          : ThemeMode.dark,
+                      isDark ? ThemeMode.light : ThemeMode.dark,
                     );
                   },
             icon: Icon(
-              theme.brightness == Brightness.dark
+              isDark
                   ? Icons.light_mode_rounded
                   : Icons.dark_mode_rounded,
             ),
@@ -184,14 +160,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       l10n.createAccountSubtitle,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 26),
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
                           color: theme.dividerColor.withValues(alpha: 0.2),
@@ -212,7 +188,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || value.trim().length < 2) {
+                              if (value == null ||
+                                  value.trim().length < 2) {
                                 return l10n.usernameMinLength;
                               }
 
@@ -228,7 +205,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             autofillHints: const [AutofillHints.email],
                             decoration: InputDecoration(
                               labelText: l10n.email,
-                              prefixIcon: const Icon(Icons.email_outlined),
+                              prefixIcon: const Icon(
+                                Icons.email_outlined,
+                              ),
                               border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
@@ -282,7 +261,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 18),
-                            _RegisterError(message: _errorMessage!),
+                            _RegisterError(
+                              message: _errorMessage!,
+                            ),
                           ],
                           const SizedBox(height: 24),
                           SizedBox(
@@ -304,7 +285,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : Text(l10n.createAccountButton),
+                                  : Text(
+                                      l10n.createAccountButton,
+                                    ),
                             ),
                           ),
                         ],
@@ -324,7 +307,9 @@ class _RegisterPageState extends State<RegisterPage> {
 class _RegisterError extends StatelessWidget {
   final String message;
 
-  const _RegisterError({required this.message});
+  const _RegisterError({
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -339,7 +324,9 @@ class _RegisterError extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: TextStyle(color: theme.colorScheme.onErrorContainer),
+        style: TextStyle(
+          color: theme.colorScheme.onErrorContainer,
+        ),
       ),
     );
   }

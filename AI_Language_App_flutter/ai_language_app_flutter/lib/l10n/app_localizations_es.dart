@@ -240,6 +240,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo iniciar sesión. Comprueba tu correo y contraseña.';
 
   @override
+  String get continueWithGoogle => 'المتابعة باستخدام Google';
+
+  @override
+  String get or => 'أو';
+
+  @override
   String get createYourAccount => 'Crea tu cuenta';
 
   @override

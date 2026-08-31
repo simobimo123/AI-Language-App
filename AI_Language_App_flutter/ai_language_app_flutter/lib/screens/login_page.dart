@@ -155,7 +155,9 @@ class _LoginPageState extends State<LoginPage> {
             left: -100,
             child: _BackgroundCircle(
               size: 280,
-              color: colorScheme.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+              color: colorScheme.primary.withValues(
+                alpha: isDark ? 0.12 : 0.08,
+              ),
             ),
           ),
           Positioned(
@@ -163,7 +165,9 @@ class _LoginPageState extends State<LoginPage> {
             right: -140,
             child: _BackgroundCircle(
               size: 300,
-              color: colorScheme.secondary.withValues(alpha: isDark ? 0.10 : 0.07),
+              color: colorScheme.secondary.withValues(
+                alpha: isDark ? 0.10 : 0.07,
+              ),
             ),
           ),
           Positioned(
@@ -171,7 +175,9 @@ class _LoginPageState extends State<LoginPage> {
             left: -80,
             child: _BackgroundCircle(
               size: 300,
-              color: colorScheme.primary.withValues(alpha: isDark ? 0.08 : 0.05),
+              color: colorScheme.primary.withValues(
+                alpha: isDark ? 0.08 : 0.05,
+              ),
             ),
           ),
           SafeArea(
@@ -194,7 +200,9 @@ class _LoginPageState extends State<LoginPage> {
                               ? null
                               : () {
                                   widget.themeController.setThemeMode(
-                                    isDark ? ThemeMode.light : ThemeMode.dark,
+                                    isDark
+                                        ? ThemeMode.light
+                                        : ThemeMode.dark,
                                   );
                                 },
                           icon: AnimatedSwitcher(
@@ -231,7 +239,8 @@ class _LoginPageState extends State<LoginPage> {
                               Text(
                                 l10n.welcomeBackTitle,
                                 textAlign: TextAlign.center,
-                                style: theme.textTheme.headlineMedium?.copyWith(
+                                style:
+                                    theme.textTheme.headlineMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.6,
                                 ),
@@ -262,8 +271,8 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 
-                                        isDark ? 0.18 : 0.06,
+                                      color: Colors.black.withValues(
+                                        alpha: isDark ? 0.18 : 0.06,
                                       ),
                                       blurRadius: 30,
                                       offset: const Offset(0, 14),
@@ -278,22 +287,23 @@ class _LoginPageState extends State<LoginPage> {
                                       l10n.login,
                                       style: theme.textTheme.titleLarge
                                           ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
                                       l10n.loginSubtitle,
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
                                     const SizedBox(height: 22),
                                     TextFormField(
                                       controller: _emailController,
                                       enabled: !isAnyLoading,
-                                      keyboardType: TextInputType.emailAddress,
+                                      keyboardType:
+                                          TextInputType.emailAddress,
                                       textInputAction: TextInputAction.next,
                                       autofillHints: const [
                                         AutofillHints.email,
@@ -308,24 +318,21 @@ class _LoginPageState extends State<LoginPage> {
                                             .surfaceContainerHighest
                                             .withValues(alpha: 0.45),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide.none,
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide(
                                             color: colorScheme.outlineVariant
                                                 .withValues(alpha: 0.35),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide(
                                             color: colorScheme.primary,
                                             width: 1.5,
@@ -375,9 +382,12 @@ class _LoginPageState extends State<LoginPage> {
                                             child: Icon(
                                               _isPasswordVisible
                                                   ? Icons
-                                                        .visibility_off_outlined
-                                                  : Icons.visibility_outlined,
-                                              key: ValueKey(_isPasswordVisible),
+                                                      .visibility_off_outlined
+                                                  : Icons
+                                                      .visibility_outlined,
+                                              key: ValueKey(
+                                                _isPasswordVisible,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -386,24 +396,21 @@ class _LoginPageState extends State<LoginPage> {
                                             .surfaceContainerHighest
                                             .withValues(alpha: 0.45),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide.none,
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide(
                                             color: colorScheme.outlineVariant
                                                 .withValues(alpha: 0.35),
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide(
                                             color: colorScheme.primary,
                                             width: 1.5,
@@ -420,19 +427,21 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     if (_errorMessage != null) ...[
                                       const SizedBox(height: 16),
-                                      _ErrorMessage(message: _errorMessage!),
+                                      _ErrorMessage(
+                                        message: _errorMessage!,
+                                      ),
                                     ],
                                     const SizedBox(height: 22),
                                     SizedBox(
                                       height: 56,
                                       child: FilledButton(
-                                        onPressed: isAnyLoading ? null : _login,
+                                        onPressed:
+                                            isAnyLoading ? null : _login,
                                         style: FilledButton.styleFrom(
                                           elevation: 0,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
                                           ),
                                         ),
                                         child: AnimatedSwitcher(
@@ -448,9 +457,9 @@ class _LoginPageState extends State<LoginPage> {
                                                   height: 23,
                                                   child:
                                                       CircularProgressIndicator(
-                                                        strokeWidth: 2.5,
-                                                        color: Colors.white,
-                                                      ),
+                                                    strokeWidth: 2.5,
+                                                    color: Colors.white,
+                                                  ),
                                                 )
                                               : Row(
                                                   key: const ValueKey(
@@ -492,13 +501,14 @@ class _LoginPageState extends State<LoginPage> {
                                             horizontal: 12,
                                           ),
                                           child: Text(
-                                            'OR',
-                                            style: theme.textTheme.labelMedium
+                                            l10n.or,
+                                            style: theme
+                                                .textTheme.labelMedium
                                                 ?.copyWith(
-                                                  color: colorScheme
-                                                      .onSurfaceVariant,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                              color: colorScheme
+                                                  .onSurfaceVariant,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
                                         Expanded(
@@ -517,14 +527,15 @@ class _LoginPageState extends State<LoginPage> {
                                             ? null
                                             : _loginWithGoogle,
                                         style: OutlinedButton.styleFrom(
-                                          backgroundColor: colorScheme.surface,
+                                          backgroundColor:
+                                              colorScheme.surface,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
                                           ),
                                           side: BorderSide(
-                                            color: colorScheme.outlineVariant,
+                                            color:
+                                                colorScheme.outlineVariant,
                                           ),
                                         ),
                                         child: _isGoogleLoading
@@ -533,8 +544,8 @@ class _LoginPageState extends State<LoginPage> {
                                                 height: 23,
                                                 child:
                                                     CircularProgressIndicator(
-                                                      strokeWidth: 2.5,
-                                                    ),
+                                                  strokeWidth: 2.5,
+                                                ),
                                               )
                                             : Row(
                                                 mainAxisAlignment:
@@ -542,9 +553,9 @@ class _LoginPageState extends State<LoginPage> {
                                                 children: [
                                                   const _GoogleIcon(),
                                                   const SizedBox(width: 12),
-                                                  const Text(
-                                                    'Continue with Google',
-                                                    style: TextStyle(
+                                                  Text(
+                                                    l10n.continueWithGoogle,
+                                                    style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.w700,
                                                       fontSize: 15,
@@ -574,7 +585,8 @@ class _LoginPageState extends State<LoginPage> {
                                     Text(
                                       l10n.noAccount,
                                       style: TextStyle(
-                                        color: colorScheme.onSurfaceVariant,
+                                        color:
+                                            colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                     TextButton(
@@ -584,7 +596,8 @@ class _LoginPageState extends State<LoginPage> {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (_) => RegisterPage(
+                                                  builder: (_) =>
+                                                      RegisterPage(
                                                     themeController:
                                                         widget.themeController,
                                                     languageController: widget
@@ -639,7 +652,10 @@ class _GoogleIcon extends StatelessWidget {
       child: Center(
         child: Text(
           'G',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );
@@ -654,7 +670,10 @@ class _AppLogo extends StatelessWidget {
   final Color primaryColor;
   final Color secondaryColor;
 
-  const _AppLogo({required this.primaryColor, required this.secondaryColor});
+  const _AppLogo({
+    required this.primaryColor,
+    required this.secondaryColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -693,7 +712,10 @@ class _BackgroundCircle extends StatelessWidget {
   final double size;
   final Color color;
 
-  const _BackgroundCircle({required this.size, required this.color});
+  const _BackgroundCircle({
+    required this.size,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +723,10 @@ class _BackgroundCircle extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }
@@ -714,7 +739,9 @@ class _BackgroundCircle extends StatelessWidget {
 class _ErrorMessage extends StatelessWidget {
   final String message;
 
-  const _ErrorMessage({required this.message});
+  const _ErrorMessage({
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -726,7 +753,9 @@ class _ErrorMessage extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: colorScheme.error.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: colorScheme.error.withValues(alpha: 0.15),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -232,6 +232,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginError => 'تعذّر تسجيل الدخول. تحقّق من البريد وكلمة المرور.';
 
   @override
+  String get continueWithGoogle => 'المتابعة باستخدام Google';
+
+  @override
+  String get or => 'أو';
+
+  @override
   String get createYourAccount => 'أنشئ حسابك';
 
   @override

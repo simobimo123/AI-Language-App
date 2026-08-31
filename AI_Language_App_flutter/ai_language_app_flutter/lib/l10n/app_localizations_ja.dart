@@ -230,6 +230,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loginError => 'ログインできませんでした。メールアドレスとパスワードを確認してください。';
 
   @override
+  String get continueWithGoogle => 'المتابعة باستخدام Google';
+
+  @override
+  String get or => 'أو';
+
+  @override
   String get createYourAccount => 'アカウントを作成';
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api/api_service.dart';
 import '../core/language/language_controller.dart';
 import '../core/theme/theme_controller.dart';
@@ -75,6 +76,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Future<void> loadCurrentUser() async {
     try {
       final user = await apiService.getCurrentUser();
+
       if (!mounted) return;
 
       setState(() {
@@ -82,14 +84,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
         userEmail = user['email']?.toString();
         selectedNativeLanguage = user['native_language']?.toString();
         selectedLearningLanguage = user['learning_language']?.toString();
-        selectedAppLanguage = widget.languageController.locale.languageCode;
+        selectedAppLanguage =
+            widget.languageController.locale.languageCode;
         isLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
 
       setState(() {
-        selectedAppLanguage = widget.languageController.locale.languageCode;
+        selectedAppLanguage =
+            widget.languageController.locale.languageCode;
         isLoading = false;
       });
     }
@@ -97,23 +101,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   bool get isArabic => widget.languageController.isArabic;
 
-  String text({required String ar, required String en}) {
-    return isArabic ? ar : en;
-  }
-
-  String languageName(Map<String, String> language) {
-    return isArabic ? language['name_ar'] ?? '' : language['name_en'] ?? '';
+  String languageName(
+    Map<String, String> language,
+  ) {
+    return isArabic
+        ? language['name_ar'] ?? ''
+        : language['name_en'] ?? '';
   }
 
   bool get canContinue {
     switch (currentStep) {
       case 0:
         return selectedAppLanguage != null;
+
       case 1:
         return selectedNativeLanguage != null;
+
       case 2:
         return selectedLearningLanguage != null &&
             selectedLearningLanguage != selectedNativeLanguage;
+
       default:
         return false;
     }
@@ -129,6 +136,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     await widget.languageController.setLanguage(code);
 
     if (!mounted) return;
+
     setState(() {});
   }
 
@@ -156,16 +164,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Future<void> saveOnboardingData() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (selectedNativeLanguage == null ||
         selectedLearningLanguage == null ||
         userName == null ||
         userEmail == null) {
-      showError(
-        text(
-          ar: 'تعذر قراءة بيانات المستخدم.',
-          en: 'Could not read user information.',
-        ),
-      );
+      showError(l10n.userInformationReadError);
       return;
     }
 
@@ -195,16 +200,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
         isSaving = false;
       });
 
-      showError(
-        text(
-          ar: 'حدث خطأ أثناء حفظ إعداداتك.',
-          en: 'An error occurred while saving your settings.',
-        ),
-      );
+      showError(l10n.onboardingSaveError);
     }
   }
 
   Future<void> showTestPreparationDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (selectedLearningLanguage == null) return;
 
     final shouldStart = await showDialog<bool>(
@@ -217,31 +219,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          title: Text(
-            text(ar: 'إعداد اختبار تحديد المستوى', en: 'Placement Test'),
-          ),
+          title: Text(l10n.placementTestTitle),
           content: Text(
-            text(
-              ar: 'الخطوة التالية هي اختبار بسيط لتحديد مستواك في اللغة التي اخترتها.\n\nلن تختار المستوى بنفسك؛ سيحدده النظام بناءً على إجاباتك.',
-              en: 'The next step is a short test to determine your level in the language you selected.\n\nYou will not choose the level yourself; the system will determine it from your answers.',
-            ),
+            l10n.placementTestDescription,
             style: theme.textTheme.bodyMedium,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(text(ar: 'لاحقًا', en: 'Later')),
+              child: Text(l10n.later),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(text(ar: 'بدء الاختبار', en: 'Start test')),
+              child: Text(l10n.startTest),
             ),
           ],
         );
       },
     );
 
-    if (shouldStart != true || !mounted || selectedLearningLanguage == null) {
+    if (shouldStart != true ||
+        !mounted ||
+        selectedLearningLanguage == null) {
       return;
     }
 
@@ -256,7 +255,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
     );
 
-    if (!mounted || result == null || result.isEmpty) return;
+    if (!mounted || result == null || result.isEmpty) {
+      return;
+    }
 
     Navigator.pushAndRemoveUntil(
       context,
@@ -272,52 +273,60 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+      ),
     );
   }
 
   String get currentTitle {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (currentStep) {
       case 0:
-        return text(ar: 'اختر لغة التطبيق', en: 'Choose app language');
+        return l10n.chooseAppLanguage;
+
       case 1:
-        return text(ar: 'ما لغتك الأم؟', en: 'What is your native language?');
+        return l10n.nativeLanguageQuestion;
+
       case 2:
-        return text(ar: 'ماذا تريد أن تتعلم؟', en: 'What do you want to learn?');
+        return l10n.learningLanguageQuestion;
+
       default:
         return '';
     }
   }
 
   String get currentDescription {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (currentStep) {
       case 0:
-        return text(
-          ar: 'اختر اللغة التي تريد استخدامها لواجهة التطبيق.',
-          en: 'Choose the language you want to use for the app interface.',
-        );
+        return l10n.chooseAppLanguageDescription;
+
       case 1:
-        return text(
-          ar: 'سنستخدم هذه اللغة لاحقًا لمساعدتك في الشرح والترجمة.',
-          en: 'We will use this language later for explanations and translations.',
-        );
+        return l10n.nativeLanguageDescription;
+
       case 2:
-        return text(
-          ar: 'اختر اللغة التي تريد تعلمها. بعد ذلك سنجري اختبارًا لتحديد مستواك تلقائيًا.',
-          en: 'Choose the language you want to learn. Then we will automatically determine your level.',
-        );
+        return l10n.learningLanguageDescription;
+
       default:
         return '';
     }
   }
 
-  Widget buildAppLanguageCard(Map<String, String> language, ThemeData theme) {
+  Widget buildAppLanguageCard(
+    Map<String, String> language,
+    ThemeData theme,
+  ) {
     final code = language['code']!;
     final name = language['name']!;
     final selected = selectedAppLanguage == code;
 
     return GestureDetector(
-      onTap: isSaving ? null : () => selectApplicationLanguage(code),
+      onTap: isSaving
+          ? null
+          : () => selectApplicationLanguage(code),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: 12),
@@ -362,7 +371,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 name,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                  fontWeight:
+                      selected ? FontWeight.bold : FontWeight.w500,
                 ),
               ),
             ),
@@ -382,6 +392,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ThemeData theme,
     String? selectedCode,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     final code = language['code']!;
     final selected = selectedCode == code;
 
@@ -392,19 +404,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
               setState(() {
                 if (currentStep == 1) {
                   selectedNativeLanguage = code;
+
                   if (selectedLearningLanguage == code) {
                     selectedLearningLanguage = null;
                   }
                 } else {
                   if (selectedNativeLanguage == code) {
                     showError(
-                      text(
-                        ar: 'لا يمكنك اختيار لغتك الأم كلغة للتعلم.',
-                        en: 'You cannot choose your native language as your learning language.',
-                      ),
+                      l10n.nativeLanguageCannotBeLearningLanguage,
                     );
                     return;
                   }
+
                   selectedLearningLanguage = code;
                 }
               });
@@ -412,7 +423,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 15,
+        ),
         decoration: BoxDecoration(
           color: selected
               ? theme.colorScheme.primary.withValues(alpha: 0.10)
@@ -454,7 +468,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 languageName(language),
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                  fontWeight:
+                      selected ? FontWeight.bold : FontWeight.w500,
                 ),
               ),
             ),
@@ -473,7 +488,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (currentStep == 0) {
       return Column(
         children: appLanguages
-            .map((language) => buildAppLanguageCard(language, theme))
+            .map(
+              (language) =>
+                  buildAppLanguageCard(language, theme),
+            )
             .toList(),
       );
     }
@@ -496,12 +514,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     if (isLoading) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Center(
-          child: CircularProgressIndicator(color: theme.colorScheme.primary),
+          child: CircularProgressIndicator(
+            color: theme.colorScheme.primary,
+          ),
         ),
       );
     }
@@ -514,10 +535,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
         leading: currentStep > 0
             ? IconButton(
                 onPressed: isSaving ? null : previousStep,
+                tooltip: l10n.back,
                 icon: const Icon(Icons.arrow_back_rounded),
               )
             : null,
-        title: Text(text(ar: 'إعداد حسابك', en: 'Set up your account')),
+        title: Text(l10n.setupYourAccount),
       ),
       body: SafeArea(
         child: Column(
@@ -527,25 +549,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
               child: Column(
                 children: [
                   Row(
-                    children: List.generate(3, (index) {
-                      final active = index <= currentStep;
-                      return Expanded(
-                        child: Container(
-                          height: 5,
-                          margin: EdgeInsets.only(right: index == 2 ? 0 : 6),
-                          decoration: BoxDecoration(
-                            color: active
-                                ? theme.colorScheme.primary
-                                : theme.dividerColor.withValues(alpha: 0.30),
-                            borderRadius: BorderRadius.circular(20),
+                    children: List.generate(
+                      3,
+                      (index) {
+                        final active = index <= currentStep;
+
+                        return Expanded(
+                          child: Container(
+                            height: 5,
+                            margin: EdgeInsets.only(
+                              right: index == 2 ? 0 : 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: active
+                                  ? theme.colorScheme.primary
+                                  : theme.dividerColor
+                                      .withValues(alpha: 0.30),
+                              borderRadius:
+                                  BorderRadius.circular(20),
+                            ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      },
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Align(
-                    alignment: AlignmentDirectional.centerStart,
+                    alignment:
+                        AlignmentDirectional.centerStart,
                     child: Text(
                       currentTitle,
                       style: const TextStyle(
@@ -556,15 +587,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
                   const SizedBox(height: 8),
                   Align(
-                    alignment: AlignmentDirectional.centerStart,
+                    alignment:
+                        AlignmentDirectional.centerStart,
                     child: Text(
                       currentDescription,
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: theme.textTheme.bodyMedium?.color?.withValues(
-                          alpha: 0.70,
-                        ),
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withValues(alpha: 0.70),
                       ),
                     ),
                   ),
@@ -574,38 +605,51 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  0,
+                  20,
+                  20,
+                ),
                 child: buildStepContent(theme),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                10,
+                20,
+                20,
+              ),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: (!canContinue || isSaving) ? null : continueStep,
+                  onPressed:
+                      (!canContinue || isSaving)
+                          ? null
+                          : continueStep,
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius:
+                          BorderRadius.circular(16),
                     ),
                   ),
                   child: isSaving
                       ? SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(
+                          child:
+                              CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: theme.colorScheme.onPrimary,
+                            color:
+                                theme.colorScheme.onPrimary,
                           ),
                         )
                       : Text(
                           currentStep == 2
-                              ? text(
-                                  ar: 'حفظ والمتابعة',
-                                  en: 'Save and continue',
-                                )
-                              : text(ar: 'متابعة', en: 'Continue'),
+                              ? l10n.saveAndContinue
+                              : l10n.continueButton,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

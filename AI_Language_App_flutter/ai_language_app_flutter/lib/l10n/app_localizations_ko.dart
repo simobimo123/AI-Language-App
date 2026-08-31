@@ -230,6 +230,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loginError => '로그인할 수 없습니다. 이메일과 비밀번호를 확인하세요.';
 
   @override
+  String get continueWithGoogle => 'المتابعة باستخدام Google';
+
+  @override
+  String get or => 'أو';
+
+  @override
   String get createYourAccount => '계정 만들기';
 
   @override

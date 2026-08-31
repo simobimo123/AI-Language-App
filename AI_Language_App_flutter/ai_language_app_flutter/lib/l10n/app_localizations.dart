@@ -546,6 +546,18 @@ abstract class AppLocalizations {
   /// **'تعذّر تسجيل الدخول. تحقّق من البريد وكلمة المرور.'**
   String get loginError;
 
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتابعة باستخدام Google'**
+  String get continueWithGoogle;
+
+  /// No description provided for @or.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو'**
+  String get or;
+
   /// No description provided for @createYourAccount.
   ///
   /// In ar, this message translates to:

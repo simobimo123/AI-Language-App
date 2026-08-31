@@ -230,6 +230,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginError => '无法登录。请检查邮箱和密码。';
 
   @override
+  String get continueWithGoogle => 'المتابعة باستخدام Google';
+
+  @override
+  String get or => 'أو';
+
+  @override
   String get createYourAccount => '创建账户';
 
   @override

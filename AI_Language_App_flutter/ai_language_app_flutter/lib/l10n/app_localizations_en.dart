@@ -235,6 +235,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginError => 'Unable to log in. Check your email and password.';
 
   @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
+  String get or => 'OR';
+
+  @override
   String get createYourAccount => 'Create Your Account';
 
   @override

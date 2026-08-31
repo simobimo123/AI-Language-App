@@ -241,6 +241,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de se connecter. Vérifiez votre e-mail et votre mot de passe.';
 
   @override
+  String get continueWithGoogle => 'المتابعة باستخدام Google';
+
+  @override
+  String get or => 'أو';
+
+  @override
   String get createYourAccount => 'Créez votre compte';
 
   @override
