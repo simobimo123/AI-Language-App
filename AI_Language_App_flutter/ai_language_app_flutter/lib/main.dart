@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/app_localizations.dart';
+import 'l10n/app_localizations_extended.dart';
 import 'screens/splash_page.dart';
 import 'core/language/language_controller.dart';
 import 'core/theme/theme_controller.dart';
@@ -33,6 +34,27 @@ class MyApp extends StatelessWidget {
     required this.languageController,
   });
 
+  static const supportedAppLocales = <Locale>[
+    Locale('ar'),
+    Locale('en'),
+    Locale('fr'),
+    Locale('es'),
+    Locale('zh'),
+    Locale('ja'),
+    Locale('ko'),
+    Locale('de'),
+    Locale('id'),
+    Locale('it'),
+    Locale('nl'),
+    Locale('pl'),
+    Locale('pt'),
+    Locale('ru'),
+    Locale('th'),
+    Locale('tr'),
+    Locale('uk'),
+    Locale('vi'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -45,33 +67,19 @@ class MyApp extends StatelessWidget {
 
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-
           title: 'AI Language Tutor',
-
           locale: locale,
-
-          supportedLocales: const [
-            Locale('ar'),
-            Locale('en'),
-            Locale('fr'),
-            Locale('es'),
-            Locale('zh'),
-            Locale('ja'),
-            Locale('ko'),
-          ],
-
+          supportedLocales: supportedAppLocales,
           localizationsDelegates: const [
             AppLocalizations.delegate,
+            ExtendedAppLocalizationsDelegate(),
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-
           themeMode: themeController.themeMode,
-
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),
-
           builder: (context, child) {
             return Directionality(
               textDirection: locale.languageCode == 'ar'
@@ -80,7 +88,6 @@ class MyApp extends StatelessWidget {
               child: child!,
             );
           },
-
           home: SplashPage(
             themeController: themeController,
             languageController: languageController,
@@ -100,42 +107,34 @@ class MyApp extends StatelessWidget {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
-
       scaffoldBackgroundColor: brightness == Brightness.dark
           ? const Color(0xFF121217)
           : const Color(0xFFF7F7FB),
-
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-
         fillColor: brightness == Brightness.dark
             ? const Color(0xFF202027)
             : Colors.white,
-
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,
         ),
-
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
-
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
             color: colorScheme.outlineVariant,
           ),
         ),
-
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
