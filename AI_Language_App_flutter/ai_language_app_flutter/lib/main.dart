@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/app_localizations.dart';
-import 'l10n/app_localizations_extended.dart';
 import 'screens/splash_page.dart';
 import 'core/language/language_controller.dart';
 import 'core/theme/theme_controller.dart';
@@ -72,7 +71,6 @@ class MyApp extends StatelessWidget {
           supportedLocales: supportedAppLocales,
           localizationsDelegates: const [
             AppLocalizations.delegate,
-            ExtendedAppLocalizationsDelegate(),
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
