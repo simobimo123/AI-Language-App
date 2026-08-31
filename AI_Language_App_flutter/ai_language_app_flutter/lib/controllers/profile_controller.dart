@@ -218,6 +218,22 @@ class ProfileController extends ChangeNotifier {
     }
   }
 
+  Future<void> logout(BuildContext context) async {
+    await storageService.deleteToken();
+
+    if (!context.mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => LoginPage(
+          themeController: themeController,
+          languageController: languageController,
+        ),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   void dispose() {
     learningLanguageController.removeListener(_onLearningLanguageChanged);
