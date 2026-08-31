@@ -360,4 +360,55 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get systemDefault => '시스템 기본값';
+
+  @override
+  String get userInformationReadError => '사용자 정보를 읽을 수 없습니다.';
+
+  @override
+  String get onboardingSaveError => '설정을 저장할 수 없습니다. 다시 시도해 주세요.';
+
+  @override
+  String get placementTestTitle => '레벨 테스트';
+
+  @override
+  String get placementTestDescription => '언어 실력을 테스트하여 알맞은 레벨을 찾아보세요.';
+
+  @override
+  String get later => '나중에';
+
+  @override
+  String get startTest => '테스트 시작';
+
+  @override
+  String get chooseAppLanguage => '앱 언어 선택';
+
+  @override
+  String get nativeLanguageQuestion => '모국어는 무엇인가요?';
+
+  @override
+  String get learningLanguageQuestion => '어떤 언어를 배우고 싶나요?';
+
+  @override
+  String get chooseAppLanguageDescription => '앱 인터페이스에서 사용할 언어를 선택하세요.';
+
+  @override
+  String get nativeLanguageDescription => '모국어를 선택하세요.';
+
+  @override
+  String get learningLanguageDescription => '배우고 싶은 언어를 선택하세요.';
+
+  @override
+  String get nativeLanguageCannotBeLearningLanguage => '모국어와 학습 언어는 같을 수 없습니다.';
+
+  @override
+  String get back => '뒤로';
+
+  @override
+  String get setupYourAccount => '계정 설정';
+
+  @override
+  String get saveAndContinue => '저장하고 계속';
+
+  @override
+  String get continueButton => '계속';
 }

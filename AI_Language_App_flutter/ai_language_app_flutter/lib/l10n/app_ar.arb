@@ -113,5 +113,22 @@
   "errorOccurred": "حدث خطأ ما",
   "tryAgain": "حاول مجددًا",
   "automatic": "تلقائي",
-  "systemDefault": "افتراضي النظام"
+  "systemDefault": "افتراضي النظام",
+  "userInformationReadError": "تعذر قراءة معلومات المستخدم.",
+  "onboardingSaveError": "تعذر حفظ إعداداتك. حاول مرة أخرى.",
+  "placementTestTitle": "اختبار تحديد المستوى",
+  "placementTestDescription": "اختبر مستواك في اللغة لنحدد المستوى المناسب لك.",
+  "later": "لاحقًا",
+  "startTest": "ابدأ الاختبار",
+  "chooseAppLanguage": "اختر لغة التطبيق",
+  "nativeLanguageQuestion": "ما لغتك الأم؟",
+  "learningLanguageQuestion": "ما اللغة التي تريد تعلمها؟",
+  "chooseAppLanguageDescription": "اختر اللغة التي تريد استخدامها في واجهة التطبيق.",
+  "nativeLanguageDescription": "اختر لغتك الأم.",
+  "learningLanguageDescription": "اختر اللغة التي تريد تعلمها.",
+  "nativeLanguageCannotBeLearningLanguage": "لا يمكن أن تكون اللغة الأم ولغة التعلّم متطابقتين.",
+  "back": "رجوع",
+  "setupYourAccount": "إعداد حسابك",
+  "saveAndContinue": "حفظ ومتابعة",
+  "continueButton": "متابعة"
 }

@@ -9,3 +9,10 @@ cd C:\Users\simobimo\Documents\AI_Language_App111\ai_app_flutter_backend\backend
 ///////
 
 python -m uvicorn main:app --reload --host 0.0.0.0
+
+
+
+°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
+
+
+git add -A; git commit -m "Fix localization and update app interface"; git push origin main

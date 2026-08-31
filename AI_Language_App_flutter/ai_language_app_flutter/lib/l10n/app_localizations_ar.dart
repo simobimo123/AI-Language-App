@@ -365,4 +365,58 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get systemDefault => 'افتراضي النظام';
+
+  @override
+  String get userInformationReadError => 'تعذر قراءة معلومات المستخدم.';
+
+  @override
+  String get onboardingSaveError => 'تعذر حفظ إعداداتك. حاول مرة أخرى.';
+
+  @override
+  String get placementTestTitle => 'اختبار تحديد المستوى';
+
+  @override
+  String get placementTestDescription =>
+      'اختبر مستواك في اللغة لنحدد المستوى المناسب لك.';
+
+  @override
+  String get later => 'لاحقًا';
+
+  @override
+  String get startTest => 'ابدأ الاختبار';
+
+  @override
+  String get chooseAppLanguage => 'اختر لغة التطبيق';
+
+  @override
+  String get nativeLanguageQuestion => 'ما لغتك الأم؟';
+
+  @override
+  String get learningLanguageQuestion => 'ما اللغة التي تريد تعلمها؟';
+
+  @override
+  String get chooseAppLanguageDescription =>
+      'اختر اللغة التي تريد استخدامها في واجهة التطبيق.';
+
+  @override
+  String get nativeLanguageDescription => 'اختر لغتك الأم.';
+
+  @override
+  String get learningLanguageDescription => 'اختر اللغة التي تريد تعلمها.';
+
+  @override
+  String get nativeLanguageCannotBeLearningLanguage =>
+      'لا يمكن أن تكون اللغة الأم ولغة التعلّم متطابقتين.';
+
+  @override
+  String get back => 'رجوع';
+
+  @override
+  String get setupYourAccount => 'إعداد حسابك';
+
+  @override
+  String get saveAndContinue => 'حفظ ومتابعة';
+
+  @override
+  String get continueButton => 'متابعة';
 }

@@ -359,4 +359,55 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get systemDefault => '系统默认';
+
+  @override
+  String get userInformationReadError => '无法读取用户信息。';
+
+  @override
+  String get onboardingSaveError => '无法保存你的设置。请重试。';
+
+  @override
+  String get placementTestTitle => '水平测试';
+
+  @override
+  String get placementTestDescription => '测试你的语言能力，以确定适合你的水平。';
+
+  @override
+  String get later => '稍后';
+
+  @override
+  String get startTest => '开始测试';
+
+  @override
+  String get chooseAppLanguage => '选择应用语言';
+
+  @override
+  String get nativeLanguageQuestion => '你的母语是什么？';
+
+  @override
+  String get learningLanguageQuestion => '你想学习哪种语言？';
+
+  @override
+  String get chooseAppLanguageDescription => '选择你希望用于应用界面的语言。';
+
+  @override
+  String get nativeLanguageDescription => '选择你的母语。';
+
+  @override
+  String get learningLanguageDescription => '选择你想学习的语言。';
+
+  @override
+  String get nativeLanguageCannotBeLearningLanguage => '母语和学习语言不能相同。';
+
+  @override
+  String get back => '返回';
+
+  @override
+  String get setupYourAccount => '设置你的账户';
+
+  @override
+  String get saveAndContinue => '保存并继续';
+
+  @override
+  String get continueButton => '继续';
 }

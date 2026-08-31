@@ -113,5 +113,22 @@
   "errorOccurred": "Something went wrong",
   "tryAgain": "Try Again",
   "automatic": "Automatic",
-  "systemDefault": "System Default"
+  "systemDefault": "System Default",
+  "userInformationReadError": "Could not read user information.",
+  "onboardingSaveError": "Could not save your settings. Please try again.",
+  "placementTestTitle": "Placement Test",
+  "placementTestDescription": "Test your language skills to find the right level for you.",
+  "later": "Later",
+  "startTest": "Start Test",
+  "chooseAppLanguage": "Choose App Language",
+  "nativeLanguageQuestion": "What is your native language?",
+  "learningLanguageQuestion": "What language do you want to learn?",
+  "chooseAppLanguageDescription": "Choose the language you want to use for the app interface.",
+  "nativeLanguageDescription": "Choose your native language.",
+  "learningLanguageDescription": "Choose the language you want to learn.",
+  "nativeLanguageCannotBeLearningLanguage": "Your native language and learning language cannot be the same.",
+  "back": "Back",
+  "setupYourAccount": "Set Up Your Account",
+  "saveAndContinue": "Save and Continue",
+  "continueButton": "Continue"
 }

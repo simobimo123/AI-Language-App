@@ -378,4 +378,61 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get systemDefault => 'Predeterminado del sistema';
+
+  @override
+  String get userInformationReadError =>
+      'No se pudo leer la información del usuario.';
+
+  @override
+  String get onboardingSaveError =>
+      'No se pudieron guardar tus ajustes. Inténtalo de nuevo.';
+
+  @override
+  String get placementTestTitle => 'Prueba de nivel';
+
+  @override
+  String get placementTestDescription =>
+      'Evalúa tus conocimientos para encontrar el nivel adecuado.';
+
+  @override
+  String get later => 'Más tarde';
+
+  @override
+  String get startTest => 'Comenzar prueba';
+
+  @override
+  String get chooseAppLanguage => 'Elige el idioma de la aplicación';
+
+  @override
+  String get nativeLanguageQuestion => '¿Cuál es tu idioma nativo?';
+
+  @override
+  String get learningLanguageQuestion => '¿Qué idioma quieres aprender?';
+
+  @override
+  String get chooseAppLanguageDescription =>
+      'Elige el idioma que quieres usar en la interfaz.';
+
+  @override
+  String get nativeLanguageDescription => 'Elige tu idioma nativo.';
+
+  @override
+  String get learningLanguageDescription =>
+      'Elige el idioma que quieres aprender.';
+
+  @override
+  String get nativeLanguageCannotBeLearningLanguage =>
+      'Tu idioma nativo y el idioma de aprendizaje no pueden ser el mismo.';
+
+  @override
+  String get back => 'Atrás';
+
+  @override
+  String get setupYourAccount => 'Configura tu cuenta';
+
+  @override
+  String get saveAndContinue => 'Guardar y continuar';
+
+  @override
+  String get continueButton => 'Continuar';
 }

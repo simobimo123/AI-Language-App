@@ -791,6 +791,108 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'افتراضي النظام'**
   String get systemDefault;
+
+  /// No description provided for @userInformationReadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر قراءة معلومات المستخدم.'**
+  String get userInformationReadError;
+
+  /// No description provided for @onboardingSaveError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حفظ إعداداتك. حاول مرة أخرى.'**
+  String get onboardingSaveError;
+
+  /// No description provided for @placementTestTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار تحديد المستوى'**
+  String get placementTestTitle;
+
+  /// No description provided for @placementTestDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبر مستواك في اللغة لنحدد المستوى المناسب لك.'**
+  String get placementTestDescription;
+
+  /// No description provided for @later.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحقًا'**
+  String get later;
+
+  /// No description provided for @startTest.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ الاختبار'**
+  String get startTest;
+
+  /// No description provided for @chooseAppLanguage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر لغة التطبيق'**
+  String get chooseAppLanguage;
+
+  /// No description provided for @nativeLanguageQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما لغتك الأم؟'**
+  String get nativeLanguageQuestion;
+
+  /// No description provided for @learningLanguageQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما اللغة التي تريد تعلمها؟'**
+  String get learningLanguageQuestion;
+
+  /// No description provided for @chooseAppLanguageDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر اللغة التي تريد استخدامها في واجهة التطبيق.'**
+  String get chooseAppLanguageDescription;
+
+  /// No description provided for @nativeLanguageDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر لغتك الأم.'**
+  String get nativeLanguageDescription;
+
+  /// No description provided for @learningLanguageDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر اللغة التي تريد تعلمها.'**
+  String get learningLanguageDescription;
+
+  /// No description provided for @nativeLanguageCannotBeLearningLanguage.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن أن تكون اللغة الأم ولغة التعلّم متطابقتين.'**
+  String get nativeLanguageCannotBeLearningLanguage;
+
+  /// No description provided for @back.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get back;
+
+  /// No description provided for @setupYourAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعداد حسابك'**
+  String get setupYourAccount;
+
+  /// No description provided for @saveAndContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ ومتابعة'**
+  String get saveAndContinue;
+
+  /// No description provided for @continueButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get continueButton;
 }
 
 class _AppLocalizationsDelegate

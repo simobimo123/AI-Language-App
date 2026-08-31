@@ -1,21 +1,16 @@
 {
   "@@locale": "ko",
-
   "appName": "AI 언어 튜터",
-
   "welcome": "환영합니다",
   "welcomeBack": "다시 오신 것을 환영합니다 👋",
   "continueLearning": "학습을 계속할 준비가 되었나요?",
-
   "home": "홈",
   "profile": "프로필",
   "words": "내 단어",
   "settings": "설정",
-
   "language": "언어",
   "appLanguage": "앱 언어",
   "learningLanguage": "학습 언어",
-
   "arabic": "아랍어",
   "english": "영어",
   "french": "프랑스어",
@@ -23,7 +18,6 @@
   "chinese": "중국어",
   "japanese": "일본어",
   "korean": "한국어",
-
   "lightMode": "라이트 모드",
   "darkMode": "다크 모드",
   "systemMode": "시스템 설정",
@@ -31,29 +25,24 @@
   "light": "밝게",
   "dark": "어둡게",
   "appAppearance": "앱 모양",
-
   "startLearning": "학습 시작",
   "practiceWithAI": "AI와 연습하기",
   "practiceWithAIDescription": "자연스러운 대화를 통해 언어 실력을 향상하세요.",
   "myWords": "내 단어",
   "myWordsDescription": "학습 중 저장한 단어를 복습하세요.",
   "yourLearning": "학습 현황",
-
   "streakDays": "연속 학습 일수",
   "learnedWords": "학습한 단어",
   "conversations": "대화",
-
   "dailyTip": "오늘의 팁",
   "dailyTipDescription": "매일 조금씩 연습하세요. 꾸준함이 언어 실력을 향상시키는 열쇠입니다.",
   "aiConversationComingSoon": "AI 대화 기능은 곧 제공될 예정입니다.",
-
   "account": "내 계정",
   "name": "이름",
   "email": "이메일",
   "userId": "사용자 ID",
   "nativeLanguage": "모국어",
   "logout": "로그아웃",
-
   "learningLanguages": "학습 언어",
   "chooseLearningLanguage": "학습 중인 언어를 선택하거나 새 언어를 추가하세요.",
   "noLearningLanguages": "아직 학습 언어가 없습니다.",
@@ -61,20 +50,17 @@
   "switchLearningLanguage": "탭하여 학습 언어 변경",
   "addOrChangeLearningLanguage": "탭하여 언어를 추가하거나 변경",
   "learningLanguageChanged": "학습 언어가 {language}(으)로 변경되었습니다.",
-
   "addLanguageTitle": "새 언어 추가",
   "yourLearningLevel": "현재 언어 수준",
   "cancel": "취소",
   "add": "추가",
   "noNewLanguagesAvailable": "추가할 수 있는 새로운 언어가 없습니다.",
-
   "levelA1": "A1 - 초급",
   "levelA2": "A2 - 기초",
   "levelB1": "B1 - 중급",
   "levelB2": "B2 - 중상급",
   "levelC1": "C1 - 고급",
   "levelC2": "C2 - 숙련",
-
   "login": "로그인",
   "welcomeBackTitle": "다시 오신 것을 환영합니다",
   "loginSubtitle": "로그인하고 학습 여정을 계속하세요.",
@@ -87,7 +73,6 @@
   "noAccount": "계정이 없으신가요?",
   "createAccount": "계정 만들기",
   "loginError": "로그인할 수 없습니다. 이메일과 비밀번호를 확인하세요.",
-
   "createYourAccount": "계정 만들기",
   "createAccountSubtitle": "언어를 선택하고 나에게 맞는 학습 경험을 시작하세요.",
   "usernameMinLength": "두 글자 이상의 이름을 입력하세요.",
@@ -99,7 +84,6 @@
   "createAccountButton": "계정 생성",
   "accountCreated": "계정이 생성되었습니다. 이제 로그인할 수 있습니다.",
   "registrationError": "계정을 만들 수 없습니다. 이메일이 이미 사용 중일 수 있습니다.",
-
   "myVocabulary": "내 단어",
   "savedWordsCount": "저장된 단어 {count}개",
   "learning": "학습 중...",
@@ -124,10 +108,25 @@
   "noSavedWords": "아직 저장된 단어가 없습니다",
   "saveWordsDuringConversation": "AI와 대화하는 중 새로운 단어를 발견하면 어휘에 추가하세요.",
   "learnNaturally": "대화를 통해 자연스럽게 학습하세요",
-
   "errorOccurred": "문제가 발생했습니다",
   "tryAgain": "다시 시도",
-
   "automatic": "자동",
-  "systemDefault": "시스템 기본값"
+  "systemDefault": "시스템 기본값",
+  "userInformationReadError": "사용자 정보를 읽을 수 없습니다.",
+  "onboardingSaveError": "설정을 저장할 수 없습니다. 다시 시도해 주세요.",
+  "placementTestTitle": "레벨 테스트",
+  "placementTestDescription": "언어 실력을 테스트하여 알맞은 레벨을 찾아보세요.",
+  "later": "나중에",
+  "startTest": "테스트 시작",
+  "chooseAppLanguage": "앱 언어 선택",
+  "nativeLanguageQuestion": "모국어는 무엇인가요?",
+  "learningLanguageQuestion": "어떤 언어를 배우고 싶나요?",
+  "chooseAppLanguageDescription": "앱 인터페이스에서 사용할 언어를 선택하세요.",
+  "nativeLanguageDescription": "모국어를 선택하세요.",
+  "learningLanguageDescription": "배우고 싶은 언어를 선택하세요.",
+  "nativeLanguageCannotBeLearningLanguage": "모국어와 학습 언어는 같을 수 없습니다.",
+  "back": "뒤로",
+  "setupYourAccount": "계정 설정",
+  "saveAndContinue": "저장하고 계속",
+  "continueButton": "계속"
 }

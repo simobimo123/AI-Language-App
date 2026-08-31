@@ -1,21 +1,16 @@
 {
   "@@locale": "ja",
-
   "appName": "AI語学チューター",
-
   "welcome": "ようこそ",
   "welcomeBack": "おかえりなさい 👋",
   "continueLearning": "学習を続ける準備はできていますか？",
-
   "home": "ホーム",
   "profile": "プロフィール",
   "words": "マイ単語",
   "settings": "設定",
-
   "language": "言語",
   "appLanguage": "アプリの言語",
   "learningLanguage": "学習言語",
-
   "arabic": "アラビア語",
   "english": "英語",
   "french": "フランス語",
@@ -23,7 +18,6 @@
   "chinese": "中国語",
   "japanese": "日本語",
   "korean": "韓国語",
-
   "lightMode": "ライトモード",
   "darkMode": "ダークモード",
   "systemMode": "システム設定",
@@ -31,29 +25,24 @@
   "light": "ライト",
   "dark": "ダーク",
   "appAppearance": "アプリの外観",
-
   "startLearning": "学習を始める",
   "practiceWithAI": "AIと練習",
   "practiceWithAIDescription": "自然な会話を通して語学力を伸ばしましょう。",
   "myWords": "マイ単語",
   "myWordsDescription": "学習中に保存した単語を復習しましょう。",
   "yourLearning": "あなたの学習",
-
   "streakDays": "連続学習日数",
   "learnedWords": "学習した単語",
   "conversations": "会話",
-
   "dailyTip": "今日のヒント",
   "dailyTipDescription": "毎日少しずつ練習しましょう。継続することが語学力向上の鍵です。",
   "aiConversationComingSoon": "AIとの会話機能は近日公開予定です。",
-
   "account": "アカウント",
   "name": "名前",
   "email": "メールアドレス",
   "userId": "ユーザーID",
   "nativeLanguage": "母語",
   "logout": "ログアウト",
-
   "learningLanguages": "学習言語",
   "chooseLearningLanguage": "学習中の言語を選択するか、新しい言語を追加してください。",
   "noLearningLanguages": "学習言語はまだありません。",
@@ -61,20 +50,17 @@
   "switchLearningLanguage": "タップして学習言語を切り替える",
   "addOrChangeLearningLanguage": "タップして言語を追加または変更",
   "learningLanguageChanged": "学習言語を {language} に変更しました",
-
   "addLanguageTitle": "新しい言語を追加",
   "yourLearningLevel": "あなたのレベル",
   "cancel": "キャンセル",
   "add": "追加",
   "noNewLanguagesAvailable": "追加できる新しい言語はありません。",
-
   "levelA1": "A1 - 初心者",
   "levelA2": "A2 - 初級",
   "levelB1": "B1 - 中級",
   "levelB2": "B2 - 中上級",
   "levelC1": "C1 - 上級",
   "levelC2": "C2 - 熟達",
-
   "login": "ログイン",
   "welcomeBackTitle": "おかえりなさい",
   "loginSubtitle": "ログインして学習を続けましょう。",
@@ -87,7 +73,6 @@
   "noAccount": "アカウントをお持ちではありませんか？",
   "createAccount": "アカウントを作成",
   "loginError": "ログインできませんでした。メールアドレスとパスワードを確認してください。",
-
   "createYourAccount": "アカウントを作成",
   "createAccountSubtitle": "言語を選んで、あなたに合った学習体験を始めましょう。",
   "usernameMinLength": "2文字以上の名前を入力してください。",
@@ -99,7 +84,6 @@
   "createAccountButton": "アカウントを作成",
   "accountCreated": "アカウントを作成しました。ログインできます。",
   "registrationError": "アカウントを作成できませんでした。メールアドレスがすでに使用されている可能性があります。",
-
   "myVocabulary": "あなたの単語",
   "savedWordsCount": "{count} 個の保存済み単語",
   "learning": "学習中...",
@@ -124,10 +108,25 @@
   "noSavedWords": "保存された単語はまだありません",
   "saveWordsDuringConversation": "AIとの会話中に新しい単語を見つけたら、語彙に追加しましょう。",
   "learnNaturally": "会話を通して自然に学びましょう",
-
   "errorOccurred": "問題が発生しました",
   "tryAgain": "もう一度試す",
-
   "automatic": "自動",
-  "systemDefault": "システム設定"
+  "systemDefault": "システム設定",
+  "userInformationReadError": "ユーザー情報を読み込めませんでした。",
+  "onboardingSaveError": "設定を保存できませんでした。もう一度お試しください。",
+  "placementTestTitle": "レベル判定テスト",
+  "placementTestDescription": "語学力を確認して、あなたに合ったレベルを見つけましょう。",
+  "later": "後で",
+  "startTest": "テストを開始",
+  "chooseAppLanguage": "アプリの言語を選択",
+  "nativeLanguageQuestion": "母語は何ですか？",
+  "learningLanguageQuestion": "どの言語を学びたいですか？",
+  "chooseAppLanguageDescription": "アプリのインターフェースで使用する言語を選択してください。",
+  "nativeLanguageDescription": "母語を選択してください。",
+  "learningLanguageDescription": "学習したい言語を選択してください。",
+  "nativeLanguageCannotBeLearningLanguage": "母語と学習言語を同じにすることはできません。",
+  "back": "戻る",
+  "setupYourAccount": "アカウントを設定",
+  "saveAndContinue": "保存して続行",
+  "continueButton": "続行"
 }

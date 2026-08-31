@@ -360,4 +360,55 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get systemDefault => 'システム設定';
+
+  @override
+  String get userInformationReadError => 'ユーザー情報を読み込めませんでした。';
+
+  @override
+  String get onboardingSaveError => '設定を保存できませんでした。もう一度お試しください。';
+
+  @override
+  String get placementTestTitle => 'レベル判定テスト';
+
+  @override
+  String get placementTestDescription => '語学力を確認して、あなたに合ったレベルを見つけましょう。';
+
+  @override
+  String get later => '後で';
+
+  @override
+  String get startTest => 'テストを開始';
+
+  @override
+  String get chooseAppLanguage => 'アプリの言語を選択';
+
+  @override
+  String get nativeLanguageQuestion => '母語は何ですか？';
+
+  @override
+  String get learningLanguageQuestion => 'どの言語を学びたいですか？';
+
+  @override
+  String get chooseAppLanguageDescription => 'アプリのインターフェースで使用する言語を選択してください。';
+
+  @override
+  String get nativeLanguageDescription => '母語を選択してください。';
+
+  @override
+  String get learningLanguageDescription => '学習したい言語を選択してください。';
+
+  @override
+  String get nativeLanguageCannotBeLearningLanguage => '母語と学習言語を同じにすることはできません。';
+
+  @override
+  String get back => '戻る';
+
+  @override
+  String get setupYourAccount => 'アカウントを設定';
+
+  @override
+  String get saveAndContinue => '保存して続行';
+
+  @override
+  String get continueButton => '続行';
 }

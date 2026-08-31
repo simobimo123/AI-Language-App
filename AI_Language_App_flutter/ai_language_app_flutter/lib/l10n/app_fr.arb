@@ -1,21 +1,16 @@
 {
   "@@locale": "fr",
-
   "appName": "Tuteur de langues IA",
-
   "welcome": "Bienvenue",
   "welcomeBack": "Bon retour 👋",
   "continueLearning": "Prêt à poursuivre votre apprentissage ?",
-
   "home": "Accueil",
   "profile": "Profil",
   "words": "Mes mots",
   "settings": "Paramètres",
-
   "language": "Langue",
   "appLanguage": "Langue de l'application",
   "learningLanguage": "Langue d'apprentissage",
-
   "arabic": "Arabe",
   "english": "Anglais",
   "french": "Français",
@@ -23,7 +18,6 @@
   "chinese": "Chinois",
   "japanese": "Japonais",
   "korean": "Coréen",
-
   "lightMode": "Mode clair",
   "darkMode": "Mode sombre",
   "systemMode": "Par défaut du système",
@@ -31,29 +25,24 @@
   "light": "Clair",
   "dark": "Sombre",
   "appAppearance": "Apparence de l'application",
-
   "startLearning": "Commencer à apprendre",
   "practiceWithAI": "Pratiquer avec l'IA",
   "practiceWithAIDescription": "Améliorez votre langue grâce à des conversations naturelles.",
   "myWords": "Mes mots",
   "myWordsDescription": "Révisez les mots que vous avez enregistrés pendant votre apprentissage.",
   "yourLearning": "Votre apprentissage",
-
   "streakDays": "Jours consécutifs",
   "learnedWords": "Mots appris",
   "conversations": "Conversations",
-
   "dailyTip": "Conseil du jour",
   "dailyTipDescription": "Pratiquez un peu chaque jour ; la régularité est la clé pour améliorer vos compétences linguistiques.",
   "aiConversationComingSoon": "La conversation avec l'IA sera bientôt disponible.",
-
   "account": "Mon compte",
   "name": "Nom",
   "email": "E-mail",
   "userId": "ID utilisateur",
   "nativeLanguage": "Langue maternelle",
   "logout": "Se déconnecter",
-
   "learningLanguages": "Langues d'apprentissage",
   "chooseLearningLanguage": "Choisissez l'une de vos langues ou ajoutez-en une nouvelle.",
   "noLearningLanguages": "Aucune langue d'apprentissage pour le moment.",
@@ -61,20 +50,17 @@
   "switchLearningLanguage": "Appuyez pour changer de langue d'apprentissage",
   "addOrChangeLearningLanguage": "Appuyez pour ajouter ou changer une langue",
   "learningLanguageChanged": "La langue d'apprentissage a été changée en {language}",
-
   "addLanguageTitle": "Ajouter une nouvelle langue",
   "yourLearningLevel": "Votre niveau dans la langue",
   "cancel": "Annuler",
   "add": "Ajouter",
   "noNewLanguagesAvailable": "Aucune nouvelle langue n'est disponible à l'ajout.",
-
   "levelA1": "A1 - Débutant",
   "levelA2": "A2 - Élémentaire",
   "levelB1": "B1 - Intermédiaire",
   "levelB2": "B2 - Intermédiaire avancé",
   "levelC1": "C1 - Avancé",
   "levelC2": "C2 - Maîtrise",
-
   "login": "Connexion",
   "welcomeBackTitle": "Bon retour",
   "loginSubtitle": "Connectez-vous et poursuivez votre parcours d'apprentissage.",
@@ -87,7 +73,6 @@
   "noAccount": "Vous n'avez pas de compte ?",
   "createAccount": "Créer un compte",
   "loginError": "Impossible de se connecter. Vérifiez votre e-mail et votre mot de passe.",
-
   "createYourAccount": "Créez votre compte",
   "createAccountSubtitle": "Choisissez vos langues et commencez une expérience d'apprentissage conçue pour vous.",
   "usernameMinLength": "Entrez un nom d'au moins deux caractères.",
@@ -99,7 +84,6 @@
   "createAccountButton": "Créer le compte",
   "accountCreated": "Compte créé. Vous pouvez maintenant vous connecter.",
   "registrationError": "Impossible de créer le compte. L'e-mail est peut-être déjà utilisé.",
-
   "myVocabulary": "Votre vocabulaire",
   "savedWordsCount": "{count} mots enregistrés",
   "learning": "En apprentissage...",
@@ -124,10 +108,25 @@
   "noSavedWords": "Aucun mot enregistré pour le moment",
   "saveWordsDuringConversation": "Lorsque vous découvrez un nouveau mot pendant une conversation avec l'IA, ajoutez-le à votre vocabulaire.",
   "learnNaturally": "Apprenez naturellement grâce à la conversation",
-
   "errorOccurred": "Une erreur s'est produite",
   "tryAgain": "Réessayer",
-
   "automatic": "Automatique",
-  "systemDefault": "Par défaut du système"
+  "systemDefault": "Par défaut du système",
+  "userInformationReadError": "Impossible de lire les informations utilisateur.",
+  "onboardingSaveError": "Impossible d’enregistrer vos paramètres. Réessayez.",
+  "placementTestTitle": "Test de niveau",
+  "placementTestDescription": "Testez vos compétences pour trouver le niveau qui vous convient.",
+  "later": "Plus tard",
+  "startTest": "Commencer le test",
+  "chooseAppLanguage": "Choisissez la langue de l’application",
+  "nativeLanguageQuestion": "Quelle est votre langue maternelle ?",
+  "learningLanguageQuestion": "Quelle langue souhaitez-vous apprendre ?",
+  "chooseAppLanguageDescription": "Choisissez la langue à utiliser pour l’interface de l’application.",
+  "nativeLanguageDescription": "Choisissez votre langue maternelle.",
+  "learningLanguageDescription": "Choisissez la langue que vous souhaitez apprendre.",
+  "nativeLanguageCannotBeLearningLanguage": "Votre langue maternelle et la langue d’apprentissage ne peuvent pas être identiques.",
+  "back": "Retour",
+  "setupYourAccount": "Configurez votre compte",
+  "saveAndContinue": "Enregistrer et continuer",
+  "continueButton": "Continuer"
 }
