@@ -1,21 +1,16 @@
 {
   "@@locale": "en",
-
   "appName": "AI Language Tutor",
-
   "welcome": "Welcome",
   "welcomeBack": "Welcome back 👋",
   "continueLearning": "Are you ready to continue learning?",
-
   "home": "Home",
   "profile": "Profile",
   "words": "My Words",
   "settings": "Settings",
-
   "language": "Language",
   "appLanguage": "App Language",
   "learningLanguage": "Learning Language",
-
   "arabic": "Arabic",
   "english": "English",
   "french": "French",
@@ -23,7 +18,6 @@
   "chinese": "Chinese",
   "japanese": "Japanese",
   "korean": "Korean",
-
   "lightMode": "Light Mode",
   "darkMode": "Dark Mode",
   "systemMode": "System Default",
@@ -31,29 +25,24 @@
   "light": "Light",
   "dark": "Dark",
   "appAppearance": "App Appearance",
-
   "startLearning": "Start Learning",
   "practiceWithAI": "Practice with AI",
   "practiceWithAIDescription": "Improve your language through natural conversations.",
   "myWords": "My Words",
   "myWordsDescription": "Review the words you saved while learning.",
   "yourLearning": "Your Learning",
-
   "streakDays": "Streak Days",
   "learnedWords": "Learned Words",
   "conversations": "Conversations",
-
   "dailyTip": "Daily Tip",
   "dailyTipDescription": "Practice a little every day; consistency is the key to improving your language skills.",
   "aiConversationComingSoon": "AI conversation will be available soon.",
-
   "account": "Account",
   "name": "Name",
   "email": "Email",
   "userId": "User ID",
   "nativeLanguage": "Native Language",
   "logout": "Log Out",
-
   "learningLanguages": "Learning Languages",
   "chooseLearningLanguage": "Choose one of your languages or add a new one.",
   "noLearningLanguages": "No learning languages yet.",
@@ -61,20 +50,17 @@
   "switchLearningLanguage": "Tap to switch learning language",
   "addOrChangeLearningLanguage": "Tap to add or change a language",
   "learningLanguageChanged": "Learning language changed to {language}",
-
   "addLanguageTitle": "Add New Language",
   "yourLearningLevel": "Your Language Level",
   "cancel": "Cancel",
   "add": "Add",
   "noNewLanguagesAvailable": "No new languages are available to add.",
-
   "levelA1": "A1 - Beginner",
   "levelA2": "A2 - Elementary",
   "levelB1": "B1 - Intermediate",
   "levelB2": "B2 - Upper Intermediate",
   "levelC1": "C1 - Advanced",
   "levelC2": "C2 - Proficient",
-
   "login": "Login",
   "welcomeBackTitle": "Welcome Back",
   "loginSubtitle": "Log in and continue your learning journey.",
@@ -87,7 +73,8 @@
   "noAccount": "Don't have an account?",
   "createAccount": "Create an account",
   "loginError": "Unable to log in. Check your email and password.",
-
+  "continueWithGoogle": "Continue with Google",
+  "or": "OR",
   "createYourAccount": "Create Your Account",
   "createAccountSubtitle": "Choose your languages and start a learning experience designed for you.",
   "usernameMinLength": "Enter a name with at least two characters.",
@@ -99,7 +86,6 @@
   "createAccountButton": "Create Account",
   "accountCreated": "Account created. You can log in now.",
   "registrationError": "Unable to create the account. The email may already be in use.",
-
   "myVocabulary": "Your Vocabulary",
   "savedWordsCount": "{count} saved words",
   "learning": "Learning...",
@@ -124,10 +110,8 @@
   "noSavedWords": "No saved words yet",
   "saveWordsDuringConversation": "When you discover a new word during an AI conversation, add it to your vocabulary.",
   "learnNaturally": "Learn naturally through conversation",
-
   "errorOccurred": "Something went wrong",
   "tryAgain": "Try Again",
-
   "automatic": "Automatic",
   "systemDefault": "System Default"
 }
