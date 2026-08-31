@@ -3,9 +3,7 @@ SUPPORTED_LANGUAGES = {
     "de",
     "en",
     "es",
-    "fa",
     "fr",
-    "hi",
     "id",
     "it",
     "ja",
@@ -36,7 +34,6 @@ SUPPORTED_LEVELS = {
 # =========================================================
 # Normalization
 # =========================================================
-
 def normalize_text(
     value: str | None,
 ) -> str | None:
@@ -153,4 +150,3 @@ def normalize_confidence(
     except ValueError:
 
         return 0.5
-
