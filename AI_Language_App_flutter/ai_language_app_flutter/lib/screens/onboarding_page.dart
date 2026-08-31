@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../services/api/api_service.dart';
 import '../core/language/language_controller.dart';
-
 import '../core/theme/theme_controller.dart';
 import 'home_page.dart';
 import 'placement_test_page.dart';
@@ -25,20 +24,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final ApiService apiService = ApiService();
 
   int currentStep = 0;
-
   bool isLoading = true;
   bool isSaving = false;
 
   String? selectedAppLanguage;
   String? selectedNativeLanguage;
   String? selectedLearningLanguage;
-
   String? userName;
   String? userEmail;
-
-  // =========================================================
-  // Application languages
-  // =========================================================
 
   final List<Map<String, String>> appLanguages = const [
     {'code': 'ar', 'name': 'العربية'},
@@ -50,52 +43,46 @@ class _OnboardingPageState extends State<OnboardingPage> {
     {'code': 'ko', 'name': '한국어'},
   ];
 
-  // =========================================================
-  // User languages
-  // =========================================================
-
+  // All 18 languages supported by the backend.
+  // fa (Persian) and hi (Hindi) are intentionally excluded.
   final List<Map<String, String>> languages = const [
     {'code': 'ar', 'name_ar': 'العربية', 'name_en': 'Arabic'},
-    {'code': 'en', 'name_ar': 'الإنجليزية', 'name_en': 'English'},
-    {'code': 'fr', 'name_ar': 'الفرنسية', 'name_en': 'French'},
-    {'code': 'es', 'name_ar': 'الإسبانية', 'name_en': 'Spanish'},
     {'code': 'de', 'name_ar': 'الألمانية', 'name_en': 'German'},
+    {'code': 'en', 'name_ar': 'الإنجليزية', 'name_en': 'English'},
+    {'code': 'es', 'name_ar': 'الإسبانية', 'name_en': 'Spanish'},
+    {'code': 'fr', 'name_ar': 'الفرنسية', 'name_en': 'French'},
+    {'code': 'id', 'name_ar': 'الإندونيسية', 'name_en': 'Indonesian'},
     {'code': 'it', 'name_ar': 'الإيطالية', 'name_en': 'Italian'},
-    {'code': 'tr', 'name_ar': 'التركية', 'name_en': 'Turkish'},
-    {'code': 'pt', 'name_ar': 'البرتغالية', 'name_en': 'Portuguese'},
     {'code': 'ja', 'name_ar': 'اليابانية', 'name_en': 'Japanese'},
     {'code': 'ko', 'name_ar': 'الكورية', 'name_en': 'Korean'},
+    {'code': 'nl', 'name_ar': 'الهولندية', 'name_en': 'Dutch'},
+    {'code': 'pl', 'name_ar': 'البولندية', 'name_en': 'Polish'},
+    {'code': 'pt', 'name_ar': 'البرتغالية', 'name_en': 'Portuguese'},
+    {'code': 'ru', 'name_ar': 'الروسية', 'name_en': 'Russian'},
+    {'code': 'th', 'name_ar': 'التايلاندية', 'name_en': 'Thai'},
+    {'code': 'tr', 'name_ar': 'التركية', 'name_en': 'Turkish'},
+    {'code': 'uk', 'name_ar': 'الأوكرانية', 'name_en': 'Ukrainian'},
+    {'code': 'vi', 'name_ar': 'الفيتنامية', 'name_en': 'Vietnamese'},
     {'code': 'zh', 'name_ar': 'الصينية', 'name_en': 'Chinese'},
   ];
-
-  // =========================================================
-  // Initialization
-  // =========================================================
 
   @override
   void initState() {
     super.initState();
-
     loadCurrentUser();
   }
 
   Future<void> loadCurrentUser() async {
     try {
       final user = await apiService.getCurrentUser();
-
       if (!mounted) return;
 
       setState(() {
         userName = user['name']?.toString();
-
         userEmail = user['email']?.toString();
-
         selectedNativeLanguage = user['native_language']?.toString();
-
         selectedLearningLanguage = user['learning_language']?.toString();
-
         selectedAppLanguage = widget.languageController.locale.languageCode;
-
         isLoading = false;
       });
     } catch (_) {
@@ -103,15 +90,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
       setState(() {
         selectedAppLanguage = widget.languageController.locale.languageCode;
-
         isLoading = false;
       });
     }
   }
-
-  // =========================================================
-  // Localization helpers
-  // =========================================================
 
   bool get isArabic => widget.languageController.isArabic;
 
@@ -123,30 +105,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return isArabic ? language['name_ar'] ?? '' : language['name_en'] ?? '';
   }
 
-  // =========================================================
-  // Validation
-  // =========================================================
-
   bool get canContinue {
     switch (currentStep) {
       case 0:
         return selectedAppLanguage != null;
-
       case 1:
         return selectedNativeLanguage != null;
-
       case 2:
         return selectedLearningLanguage != null &&
             selectedLearningLanguage != selectedNativeLanguage;
-
       default:
         return false;
     }
   }
-
-  // =========================================================
-  // Application language
-  // =========================================================
 
   Future<void> selectApplicationLanguage(String code) async {
     if (isSaving) return;
@@ -158,33 +129,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
     await widget.languageController.setLanguage(code);
 
     if (!mounted) return;
-
     setState(() {});
   }
 
-  // =========================================================
-  // Continue
-  // =========================================================
-
   Future<void> continueStep() async {
-    if (!canContinue || isSaving) {
-      return;
-    }
+    if (!canContinue || isSaving) return;
 
     if (currentStep < 2) {
       setState(() {
         currentStep++;
       });
-
       return;
     }
 
     await saveOnboardingData();
   }
-
-  // =========================================================
-  // Back
-  // =========================================================
 
   void previousStep() {
     if (isSaving) return;
@@ -195,10 +154,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
       });
     }
   }
-
-  // =========================================================
-  // Save onboarding data
-  // =========================================================
 
   Future<void> saveOnboardingData() async {
     if (selectedNativeLanguage == null ||
@@ -211,7 +166,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           en: 'Could not read user information.',
         ),
       );
-
       return;
     }
 
@@ -250,14 +204,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
-  // =========================================================
-  // Placement test preparation
-  // =========================================================
-
   Future<void> showTestPreparationDialog() async {
-    if (selectedLearningLanguage == null) {
-      return;
-    }
+    if (selectedLearningLanguage == null) return;
 
     final shouldStart = await showDialog<bool>(
       context: context,
@@ -281,15 +229,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: Text(text(ar: 'لاحقًا', en: 'Later')),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: Text(text(ar: 'بدء الاختبار', en: 'Start test')),
             ),
           ],
@@ -312,16 +256,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
     );
 
-    if (!mounted) return;
-
-    if (result == null || result.isEmpty) {
-      return;
-    }
-
-    // -------------------------------------------------------
-    // The PlacementTestPage already finalized the profile
-    // on the backend.
-    // -------------------------------------------------------
+    if (!mounted || result == null || result.isEmpty) return;
 
     Navigator.pushAndRemoveUntil(
       context,
@@ -335,34 +270,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  // =========================================================
-  // Error
-  // =========================================================
-
   void showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
-
-  // =========================================================
-  // Step title
-  // =========================================================
 
   String get currentTitle {
     switch (currentStep) {
       case 0:
         return text(ar: 'اختر لغة التطبيق', en: 'Choose app language');
-
       case 1:
         return text(ar: 'ما لغتك الأم؟', en: 'What is your native language?');
-
       case 2:
-        return text(
-          ar: 'ماذا تريد أن تتعلم؟',
-          en: 'What do you want to learn?',
-        );
-
+        return text(ar: 'ماذا تريد أن تتعلم؟', en: 'What do you want to learn?');
       default:
         return '';
     }
@@ -375,41 +296,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ar: 'اختر اللغة التي تريد استخدامها لواجهة التطبيق.',
           en: 'Choose the language you want to use for the app interface.',
         );
-
       case 1:
         return text(
           ar: 'سنستخدم هذه اللغة لاحقًا لمساعدتك في الشرح والترجمة.',
           en: 'We will use this language later for explanations and translations.',
         );
-
       case 2:
         return text(
           ar: 'اختر اللغة التي تريد تعلمها. بعد ذلك سنجري اختبارًا لتحديد مستواك تلقائيًا.',
           en: 'Choose the language you want to learn. Then we will automatically determine your level.',
         );
-
       default:
         return '';
     }
   }
 
-  // =========================================================
-  // App language card
-  // =========================================================
-
   Widget buildAppLanguageCard(Map<String, String> language, ThemeData theme) {
     final code = language['code']!;
-
     final name = language['name']!;
-
     final selected = selectedAppLanguage == code;
 
     return GestureDetector(
-      onTap: isSaving
-          ? null
-          : () {
-              selectApplicationLanguage(code);
-            },
+      onTap: isSaving ? null : () => selectApplicationLanguage(code),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: 12),
@@ -469,17 +377,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  // =========================================================
-  // User language card
-  // =========================================================
-
   Widget buildUserLanguageCard(
     Map<String, String> language,
     ThemeData theme,
     String? selectedCode,
   ) {
     final code = language['code']!;
-
     final selected = selectedCode == code;
 
     return GestureDetector(
@@ -489,7 +392,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
               setState(() {
                 if (currentStep == 1) {
                   selectedNativeLanguage = code;
-
                   if (selectedLearningLanguage == code) {
                     selectedLearningLanguage = null;
                   }
@@ -501,10 +403,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         en: 'You cannot choose your native language as your learning language.',
                       ),
                     );
-
                     return;
                   }
-
                   selectedLearningLanguage = code;
                 }
               });
@@ -569,10 +469,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  // =========================================================
-  // Current step content
-  // =========================================================
-
   Widget buildStepContent(ThemeData theme) {
     if (currentStep == 0) {
       return Column(
@@ -596,10 +492,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           .toList(),
     );
   }
-
-  // =========================================================
-  // Build
-  // =========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -637,7 +529,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   Row(
                     children: List.generate(3, (index) {
                       final active = index <= currentStep;
-
                       return Expanded(
                         child: Container(
                           height: 5,
@@ -671,8 +562,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 
-                          0.70,
+                        color: theme.textTheme.bodyMedium?.color?.withValues(
+                          alpha: 0.70,
                         ),
                       ),
                     ),
