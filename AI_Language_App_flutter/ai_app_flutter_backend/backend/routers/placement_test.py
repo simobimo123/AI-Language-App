@@ -29,7 +29,7 @@ from services.placement.leveling import (
     normalize_language,
     normalize_level,
 )
-from services.placement.quiz_generator import get_random_level_words
+from services.placement.vocabulary import get_random_level_words
 from services.placement.repository import get_attempt_or_404
 
 router = APIRouter(prefix="/placement", tags=["Placement Test"])
