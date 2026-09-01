@@ -50,16 +50,10 @@ from .vocabulary import (
 
 from .placement import (
     PlacementAttemptCreate,
-    PlacementAttemptQuestionResponse,
     PlacementAttemptResponse,
     PlacementAttemptWordResponse,
     PlacementFinalizeRequest,
     PlacementFinalizeResponse,
-    PlacementQuizAnswer,
-    PlacementQuizEvaluationRequest,
-    PlacementQuizEvaluationResponse,
-    PlacementQuizQuestionOut,
-    PlacementQuizResponse,
     PlacementWord,
     PlacementWordEvaluationRequest,
     PlacementWordEvaluationResponse,
