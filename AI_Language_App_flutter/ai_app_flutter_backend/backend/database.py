@@ -408,6 +408,49 @@ def expand_level_column(
     )
 
 
+def remove_obsolete_placement_quiz_tables(
+    connection,
+) -> None:
+    """
+    Remove the obsolete Placement Quiz tables.
+
+    The current placement system is vocabulary-only:
+        A1 -> 20 random words -> pass/fail -> next/previous level
+
+    These tables are experimental and are no longer used by the
+    current Placement models or router.
+    """
+
+    # placement_attempt_questions depends on the old quiz system,
+    # so remove it first.
+    connection.execute(
+        text(
+            """
+            DROP TABLE IF EXISTS
+            placement_attempt_questions
+            CASCADE
+            """
+        )
+    )
+
+    # Old multiple-choice placement question bank.
+    connection.execute(
+        text(
+            """
+            DROP TABLE IF EXISTS
+            placement_quiz_questions
+            CASCADE
+            """
+        )
+    )
+
+    connection.commit()
+
+    print(
+        "Obsolete placement quiz tables removed."
+    )
+
+
 def verify_required_columns(
     connection,
     requirements: dict[str, set[str]],
@@ -464,6 +507,14 @@ Base.metadata.create_all(
 # =========================================================
 
 with engine.connect() as connection:
+
+    # =====================================================
+    # 0. REMOVE OBSOLETE PLACEMENT QUIZ TABLES
+    # =====================================================
+
+    remove_obsolete_placement_quiz_tables(
+        connection
+    )
 
     # =====================================================
     # 1. USERS
@@ -762,10 +813,6 @@ with engine.connect() as connection:
         ),
         (
             "placement_vocabulary",
-            "level",
-        ),
-        (
-            "placement_quiz_questions",
             "level",
         ),
         (
@@ -1483,39 +1530,12 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 16. PLACEMENT QUIZ
-    # =====================================================
-
-    add_column_if_missing(
-        connection,
-        "placement_quiz_questions",
-        "explanation",
-        "TEXT",
-        nullable=True,
-    )
-
-    add_column_if_missing(
-        connection,
-        "placement_quiz_questions",
-        "question_type",
-        "VARCHAR(30)",
-        nullable=False,
-        default_sql="'multiple_choice'",
-    )
-
-    print(
-        "Placement quiz schema verified."
-    )
-
-
-    # =====================================================
-    # 17. PLACEMENT ATTEMPTS
+    # 16. PLACEMENT ATTEMPTS
     # =====================================================
 
     required_placement_tables = {
         "placement_attempts",
         "placement_attempt_words",
-        "placement_attempt_questions",
     }
 
     existing_tables = set(
@@ -1540,7 +1560,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 18. COURSE LESSONS
+    # 17. COURSE LESSONS
     # =====================================================
 
     expand_level_column(
@@ -1555,7 +1575,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 19. USER LESSON PROGRESS
+    # 18. USER LESSON PROGRESS
     # =====================================================
 
     if table_exists(
@@ -1579,7 +1599,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 20. AI USAGE
+    # 19. AI USAGE
     # =====================================================
 
     add_column_if_missing(
@@ -1633,7 +1653,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 21. AI CONVERSATION
+    # 20. AI CONVERSATION
     # =====================================================
 
     add_column_if_missing(
@@ -1661,7 +1681,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 22. FINAL REQUIRED TABLE CHECK
+    # 21. FINAL REQUIRED TABLE CHECK
     # =====================================================
 
     required_tables = {
@@ -1678,10 +1698,8 @@ with engine.connect() as connection:
         "vocabulary_example_translations",
         "vocabulary_media",
         "placement_vocabulary",
-        "placement_quiz_questions",
         "placement_attempts",
         "placement_attempt_words",
-        "placement_attempt_questions",
         "course_lessons",
         "user_lesson_progress",
         "words",
@@ -1708,7 +1726,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 23. FINAL REQUIRED COLUMN CHECK
+    # 22. FINAL REQUIRED COLUMN CHECK
     # =====================================================
 
     verify_required_columns(
@@ -1834,7 +1852,7 @@ with engine.connect() as connection:
 
 
     # =====================================================
-    # 24. Final informational output
+    # 23. Final informational output
     # =====================================================
 
     print()
@@ -1909,7 +1927,7 @@ with engine.connect() as connection:
 
     print(
         "PlacementAttempt -> "
-        "Words / Questions -> Final level"
+        "20 Random Vocabulary Words -> Final level"
     )
 
     print()
