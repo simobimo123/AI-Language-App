@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 
 import '../core/errors/error_message.dart';
 import '../models/placement_models.dart';
@@ -186,6 +186,8 @@ class PlacementTestController extends ChangeNotifier {
     try {
       final result = await repository.evaluatePlacementQuiz(
         attemptId: id,
+        language: language,
+        level: currentLevel,
         answers: Map<int, int>.from(quizAnswers),
       );
 

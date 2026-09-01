@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:ai_language_app_flutter/core/errors/api_exception.dart';
 
@@ -64,15 +64,18 @@ class PlacementApiService {
     throw client.apiException(data, 'Failed to get placement quiz', statusCode: response.statusCode);
   }
 
-  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({required int attemptId, required Map<int, int> answers}) async {
+  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({
+    required int attemptId,
+    required String language,
+    required String level,
+    required Map<int, int> answers,
+  }) async {
+    final answersList = answers.entries.map((e) => {'question_id': e.key, 'selected_index': e.value}).toList();
     final response = await client.post(
       '/placement/attempts/$attemptId/quiz/evaluate',
       authenticated: true,
       headers: client.jsonHeaders,
-      body: jsonEncode({
-        'attempt_id': attemptId,
-        'answers': answers.map((key, value) => MapEntry(key.toString(), value)),
-      }),
+      body: jsonEncode({'language': language, 'level': level, 'answers': answersList}),
     );
     final data = client.decodeResponse(response);
     if (response.statusCode == 200 && data is Map) {

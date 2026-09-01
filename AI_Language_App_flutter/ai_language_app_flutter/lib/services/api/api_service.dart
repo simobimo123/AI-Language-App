@@ -1,4 +1,4 @@
-import '../../models/placement_models.dart';
+﻿import '../../models/placement_models.dart';
 import 'api_client.dart';
 import 'auth_api_service.dart';
 import 'learning_api_service.dart';
@@ -31,6 +31,7 @@ class ApiService {
     throw _client.apiException(data, 'Failed to connect to backend', statusCode: response.statusCode);
   }
 
+  // Auth
   Future<Map<String, dynamic>> register({required String name, required String email, required String password}) =>
       _auth.register(name: name, email: email, password: password);
   Future<Map<String, dynamic>> login({required String email, required String password}) =>
@@ -40,6 +41,7 @@ class ApiService {
   Future<Map<String, dynamic>> updateCurrentUser({required String name, required String email, required String nativeLanguage, required String learningLanguage}) =>
       _auth.updateCurrentUser(name: name, email: email, nativeLanguage: nativeLanguage, learningLanguage: learningLanguage);
 
+  // Learning
   Future<List<dynamic>> getLearningProfiles() => _learning.getLearningProfiles();
   Future<Map<String, dynamic>> getCurrentLearningProfile() => _learning.getCurrentLearningProfile();
   Future<Map<String, dynamic>> createLearningProfile({required String language, required String level}) => _learning.createLearningProfile(language: language, level: level);
@@ -48,19 +50,33 @@ class ApiService {
   Future<Map<String, dynamic>> getLearningPath() => _learning.getLearningPath();
   Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) => _learning.completeLesson(lessonId: lessonId, score: score);
 
+  // Placement
   Future<int> startPlacementAttempt({required String language}) => _placement.startPlacementAttempt(language: language);
   Future<PlacementWordsResponse> getPlacementWords({required int attemptId, required String language, required String level}) =>
       _placement.getPlacementWords(attemptId: attemptId, language: language, level: level);
   Future<PlacementWordEvaluation> evaluatePlacementWords({required int attemptId, required List<int> selectedWordIds}) =>
       _placement.evaluatePlacementWords(attemptId: attemptId, selectedWordIds: selectedWordIds);
   Future<PlacementQuizResponse> getPlacementQuiz({required int attemptId}) => _placement.getPlacementQuiz(attemptId: attemptId);
-  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({required int attemptId, required Map<int, int> answers}) =>
-      _placement.evaluatePlacementQuiz(attemptId: attemptId, answers: answers);
+  Future<PlacementQuizEvaluation> evaluatePlacementQuiz({
+    required int attemptId,
+    required String language,
+    required String level,
+    required Map<int, int> answers,
+  }) =>
+      _placement.evaluatePlacementQuiz(
+        attemptId: attemptId,
+        language: language,
+        level: level,
+        answers: answers,
+      );
   Future<PlacementFinalizeResponse> finalizePlacement({required int attemptId}) => _placement.finalizePlacement(attemptId: attemptId);
 
+  // Words
   Future<Map<String, dynamic>> createWord({required String word, required String translation}) => _words.createWord(word: word, translation: translation);
   Future<List<dynamic>> getWords() => _words.getWords();
   Future<Map<String, dynamic>> updateWordStatus({required int wordId, required bool learned}) => _words.updateWordStatus(wordId: wordId, learned: learned);
   Future<void> deleteWord({required int wordId}) => _words.deleteWord(wordId: wordId);
+
+  // Stats
   Future<Map<String, dynamic>> getHomeStats() => _stats.getHomeStats();
 }
