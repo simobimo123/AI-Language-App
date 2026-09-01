@@ -190,14 +190,31 @@ def evaluate_placement_words_secure(
 
     passed = percentage >= PASS_THRESHOLD
 
-    # IMPORTANT: the failed level itself is the confirmation level.
-    # We never move down before confirmation.
-    if passed:
-        preliminary_level = level
-        next_level = calculate_next_level(level)
-    else:
-        preliminary_level = level
-        next_level = None
+    # A1 is the special entry point. If the learner knows less than 50%
+    # of A1 vocabulary, placement is immediately PRE_A1. There is no
+    # confirmation quiz for PRE_A1.
+    if not passed and level == "A1":
+        attempt.vocabulary_percentage = round(percentage, 2)
+        attempt.preliminary_level = "PRE_A1"
+        attempt.final_level = "PRE_A1"
+        attempt.stage = "finalized"
+        attempt.status = "completed"
+        db.commit()
+        return PlacementWordEvaluationResponse(
+            language=language,
+            level=level,
+            total_words=total_words,
+            known_words=known_words,
+            percentage=round(percentage, 2),
+            passed=False,
+            next_level=None,
+            preliminary_level="PRE_A1",
+        )
+
+    # For A2..C2, a failed vocabulary screen is confirmed at the SAME
+    # level with the grammar/comprehension quiz.
+    preliminary_level = level
+    next_level = calculate_next_level(level) if passed else None
 
     attempt.vocabulary_percentage = round(percentage, 2)
     attempt.preliminary_level = preliminary_level
@@ -208,8 +225,6 @@ def evaluate_placement_words_secure(
         attempt.stage = "finalized"
         attempt.status = "completed"
     else:
-        # A1..C2 failure goes to confirmation at the SAME level.
-        # Passing A1..C1 continues to the next vocabulary level.
         attempt.stage = "confirmation" if not passed else "vocabulary"
 
     db.commit()
@@ -263,6 +278,9 @@ def evaluate_placement_words_legacy(
     passed = percentage >= PASS_THRESHOLD
     preliminary_level = level
     next_level = calculate_next_level(level) if passed else None
+    if not passed and level == "A1":
+        preliminary_level = "PRE_A1"
+        next_level = None
     return PlacementWordEvaluationResponse(
         language=language,
         level=level,
