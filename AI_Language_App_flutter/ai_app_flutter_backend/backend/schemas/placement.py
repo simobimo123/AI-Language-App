@@ -1,12 +1,9 @@
-from datetime import date, datetime
+from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from .common import (
-    ENRICHMENT_STATUS_PATTERN,
-    LANGUAGE_CODE_PATTERN,
-    LEVEL_PATTERN,
-)
+from .common import LANGUAGE_CODE_PATTERN, LEVEL_PATTERN
+
 
 class PlacementWord(BaseModel):
     id: int
@@ -20,13 +17,8 @@ class PlacementWord(BaseModel):
 class PlacementWordsResponse(BaseModel):
     language: str
     level: str
-
     words: list[PlacementWord]
 
-
-# =========================================================
-# Placement Vocabulary Evaluation
-# =========================================================
 
 class PlacementWordEvaluationRequest(BaseModel):
     language: str = Field(
@@ -66,70 +58,6 @@ class PlacementWordEvaluationResponse(BaseModel):
     preliminary_level: str
 
 
-# =========================================================
-# Placement Quiz
-# =========================================================
-
-class PlacementQuizQuestionOut(BaseModel):
-    id: int
-    question: str
-    choices: list[str]
-
-    question_type: str = "multiple_choice"
-
-
-class PlacementQuizResponse(BaseModel):
-    language: str
-    level: str
-
-    questions: list[
-        PlacementQuizQuestionOut
-    ]
-
-
-class PlacementQuizAnswer(BaseModel):
-    question_id: int
-
-    selected_index: int = Field(
-        ge=0,
-    )
-
-
-class PlacementQuizEvaluationRequest(BaseModel):
-    language: str = Field(
-        min_length=2,
-        max_length=10,
-        pattern=LANGUAGE_CODE_PATTERN,
-    )
-
-    level: str = Field(
-        min_length=2,
-        max_length=10,
-        pattern=LEVEL_PATTERN,
-    )
-
-    answers: list[PlacementQuizAnswer] = Field(
-        min_length=1,
-        max_length=10,
-    )
-
-
-class PlacementQuizEvaluationResponse(BaseModel):
-    language: str
-    level: str
-
-    total_questions: int
-    correct_answers: int
-    percentage: float
-
-    passed: bool
-    final_level: str
-
-
-# =========================================================
-# Placement Attempt
-# =========================================================
-
 class PlacementAttemptCreate(BaseModel):
     language: str = Field(
         min_length=2,
@@ -149,7 +77,6 @@ class PlacementAttemptResponse(BaseModel):
     final_level: str | None
 
     vocabulary_percentage: float | None
-    confirmation_percentage: float | None
 
     status: str
 
@@ -173,24 +100,6 @@ class PlacementAttemptWordResponse(BaseModel):
     )
 
 
-class PlacementAttemptQuestionResponse(BaseModel):
-    id: int
-    attempt_id: int
-    placement_question_id: int
-    position: int
-
-    selected_index: int | None
-    is_correct: bool | None
-
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
-
-
-# =========================================================
-# Placement Finalize
-# =========================================================
-
 class PlacementFinalizeRequest(BaseModel):
     attempt_id: int = Field(
         ge=1,
@@ -203,9 +112,3 @@ class PlacementFinalizeResponse(BaseModel):
     language: str
     level: str
     progress: float
-
-
-# =========================================================
-# Vocabulary Enrichment
-# =========================================================
-
