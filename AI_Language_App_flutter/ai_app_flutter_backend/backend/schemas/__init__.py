@@ -71,3 +71,8 @@ from .ai import (
 from .stats import (
     HomeStatsResponse,
 )
+
+from .lesson_content import (
+    GenerateLessonContentRequest,
+    LessonContentResponse,
+)
