@@ -76,7 +76,6 @@ class PlacementQuizQuestionOut(BaseModel):
     choices: list[str]
 
     question_type: str = "multiple_choice"
-    explanation: str | None = None
 
 
 class PlacementQuizResponse(BaseModel):
