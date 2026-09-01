@@ -18,9 +18,7 @@ from .vocabulary import (
 )
 from .placement import (
     PlacementAttempt,
-    PlacementAttemptQuestion,
     PlacementAttemptWord,
-    PlacementQuizQuestion,
     PlacementVocabulary,
 )
 from .learning import CourseLesson, UserLessonProgress, Word
