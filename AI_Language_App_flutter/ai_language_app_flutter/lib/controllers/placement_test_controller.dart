@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/errors/error_message.dart';
 import '../models/placement_models.dart';
@@ -8,35 +8,26 @@ class PlacementTestController extends ChangeNotifier {
   final PlacementRepository repository;
   final String language;
 
-  PlacementTestController({required this.language, PlacementRepository? repository})
-      : repository = repository ?? PlacementRepository();
+  PlacementTestController({
+    required this.language,
+    PlacementRepository? repository,
+  }) : repository = repository ?? PlacementRepository();
 
   int? attemptId;
   String currentLevel = 'A1';
   List<PlacementWord> words = const [];
   final Set<int> selectedWordIds = {};
-  List<PlacementQuizQuestion> quizQuestions = const [];
-  final Map<int, int> quizAnswers = {};
 
   bool isLoading = true;
   bool isEvaluating = false;
-  bool isQuizMode = false;
   bool isFinished = false;
   String? errorMessage;
   String? finalLevel;
-
-  int get quizAnsweredCount => quizAnswers.length;
-
-  bool get canSubmitQuiz =>
-      quizQuestions.isNotEmpty &&
-      quizAnswers.length == quizQuestions.length &&
-      !isEvaluating;
 
   Future<void> initialize() => startAttempt();
 
   Future<void> startAttempt() async {
     isLoading = true;
-    isQuizMode = false;
     isFinished = false;
     isEvaluating = false;
     errorMessage = null;
@@ -45,8 +36,6 @@ class PlacementTestController extends ChangeNotifier {
     currentLevel = 'A1';
     words = const [];
     selectedWordIds.clear();
-    quizQuestions = const [];
-    quizAnswers.clear();
     notifyListeners();
 
     try {
@@ -66,6 +55,11 @@ class PlacementTestController extends ChangeNotifier {
       throw StateError('Placement attempt was not created.');
     }
 
+    if (currentLevel == 'PRE_A1') {
+      await _finalize(id);
+      return;
+    }
+
     final result = await repository.getPlacementWords(
       attemptId: id,
       language: language,
@@ -79,7 +73,6 @@ class PlacementTestController extends ChangeNotifier {
     words = result.words;
     selectedWordIds.clear();
     isLoading = false;
-    isQuizMode = false;
     isEvaluating = false;
     errorMessage = null;
     notifyListeners();
@@ -111,87 +104,24 @@ class PlacementTestController extends ChangeNotifier {
         selectedWordIds: selectedWordIds.toList(),
       );
 
-      // A1 is the entry point. If the learner knows less than 50%
-      // of A1 vocabulary, placement ends immediately at PRE_A1.
-      // There is no confirmation quiz for PRE_A1.
-      if (!result.passed && result.level.toUpperCase() == 'A1') {
-        currentLevel = 'PRE_A1';
+      // Vocabulary-only placement:
+      // - 50% or more: move up one CEFR level.
+      // - Less than 50%: move down one CEFR level.
+      // - A1 failure: PRE_A1 and finish immediately.
+      // - C2 success: finish at C2.
+      if (!result.passed) {
+        currentLevel = result.preliminaryLevel;
         await _finalize(id);
         return;
       }
 
-      // For A2..C2, failing the vocabulary screen means the SAME
-      // level must be confirmed with the grammar/comprehension quiz.
-      if (!result.passed) {
-        currentLevel = result.level;
-        await _loadQuiz(id);
-        return;
-      }
-
-      // The learner passed the current level, so continue progressively
-      // to the next level.
       final nextLevel = result.nextLevel;
-
       if (nextLevel != null && nextLevel.isNotEmpty) {
         currentLevel = nextLevel;
         await _loadWordsForAttempt();
         return;
       }
 
-      // C2 is the highest level. Passing C2 completes placement
-      // without a confirmation quiz.
-      await _finalize(id);
-    } catch (error) {
-      isEvaluating = false;
-      errorMessage = ErrorMessage.from(error);
-      notifyListeners();
-    }
-  }
-
-  Future<void> _loadQuiz(int id) async {
-    isLoading = true;
-    isQuizMode = false;
-    quizQuestions = const [];
-    quizAnswers.clear();
-    errorMessage = null;
-    notifyListeners();
-
-    final result = await repository.getPlacementQuiz(attemptId: id);
-
-    if (result.questions.length != 10) {
-      throw StateError('The confirmation quiz must contain exactly 10 questions.');
-    }
-
-    quizQuestions = result.questions;
-    isLoading = false;
-    isEvaluating = false;
-    isQuizMode = true;
-    notifyListeners();
-  }
-
-  void selectQuizAnswer(int questionId, int answerIndex) {
-    if (isEvaluating) return;
-    quizAnswers[questionId] = answerIndex;
-    notifyListeners();
-  }
-
-  Future<void> evaluateQuiz() async {
-    final id = attemptId;
-    if (!canSubmitQuiz || id == null) return;
-
-    isEvaluating = true;
-    errorMessage = null;
-    notifyListeners();
-
-    try {
-      final result = await repository.evaluatePlacementQuiz(
-        attemptId: id,
-        language: language,
-        level: currentLevel,
-        answers: Map<int, int>.from(quizAnswers),
-      );
-
-      currentLevel = result.finalLevel;
       await _finalize(id);
     } catch (error) {
       isEvaluating = false;
@@ -207,7 +137,6 @@ class PlacementTestController extends ChangeNotifier {
     isEvaluating = false;
     isLoading = false;
     isFinished = true;
-    isQuizMode = false;
     errorMessage = null;
     notifyListeners();
   }
