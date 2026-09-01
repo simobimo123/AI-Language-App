@@ -22,4 +22,5 @@ from .placement import (
     PlacementVocabulary,
 )
 from .learning import CourseLesson, UserLessonProgress, Word
+from .lesson_content import LessonContent
 from .ai import AIConversationMessage, AIUsage
