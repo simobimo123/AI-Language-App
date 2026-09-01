@@ -111,17 +111,24 @@ class PlacementTestController extends ChangeNotifier {
         selectedWordIds: selectedWordIds.toList(),
       );
 
-      // IMPORTANT:
-      // If the user fails a level, that SAME level must be confirmed
-      // with the grammar/comprehension quiz. We must never move down
-      // to the previous level before the confirmation quiz.
+      // A1 is the entry point. If the learner knows less than 50%
+      // of A1 vocabulary, placement ends immediately at PRE_A1.
+      // There is no confirmation quiz for PRE_A1.
+      if (!result.passed && result.level.toUpperCase() == 'A1') {
+        currentLevel = 'PRE_A1';
+        await _finalize(id);
+        return;
+      }
+
+      // For A2..C2, failing the vocabulary screen means the SAME
+      // level must be confirmed with the grammar/comprehension quiz.
       if (!result.passed) {
         currentLevel = result.level;
         await _loadQuiz(id);
         return;
       }
 
-      // The user passed the current level, so continue progressively
+      // The learner passed the current level, so continue progressively
       // to the next level.
       final nextLevel = result.nextLevel;
 
