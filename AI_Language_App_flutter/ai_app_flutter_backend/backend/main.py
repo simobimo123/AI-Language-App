@@ -34,6 +34,10 @@ from routers.stats import (
     router as stats_router,
 )
 
+from routers.lesson_content import (
+    router as lesson_content_router,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -89,4 +93,7 @@ app.include_router(placement_router)
 app.include_router(vocabulary_router)
 
 app.include_router(stats_router)
+
+app.include_router(lesson_content_router)
+
 # python -m uvicorn main:app --reload --host 0.0.0.0
