@@ -1,0 +1,327 @@
+﻿[
+  {
+    "question": "What does \"borrow\" mean?",
+    "choices": [
+      "To take something and return it later",
+      "To buy something",
+      "To break something",
+      "To sell something"
+    ],
+    "correct_index": 0,
+    "explanation": "To borrow something means to take it temporarily and return it later.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"crowded\" mean?",
+    "choices": [
+      "Very quiet",
+      "Full of people",
+      "Very expensive",
+      "Very clean"
+    ],
+    "correct_index": 1,
+    "explanation": "A crowded place has many people in it.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Which word means \"very tired\"?",
+    "choices": ["Excited", "Exhausted", "Surprised", "Pleased"],
+    "correct_index": 1,
+    "explanation": "\"Exhausted\" means extremely tired.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What is the opposite of \"dangerous\"?",
+    "choices": ["Noisy", "Safe", "Difficult", "Heavy"],
+    "correct_index": 1,
+    "explanation": "The opposite of \"dangerous\" is \"safe\".",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"improve\" mean?",
+    "choices": [
+      "To become better",
+      "To become smaller",
+      "To stop something",
+      "To forget something"
+    ],
+    "correct_index": 0,
+    "explanation": "To improve means to become better or make something better.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"usually\" mean?",
+    "choices": ["Never", "Most of the time", "Only once", "Immediately"],
+    "correct_index": 1,
+    "explanation": "\"Usually\" means something happens most of the time.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"quiet\" mean?",
+    "choices": ["With little noise", "Very crowded", "Very bright", "Very expensive"],
+    "correct_index": 0,
+    "explanation": "A quiet place has little or no noise.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What is a \"neighborhood\"?",
+    "choices": [
+      "An area where people live",
+      "A type of food",
+      "A school subject",
+      "A type of vehicle"
+    ],
+    "correct_index": 0,
+    "explanation": "A neighborhood is an area where people live.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"cheap\" mean?",
+    "choices": ["Not expensive", "Very large", "Very old", "Very fast"],
+    "correct_index": 0,
+    "explanation": "Something cheap does not cost much money.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"appointment\" mean?",
+    "choices": [
+      "An arranged meeting at a particular time",
+      "A type of food",
+      "A journey by train",
+      "A place to sleep"
+    ],
+    "correct_index": 0,
+    "explanation": "An appointment is an arranged meeting at a specific time.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Emma missed the bus, so she arrived late. Why was Emma late?",
+    "choices": [
+      "She missed the bus.",
+      "She woke up early.",
+      "She finished work.",
+      "She took a taxi."
+    ],
+    "correct_index": 0,
+    "explanation": "The sentence says Emma was late because she missed the bus.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "James wanted to buy a phone, but he did not have enough money. What did he do?",
+    "choices": [
+      "He bought two phones.",
+      "He waited until he had enough money.",
+      "He lost his phone.",
+      "He went on holiday."
+    ],
+    "correct_index": 1,
+    "explanation": "If James did not have enough money, he would need to wait before buying the phone.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Sarah usually goes running on Saturday, but it was raining last Saturday. What probably happened?",
+    "choices": [
+      "She went running in the park.",
+      "She stayed inside.",
+      "She went swimming outside.",
+      "She went to the beach."
+    ],
+    "correct_index": 1,
+    "explanation": "Because it was raining, staying inside is the most likely choice.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "David has a headache and feels sick. What might he need?",
+    "choices": ["A doctor", "A new bicycle", "A concert ticket", "A swimming pool"],
+    "correct_index": 0,
+    "explanation": "Someone with a headache and feeling sick may need medical advice.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Maria went to the supermarket because there was no food at home. Why did she go there?",
+    "choices": [
+      "To buy food",
+      "To meet a doctor",
+      "To watch a film",
+      "To catch a train"
+    ],
+    "correct_index": 0,
+    "explanation": "Maria went to the supermarket because she needed food.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "A: \"Could you help me with this bag?\" B: \"___\"",
+    "choices": ["Of course.", "Yesterday.", "At the station.", "I'm twenty."],
+    "correct_index": 0,
+    "explanation": "\"Of course\" is a natural response when agreeing to help.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "A friend says, \"I'm sorry I'm late.\" What is a polite response?",
+    "choices": ["That's okay.", "Happy birthday!", "Good luck!", "You're welcome!"],
+    "correct_index": 0,
+    "explanation": "\"That's okay\" is a natural response to an apology.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "You want to ask someone for directions. What can you say?",
+    "choices": [
+      "Excuse me, could you help me?",
+      "Happy birthday!",
+      "Good night!",
+      "Thank you for the meal."
+    ],
+    "correct_index": 0,
+    "explanation": "\"Excuse me, could you help me?\" is a polite way to start asking for help.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Someone offers you some coffee and you do not want any. What can you say?",
+    "choices": ["No, thank you.", "Good morning.", "You're welcome.", "See you yesterday."],
+    "correct_index": 0,
+    "explanation": "\"No, thank you\" is a polite way to refuse an offer.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "You are at a restaurant and want to ask for the bill. What can you say?",
+    "choices": [
+      "Could I have the bill, please?",
+      "Where is the hospital?",
+      "What time is the train?",
+      "Happy birthday!"
+    ],
+    "correct_index": 0,
+    "explanation": "\"Could I have the bill, please?\" is a polite restaurant expression.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"Tom usually walks to work because he lives near his office. Today, however, he took the bus because it was raining.\" How did Tom go to work today?",
+    "choices": ["By bus", "By car", "On foot", "By train"],
+    "correct_index": 0,
+    "explanation": "The text says that Tom took the bus today.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"Lucy wanted to go shopping, but the shops were closed. She decided to go home.\" Why did Lucy go home?",
+    "choices": [
+      "She was hungry.",
+      "The shops were closed.",
+      "She bought everything.",
+      "She met a friend."
+    ],
+    "correct_index": 1,
+    "explanation": "The text says that Lucy went home because the shops were closed.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"Mark has lived in the same city for five years. He likes it because there are many parks and restaurants.\" What does Mark like about the city?",
+    "choices": [
+      "There are many parks and restaurants.",
+      "It is very small.",
+      "There are no shops.",
+      "It is always cold."
+    ],
+    "correct_index": 0,
+    "explanation": "Mark likes the city because it has many parks and restaurants.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Which place would you probably visit if you wanted to borrow a book?",
+    "choices": ["Library", "Hospital", "Airport", "Restaurant"],
+    "correct_index": 0,
+    "explanation": "A library is a place where people can borrow books.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Which word describes a person who is always on time?",
+    "choices": ["Punctual", "Hungry", "Noisy", "Careless"],
+    "correct_index": 0,
+    "explanation": "A punctual person arrives at the expected time.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"return\" mean in \"I need to return the book to the library\"?",
+    "choices": [
+      "Give it back",
+      "Buy it",
+      "Read it quickly",
+      "Throw it away"
+    ],
+    "correct_index": 0,
+    "explanation": "In this context, \"return\" means to give something back.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"available\" mean?",
+    "choices": [
+      "Ready or free to be used",
+      "Very expensive",
+      "Broken",
+      "Very far away"
+    ],
+    "correct_index": 0,
+    "explanation": "\"Available\" means ready or free to be used or obtained.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "A: \"Would you like to come to my party?\" B: \"___\"",
+    "choices": [
+      "I'd love to, thank you.",
+      "I am at the station.",
+      "It is Monday.",
+      "I don't know his name."
+    ],
+    "correct_index": 0,
+    "explanation": "\"I'd love to, thank you\" is a natural way to accept an invitation.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "A: \"What did you do last weekend?\" B: \"___\"",
+    "choices": [
+      "I visited my family.",
+      "I'm from Italy.",
+      "It's very expensive.",
+      "At seven o'clock."
+    ],
+    "correct_index": 0,
+    "explanation": "The question asks about an activity, so \"I visited my family\" is an appropriate answer.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "A: \"Can I use your phone?\" B: \"___\"",
+    "choices": ["Sure, no problem.", "Good night.", "I'm from France.", "It was yesterday."],
+    "correct_index": 0,
+    "explanation": "\"Sure, no problem\" is a natural way to agree to a request.",
+    "question_type": "functional_language",
+    "is_active": true
+  }
+]

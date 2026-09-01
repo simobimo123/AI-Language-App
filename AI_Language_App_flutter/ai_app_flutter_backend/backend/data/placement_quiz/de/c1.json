@@ -1,0 +1,242 @@
+﻿[
+  {
+    "question": "Kaum ___ die Sitzung begonnen, als bereits die ersten Einwände vorgebracht wurden.",
+    "choices": ["hatte", "hat", "war", "wurde"],
+    "correct_index": 0,
+    "explanation": "Die Konstruktion „Kaum hatte ..., als ...“ beschreibt zwei unmittelbar aufeinanderfolgende Ereignisse in der Vergangenheit.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Die Studie legt nahe, dass die Ergebnisse mit Vorsicht ___ sollten.",
+    "choices": ["interpretieren", "zu interpretieren", "interpretiert werden", "interpretiert zu werden"],
+    "correct_index": 2,
+    "explanation": "Nach „die Ergebnisse sollten“ ist hier das Passiv „interpretiert werden“ korrekt.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Er verhielt sich, als ___ er von der Entscheidung bereits gewusst.",
+    "choices": ["hat", "hätte", "habe", "wird"],
+    "correct_index": 1,
+    "explanation": "Bei einem irrealen Vergleich mit „als“ wird hier der Konjunktiv II „hätte“ verwendet.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Die Regierung steht vor der Herausforderung, die wirtschaftliche Entwicklung ___ und gleichzeitig die Umwelt zu schützen.",
+    "choices": ["fördern", "zu fördern", "gefördert", "fördernd"],
+    "correct_index": 1,
+    "explanation": "Nach „vor der Herausforderung stehen, etwas ...“ folgt hier ein Infinitiv mit „zu“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Es ist nicht auszuschließen, dass die Preise im kommenden Jahr ___ werden.",
+    "choices": ["steigen", "gestiegen", "gestiegen wären", "steigen würden"],
+    "correct_index": 0,
+    "explanation": "Nach „dass“ wird hier das Verb „steigen“ verwendet.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Die Entscheidung, den Vertrag zu kündigen, ___ nach langen Verhandlungen getroffen.",
+    "choices": ["wurde", "ist", "hat", "wäre"],
+    "correct_index": 0,
+    "explanation": "Hier wird das Präteritum des Passivs verwendet: „wurde getroffen“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Hätte das Unternehmen früher reagiert, ___ der Schaden vermutlich geringer gewesen.",
+    "choices": ["wäre", "ist", "war", "wird"],
+    "correct_index": 0,
+    "explanation": "Der irreale Konditionalsatz der Vergangenheit verlangt im Hauptsatz den Konjunktiv II Perfekt: „wäre ... gewesen“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Die Maßnahmen wurden ergriffen, ___ eine weitere Verschärfung der Situation zu verhindern.",
+    "choices": ["obwohl", "während", "um", "indem"],
+    "correct_index": 2,
+    "explanation": "„Um ... zu“ drückt einen Zweck aus.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „etwas in Erwägung ziehen“?",
+    "choices": ["Etwas grundsätzlich ablehnen", "Etwas ernsthaft prüfen oder überlegen", "Etwas sofort umsetzen", "Etwas geheim halten"],
+    "correct_index": 1,
+    "explanation": "„Etwas in Erwägung ziehen“ bedeutet, eine Möglichkeit ernsthaft zu prüfen oder zu überlegen.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „maßgeblich“?",
+    "choices": ["Unbedeutend", "Entscheidend oder wesentlich", "Vorübergehend", "Zufällig"],
+    "correct_index": 1,
+    "explanation": "„Maßgeblich“ bedeutet entscheidend, wesentlich oder von großer Bedeutung.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „eine Schlussfolgerung ziehen“?",
+    "choices": ["Eine Vermutung vergessen", "Aus Informationen ein Ergebnis ableiten", "Eine Diskussion beenden", "Eine Entscheidung verschieben"],
+    "correct_index": 1,
+    "explanation": "Eine Schlussfolgerung ist ein Ergebnis, das aus bestimmten Informationen oder Beobachtungen abgeleitet wird.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „widersprüchlich“?",
+    "choices": ["Logisch und eindeutig", "Sich gegenseitig widersprechend", "Besonders ausführlich", "Leicht verständlich"],
+    "correct_index": 1,
+    "explanation": "Widersprüchliche Aussagen oder Informationen passen nicht zusammen oder widersprechen einander.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „etwas relativieren“?",
+    "choices": ["Etwas absolut darstellen", "Die Bedeutung oder Gültigkeit einer Aussage einschränken", "Etwas vollständig beweisen", "Etwas wiederholen"],
+    "correct_index": 1,
+    "explanation": "Relativieren bedeutet, eine Aussage oder Bedeutung in einen bestimmten Zusammenhang zu stellen und dadurch einzuschränken.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „nachvollziehbar“?",
+    "choices": ["Unverständlich", "Logisch verständlich oder erklärbar", "Unwichtig", "Widersprüchlich"],
+    "correct_index": 1,
+    "explanation": "Etwas Nachvollziehbares kann logisch verstanden oder erklärt werden.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „eine kontroverse Debatte“?",
+    "choices": ["Eine Diskussion mit unterschiedlichen und oft gegensätzlichen Positionen", "Eine kurze Begrüßung", "Eine private Vereinbarung", "Eine wissenschaftliche Messung"],
+    "correct_index": 0,
+    "explanation": "Eine kontroverse Debatte ist eine Diskussion, bei der unterschiedliche oder gegensätzliche Meinungen aufeinandertreffen.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „weitreichende Konsequenzen“?",
+    "choices": ["Folgen mit nur geringer Bedeutung", "Folgen, die viele Bereiche oder Menschen betreffen können", "Folgen, die sofort verschwinden", "Folgen ohne Zusammenhang"],
+    "correct_index": 1,
+    "explanation": "Weitreichende Konsequenzen können erhebliche Auswirkungen auf verschiedene Bereiche haben.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Eine Untersuchung kommt zu dem Ergebnis, dass der Klimawandel nicht nur ökologische, sondern auch wirtschaftliche Auswirkungen hat. Welche Aussage entspricht dem Text?",
+    "choices": ["Der Klimawandel betrifft ausschließlich die Umwelt.", "Der Klimawandel hat sowohl ökologische als auch wirtschaftliche Folgen.", "Der Klimawandel hat keine wirtschaftlichen Auswirkungen.", "Die Untersuchung beschäftigt sich nur mit Unternehmen."],
+    "correct_index": 1,
+    "explanation": "Der Text nennt ausdrücklich sowohl ökologische als auch wirtschaftliche Auswirkungen.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Ein Unternehmen investiert in neue Technologien. Kurzfristig steigen dadurch die Kosten, langfristig erwartet die Geschäftsführung jedoch eine höhere Produktivität. Was wird erwartet?",
+    "choices": ["Eine langfristige Verbesserung der Produktivität.", "Eine dauerhafte Senkung der Investitionen.", "Eine sofortige Schließung des Unternehmens.", "Einen vollständigen Verzicht auf Technologie."],
+    "correct_index": 0,
+    "explanation": "Die Geschäftsführung erwartet langfristig eine höhere Produktivität.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Eine Universität stellt fest, dass Studenten bessere Ergebnisse erzielen, wenn sie regelmäßig lernen, anstatt kurz vor der Prüfung intensiv zu lernen. Welche Lernstrategie wird empfohlen?",
+    "choices": ["Nur am Tag vor der Prüfung lernen.", "Regelmäßig über einen längeren Zeitraum lernen.", "Auf das Lernen vollständig verzichten.", "Nur Prüfungsfragen auswendig lernen."],
+    "correct_index": 1,
+    "explanation": "Die Untersuchung spricht für regelmäßiges Lernen über einen längeren Zeitraum.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Ein Bericht stellt fest, dass soziale Medien den Zugang zu Informationen erleichtern, gleichzeitig aber die Verbreitung falscher Informationen begünstigen können. Welche Schlussfolgerung ist angemessen?",
+    "choices": ["Soziale Medien haben ausschließlich positive Auswirkungen.", "Soziale Medien sind grundsätzlich nutzlos.", "Soziale Medien bieten Vorteile, bergen aber auch Risiken.", "Falsche Informationen existieren nur in sozialen Medien."],
+    "correct_index": 2,
+    "explanation": "Der Bericht beschreibt sowohl einen Vorteil als auch ein mögliches Risiko.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Eine Stadt plant, den öffentlichen Nahverkehr auszubauen. Ziel ist es, den Autoverkehr zu reduzieren und gleichzeitig die Mobilität der Einwohner zu verbessern. Was ist das Hauptziel der Maßnahme?",
+    "choices": ["Mehr private Autos zu fördern.", "Die Mobilität zu verbessern und den Autoverkehr zu verringern.", "Den öffentlichen Verkehr abzuschaffen.", "Die Einwohner zum Umzug zu bewegen."],
+    "correct_index": 1,
+    "explanation": "Die Maßnahme verfolgt beide Ziele: bessere Mobilität und weniger Autoverkehr.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Ein Mitarbeiter lehnt einen Vorschlag nicht grundsätzlich ab, weist aber auf einige mögliche Probleme hin. Wie kann man seine Haltung beschreiben?",
+    "choices": ["Er stimmt uneingeschränkt zu.", "Er lehnt den Vorschlag kategorisch ab.", "Er betrachtet den Vorschlag differenziert.", "Er hat keine Meinung dazu."],
+    "correct_index": 2,
+    "explanation": "Der Mitarbeiter erkennt den Vorschlag an, weist aber gleichzeitig auf mögliche Probleme hin.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest in einer formellen Diskussion vorsichtig ausdrücken, dass du einer Aussage nicht vollständig zustimmst. Was passt am besten?",
+    "choices": ["Das ist absolut falsch.", "Ich würde dieser Aussage nur teilweise zustimmen.", "Das ist völliger Unsinn.", "Darüber gibt es nichts zu diskutieren."],
+    "correct_index": 1,
+    "explanation": "Die Formulierung „Ich würde dieser Aussage nur teilweise zustimmen“ ist differenziert und höflich.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest in einem Gespräch einen Einwand formulieren, ohne unhöflich zu wirken. Was sagst du?",
+    "choices": ["Darf ich an dieser Stelle einen Einwand vorbringen?", "Das ist falsch.", "Sie haben keine Ahnung.", "Das interessiert niemanden."],
+    "correct_index": 0,
+    "explanation": "Die erste Formulierung ist eine höfliche und formelle Art, einen Einwand einzuleiten.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest eine Aussage deines Gesprächspartners präzisieren. Welche Formulierung passt?",
+    "choices": ["Das haben Sie sicher falsch verstanden.", "Wenn ich Sie richtig verstehe, meinen Sie damit, dass ...", "Das ergibt überhaupt keinen Sinn.", "Ich möchte darüber nicht sprechen."],
+    "correct_index": 1,
+    "explanation": "Die Formulierung bittet indirekt um Bestätigung des eigenen Verständnisses.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest in einer Präsentation auf eine Einschränkung deiner Aussage hinweisen. Was passt?",
+    "choices": ["Diese Aussage gilt ohne jede Ausnahme.", "Allerdings ist zu berücksichtigen, dass ...", "Das Gegenteil ist immer richtig.", "Weitere Überlegungen sind unnötig."],
+    "correct_index": 1,
+    "explanation": "„Allerdings ist zu berücksichtigen, dass ...“ eignet sich gut, um eine Einschränkung einzuführen.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest eine andere Person höflich auffordern, ihre Behauptung zu begründen. Was sagst du?",
+    "choices": ["Könnten Sie Ihre Aussage bitte näher erläutern?", "Beweisen Sie sofort, dass Sie recht haben.", "Das glaube ich Ihnen sowieso nicht.", "Sie müssen das erklären."],
+    "correct_index": 0,
+    "explanation": "Die erste Formulierung ist höflich und fordert eine nähere Begründung oder Erklärung.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest zwei unterschiedliche Möglichkeiten miteinander vergleichen. Welche Formulierung eignet sich?",
+    "choices": ["Einerseits ..., andererseits ...", "Deshalb niemals ...", "Ohne Zweifel nur ...", "Auf keinen Fall beide ..."],
+    "correct_index": 0,
+    "explanation": "„Einerseits ..., andererseits ...“ wird verwendet, um zwei Seiten oder Perspektiven gegenüberzustellen.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Die Ergebnisse der Untersuchung sind ___ früheren Studien nicht vollständig vergleichbar.",
+    "choices": ["mit", "zu", "an", "von"],
+    "correct_index": 0,
+    "explanation": "Die korrekte Verbindung lautet „mit etwas vergleichbar sein“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Es bedarf weiterer Untersuchungen, ___ eine eindeutige Aussage treffen zu können.",
+    "choices": ["damit", "um", "obwohl", "während"],
+    "correct_index": 1,
+    "explanation": "„Um ... zu“ bezeichnet hier den Zweck: weitere Untersuchungen sind nötig, um eine eindeutige Aussage treffen zu können.",
+    "question_type": "grammar",
+    "is_active": true
+  }
+]

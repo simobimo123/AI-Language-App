@@ -1,0 +1,242 @@
+﻿[
+  {
+    "question": "Wenn ich mehr Zeit habe, ___ ich dich morgen.",
+    "choices": ["besuche", "besuchen", "besucht", "besuchst"],
+    "correct_index": 0,
+    "explanation": "Mit „ich“ lautet die Form von „besuchen“: „besuche“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Ich ___ gestern lange gearbeitet.",
+    "choices": ["habe", "bin", "hatte", "werde"],
+    "correct_index": 0,
+    "explanation": "Das Perfekt von „arbeiten“ wird mit „haben“ gebildet.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Als ich klein war, ___ ich jeden Sommer meine Großeltern.",
+    "choices": ["besuche", "besuchte", "besucht", "besuchen"],
+    "correct_index": 1,
+    "explanation": "Für eine regelmäßige Handlung in der Vergangenheit wird hier das Präteritum „besuchte“ verwendet.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Ich interessiere mich ___ deutsche Geschichte.",
+    "choices": ["für", "an", "mit", "auf"],
+    "correct_index": 0,
+    "explanation": "Die feste Verbindung lautet „sich für etwas interessieren“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Obwohl es stark regnete, ___ wir spazieren.",
+    "choices": ["gingen", "gehen", "gegangen", "ging"],
+    "correct_index": 0,
+    "explanation": "Nach „obwohl“ steht hier der Hauptsatz im Präteritum: „gingen wir“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Kannst du mir sagen, ___ der nächste Bahnhof ist?",
+    "choices": ["wo", "dass", "weil", "ob"],
+    "correct_index": 0,
+    "explanation": "Bei einer indirekten Frage nach einem Ort verwendet man „wo“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Das Auto muss heute ___ werden.",
+    "choices": ["repariert", "reparieren", "reparierte", "repariert sein"],
+    "correct_index": 0,
+    "explanation": "Im Passiv mit Modalverb lautet die Struktur „muss ... repariert werden“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Ich habe keine Zeit, heute lange ___.",
+    "choices": ["bleiben", "zu bleiben", "geblieben", "bleibe"],
+    "correct_index": 1,
+    "explanation": "Nach „Zeit haben“ + Nomen folgt hier ein Infinitiv mit „zu“: „Zeit, ... zu bleiben“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „sich entscheiden“?",
+    "choices": ["to forget", "to decide", "to explain", "to repair"],
+    "correct_index": 1,
+    "explanation": "„Sich entscheiden“ bedeutet auf Englisch „to decide“.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „zuverlässig“?",
+    "choices": ["reliable", "expensive", "dangerous", "empty"],
+    "correct_index": 0,
+    "explanation": "„Zuverlässig“ bedeutet, dass man sich auf jemanden oder etwas verlassen kann.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was ist das Gegenteil von „erfolgreich“?",
+    "choices": ["berühmt", "erfahren", "erfolglos", "bekannt"],
+    "correct_index": 2,
+    "explanation": "Das Gegenteil von „erfolgreich“ ist „erfolglos“.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „sich beschweren“?",
+    "choices": ["to complain", "to agree", "to invite", "to improve"],
+    "correct_index": 0,
+    "explanation": "„Sich beschweren“ bedeutet, seine Unzufriedenheit über etwas auszudrücken.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „Vereinbarung“?",
+    "choices": ["agreement", "accident", "journey", "mistake"],
+    "correct_index": 0,
+    "explanation": "Eine „Vereinbarung“ ist eine Abmachung oder ein Agreement.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „vermeiden“?",
+    "choices": ["to avoid", "to accept", "to discover", "to repeat"],
+    "correct_index": 0,
+    "explanation": "„Vermeiden“ bedeutet, etwas nicht zu tun oder einer Sache aus dem Weg zu gehen.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „sich gewöhnen an“?",
+    "choices": ["to get used to", "to get lost", "to give away", "to give up"],
+    "correct_index": 0,
+    "explanation": "„Sich an etwas gewöhnen“ bedeutet, mit etwas zunehmend vertraut oder komfortabel zu werden.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Anna arbeitet normalerweise im Büro. Diese Woche arbeitet sie von zu Hause. Wo arbeitet Anna diese Woche?",
+    "choices": ["Im Hotel", "Im Büro", "Zu Hause", "In der Schule"],
+    "correct_index": 2,
+    "explanation": "Der Text sagt, dass Anna diese Woche von zu Hause arbeitet.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Markus wollte mit dem Zug fahren, aber wegen eines technischen Problems wurde die Verbindung gestrichen. Wie reist Markus wahrscheinlich nicht?",
+    "choices": ["Mit dem Zug", "Mit dem Auto", "Mit dem Bus", "Mit einem anderen Verkehrsmittel"],
+    "correct_index": 0,
+    "explanation": "Die Zugverbindung wurde wegen eines technischen Problems gestrichen.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Laura lernt seit drei Jahren Deutsch. Sie versteht Gespräche gut, hat aber noch Schwierigkeiten beim Schreiben. Was kann Laura gut?",
+    "choices": ["Deutsch schreiben", "Deutsch verstehen", "Deutsch unterrichten", "Deutsch übersetzen"],
+    "correct_index": 1,
+    "explanation": "Im Text steht, dass Laura Gespräche gut versteht.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Der Supermarkt schließt heute wegen Renovierungsarbeiten früher als gewöhnlich. Was sollten Kunden beachten?",
+    "choices": ["Er öffnet heute überhaupt nicht.", "Er schließt heute früher.", "Er bleibt die ganze Nacht offen.", "Er zieht in eine andere Stadt."],
+    "correct_index": 1,
+    "explanation": "Der Supermarkt schließt wegen der Renovierungsarbeiten früher.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Peter hat eine Prüfung am Montag. Am Wochenende plant er, jeden Tag zwei Stunden zu lernen. Was macht Peter am Wochenende?",
+    "choices": ["Er fährt in den Urlaub.", "Er bereitet sich auf die Prüfung vor.", "Er arbeitet im Supermarkt.", "Er besucht einen Arzt."],
+    "correct_index": 1,
+    "explanation": "Peter möchte am Wochenende lernen, um sich auf die Prüfung vorzubereiten.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Die Stadt möchte mehr Fahrräder auf den Straßen sehen und baut deshalb neue Radwege. Was ist das Ziel?",
+    "choices": ["Mehr Menschen sollen Fahrrad fahren.", "Mehr Autos sollen fahren.", "Weniger Straßen sollen gebaut werden.", "Die Busse sollen abgeschafft werden."],
+    "correct_index": 0,
+    "explanation": "Neue Radwege sollen dazu beitragen, dass mehr Menschen Fahrrad fahren.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Das Hotel war zwar teuer, aber die Gäste waren mit dem Service sehr zufrieden. Wie war der Service?",
+    "choices": ["Schlecht", "Unzuverlässig", "Sehr gut", "Nicht vorhanden"],
+    "correct_index": 2,
+    "explanation": "Die Gäste waren mit dem Service sehr zufrieden.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Du bist mit einem Produkt unzufrieden und möchtest es im Geschäft zurückgeben. Was kannst du sagen?",
+    "choices": ["Ich möchte diesen Artikel zurückgeben.", "Ich möchte einen Tisch reservieren.", "Wo ist der Bahnhof?", "Ich brauche einen Arzt."],
+    "correct_index": 0,
+    "explanation": "„Ich möchte diesen Artikel zurückgeben“ ist eine passende Formulierung im Geschäft.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest einen Termin beim Arzt vereinbaren. Was sagst du?",
+    "choices": ["Ich möchte einen Termin vereinbaren.", "Ich möchte das Fenster öffnen.", "Ich suche meinen Koffer.", "Ich möchte bezahlen."],
+    "correct_index": 0,
+    "explanation": "„Ich möchte einen Termin vereinbaren“ ist eine passende Bitte.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Ein Freund hat ein Problem. Du möchtest Hilfe anbieten. Was sagst du?",
+    "choices": ["Kann ich dir helfen?", "Was kostet das?", "Wo ist der Bahnhof?", "Gute Nacht!"],
+    "correct_index": 0,
+    "explanation": "„Kann ich dir helfen?“ ist eine natürliche Art, Hilfe anzubieten.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du bist anderer Meinung als dein Gesprächspartner. Welche Antwort ist höflich?",
+    "choices": ["Das ist völlig falsch.", "Ich sehe das etwas anders.", "Du verstehst gar nichts.", "Das ist Unsinn."],
+    "correct_index": 1,
+    "explanation": "„Ich sehe das etwas anders“ ist eine höfliche Möglichkeit, eine andere Meinung auszudrücken.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du hast eine Einladung bekommen, kannst aber nicht teilnehmen. Was kannst du sagen?",
+    "choices": ["Vielen Dank für die Einladung, aber ich kann leider nicht kommen.", "Ich komme gestern.", "Wo ist die Rechnung?", "Ich habe keinen Namen."],
+    "correct_index": 0,
+    "explanation": "Die erste Antwort ist eine höfliche Absage.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest deinen Gesprächspartner nach seiner Meinung fragen. Was sagst du?",
+    "choices": ["Was hältst du davon?", "Wie spät ist es gestern?", "Wo ist dein Pass?", "Was hast du gegessen morgen?"],
+    "correct_index": 0,
+    "explanation": "„Was hältst du davon?“ fragt nach der Meinung einer Person.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du hast einen Termin und möchtest ihn auf einen anderen Tag verschieben. Was sagst du?",
+    "choices": ["Könnten wir den Termin verschieben?", "Ich habe keinen Termin gestern.", "Wo kann ich essen?", "Ich bin ein Termin."],
+    "correct_index": 0,
+    "explanation": "„Könnten wir den Termin verschieben?“ ist eine höfliche Bitte, einen Termin zu ändern.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Ich weiß nicht, ___ er heute kommt.",
+    "choices": ["ob", "dass", "weil", "denn"],
+    "correct_index": 0,
+    "explanation": "Bei einer indirekten Ja-Nein-Frage verwendet man „ob“.",
+    "question_type": "grammar",
+    "is_active": true
+  }
+]

@@ -1,0 +1,309 @@
+﻿[
+  {
+    "question": "Had it not been for the timely intervention of the regulators, the situation ___ considerably worse.",
+    "choices": ["might have become", "will become", "would become", "had become"],
+    "correct_index": 0,
+    "explanation": "The structure \"Had it not been for\" introduces an unreal past condition, followed by a modal perfect such as \"might have become\".",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Scarcely ___ the announcement when protests began across the country.",
+    "choices": ["had they made", "they had made", "did they make", "they made"],
+    "correct_index": 0,
+    "explanation": "\"Scarcely\" at the beginning of a sentence requires inversion, and the past perfect is used for the earlier action.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The committee recommended that the proposal ___ before any final decision was made.",
+    "choices": ["be reconsidered", "was reconsidered", "would reconsider", "has reconsidered"],
+    "correct_index": 0,
+    "explanation": "The formal subjunctive passive \"be reconsidered\" follows \"recommended that\".",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Much as I ___ the author's argument, I find some of the conclusions difficult to justify.",
+    "choices": ["admire", "admired", "am admiring", "would admire"],
+    "correct_index": 0,
+    "explanation": "\"Much as\" can introduce a concessive clause and is followed here by the present simple.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Were the evidence ___ more carefully, the outcome might have been different.",
+    "choices": ["to have been examined", "examining", "examined", "to examine"],
+    "correct_index": 0,
+    "explanation": "The formal conditional structure \"Were ... to have been examined\" refers to a hypothetical past situation.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Little ___ that the seemingly minor error would have such serious consequences.",
+    "choices": ["did they suspect", "they suspected", "had they suspected", "they had suspected"],
+    "correct_index": 0,
+    "explanation": "The negative adverb \"little\" at the beginning requires subject-auxiliary inversion.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The extent to which the policy will succeed remains ___.",
+    "choices": ["to be seen", "seeing", "seen to", "to seeing"],
+    "correct_index": 0,
+    "explanation": "\"Remains to be seen\" is a fixed expression meaning that the outcome is not yet known.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The findings, controversial though they ___, have prompted considerable debate.",
+    "choices": ["may be", "might have", "are being", "would"],
+    "correct_index": 0,
+    "explanation": "\"Adjective + though + subject + may be\" is a formal concessive structure.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "What does \"ubiquitous\" mean?",
+    "choices": [
+      "Present or found almost everywhere",
+      "Extremely difficult to understand",
+      "Rare and difficult to obtain",
+      "Completely unnecessary"
+    ],
+    "correct_index": 0,
+    "explanation": "\"Ubiquitous\" describes something that appears to be present almost everywhere.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"inadvertently\" mean?",
+    "choices": [
+      "Deliberately",
+      "Without intending to",
+      "With great difficulty",
+      "After careful consideration"
+    ],
+    "correct_index": 1,
+    "explanation": "\"Inadvertently\" means accidentally or without intending to do something.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Which word best describes an argument that appears convincing but contains a fundamental error?",
+    "choices": ["Fallacious", "Empirical", "Coherent", "Objective"],
+    "correct_index": 0,
+    "explanation": "\"Fallacious\" describes an argument based on faulty reasoning.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"pervasive\" mean?",
+    "choices": [
+      "Existing throughout an area or situation",
+      "Occurring only once",
+      "Easy to eliminate",
+      "Completely predictable"
+    ],
+    "correct_index": 0,
+    "explanation": "\"Pervasive\" describes something widespread or present throughout a particular area or situation.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"conundrum\" mean?",
+    "choices": [
+      "A difficult problem or situation",
+      "A minor disagreement",
+      "A scientific measurement",
+      "A formal agreement"
+    ],
+    "correct_index": 0,
+    "explanation": "A conundrum is a difficult and often confusing problem or question.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Which word is closest in meaning to \"scrupulous\"?",
+    "choices": ["Extremely careful", "Careless", "Uncertain", "Aggressive"],
+    "correct_index": 0,
+    "explanation": "A scrupulous person is extremely careful about details, correctness, or moral standards.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"disparate\" mean?",
+    "choices": [
+      "Fundamentally different",
+      "Almost identical",
+      "Closely connected",
+      "Temporarily unavailable"
+    ],
+    "correct_index": 0,
+    "explanation": "\"Disparate\" describes things that are fundamentally different from each other.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The report does not dispute the existence of the trend; rather, it questions whether the available data are sufficient to establish its long-term significance. The authors therefore call for a more extensive dataset before any definitive conclusions are drawn.\" What are the authors primarily questioning?",
+    "choices": [
+      "Whether the trend exists at all",
+      "Whether the available evidence is sufficient to establish its long-term significance",
+      "Whether data should be collected",
+      "Whether the report should be published"
+    ],
+    "correct_index": 1,
+    "explanation": "The authors accept that the trend exists but question whether the available data are sufficient to establish its long-term importance.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"While the policy was ostensibly introduced to reduce administrative costs, critics contend that its practical effect has been to shift those costs onto local authorities. Supporters, however, argue that the redistribution of responsibilities will ultimately produce greater efficiency.\" What is the central disagreement?",
+    "choices": [
+      "Whether administrative costs exist",
+      "Whether the policy has redistributed costs in a beneficial or harmful way",
+      "Whether local authorities should exist",
+      "Whether the policy was introduced recently"
+    ],
+    "correct_index": 1,
+    "explanation": "Critics and supporters disagree about the consequences of how the policy redistributes administrative costs and responsibilities.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The author's conclusion is deliberately tentative. Rather than claiming that the evidence conclusively demonstrates causation, the study suggests that the observed relationship warrants further investigation.\" What is the author's position?",
+    "choices": [
+      "The evidence conclusively proves causation.",
+      "The relationship is meaningless.",
+      "The relationship is interesting enough to justify further research.",
+      "Further research would be unnecessary."
+    ],
+    "correct_index": 2,
+    "explanation": "The author does not claim causation but believes the observed relationship deserves further investigation.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The minister's statement was carefully worded. Although it appeared to endorse the proposed reforms, it stopped short of committing the government to any specific timetable. This ambiguity allowed different groups to interpret the announcement according to their own expectations.\" What made the statement ambiguous?",
+    "choices": [
+      "It rejected the reforms completely.",
+      "It gave a precise timetable.",
+      "It supported the reforms without specifying when they would be implemented.",
+      "It contained no reference to the reforms."
+    ],
+    "correct_index": 2,
+    "explanation": "The statement appeared supportive but did not commit the government to a specific timetable.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The study's findings appear to contradict earlier research. However, the discrepancy may be attributable to differences in methodology rather than genuinely conflicting evidence. The researchers therefore caution against treating the studies as directly comparable.\" Why might the studies appear to conflict?",
+    "choices": [
+      "They examined exactly the same conditions.",
+      "They used different methodologies.",
+      "One of the studies contained no data.",
+      "The researchers rejected both studies."
+    ],
+    "correct_index": 1,
+    "explanation": "The passage suggests that methodological differences may explain the apparent contradiction.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "You want to challenge a widely accepted assumption in a formal discussion. Which is most appropriate?",
+    "choices": [
+      "It might be worth questioning the assumption that this is necessarily the case.",
+      "Everyone knows that assumption is stupid.",
+      "That idea makes no sense at all.",
+      "Obviously, nobody should believe that."
+    ],
+    "correct_index": 0,
+    "explanation": "The first option challenges the assumption in a cautious and appropriately formal manner.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "You want to qualify a strong claim because the available evidence is limited. What could you say?",
+    "choices": [
+      "The evidence appears to suggest this, although it would be premature to draw a definitive conclusion.",
+      "This proves everything beyond doubt.",
+      "There is absolutely nothing else to consider.",
+      "Everyone must accept this immediately."
+    ],
+    "correct_index": 0,
+    "explanation": "The first response appropriately distinguishes between suggestive evidence and definitive proof.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Someone makes a valid criticism of your proposal. What is the most sophisticated response?",
+    "choices": [
+      "That's irrelevant.",
+      "That's a fair point, and it is something we should take into account.",
+      "You're wrong, end of discussion.",
+      "I don't care what you think."
+    ],
+    "correct_index": 1,
+    "explanation": "The response acknowledges the criticism and indicates that it should be considered.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "You want to introduce an important qualification to an argument. Which expression is most appropriate?",
+    "choices": [
+      "That said, the issue is considerably more complex than this suggests.",
+      "Anyway, that's it.",
+      "But whatever.",
+      "Forget that point."
+    ],
+    "correct_index": 0,
+    "explanation": "\"That said\" is a formal discourse marker used to introduce a qualification or contrasting point.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "You are asked whether a conclusion necessarily follows from the evidence. What is the most precise response?",
+    "choices": [
+      "Not necessarily; the evidence supports the possibility, but it does not establish it conclusively.",
+      "Yes, obviously.",
+      "The evidence is always correct.",
+      "There is no connection whatsoever."
+    ],
+    "correct_index": 0,
+    "explanation": "The response carefully distinguishes between evidence that supports a possibility and evidence that conclusively establishes it.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "So controversial ___ the proposal that several members refused to support it.",
+    "choices": ["was", "were", "did", "had"],
+    "correct_index": 0,
+    "explanation": "The structure \"So + adjective + be + subject + that\" uses inversion after the adjective phrase.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Only by reconsidering the underlying assumptions ___ a satisfactory solution be found.",
+    "choices": ["can", "could have", "has", "would have"],
+    "correct_index": 0,
+    "explanation": "After a restrictive expression such as \"Only by\", inversion is used in the main clause.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Far from ___ the problem, the new policy appears to have made it worse.",
+    "choices": ["solving", "solve", "solved", "to solve"],
+    "correct_index": 0,
+    "explanation": "\"Far from\" is followed by a noun or gerund, so \"solving\" is correct.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Whatever the outcome ___, the investigation has already revealed important weaknesses in the system.",
+    "choices": ["may be", "would have", "is being", "has"],
+    "correct_index": 0,
+    "explanation": "\"Whatever the outcome may be\" is a formal concessive construction meaning regardless of the result.",
+    "question_type": "grammar",
+    "is_active": true
+  }
+]

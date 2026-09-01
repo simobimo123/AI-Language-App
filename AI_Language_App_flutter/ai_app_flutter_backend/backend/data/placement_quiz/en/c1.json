@@ -1,0 +1,294 @@
+﻿[
+  {
+    "question": "Had I known about the problem earlier, I ___ something about it.",
+    "choices": ["would have done", "will do", "would do", "had done"],
+    "correct_index": 0,
+    "explanation": "This is a third conditional structure referring to an unreal situation in the past.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "By the time the investigation began, the company ___ several important documents.",
+    "choices": ["had already destroyed", "already destroys", "has already destroyed", "was destroying"],
+    "correct_index": 0,
+    "explanation": "The past perfect is used for an action completed before another past event.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The proposal, ___ was initially rejected, was eventually accepted.",
+    "choices": ["that", "which", "what", "where"],
+    "correct_index": 1,
+    "explanation": "\"Which\" is used to introduce a non-defining relative clause referring to the proposal.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "It is essential that every applicant ___ the required documents before Friday.",
+    "choices": ["submits", "submit", "submitted", "will submit"],
+    "correct_index": 1,
+    "explanation": "After expressions such as \"It is essential that\", formal English can use the subjunctive base form \"submit\".",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "No sooner ___ the announcement than the audience began asking questions.",
+    "choices": ["had he finished", "he had finished", "did he finish", "he finished"],
+    "correct_index": 0,
+    "explanation": "\"No sooner\" at the beginning of a sentence is followed by inversion: \"had he finished\".",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The manager denied ___ any confidential information to the press.",
+    "choices": ["to give", "giving", "give", "having give"],
+    "correct_index": 1,
+    "explanation": "The verb \"deny\" is followed by a gerund.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "If the researchers had followed the original plan, the results ___ different.",
+    "choices": ["would have been", "will be", "would be", "had been"],
+    "correct_index": 0,
+    "explanation": "This is a third conditional referring to an unreal past condition and its result.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The report is believed ___ several serious errors.",
+    "choices": ["to contain", "containing", "contain", "contained"],
+    "correct_index": 0,
+    "explanation": "After \"is believed\", the infinitive \"to contain\" is used in this passive reporting structure.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "She spoke so quietly that I could barely ___ what she was saying.",
+    "choices": ["make out", "make up", "make for", "make over"],
+    "correct_index": 0,
+    "explanation": "\"Make out\" can mean to understand or hear something with difficulty.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"ambiguous\" mean?",
+    "choices": [
+      "Open to more than one interpretation",
+      "Completely predictable",
+      "Extremely detailed",
+      "Easy to prove"
+    ],
+    "correct_index": 0,
+    "explanation": "Something ambiguous can have more than one possible meaning or interpretation.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"substantial\" most nearly mean in \"a substantial increase\"?",
+    "choices": ["Very small", "Considerable", "Temporary", "Unexpected"],
+    "correct_index": 1,
+    "explanation": "In this context, \"substantial\" means large or considerable.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Which word is closest in meaning to \"reluctant\"?",
+    "choices": ["Unwilling", "Certain", "Enthusiastic", "Confused"],
+    "correct_index": 0,
+    "explanation": "Someone who is reluctant is unwilling or hesitant to do something.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "What does \"undermine\" mean?",
+    "choices": [
+      "To weaken something gradually",
+      "To improve something immediately",
+      "To explain something clearly",
+      "To replace something completely"
+    ],
+    "correct_index": 0,
+    "explanation": "To undermine something means to weaken its strength, effectiveness, or authority.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "The phrase \"by no means\" means ___.",
+    "choices": ["Certainly", "Not at all", "Eventually", "Approximately"],
+    "correct_index": 1,
+    "explanation": "\"By no means\" is a strong way of saying that something is definitely not the case.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Which word best completes the sentence: \"The evidence was ___, so the committee decided to investigate further.\"",
+    "choices": ["conclusive", "inconclusive", "irrelevant", "identical"],
+    "correct_index": 1,
+    "explanation": "\"Inconclusive\" means the evidence was not sufficient to reach a definite conclusion.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"Although the company had initially promised to maintain all existing positions, falling demand forced it to reconsider. Several departments were subsequently reorganized, although no immediate redundancies were announced.\" What happened as a result of falling demand?",
+    "choices": [
+      "The company closed completely.",
+      "Several departments were reorganized.",
+      "All employees were dismissed.",
+      "The company increased recruitment."
+    ],
+    "correct_index": 1,
+    "explanation": "The passage states that several departments were reorganized because of falling demand.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The study found a strong correlation between regular exercise and improved concentration. However, the researchers emphasized that the findings did not prove that exercise directly causes better concentration.\" What is the main caution in the study?",
+    "choices": [
+      "Exercise has no relationship with concentration.",
+      "The study proves exercise causes better concentration.",
+      "A relationship was observed, but causation was not established.",
+      "The researchers did not study exercise."
+    ],
+    "correct_index": 2,
+    "explanation": "The researchers found a correlation but explicitly said this does not prove causation.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The museum's visitor numbers increased significantly after the new exhibition opened. Nevertheless, the director warned that the figures should not be interpreted as evidence of a long-term trend, since the exhibition was attracting considerable media attention.\" Why was the director cautious?",
+    "choices": [
+      "The museum was about to close.",
+      "The increase might be temporary.",
+      "The exhibition received no publicity.",
+      "Visitor numbers had fallen to zero."
+    ],
+    "correct_index": 1,
+    "explanation": "The director suggested that media attention could be responsible for the temporary increase.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"Despite considerable investment in the project, progress remained slow. According to the project manager, the main difficulty was not a lack of funding but the shortage of qualified personnel.\" What was the main problem?",
+    "choices": [
+      "Insufficient funding",
+      "A shortage of qualified personnel",
+      "Poor equipment",
+      "Lack of public interest"
+    ],
+    "correct_index": 1,
+    "explanation": "The project manager identified the shortage of qualified personnel as the main difficulty.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Read: \"The article argues that technological innovation can improve productivity, but only when organizations are prepared to adapt their working practices. Simply introducing new technology, the author suggests, does not guarantee better results.\" What is the author's main point?",
+    "choices": [
+      "Technology always reduces productivity.",
+      "Technology is unnecessary in organizations.",
+      "Technology works best when organizations also adapt.",
+      "Organizations should avoid innovation."
+    ],
+    "correct_index": 2,
+    "explanation": "The author argues that technological innovation alone does not guarantee better results.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "A colleague presents an idea you partly disagree with. What is the most appropriate response?",
+    "choices": [
+      "That's completely wrong.",
+      "I can see where you're coming from, although I'm not entirely convinced.",
+      "You don't understand the issue.",
+      "There is nothing more to discuss."
+    ],
+    "correct_index": 1,
+    "explanation": "The second response acknowledges the other person's viewpoint while expressing polite disagreement.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "You want to introduce a contrasting point in a formal discussion. Which expression is most appropriate?",
+    "choices": [
+      "On the other hand",
+      "Whatever",
+      "Anyway, forget it",
+      "Who cares?"
+    ],
+    "correct_index": 0,
+    "explanation": "\"On the other hand\" is commonly used to introduce a contrasting point.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Someone asks whether you are certain about a complicated claim. What is the most cautious response?",
+    "choices": [
+      "Absolutely. There is no doubt whatsoever.",
+      "As far as I know, although I'd need to check the details.",
+      "Of course, everyone knows that.",
+      "It is definitely impossible."
+    ],
+    "correct_index": 1,
+    "explanation": "The response expresses a reasonable degree of confidence while acknowledging that verification may be necessary.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Which sentence expresses a strong recommendation in a formal context?",
+    "choices": [
+      "You might wanna check it out.",
+      "I strongly recommend that the committee reconsider the proposal.",
+      "Maybe it's okay.",
+      "You can do whatever."
+    ],
+    "correct_index": 1,
+    "explanation": "The second sentence uses formal language to make a strong recommendation.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Rarely ___ such a comprehensive analysis of the issue.",
+    "choices": ["we see", "do we see", "we saw", "saw we"],
+    "correct_index": 1,
+    "explanation": "Negative or restrictive adverbs such as \"rarely\" at the beginning of a sentence require subject-auxiliary inversion.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "It was not until the final meeting that the participants ___ the seriousness of the situation.",
+    "choices": ["realize", "realized", "had realized", "have realized"],
+    "correct_index": 1,
+    "explanation": "The structure \"It was not until... that\" is followed here by the past simple for the event that finally occurred.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "The candidate's explanation was so vague that it failed to ___ the concerns raised by the committee.",
+    "choices": ["address", "approach", "attend", "arrange"],
+    "correct_index": 0,
+    "explanation": "\"Address a concern\" means to deal with or respond to it.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "The phrase \"to a certain extent\" means ___.",
+    "choices": [
+      "Completely",
+      "To some degree",
+      "Without exception",
+      "For a very short time"
+    ],
+    "correct_index": 1,
+    "explanation": "\"To a certain extent\" means partly or to some degree.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Only after the results had been independently verified ___ the researchers publish their findings.",
+    "choices": ["did", "have", "were", "had"],
+    "correct_index": 0,
+    "explanation": "When \"only after\" begins a sentence, subject-auxiliary inversion is required in the main clause.",
+    "question_type": "grammar",
+    "is_active": true
+  }
+]

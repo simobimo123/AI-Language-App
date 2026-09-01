@@ -1,0 +1,242 @@
+﻿[
+  {
+    "question": "Obwohl er wenig Zeit hatte, ___ er den Bericht noch am selben Tag.",
+    "choices": ["fertigstellen", "stellte fertig", "fertiggestellt", "stellt fertig"],
+    "correct_index": 1,
+    "explanation": "Im Präteritum lautet die Form: „stellte ... fertig“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Wenn ich früher davon ___, hätte ich anders reagiert.",
+    "choices": ["wusste", "gewusst hätte", "gewusst habe", "wissen würde"],
+    "correct_index": 1,
+    "explanation": "Für eine irreale Bedingung in der Vergangenheit verwendet man den Konjunktiv II Plusquamperfekt: „gewusst hätte“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Die Entscheidung wurde nach langen Diskussionen ___.",
+    "choices": ["getroffen", "treffen", "trifft", "geträumt"],
+    "correct_index": 0,
+    "explanation": "Die feste Verbindung lautet „eine Entscheidung treffen“; im Passiv heißt es „wurde ... getroffen“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Er behauptet, dass er nichts davon ___.",
+    "choices": ["wisse", "weiß", "gewusst", "wissen"],
+    "correct_index": 0,
+    "explanation": "Nach „behaupten“ kann zur indirekten Rede der Konjunktiv I „wisse“ verwendet werden.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Je länger man wartet, ___ wird die Situation.",
+    "choices": ["desto komplizierter", "umso kompliziert", "komplizierter desto", "mehr kompliziert"],
+    "correct_index": 0,
+    "explanation": "Die Vergleichsstruktur lautet „Je ..., desto ...“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Das Problem lässt sich nicht einfach ___.",
+    "choices": ["lösen", "gelöst", "löste", "zu lösen"],
+    "correct_index": 0,
+    "explanation": "Nach „sich lassen“ folgt hier der Infinitiv: „lässt sich lösen“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Er handelt so, ___ wäre er der Chef.",
+    "choices": ["als", "als ob", "dass", "wenn dass"],
+    "correct_index": 1,
+    "explanation": "Für einen irrealen Vergleich verwendet man „als ob“.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Nachdem sie den Vertrag ___, begann die Zusammenarbeit.",
+    "choices": ["unterschrieben hatte", "unterschreibt", "unterschrieben hat", "unterschreiben"],
+    "correct_index": 0,
+    "explanation": "Für eine Handlung, die vor einer anderen vergangenen Handlung abgeschlossen wurde, verwendet man hier das Plusquamperfekt.",
+    "question_type": "grammar",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „nachhaltig“?",
+    "choices": ["Nur für kurze Zeit gültig", "Umweltbewusst und langfristig wirksam", "Besonders teuer", "Schwer verständlich"],
+    "correct_index": 1,
+    "explanation": "„Nachhaltig“ beschreibt etwas, das langfristig wirkt und Ressourcen beziehungsweise Umwelt berücksichtigt.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „eine Entscheidung treffen“?",
+    "choices": ["Eine Entscheidung vermeiden", "Sich für eine Möglichkeit entscheiden", "Eine Entscheidung vergessen", "Eine Entscheidung erklären"],
+    "correct_index": 1,
+    "explanation": "„Eine Entscheidung treffen“ bedeutet, sich für eine Möglichkeit zu entscheiden.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „zuverlässig“ in Bezug auf eine Person?",
+    "choices": ["Man kann sich auf sie verlassen.", "Sie kommt immer zu spät.", "Sie ändert ständig ihre Meinung.", "Sie arbeitet sehr langsam."],
+    "correct_index": 0,
+    "explanation": "Eine zuverlässige Person hält Absprachen ein und auf sie kann man sich verlassen.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „eine Herausforderung“?",
+    "choices": ["Eine einfache Aufgabe", "Eine schwierige Aufgabe oder Situation", "Eine Belohnung", "Eine Pause"],
+    "correct_index": 1,
+    "explanation": "Eine Herausforderung ist eine Aufgabe oder Situation, die besondere Anstrengung erfordert.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was ist das Gegenteil von „vorübergehend“?",
+    "choices": ["zufällig", "langsam", "dauerhaft", "unbekannt"],
+    "correct_index": 2,
+    "explanation": "Das Gegenteil von „vorübergehend“ ist „dauerhaft“.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „etwas berücksichtigen“?",
+    "choices": ["Etwas ignorieren", "Etwas in eine Überlegung einbeziehen", "Etwas verkaufen", "Etwas zerstören"],
+    "correct_index": 1,
+    "explanation": "„Berücksichtigen“ bedeutet, etwas bei einer Entscheidung oder Überlegung einzubeziehen.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „im Gegensatz zu“?",
+    "choices": ["Ähnlich wie", "Zusammen mit", "Anders als", "Wegen"],
+    "correct_index": 2,
+    "explanation": "„Im Gegensatz zu“ zeigt einen Unterschied oder eine Gegenüberstellung.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Was bedeutet „eine Maßnahme ergreifen“?",
+    "choices": ["Etwas unternehmen, um ein Problem zu lösen", "Eine Pause machen", "Etwas vergessen", "Eine Reise buchen"],
+    "correct_index": 0,
+    "explanation": "Eine Maßnahme zu ergreifen bedeutet, gezielt etwas zu unternehmen.",
+    "question_type": "vocabulary",
+    "is_active": true
+  },
+  {
+    "question": "Ein Unternehmen führt flexible Arbeitszeiten ein. Die Mitarbeiter können nun früher oder später beginnen und ihre Arbeitszeit teilweise selbst bestimmen. Was bedeutet das?",
+    "choices": ["Die Mitarbeiter dürfen überhaupt nicht mehr arbeiten.", "Die Mitarbeiter haben mehr Flexibilität bei ihren Arbeitszeiten.", "Alle Mitarbeiter müssen gleichzeitig beginnen.", "Die Arbeitszeit wird für alle verlängert."],
+    "correct_index": 1,
+    "explanation": "Flexible Arbeitszeiten geben Mitarbeitern mehr Freiheit bei der Gestaltung ihrer Arbeitszeit.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Eine Stadt möchte den Autoverkehr im Zentrum reduzieren. Deshalb werden neue Fahrradwege gebaut und der öffentliche Verkehr ausgebaut. Was ist das Hauptziel?",
+    "choices": ["Mehr Autos ins Zentrum zu bringen.", "Den öffentlichen Verkehr abzuschaffen.", "Die Zahl der Autos im Zentrum zu verringern.", "Die Fahrradwege zu entfernen."],
+    "correct_index": 2,
+    "explanation": "Die Maßnahmen sollen den Autoverkehr im Stadtzentrum reduzieren.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Lisa wollte eine Wohnung kaufen, entschied sich aber aufgrund der hohen Preise zunächst für eine Mietwohnung. Warum kaufte Lisa keine Wohnung?",
+    "choices": ["Sie wollte nicht umziehen.", "Die Wohnungen waren zu teuer.", "Sie hatte keine Arbeit.", "Sie wollte ein Haus bauen."],
+    "correct_index": 1,
+    "explanation": "Der Text nennt die hohen Preise als Grund.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Ein Bericht zeigt, dass immer mehr Menschen von zu Hause arbeiten. Gleichzeitig berichten einige Unternehmen von Schwierigkeiten bei der Kommunikation zwischen Mitarbeitern. Was ist eine mögliche Folge des Homeoffice?",
+    "choices": ["Kommunikation kann schwieriger werden.", "Alle Mitarbeiter arbeiten automatisch effizienter.", "Niemand benutzt mehr Computer.", "Unternehmen brauchen keine Mitarbeiter mehr."],
+    "correct_index": 0,
+    "explanation": "Der Text erwähnt ausdrücklich Kommunikationsprobleme als mögliche Schwierigkeit.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Eine Universität bietet einen neuen Kurs an. Die Teilnehmer lernen nicht nur theoretische Grundlagen, sondern arbeiten auch an realen Projekten. Was zeichnet den Kurs aus?",
+    "choices": ["Er besteht ausschließlich aus Prüfungen.", "Er verbindet Theorie mit praktischer Erfahrung.", "Er findet nur online statt.", "Er richtet sich ausschließlich an Professoren."],
+    "correct_index": 1,
+    "explanation": "Der Kurs verbindet theoretische Grundlagen mit praktischer Projektarbeit.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Ein Geschäft senkt seine Preise für eine Woche. Viele Kunden kommen deshalb, um Produkte zu kaufen. Warum kommen viele Kunden?",
+    "choices": ["Weil das Geschäft geschlossen ist.", "Weil die Produkte günstiger sind.", "Weil die Öffnungszeiten kürzer sind.", "Weil es keine Produkte gibt."],
+    "correct_index": 1,
+    "explanation": "Die Kunden reagieren auf die vorübergehend niedrigeren Preise.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Ein Arzt empfiehlt seinem Patienten, regelmäßig Sport zu treiben und auf eine ausgewogene Ernährung zu achten. Was möchte der Arzt wahrscheinlich erreichen?",
+    "choices": ["Die Gesundheit des Patienten verbessern.", "Den Patienten vom Arbeiten abhalten.", "Die Ernährung vollständig verbieten.", "Den Patienten zu einer Reise bewegen."],
+    "correct_index": 0,
+    "explanation": "Sport und ausgewogene Ernährung können zur Verbesserung der Gesundheit beitragen.",
+    "question_type": "comprehension",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest in einer Diskussion höflich widersprechen. Welche Formulierung passt am besten?",
+    "choices": ["Das ist kompletter Unsinn.", "Ich sehe das etwas anders.", "Du hast überhaupt keine Ahnung.", "Das stimmt niemals."],
+    "correct_index": 1,
+    "explanation": "„Ich sehe das etwas anders“ ermöglicht einen höflichen Widerspruch.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest in einer Besprechung einen Vorschlag machen. Was kannst du sagen?",
+    "choices": ["Ich hätte einen Vorschlag zu diesem Thema.", "Das ist mir völlig egal.", "Ich möchte die Besprechung verlassen.", "Ich habe nichts verstanden."],
+    "correct_index": 0,
+    "explanation": "„Ich hätte einen Vorschlag zu diesem Thema“ ist eine passende Formulierung für einen Vorschlag.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest höflich darum bitten, dass jemand seine Aussage genauer erklärt. Was sagst du?",
+    "choices": ["Das verstehe ich überhaupt nicht.", "Könnten Sie das bitte etwas genauer erklären?", "Sagen Sie einfach irgendetwas.", "Das ist nicht mein Problem."],
+    "correct_index": 1,
+    "explanation": "Die zweite Formulierung ist höflich und bittet um eine genauere Erklärung.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Ein Kollege bittet dich um Hilfe, aber du bist gerade beschäftigt. Welche Antwort ist höflich?",
+    "choices": ["Nein, mach es selbst.", "Ich habe keine Lust.", "Ich helfe dir gerne, sobald ich damit fertig bin.", "Das interessiert mich nicht."],
+    "correct_index": 2,
+    "explanation": "Die dritte Antwort lehnt die Hilfe nicht ab, sondern erklärt höflich, wann sie möglich ist.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest in einer Diskussion auf einen wichtigen Punkt zurückkommen. Was sagst du?",
+    "choices": ["Ich möchte noch einmal auf diesen Punkt zurückkommen.", "Vergessen wir alles.", "Ich habe keine Meinung.", "Das Thema ist bereits geschlossen."],
+    "correct_index": 0,
+    "explanation": "Die erste Formulierung wird verwendet, um einen früheren Punkt erneut aufzugreifen.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Du möchtest deine Meinung vorsichtig ausdrücken, ohne sie als absolute Tatsache darzustellen. Was passt?",
+    "choices": ["Das ist definitiv die einzige Wahrheit.", "Meiner Ansicht nach könnte das eine gute Lösung sein.", "Jeder muss genau so denken.", "Es gibt keine andere Möglichkeit."],
+    "correct_index": 1,
+    "explanation": "„Meiner Ansicht nach könnte ...“ drückt eine persönliche und vorsichtige Meinung aus.",
+    "question_type": "functional_language",
+    "is_active": true
+  },
+  {
+    "question": "Das Projekt wurde früher als erwartet ___.",
+    "choices": ["abgeschlossen", "abschließen", "abschloss", "abschließend"],
+    "correct_index": 0,
+    "explanation": "Nach „wurde“ wird im Passiv das Partizip II „abgeschlossen“ verwendet.",
+    "question_type": "grammar",
+    "is_active": true
+  }
+]
