@@ -53,18 +53,23 @@ class _PlacementTestPageState extends State<PlacementTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    final code = widget.languageController.locale.languageCode;
-    final title = controller.isQuizMode
-        ? _confirmationTitle(code)
-        : _placementTitle(code);
+    return AnimatedBuilder(
+      animation: widget.languageController,
+      builder: (context, _) {
+        final code = widget.languageController.locale.languageCode;
+        final title = controller.isQuizMode
+            ? _confirmationTitle(code)
+            : _placementTitle(code);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: PlacementTestView(
-        controller: controller,
-        themeController: widget.themeController,
-        languageController: widget.languageController,
-      ),
+        return Scaffold(
+          appBar: AppBar(title: Text(title)),
+          body: PlacementTestView(
+            controller: controller,
+            themeController: widget.themeController,
+            languageController: widget.languageController,
+          ),
+        );
+      },
     );
   }
 
