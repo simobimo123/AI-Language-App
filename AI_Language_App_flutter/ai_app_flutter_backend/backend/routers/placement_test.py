@@ -2,7 +2,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -359,83 +358,6 @@ def evaluate_placement_words_secure(
     )
 
 
-class LegacyPlacementWordEvaluationRequest(BaseModel):
-    language: str = Field(min_length=2, max_length=10)
-    level: str = Field(min_length=2, max_length=10)
-    presented_word_ids: list[int] = Field(
-        min_length=WORDS_PER_LEVEL,
-        max_length=WORDS_PER_LEVEL,
-    )
-    selected_word_ids: list[int] = Field(
-        default_factory=list,
-        max_length=WORDS_PER_LEVEL,
-    )
-
-
-@router.post("/words/evaluate", response_model=PlacementWordEvaluationResponse)
-def evaluate_placement_words_legacy(
-    request: LegacyPlacementWordEvaluationRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    language = normalize_language(request.language)
-    level = normalize_level(request.level)
-
-    if level == "PRE_A1":
-        raise HTTPException(
-            status_code=400,
-            detail="PRE_A1 does not use a vocabulary test.",
-        )
-
-    presented_ids = list(dict.fromkeys(request.presented_word_ids))
-    selected_ids = list(dict.fromkeys(request.selected_word_ids))
-
-    if len(presented_ids) != WORDS_PER_LEVEL:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Exactly {WORDS_PER_LEVEL} presented word IDs are required.",
-        )
-
-    presented_id_set = set(presented_ids)
-    if any(word_id not in presented_id_set for word_id in selected_ids):
-        raise HTTPException(
-            status_code=400,
-            detail="One or more selected word IDs were not part of the presented test.",
-        )
-
-    statement = select(PlacementVocabulary).where(
-        PlacementVocabulary.id.in_(presented_ids),
-        PlacementVocabulary.language == language,
-        PlacementVocabulary.level == level,
-        PlacementVocabulary.is_active.is_(True),
-    )
-    presented_words = db.execute(statement).scalars().all()
-
-    if len(presented_words) != WORDS_PER_LEVEL:
-        raise HTTPException(
-            status_code=400,
-            detail="The presented word IDs do not form a valid 20-word test.",
-        )
-
-    known_words = len(set(selected_ids))
-    total_words = WORDS_PER_LEVEL
-    percentage = known_words / total_words * 100.0
-    passed = percentage >= PASS_THRESHOLD
-    preliminary_level = level if passed else calculate_previous_level(level)
-    next_level = calculate_next_level(level) if passed else None
-
-    return PlacementWordEvaluationResponse(
-        language=language,
-        level=level,
-        total_words=total_words,
-        known_words=known_words,
-        percentage=round(percentage, 2),
-        passed=passed,
-        next_level=next_level,
-        preliminary_level=preliminary_level,
-    )
-
-
 class FinalizePlacementAttemptRequest(BaseModel):
     attempt_id: int = Field(ge=1)
 
@@ -500,24 +422,6 @@ def finalize_placement_attempt(
         language=profile.language,
         level=profile.level,
         progress=profile.progress,
-    )
-
-
-class LegacyFinalizePlacementRequest(BaseModel):
-    attempt_id: int = Field(ge=1)
-
-
-@router.post("/finalize", response_model=PlacementFinalizeResponse)
-def finalize_placement_legacy(
-    request: LegacyFinalizePlacementRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return finalize_placement_attempt(
-        attempt_id=request.attempt_id,
-        request=FinalizePlacementAttemptRequest(attempt_id=request.attempt_id),
-        current_user=current_user,
-        db=db,
     )
 
 
