@@ -49,6 +49,10 @@ class LearningRepository {
     return apiService.getLearningPath();
   }
 
+  Future<Map<String, dynamic>> getLessonContent({required int lessonId}) {
+    return apiService.getLessonContent(lessonId: lessonId);
+  }
+
   Future<Map<String, dynamic>> completeLesson({
     required int lessonId,
     double score = 100,
