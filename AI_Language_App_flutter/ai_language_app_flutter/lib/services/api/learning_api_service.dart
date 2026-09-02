@@ -161,6 +161,53 @@ class LearningApiService {
     );
   }
 
+  Future<Map<String, dynamic>> getLessonAssessment({
+    required int lessonId,
+  }) async {
+    final response = await client.get(
+      '/learning/lessons/$lessonId/assessment',
+      authenticated: true,
+    );
+
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(
+      data,
+      'Failed to get lesson assessment',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<Map<String, dynamic>> submitLessonAssessment({
+    required int lessonId,
+    required List<Map<String, String>> answers,
+  }) async {
+    final response = await client.post(
+      '/learning/lessons/$lessonId/assessment',
+      authenticated: true,
+      headers: client.jsonHeaders,
+      body: jsonEncode({
+        'answers': answers,
+      }),
+    );
+
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(
+      data,
+      'Failed to submit lesson assessment',
+      statusCode: response.statusCode,
+    );
+  }
+
   Future<Map<String, dynamic>> completeLesson({
     required int lessonId,
     double score = 100,
