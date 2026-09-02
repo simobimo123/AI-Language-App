@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
-import '../models/lesson_content_model.dart';
+import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
-import '../core/language/language_controller.dart';
+import '../services/api/api_service.dart';
+import '../services/api/lesson_ai_api_service.dart';
 
 class LessonPage extends StatefulWidget {
   final LearningLessonModel lesson;
@@ -21,157 +22,409 @@ class LessonPage extends StatefulWidget {
   State<LessonPage> createState() => _LessonPageState();
 }
 
+class _TutorMessage {
+  final String role;
+  String text;
+
+  _TutorMessage({
+    required this.role,
+    required this.text,
+  });
+
+  bool get isUser => role == 'user';
+}
+
 class _LessonPageState extends State<LessonPage> {
   late final LearningRepository _repository;
+  late final ApiService _apiService;
 
-  LessonContentModel? _content;
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final List<_TutorMessage> _messages = [];
+
+  String? _conversationId;
   String? _error;
+  int? _dailyLimit;
+  int? _dailyRemaining;
+
   bool _loading = true;
+  bool _sending = false;
   bool _submitting = false;
-
-  int _currentExercise = 0;
-  int _correctAnswers = 0;
-
-  String? _selectedAnswer;
-  final TextEditingController _answerController = TextEditingController();
-  final List<String> _orderedWords = [];
-
-  bool _answerChecked = false;
-  bool _lastAnswerCorrect = false;
+  bool _lessonStarted = false;
 
   @override
   void initState() {
     super.initState();
 
     _repository = widget.repository ?? LearningRepository();
+    _apiService = ApiService();
 
-    _loadContent();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startTutor();
+    });
   }
 
   @override
   void dispose() {
-    _answerController.dispose();
+    _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadContent() async {
+  String _locale() {
+    return widget.languageController.locale.languageCode;
+  }
+
+  String _text({
+    required String ar,
+    required String en,
+    String? fr,
+    String? es,
+    String? de,
+    String? id,
+    String? it,
+    String? ja,
+    String? ko,
+    String? nl,
+    String? pl,
+    String? pt,
+    String? ru,
+    String? th,
+    String? tr,
+    String? uk,
+    String? vi,
+    String? zh,
+  }) {
+    switch (_locale()) {
+      case 'fr':
+        return fr ?? en;
+      case 'es':
+        return es ?? en;
+      case 'de':
+        return de ?? en;
+      case 'id':
+        return id ?? en;
+      case 'it':
+        return it ?? en;
+      case 'ja':
+        return ja ?? en;
+      case 'ko':
+        return ko ?? en;
+      case 'nl':
+        return nl ?? en;
+      case 'pl':
+        return pl ?? en;
+      case 'pt':
+        return pt ?? en;
+      case 'ru':
+        return ru ?? en;
+      case 'th':
+        return th ?? en;
+      case 'tr':
+        return tr ?? en;
+      case 'uk':
+        return uk ?? en;
+      case 'vi':
+        return vi ?? en;
+      case 'zh':
+        return zh ?? en;
+      case 'ar':
+      default:
+        return ar;
+    }
+  }
+
+  String _pageTitle() {
+    return _text(
+      ar: 'الدرس ${widget.lesson.lessonOrder}',
+      en: 'Lesson ${widget.lesson.lessonOrder}',
+      fr: 'Leçon ${widget.lesson.lessonOrder}',
+      es: 'Lección ${widget.lesson.lessonOrder}',
+      de: 'Lektion ${widget.lesson.lessonOrder}',
+      it: 'Lezione ${widget.lesson.lessonOrder}',
+      ja: 'レッスン ${widget.lesson.lessonOrder}',
+      ko: '레슨 ${widget.lesson.lessonOrder}',
+      zh: '课程 ${widget.lesson.lessonOrder}',
+    );
+  }
+
+  String _subtitle() {
+    return _text(
+      ar: widget.lesson.title,
+      en: widget.lesson.title,
+      fr: widget.lesson.title,
+      es: widget.lesson.title,
+    );
+  }
+
+  String _inputHint() {
+    return _text(
+      ar: 'اكتب إجابتك...',
+      en: 'Write your answer...',
+      fr: 'Écrivez votre réponse...',
+      es: 'Escribe tu respuesta...',
+      de: 'Schreibe deine Antwort...',
+      it: 'Scrivi la tua risposta...',
+      ja: '答えを入力...',
+      ko: '답변을 입력하세요...',
+      zh: '输入你的回答...',
+    );
+  }
+
+  String _sendLabel() {
+    return _text(
+      ar: 'إرسال',
+      en: 'Send',
+      fr: 'Envoyer',
+      es: 'Enviar',
+      de: 'Senden',
+      it: 'Invia',
+      ja: '送信',
+      ko: '보내기',
+      zh: '发送',
+    );
+  }
+
+  String _finishLabel() {
+    return _text(
+      ar: 'إنهاء الدرس',
+      en: 'Finish lesson',
+      fr: 'Terminer la leçon',
+      es: 'Terminar lección',
+      de: 'Lektion beenden',
+      it: 'Termina lezione',
+      ja: 'レッスンを終了',
+      ko: '레슨 완료',
+      zh: '完成课程',
+    );
+  }
+
+  String _startingLabel() {
+    return _text(
+      ar: 'يبدأ المدرّس الذكي الدرس...',
+      en: 'Your AI tutor is starting the lesson...',
+      fr: 'Votre tuteur IA démarre la leçon...',
+      es: 'Tu tutor de IA está iniciando la lección...',
+      de: 'Dein KI-Tutor startet die Lektion...',
+      it: 'Il tuo tutor IA sta iniziando la lezione...',
+      ja: 'AIチューターがレッスンを開始しています...',
+      ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
+      zh: 'AI 导师正在开始课程...',
+    );
+  }
+
+  String _errorLabel() {
+    return _text(
+      ar: 'حدث خطأ أثناء الاتصال بالمدرّس الذكي.',
+      en: 'Something went wrong while connecting to the AI tutor.',
+      fr: 'Une erreur est survenue avec le tuteur IA.',
+      es: 'Ocurrió un error al conectar con el tutor de IA.',
+      de: 'Beim Verbinden mit dem KI-Tutor ist ein Fehler aufgetreten.',
+      it: 'Si è verificato un errore con il tutor IA.',
+      ja: 'AIチューターへの接続中にエラーが発生しました。',
+      ko: 'AI 튜터 연결 중 오류가 발생했습니다.',
+      zh: '连接 AI 导师时发生错误。',
+    );
+  }
+
+  String _finishQuestion() {
+    return _text(
+      ar: 'هل تريد إنهاء هذا الدرس؟ سيتم تسجيله كمكتمل.',
+      en: 'Finish this lesson? It will be marked as completed.',
+      fr: 'Terminer cette leçon ? Elle sera marquée comme terminée.',
+      es: '¿Terminar esta lección? Se marcará como completada.',
+      de: 'Diese Lektion beenden? Sie wird als abgeschlossen markiert.',
+      it: 'Terminare questa lezione? Verrà segnata come completata.',
+      ja: 'このレッスンを終了しますか？完了として記録されます。',
+      ko: '이 레슨을 끝낼까요? 완료된 것으로 기록됩니다.',
+      zh: '完成这节课程吗？课程将被标记为已完成。',
+    );
+  }
+
+  String _cancelLabel() {
+    return _text(
+      ar: 'إلغاء',
+      en: 'Cancel',
+      fr: 'Annuler',
+      es: 'Cancelar',
+      de: 'Abbrechen',
+      it: 'Annulla',
+      ja: 'キャンセル',
+      ko: '취소',
+      zh: '取消',
+    );
+  }
+
+  String _confirmLabel() {
+    return _text(
+      ar: 'إنهاء',
+      en: 'Finish',
+      fr: 'Terminer',
+      es: 'Terminar',
+      de: 'Beenden',
+      it: 'Termina',
+      ja: '終了',
+      ko: '완료',
+      zh: '完成',
+    );
+  }
+
+  Future<void> _startTutor() async {
+    if (_lessonStarted || _sending) return;
+
     setState(() {
+      _lessonStarted = true;
       _loading = true;
       _error = null;
     });
 
-    try {
-      final data = await _repository.getLessonContent(
-        lessonId: widget.lesson.id,
-      );
+    await _sendMessage(
+      'START_LESSON',
+      showUserMessage: false,
+    );
+  }
 
-      if (!mounted) return;
+  Future<void> _sendCurrentMessage() async {
+    final message = _messageController.text.trim();
 
+    if (message.isEmpty || _sending || _submitting) return;
+
+    _messageController.clear();
+    await _sendMessage(message, showUserMessage: true);
+  }
+
+  Future<void> _sendMessage(
+    String message, {
+    required bool showUserMessage,
+  }) async {
+    if (_sending || _submitting) return;
+
+    if (showUserMessage) {
       setState(() {
-        _content = LessonContentModel.fromJson(data);
-        _loading = false;
+        _messages.add(
+          _TutorMessage(
+            role: 'user',
+            text: message,
+          ),
+        );
+        _error = null;
       });
+      _scrollToBottom();
+    }
+
+    setState(() {
+      _sending = true;
+      _loading = !showUserMessage;
+      _error = null;
+    });
+
+    var assistantIndex = -1;
+
+    try {
+      await for (final chunk in _apiService.lessonAiChat(
+        lessonId: widget.lesson.id,
+        message: message,
+        conversationId: _conversationId,
+      )) {
+        if (!mounted) return;
+
+        if (chunk.type == 'conversation' && chunk.conversationId != null) {
+          _conversationId = chunk.conversationId;
+        }
+
+        if (chunk.type == 'chunk' && chunk.text.isNotEmpty) {
+          if (assistantIndex == -1) {
+            _messages.add(
+              _TutorMessage(
+                role: 'assistant',
+                text: chunk.text,
+              ),
+            );
+            assistantIndex = _messages.length - 1;
+          } else {
+            _messages[assistantIndex].text += chunk.text;
+          }
+
+          setState(() {});
+          _scrollToBottom();
+        }
+
+        if (chunk.type == 'done') {
+          _conversationId = chunk.conversationId ?? _conversationId;
+          _dailyLimit = chunk.dailyLimit;
+          _dailyRemaining = chunk.dailyRemaining;
+        }
+
+        if (chunk.type == 'error') {
+          throw Exception(chunk.message ?? _errorLabel());
+        }
+      }
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _loading = false;
         _error = e.toString();
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_errorLabel())),
+      );
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        _sending = false;
+        _loading = false;
+      });
+
+      _scrollToBottom();
     }
   }
 
-  void _resetExercise() {
-    _selectedAnswer = null;
-    _answerController.clear();
-    _orderedWords.clear();
-    _answerChecked = false;
-    _lastAnswerCorrect = false;
-  }
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
 
-  String _normalize(String value) {
-    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
-  }
-
-  String _currentUserAnswer(LessonExercise exercise) {
-    if (exercise.type == 'multiple_choice') {
-      return _selectedAnswer ?? '';
-    }
-
-    if (exercise.type == 'word_order') {
-      return _orderedWords.join(' ');
-    }
-
-    return _answerController.text;
-  }
-
-  void _checkAnswer() {
-    final content = _content;
-
-    if (content == null ||
-        _answerChecked ||
-        content.exercises.isEmpty ||
-        _currentExercise >= content.exercises.length) {
-      return;
-    }
-
-    final exercise = content.exercises[_currentExercise];
-
-    final userAnswer = _currentUserAnswer(exercise);
-
-    if (userAnswer.trim().isEmpty) {
-      return;
-    }
-
-    final isCorrect =
-        _normalize(userAnswer) == _normalize(exercise.answer);
-
-    setState(() {
-      _answerChecked = true;
-      _lastAnswerCorrect = isCorrect;
-
-      if (isCorrect) {
-        _correctAnswers++;
-      }
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     });
   }
 
-  Future<void> _nextExercise() async {
-    final content = _content;
+  Future<void> _finishLesson() async {
+    if (_submitting || _sending) return;
 
-    if (content == null || !_answerChecked) {
-      return;
-    }
+    final shouldFinish = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_finishLabel()),
+        content: Text(_finishQuestion()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(_cancelLabel()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(_confirmLabel()),
+          ),
+        ],
+      ),
+    );
 
-    if (_currentExercise < content.exercises.length - 1) {
-      setState(() {
-        _currentExercise++;
-        _resetExercise();
-      });
-
-      return;
-    }
-
-    await _completeLesson();
-  }
-
-  Future<void> _completeLesson() async {
-    if (_submitting) return;
+    if (shouldFinish != true || !mounted) return;
 
     setState(() {
       _submitting = true;
+      _error = null;
     });
 
     try {
-      final total = _content?.exercises.length ?? 0;
-
-      final score = total == 0
-          ? 0
-          : ((_correctAnswers / total) * 100).round();
-
       await _repository.completeLesson(
         lessonId: widget.lesson.id,
-        score: score.toDouble(),
+        score: 100,
       );
 
       if (!mounted) return;
@@ -186,547 +439,109 @@ class _LessonPageState extends State<LessonPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to complete lesson: $e',
+        SnackBar(content: Text(_errorLabel())),
+      );
+    }
+  }
+
+  Widget _buildMessage(
+    _TutorMessage message,
+    ThemeData theme,
+  ) {
+    final isUser = message.isUser;
+
+    return Align(
+      alignment: isUser ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 620),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: isUser
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          message.text,
+          textDirection: _textDirection(message.text),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            height: 1.45,
           ),
         ),
-      );
-    }
-  }
-
-  String _pageTitle() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Leçon';
-      case 'es':
-        return 'Lección';
-      case 'zh':
-        return '课程';
-      case 'ja':
-        return 'レッスン';
-      case 'ko':
-        return '레슨';
-      case 'en':
-        return 'Lesson';
-      case 'ar':
-      default:
-        return 'الدرس';
-    }
-  }
-
-  String _loadingText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Chargement de la leçon...';
-      case 'es':
-        return 'Cargando la lección...';
-      case 'zh':
-        return '正在加载课程...';
-      case 'ja':
-        return 'レッスンを読み込んでいます...';
-      case 'ko':
-        return '레슨을 불러오는 중...';
-      case 'en':
-        return 'Loading lesson...';
-      case 'ar':
-      default:
-        return 'جارٍ تحميل الدرس...';
-    }
-  }
-
-  String _retryText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Réessayer';
-      case 'es':
-        return 'Reintentar';
-      case 'zh':
-        return '重试';
-      case 'ja':
-        return '再試行';
-      case 'ko':
-        return '다시 시도';
-      case 'en':
-        return 'Retry';
-      case 'ar':
-      default:
-        return 'إعادة المحاولة';
-    }
-  }
-
-  String _startText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Exercices';
-      case 'es':
-        return 'Ejercicios';
-      case 'zh':
-        return '练习';
-      case 'ja':
-        return '練習';
-      case 'ko':
-        return '연습';
-      case 'en':
-        return 'Exercises';
-      case 'ar':
-      default:
-        return 'التمارين';
-    }
-  }
-
-  String _checkText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Vérifier';
-      case 'es':
-        return 'Comprobar';
-      case 'zh':
-        return '检查';
-      case 'ja':
-        return '確認';
-      case 'ko':
-        return '확인';
-      case 'en':
-        return 'Check';
-      case 'ar':
-      default:
-        return 'تحقق';
-    }
-  }
-
-  String _nextText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Suivant';
-      case 'es':
-        return 'Siguiente';
-      case 'zh':
-        return '下一题';
-      case 'ja':
-        return '次へ';
-      case 'ko':
-        return '다음';
-      case 'en':
-        return 'Next';
-      case 'ar':
-      default:
-        return 'التالي';
-    }
-  }
-
-  String _finishText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Terminer';
-      case 'es':
-        return 'Terminar';
-      case 'zh':
-        return '完成';
-      case 'ja':
-        return '完了';
-      case 'ko':
-        return '완료';
-      case 'en':
-        return 'Finish';
-      case 'ar':
-      default:
-        return 'إنهاء';
-    }
-  }
-
-  String _correctText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Correct !';
-      case 'es':
-        return '¡Correcto!';
-      case 'zh':
-        return '正确！';
-      case 'ja':
-        return '正解！';
-      case 'ko':
-        return '정답입니다!';
-      case 'en':
-        return 'Correct!';
-      case 'ar':
-      default:
-        return 'إجابة صحيحة!';
-    }
-  }
-
-  String _incorrectText() {
-    final locale = widget.languageController.locale.languageCode;
-
-    switch (locale) {
-      case 'fr':
-        return 'Incorrect';
-      case 'es':
-        return 'Incorrecto';
-      case 'zh':
-        return '不正确';
-      case 'ja':
-        return '不正解';
-      case 'ko':
-        return '오답입니다';
-      case 'en':
-        return 'Incorrect';
-      case 'ar':
-      default:
-        return 'إجابة غير صحيحة';
-    }
-  }
-
-  Widget _buildVocabulary(
-    LessonContentModel content,
-    ThemeData theme,
-  ) {
-    if (content.vocabulary.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Vocabulary',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...content.vocabulary.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.word,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        item.translation,
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildExamples(
-    LessonContentModel content,
-    ThemeData theme,
-  ) {
-    if (content.examples.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Examples',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...content.examples.map(
-              (example) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      example.targetText,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      example.translation,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  TextDirection _textDirection(String text) {
+    final arabic = RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+    return arabic ? TextDirection.rtl : TextDirection.ltr;
   }
 
-  Widget _buildDialogue(
-    LessonContentModel content,
-    ThemeData theme,
-  ) {
-    if (content.dialogue.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
+  Widget _buildComposer(ThemeData theme) {
+    return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              'Dialogue',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...content.dialogue.map(
-              (line) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      line.targetText,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(line.translation),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExerciseInput(LessonExercise exercise) {
-    if (exercise.type == 'multiple_choice') {
-      return RadioGroup<String>(
-        groupValue: _selectedAnswer,
-        onChanged: (String? value) {
-          if (_answerChecked) return;
-          setState(() {
-            _selectedAnswer = value;
-          });
-        },
-        child: Column(
-          children: exercise.options.map((option) {
-            return RadioListTile<String>(
-              value: option,
-              title: Text(option),
-              contentPadding: EdgeInsets.zero,
-            );
-          }).toList(),
-        ),
-      );
-    }
-
-    if (exercise.type == 'word_order') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_orderedWords.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _orderedWords.join(' '),
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: exercise.options.map((word) {
-              final used = _orderedWords.contains(word);
-
-              return OutlinedButton(
-                onPressed: _answerChecked || used
-                    ? null
-                    : () {
-                        setState(() {
-                          _orderedWords.add(word);
-                        });
-                      },
-                child: Text(word),
-              );
-            }).toList(),
-          ),
-          if (_orderedWords.isNotEmpty && !_answerChecked)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: TextButton(
-                onPressed: () {
-                  setState(() {
-                    _orderedWords.clear();
-                  });
-                },
-                child: const Text('Clear'),
-              ),
-            ),
-        ],
-      );
-    }
-
-    return TextField(
-      controller: _answerController,
-      enabled: !_answerChecked,
-      maxLines: exercise.type == 'translation' ? 3 : 1,
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        hintText: 'Type your answer',
-      ),
-    );
-  }
-
-  Widget _buildExercise(
-    LessonContentModel content,
-    ThemeData theme,
-  ) {
-    if (content.exercises.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final exercise = content.exercises[_currentExercise];
-    final total = content.exercises.length;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _startText(),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                enabled: !_sending && !_submitting,
+                minLines: 1,
+                maxLines: 5,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendCurrentMessage(),
+                decoration: InputDecoration(
+                  hintText: _inputHint(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                 ),
-                Text(
-                  '${_currentExercise + 1} / $total',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              onPressed: _sending || _submitting
+                  ? null
+                  : _sendCurrentMessage,
+              tooltip: _sendLabel(),
+              icon: const Icon(Icons.send_rounded),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.smart_toy_outlined,
+              size: 56,
             ),
             const SizedBox(height: 16),
-            LinearProgressIndicator(
-              value: (_currentExercise + 1).toDouble() / total,
-            ),
-            const SizedBox(height: 20),
             Text(
-              exercise.question,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              _startingLabel(),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
-            _buildExerciseInput(exercise),
-            const SizedBox(height: 16),
-            if (_answerChecked)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _lastAnswerCorrect
-                          ? _correctText()
-                          : _incorrectText(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: _lastAnswerCorrect
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                    ),
-                    if (!_lastAnswerCorrect)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          'Correct answer: ${exercise.answer}',
-                        ),
-                      ),
-                    if (exercise.explanation != null &&
-                        exercise.explanation!.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          exercise.explanation!,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitting
-                    ? null
-                    : _answerChecked
-                        ? _nextExercise
-                        : _checkAnswer,
-                child: Text(
-                  _answerChecked
-                      ? (_currentExercise == total - 1
-                          ? _finishText()
-                          : _nextText())
-                      : _checkText(),
-                ),
-              ),
-            ),
+            const CircularProgressIndicator(),
           ],
         ),
       ),
@@ -736,139 +551,101 @@ class _LessonPageState extends State<LessonPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    if (_loading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(_pageTitle()),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(_loadingText()),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(_pageTitle()),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadContent,
-                  child: Text(_retryText()),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    final content = _content;
-
-    if (content == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(_pageTitle()),
-        ),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: _loadContent,
-            child: Text(_retryText()),
-          ),
-        ),
-      );
-    }
+    final isRtl = _locale() == 'ar';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          content.title.isNotEmpty ? content.title : _pageTitle(),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadContent,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        titleSpacing: 16,
+        title: Column(
+          crossAxisAlignment:
+              isRtl ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            if (content.objective.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        content.objective,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            Text(
+              _pageTitle(),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            if (_subtitle().isNotEmpty)
+              Text(
+                _subtitle(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
               ),
-            if (content.introduction.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    content.introduction,
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                ),
-              ),
-            ],
-            if (content.explanation.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    content.explanation,
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            _buildVocabulary(content, theme),
-            const SizedBox(height: 12),
-            _buildExamples(content, theme),
-            const SizedBox(height: 12),
-            _buildDialogue(content, theme),
-            const SizedBox(height: 12),
-            _buildExercise(content, theme),
-            const SizedBox(height: 24),
           ],
         ),
+        actions: [
+          if (_dailyRemaining != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 4),
+              child: Center(
+                child: Text(
+                  '$_dailyRemaining/${_dailyLimit ?? ''}',
+                  style: theme.textTheme.labelMedium,
+                ),
+              ),
+            ),
+          IconButton(
+            onPressed: _sending || _submitting ? null : _finishLesson,
+            tooltip: _finishLabel(),
+            icon: const Icon(Icons.check_circle_outline_rounded),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _messages.isEmpty && _loading
+                ? _buildEmptyState(theme)
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                    itemCount: _messages.length + (_sending ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index >= _messages.length) {
+                        return Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(_startingLabel()),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return _buildMessage(
+                        _messages[index],
+                        theme,
+                      );
+                    },
+                  ),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                _errorLabel(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
+          _buildComposer(theme),
+        ],
       ),
     );
   }
 }
-
-
