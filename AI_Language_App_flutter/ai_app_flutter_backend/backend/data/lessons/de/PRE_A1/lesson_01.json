@@ -1,16 +1,89 @@
 {
+  "schema_version": 2,
   "lesson_id": "de_pre_a1_lesson_01",
   "language": "de",
   "level": "PRE_A1",
   "lesson_order": 1,
-  "instruction_language": "ar",
+
   "metadata": {
-    "title": "الأصوات والقراءة الأولى",
-    "title_target": "Laute und erstes Lesen",
-    "objective": "التعرف على أهم أصوات وأنماط القراءة الألمانية وقراءة كلمات ألمانية قصيرة جدًا.",
     "estimated_minutes": 15,
-    "difficulty": "PRE_A1"
+    "difficulty": "PRE_A1",
+    "translations": {
+      "ar": {
+        "title": "الأصوات والقراءة الأولى",
+        "objective": "التعرف على أهم أصوات وأنماط القراءة الألمانية وقراءة كلمات ألمانية قصيرة جدًا."
+      },
+      "en": {
+        "title": "Sounds and First Reading",
+        "objective": "Recognize important German sounds and reading patterns and read very short German words."
+      },
+      "fr": {
+        "title": "Les sons et la première lecture",
+        "objective": "Reconnaître les principaux sons et modèles de lecture allemands et lire de très courts mots allemands."
+      },
+      "es": {
+        "title": "Sonidos y primeras lecturas",
+        "objective": "Reconocer sonidos y patrones básicos de lectura del alemán y leer palabras alemanas muy cortas."
+      },
+      "de": {
+        "title": "Laute und erstes Lesen",
+        "objective": "Wichtige deutsche Laute und Lesemuster erkennen und sehr kurze deutsche Wörter lesen."
+      },
+      "it": {
+        "title": "Suoni e prime letture",
+        "objective": "Riconoscere i principali suoni e modelli di lettura tedeschi e leggere parole tedesche molto brevi."
+      },
+      "pt": {
+        "title": "Sons e primeiras leituras",
+        "objective": "Reconhecer sons e padrões básicos de leitura do alemão e ler palavras alemãs muito curtas."
+      },
+      "nl": {
+        "title": "Klanken en eerste lezen",
+        "objective": "Belangrijke Duitse klanken en leespatronen herkennen en zeer korte Duitse woorden lezen."
+      },
+      "pl": {
+        "title": "Dźwięki i pierwsze czytanie",
+        "objective": "Rozpoznawać najważniejsze niemieckie dźwięki i wzorce czytania oraz czytać bardzo krótkie niemieckie słowa."
+      },
+      "ru": {
+        "title": "Звуки и первое чтение",
+        "objective": "Познакомиться с основными немецкими звуками и правилами чтения и читать очень короткие немецкие слова."
+      },
+      "uk": {
+        "title": "Звуки та перше читання",
+        "objective": "Розпізнавати основні німецькі звуки та моделі читання і читати дуже короткі німецькі слова."
+      },
+      "tr": {
+        "title": "Sesler ve İlk Okuma",
+        "objective": "Temel Almanca sesleri ve okuma kalıplarını tanımak ve çok kısa Almanca kelimeleri okumak."
+      },
+      "id": {
+        "title": "Bunyi dan Bacaan Pertama",
+        "objective": "Mengenali bunyi dan pola bacaan penting dalam bahasa Jerman serta membaca kata-kata Jerman yang sangat pendek."
+      },
+      "vi": {
+        "title": "Âm thanh và bài đọc đầu tiên",
+        "objective": "Nhận biết các âm và mẫu đọc quan trọng trong tiếng Đức và đọc những từ tiếng Đức rất ngắn."
+      },
+      "th": {
+        "title": "เสียงและการอ่านครั้งแรก",
+        "objective": "รู้จักเสียงและรูปแบบการอ่านภาษาเยอรมันที่สำคัญ และอ่านคำภาษาเยอรมันสั้น ๆ ได้"
+      },
+      "ja": {
+        "title": "音と最初の読み方",
+        "objective": "ドイツ語の基本的な音と読み方のパターンを知り、とても短いドイツ語の単語を読む。"
+      },
+      "ko": {
+        "title": "소리와 첫 읽기",
+        "objective": "독일어의 기본 소리와 읽기 패턴을 익히고 매우 짧은 독일어 단어를 읽습니다."
+      },
+      "zh": {
+        "title": "声音与第一次阅读",
+        "objective": "认识重要的德语发音和阅读模式，并阅读非常短的德语单词。"
+      }
+    }
   },
+
   "sections": [
     {
       "id": "de_pre_a1_l01_s01",
@@ -18,413 +91,774 @@
       "type": "explanation",
       "content": {
         "target_text": "a – e – i – o – u",
-        "translation": "حروف العلة الأساسية: a و e و i و o و u",
-        "pronunciation": "آ / إِ-أَيْ / إي / أو / أوو",
-        "explanation": "سنبدأ بأصوات بسيطة جدًا. لا نحتاج إلى دراسة القواعد الآن؛ الهدف هو التعرف على شكل الحرف وصوته داخل الكلمة."
+        "pronunciation": "a – e – i – o – u"
+      },
+      "translations": {
+        "ar": {
+          "translation": "حروف العلة الأساسية: a و e و i و o و u",
+          "pronunciation": "آ / إِ-أَيْ / إي / أو / أوو",
+          "explanation": "سنبدأ بأصوات بسيطة جدًا. لا نحتاج إلى دراسة القواعد الآن؛ الهدف هو التعرف على شكل الحرف وصوته داخل الكلمة."
+        },
+        "en": {
+          "translation": "The basic vowels: a, e, i, o and u.",
+          "pronunciation": "a / e / i / o / u",
+          "explanation": "We begin with very simple sounds. We do not need grammar yet; the goal is to recognize the letter shape and its sound inside a word."
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s02",
       "order": 2,
       "type": "reading_pattern",
       "content": {
         "target_text": "sch",
-        "translation": "صوت قريب من «ش»",
-        "pronunciation": "ش",
-        "examples": [
-          {
-            "target_text": "Schule",
-            "translation": "مدرسة",
-            "pronunciation": "شوله"
-          }
-        ],
-        "explanation": "عندما نرى sch في الألمانية يكون الصوت عادة قريبًا من «ش»."
+        "pronunciation": "sch"
+      },
+      "translations": {
+        "ar": {
+          "translation": "صوت قريب من «ش»",
+          "pronunciation": "ش",
+          "explanation": "عندما نرى sch في الألمانية يكون الصوت عادة قريبًا من «ش».",
+          "examples": [
+            {
+              "target_text": "Schule",
+              "translation": "مدرسة",
+              "pronunciation": "شوله"
+            }
+          ]
+        },
+        "en": {
+          "translation": "A sound similar to English \"sh\".",
+          "pronunciation": "sh",
+          "explanation": "In German, sch is usually pronounced with a sound similar to \"sh\".",
+          "examples": [
+            {
+              "target_text": "Schule",
+              "translation": "school",
+              "pronunciation": "shoo-luh"
+            }
+          ]
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s03",
       "order": 3,
       "type": "reading_pattern",
       "content": {
         "target_text": "ei",
-        "translation": "نمط صوتي شائع",
-        "pronunciation": "آي",
-        "examples": [
-          {
-            "target_text": "mein",
-            "translation": "لي / خاصتي",
-            "pronunciation": "ماين"
-          }
-        ],
-        "explanation": "النمط ei يُنطق تقريبًا مثل «آي» في كلمات ألمانية كثيرة."
+        "pronunciation": "ei"
+      },
+      "translations": {
+        "ar": {
+          "translation": "نمط صوتي شائع",
+          "pronunciation": "آي",
+          "explanation": "النمط ei يُنطق تقريبًا مثل «آي» في كلمات ألمانية كثيرة.",
+          "examples": [
+            {
+              "target_text": "mein",
+              "translation": "لي / خاصتي",
+              "pronunciation": "ماين"
+            }
+          ]
+        },
+        "en": {
+          "translation": "A common German sound pattern.",
+          "pronunciation": "eye",
+          "explanation": "The pattern ei is commonly pronounced like \"eye\".",
+          "examples": [
+            {
+              "target_text": "mein",
+              "translation": "my",
+              "pronunciation": "mine"
+            }
+          ]
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s04",
       "order": 4,
       "type": "reading_pattern",
       "content": {
         "target_text": "ie",
-        "translation": "نمط صوتي شائع",
-        "pronunciation": "إي طويلة",
-        "examples": [
-          {
-            "target_text": "wie",
-            "translation": "كيف",
-            "pronunciation": "في"
-          }
-        ],
-        "explanation": "النمط ie يعطي غالبًا صوتًا طويلًا قريبًا من «إي»."
+        "pronunciation": "ie"
+      },
+      "translations": {
+        "ar": {
+          "translation": "نمط صوتي شائع",
+          "pronunciation": "إي طويلة",
+          "explanation": "النمط ie يعطي غالبًا صوتًا طويلًا قريبًا من «إي».",
+          "examples": [
+            {
+              "target_text": "wie",
+              "translation": "كيف",
+              "pronunciation": "في"
+            }
+          ]
+        },
+        "en": {
+          "translation": "A common German sound pattern.",
+          "pronunciation": "long ee",
+          "explanation": "The pattern ie usually produces a long \"ee\" sound.",
+          "examples": [
+            {
+              "target_text": "wie",
+              "translation": "how",
+              "pronunciation": "vee"
+            }
+          ]
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s05",
       "order": 5,
       "type": "reading_pattern",
       "content": {
         "target_text": "eu",
-        "translation": "نمط صوتي شائع",
-        "pronunciation": "أُوي تقريبًا",
-        "examples": [
-          {
-            "target_text": "neu",
-            "translation": "جديد",
-            "pronunciation": "نوي"
-          }
-        ],
-        "explanation": "النمط eu يُنطق تقريبًا مثل «أُوي»."
+        "pronunciation": "eu"
+      },
+      "translations": {
+        "ar": {
+          "translation": "نمط صوتي شائع",
+          "pronunciation": "أُوي تقريبًا",
+          "explanation": "النمط eu يُنطق تقريبًا مثل «أُوي».",
+          "examples": [
+            {
+              "target_text": "neu",
+              "translation": "جديد",
+              "pronunciation": "نوي"
+            }
+          ]
+        },
+        "en": {
+          "translation": "A common German sound pattern.",
+          "pronunciation": "oy",
+          "explanation": "The pattern eu is pronounced approximately like \"oy\".",
+          "examples": [
+            {
+              "target_text": "neu",
+              "translation": "new",
+              "pronunciation": "noy"
+            }
+          ]
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s06",
       "order": 6,
       "type": "reading_pattern",
       "content": {
         "target_text": "ch",
-        "translation": "صوت خاص في الألمانية",
-        "pronunciation": "صوت خفيف يختلف حسب الكلمة",
-        "examples": [
-          {
-            "target_text": "ich",
-            "translation": "أنا",
-            "pronunciation": "إِخ تقريبًا"
-          }
-        ],
-        "explanation": "الحرفان ch لهما نطق خاص في الألمانية. في هذه المرحلة يكفي التعرف عليهما في كلمة ich دون دراسة كل قواعد النطق."
+        "pronunciation": "ch"
+      },
+      "translations": {
+        "ar": {
+          "translation": "صوت خاص في الألمانية",
+          "pronunciation": "صوت خفيف يختلف حسب الكلمة",
+          "explanation": "الحرفان ch لهما نطق خاص في الألمانية. في هذه المرحلة يكفي التعرف عليهما في كلمة ich دون دراسة كل قواعد النطق.",
+          "examples": [
+            {
+              "target_text": "ich",
+              "translation": "أنا",
+              "pronunciation": "إِخ تقريبًا"
+            }
+          ]
+        },
+        "en": {
+          "translation": "A special German sound.",
+          "pronunciation": "a German ch sound",
+          "explanation": "The letters ch have a special pronunciation in German. At this stage, it is enough to recognize them in ich without learning all pronunciation rules.",
+          "examples": [
+            {
+              "target_text": "ich",
+              "translation": "I",
+              "pronunciation": "ikh, approximately"
+            }
+          ]
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s07",
       "order": 7,
       "type": "special_characters",
       "content": {
         "target_text": "ä – ö – ü – ß",
-        "translation": "أحرف ورمز خاصان بالألمانية",
-        "pronunciation": "ä و ö و ü أصوات خاصة، و ß يشبه ss في النطق في كلمات كثيرة",
-        "explanation": "سنرى هذه الرموز كثيرًا في الألمانية. لا نحتاج إلى حفظ قواعدها كاملة في هذا الدرس؛ المطلوب فقط التعرف على شكلها."
+        "pronunciation": "ä – ö – ü – ß"
+      },
+      "translations": {
+        "ar": {
+          "translation": "أحرف ورمز خاصان بالألمانية",
+          "pronunciation": "ä و ö و ü أصوات خاصة، و ß يشبه ss في النطق في كلمات كثيرة",
+          "explanation": "سنرى هذه الرموز كثيرًا في الألمانية. لا نحتاج إلى حفظ قواعدها كاملة في هذا الدرس؛ المطلوب فقط التعرف على شكلها."
+        },
+        "en": {
+          "translation": "Special German letters and symbol.",
+          "pronunciation": "special vowel sounds; ß is often similar to ss",
+          "explanation": "You will see these symbols often in German. We do not need to learn all their rules yet; for now, simply recognize their shapes."
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s08",
       "order": 8,
       "type": "reading_sequence",
       "content": {
         "target_text": "Ma-ma → Mama",
-        "translation": "ماما",
-        "pronunciation": "ماما",
-        "explanation": "نقسم الكلمة إلى مقاطع بسيطة ثم نقرأ الكلمة كاملة."
+        "pronunciation": "Mama"
+      },
+      "translations": {
+        "ar": {
+          "translation": "ماما",
+          "pronunciation": "ماما",
+          "explanation": "نقسم الكلمة إلى مقاطع بسيطة ثم نقرأ الكلمة كاملة."
+        },
+        "en": {
+          "translation": "Mom / Mum",
+          "pronunciation": "mama",
+          "explanation": "We divide the word into simple parts and then read the whole word."
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s09",
       "order": 9,
       "type": "reading_sequence",
       "content": {
         "target_text": "Pa-pa → Papa",
-        "translation": "بابا / الأب",
-        "pronunciation": "بابا",
-        "explanation": "الكلمة قصيرة ويمكن قراءتها مباشرة من المقاطع."
+        "pronunciation": "Papa"
+      },
+      "translations": {
+        "ar": {
+          "translation": "بابا / الأب",
+          "pronunciation": "بابا",
+          "explanation": "الكلمة قصيرة ويمكن قراءتها مباشرة من المقاطع البسيطة."
+        },
+        "en": {
+          "translation": "Dad / Father",
+          "pronunciation": "papa",
+          "explanation": "The word is short and can be read directly from its simple parts."
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s10",
       "order": 10,
       "type": "reading_sequence",
       "content": {
         "target_text": "O-ma → Oma",
-        "translation": "الجدة",
-        "pronunciation": "أوما",
-        "explanation": "هذه من الكلمات الأولى السهلة للقراءة."
+        "pronunciation": "Oma"
+      },
+      "translations": {
+        "ar": {
+          "translation": "الجدة",
+          "pronunciation": "أوما",
+          "explanation": "هذه من الكلمات الأولى السهلة للقراءة."
+        },
+        "en": {
+          "translation": "Grandma / Grandmother",
+          "pronunciation": "oh-ma",
+          "explanation": "This is one of the first easy words to read."
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s11",
       "order": 11,
       "type": "reading_sequence",
       "content": {
         "target_text": "O-pa → Opa",
-        "translation": "الجد",
-        "pronunciation": "أوبا",
-        "explanation": "نقرأ الكلمة من مقطعين بسيطين."
+        "pronunciation": "Opa"
+      },
+      "translations": {
+        "ar": {
+          "translation": "الجد",
+          "pronunciation": "أوبا",
+          "explanation": "نقرأ الكلمة من مقطعين بسيطين."
+        },
+        "en": {
+          "translation": "Grandpa / Grandfather",
+          "pronunciation": "oh-pa",
+          "explanation": "We read the word from two simple parts."
+        }
       }
     },
+
     {
       "id": "de_pre_a1_l01_s12",
       "order": 12,
       "type": "micro_review",
       "content": {
         "target_text": "Hallo! Mama. Papa. Mein Name.",
-        "translation": "مرحبًا! ماما. بابا. اسمي / اسمي هو...",
-        "pronunciation": "هالو! ماما. بابا. ماين نامه.",
-        "explanation": "هذه أمثلة قصيرة جدًا. بعض الكلمات هنا تظهر كأمثلة للقراءة فقط، وسيتم تقديمها كمفردات جديدة في الدروس المناسبة لاحقًا."
+        "pronunciation": "Hallo! Mama. Papa. Mein Name."
+      },
+      "translations": {
+        "ar": {
+          "translation": "مرحبًا! ماما. بابا. اسمي / اسمي هو...",
+          "pronunciation": "هالو! ماما. بابا. ماين نامه.",
+          "explanation": "هذه أمثلة قصيرة جدًا. بعض الكلمات هنا تظهر كأمثلة للقراءة فقط، وسيتم تقديمها كمفردات جديدة في الدروس المناسبة لاحقًا."
+        },
+        "en": {
+          "translation": "Hello! Mom. Dad. My name.",
+          "pronunciation": "Hello! Mama. Papa. Mine nah-muh.",
+          "explanation": "These are very short examples. Some words are shown only as reading examples and will be introduced as new vocabulary in appropriate later lessons."
+        }
       }
     }
   ],
+
   "vocabulary": [
     {
       "id": "de_pre_a1_001",
       "display_order": 1,
       "word": "Hallo",
-      "translation": "مرحبًا",
-      "pronunciation": "هالو",
-      "part_of_speech": "interjection"
+      "pronunciation": "Hallo",
+      "part_of_speech": "interjection",
+      "translations": {
+        "ar": {"translation": "مرحبًا"},
+        "en": {"translation": "hello"}
+      }
     },
     {
       "id": "de_pre_a1_002",
       "display_order": 2,
       "word": "Mama",
-      "translation": "ماما / الأم",
-      "pronunciation": "ماما",
-      "part_of_speech": "noun"
+      "pronunciation": "Mama",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "ماما / الأم"},
+        "en": {"translation": "mom / mother"}
+      }
     },
     {
       "id": "de_pre_a1_003",
       "display_order": 3,
       "word": "Papa",
-      "translation": "بابا / الأب",
-      "pronunciation": "بابا",
-      "part_of_speech": "noun"
+      "pronunciation": "Papa",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "بابا / الأب"},
+        "en": {"translation": "dad / father"}
+      }
     },
     {
       "id": "de_pre_a1_004",
       "display_order": 4,
       "word": "Oma",
-      "translation": "الجدة",
-      "pronunciation": "أوما",
-      "part_of_speech": "noun"
+      "pronunciation": "Oma",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "الجدة"},
+        "en": {"translation": "grandma / grandmother"}
+      }
     },
     {
       "id": "de_pre_a1_005",
       "display_order": 5,
       "word": "Opa",
-      "translation": "الجد",
-      "pronunciation": "أوبا",
-      "part_of_speech": "noun"
+      "pronunciation": "Opa",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "الجد"},
+        "en": {"translation": "grandpa / grandfather"}
+      }
     },
     {
       "id": "de_pre_a1_006",
       "display_order": 6,
       "word": "Name",
-      "translation": "اسم",
-      "pronunciation": "نامه",
-      "part_of_speech": "noun"
+      "pronunciation": "Name",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "اسم"},
+        "en": {"translation": "name"}
+      }
     },
     {
       "id": "de_pre_a1_007",
       "display_order": 7,
       "word": "Haus",
-      "translation": "بيت / منزل",
-      "pronunciation": "هاوس",
-      "part_of_speech": "noun"
+      "pronunciation": "Haus",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "بيت / منزل"},
+        "en": {"translation": "house / home"}
+      }
     },
     {
       "id": "de_pre_a1_008",
       "display_order": 8,
       "word": "Hand",
-      "translation": "يد",
-      "pronunciation": "هاند",
-      "part_of_speech": "noun"
+      "pronunciation": "Hand",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "يد"},
+        "en": {"translation": "hand"}
+      }
     },
     {
       "id": "de_pre_a1_009",
       "display_order": 9,
       "word": "Auto",
-      "translation": "سيارة",
-      "pronunciation": "آوتو",
-      "part_of_speech": "noun"
+      "pronunciation": "Auto",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "سيارة"},
+        "en": {"translation": "car"}
+      }
     },
     {
       "id": "de_pre_a1_010",
       "display_order": 10,
       "word": "Tag",
-      "translation": "يوم",
-      "pronunciation": "تاغ",
-      "part_of_speech": "noun"
+      "pronunciation": "Tag",
+      "part_of_speech": "noun",
+      "translations": {
+        "ar": {"translation": "يوم"},
+        "en": {"translation": "day"}
+      }
     }
   ],
+
   "exercises": [
     {
       "id": "de_pre_a1_l01_ex01",
       "order": 1,
       "type": "multiple_choice",
-      "question": "أي مجموعة حروف تعطي صوتًا قريبًا من «ش»؟",
-      "options": [
-        {"id": "a", "text": "sch"},
-        {"id": "b", "text": "ei"},
-        {"id": "c", "text": "ie"}
-      ],
-      "correct_answer": "a",
-      "explanation": "النمط sch يُنطق عادة بصوت قريب من «ش»."
+      "translations": {
+        "ar": {
+          "question": "أي مجموعة حروف تعطي صوتًا قريبًا من «ش»؟",
+          "options": [
+            {"id": "a", "text": "sch"},
+            {"id": "b", "text": "ei"},
+            {"id": "c", "text": "ie"}
+          ],
+          "explanation": "النمط sch يُنطق عادة بصوت قريب من «ش»."
+        },
+        "en": {
+          "question": "Which letter group produces a sound similar to \"sh\"?",
+          "options": [
+            {"id": "a", "text": "sch"},
+            {"id": "b", "text": "ei"},
+            {"id": "c", "text": "ie"}
+          ],
+          "explanation": "The pattern sch is usually pronounced with a sound similar to \"sh\"."
+        }
+      },
+      "correct_answer": "a"
     },
+
     {
       "id": "de_pre_a1_l01_ex02",
       "order": 2,
       "type": "multiple_choice",
-      "question": "أي كلمة تحتوي على النمط ei؟",
-      "options": [
-        {"id": "a", "text": "wie"},
-        {"id": "b", "text": "mein"},
-        {"id": "c", "text": "Schule"}
-      ],
-      "correct_answer": "b",
-      "explanation": "كلمة mein تحتوي على ei."
+      "translations": {
+        "ar": {
+          "question": "أي كلمة تحتوي على النمط ei؟",
+          "options": [
+            {"id": "a", "text": "wie"},
+            {"id": "b", "text": "mein"},
+            {"id": "c", "text": "Schule"}
+          ],
+          "explanation": "كلمة mein تحتوي على ei."
+        },
+        "en": {
+          "question": "Which word contains the pattern ei?",
+          "options": [
+            {"id": "a", "text": "wie"},
+            {"id": "b", "text": "mein"},
+            {"id": "c", "text": "Schule"}
+          ],
+          "explanation": "The word mein contains ei."
+        }
+      },
+      "correct_answer": "b"
     },
+
     {
       "id": "de_pre_a1_l01_ex03",
       "order": 3,
       "type": "multiple_choice",
-      "question": "أي كلمة تحتوي على النمط ie؟",
-      "options": [
-        {"id": "a", "text": "Tag"},
-        {"id": "b", "text": "mein"},
-        {"id": "c", "text": "wie"}
-      ],
-      "correct_answer": "c",
-      "explanation": "كلمة wie تحتوي على ie."
+      "translations": {
+        "ar": {
+          "question": "أي كلمة تحتوي على النمط ie؟",
+          "options": [
+            {"id": "a", "text": "Tag"},
+            {"id": "b", "text": "mein"},
+            {"id": "c", "text": "wie"}
+          ],
+          "explanation": "كلمة wie تحتوي على ie."
+        },
+        "en": {
+          "question": "Which word contains the pattern ie?",
+          "options": [
+            {"id": "a", "text": "Tag"},
+            {"id": "b", "text": "mein"},
+            {"id": "c", "text": "wie"}
+          ],
+          "explanation": "The word wie contains ie."
+        }
+      },
+      "correct_answer": "c"
     },
+
     {
       "id": "de_pre_a1_l01_ex04",
       "order": 4,
-      "type": "matching",
-      "question": "اختر معنى كلمة Mama.",
-      "options": [
-        {"id": "a", "text": "الأم / ماما"},
-        {"id": "b", "text": "الجد"},
-        {"id": "c", "text": "البيت"}
-      ],
-      "correct_answer": "a",
-      "explanation": "Mama تعني الأم أو ماما."
+      "type": "multiple_choice",
+      "translations": {
+        "ar": {
+          "question": "ما معنى كلمة Mama؟",
+          "options": [
+            {"id": "a", "text": "الأم / ماما"},
+            {"id": "b", "text": "الجد"},
+            {"id": "c", "text": "البيت"}
+          ],
+          "explanation": "Mama تعني الأم أو ماما."
+        },
+        "en": {
+          "question": "What does Mama mean?",
+          "options": [
+            {"id": "a", "text": "mother / mom"},
+            {"id": "b", "text": "grandfather"},
+            {"id": "c", "text": "house"}
+          ],
+          "explanation": "Mama means mother or mom."
+        }
+      },
+      "correct_answer": "a"
     },
+
     {
       "id": "de_pre_a1_l01_ex05",
       "order": 5,
       "type": "multiple_choice",
-      "question": "ماذا تعني Oma؟",
-      "options": [
-        {"id": "a", "text": "الأب"},
-        {"id": "b", "text": "الجدة"},
-        {"id": "c", "text": "اليد"}
-      ],
-      "correct_answer": "b",
-      "explanation": "Oma تعني الجدة."
+      "translations": {
+        "ar": {
+          "question": "ماذا تعني Oma؟",
+          "options": [
+            {"id": "a", "text": "الأب"},
+            {"id": "b", "text": "الجدة"},
+            {"id": "c", "text": "اليد"}
+          ],
+          "explanation": "Oma تعني الجدة."
+        },
+        "en": {
+          "question": "What does Oma mean?",
+          "options": [
+            {"id": "a", "text": "father"},
+            {"id": "b", "text": "grandmother"},
+            {"id": "c", "text": "hand"}
+          ],
+          "explanation": "Oma means grandmother."
+        }
+      },
+      "correct_answer": "b"
     },
+
     {
       "id": "de_pre_a1_l01_ex06",
       "order": 6,
       "type": "multiple_choice",
-      "question": "أي كلمة تبدأ بالنمط sch؟",
-      "options": [
-        {"id": "a", "text": "Schule"},
-        {"id": "b", "text": "Haus"},
-        {"id": "c", "text": "Auto"}
-      ],
-      "correct_answer": "a",
-      "explanation": "Schule تبدأ بالحروف sch."
+      "translations": {
+        "ar": {
+          "question": "أي كلمة تبدأ بالنمط sch؟",
+          "options": [
+            {"id": "a", "text": "Schule"},
+            {"id": "b", "text": "Haus"},
+            {"id": "c", "text": "Auto"}
+          ],
+          "explanation": "Schule تبدأ بالحروف sch."
+        },
+        "en": {
+          "question": "Which word begins with the pattern sch?",
+          "options": [
+            {"id": "a", "text": "Schule"},
+            {"id": "b", "text": "Haus"},
+            {"id": "c", "text": "Auto"}
+          ],
+          "explanation": "Schule begins with sch."
+        }
+      },
+      "correct_answer": "a"
     },
+
     {
       "id": "de_pre_a1_l01_ex07",
       "order": 7,
       "type": "multiple_choice",
-      "question": "ما النمط الموجود في كلمة mein؟",
-      "options": [
-        {"id": "a", "text": "ie"},
-        {"id": "b", "text": "eu"},
-        {"id": "c", "text": "ei"}
-      ],
-      "correct_answer": "c",
-      "explanation": "mein تحتوي على ei."
+      "translations": {
+        "ar": {
+          "question": "ما النمط الموجود في كلمة mein؟",
+          "options": [
+            {"id": "a", "text": "ie"},
+            {"id": "b", "text": "eu"},
+            {"id": "c", "text": "ei"}
+          ],
+          "explanation": "mein تحتوي على ei."
+        },
+        "en": {
+          "question": "Which pattern appears in the word mein?",
+          "options": [
+            {"id": "a", "text": "ie"},
+            {"id": "b", "text": "eu"},
+            {"id": "c", "text": "ei"}
+          ],
+          "explanation": "mein contains ei."
+        }
+      },
+      "correct_answer": "c"
     },
+
     {
       "id": "de_pre_a1_l01_ex08",
       "order": 8,
       "type": "multiple_choice",
-      "question": "ماذا تعني Papa؟",
-      "options": [
-        {"id": "a", "text": "الأب / بابا"},
-        {"id": "b", "text": "الجدة"},
-        {"id": "c", "text": "الاسم"}
-      ],
-      "correct_answer": "a",
-      "explanation": "Papa تعني الأب أو بابا."
+      "translations": {
+        "ar": {
+          "question": "ماذا تعني Papa؟",
+          "options": [
+            {"id": "a", "text": "الأب / بابا"},
+            {"id": "b", "text": "الجدة"},
+            {"id": "c", "text": "الاسم"}
+          ],
+          "explanation": "Papa تعني الأب أو بابا."
+        },
+        "en": {
+          "question": "What does Papa mean?",
+          "options": [
+            {"id": "a", "text": "father / dad"},
+            {"id": "b", "text": "grandmother"},
+            {"id": "c", "text": "name"}
+          ],
+          "explanation": "Papa means father or dad."
+        }
+      },
+      "correct_answer": "a"
     },
+
     {
       "id": "de_pre_a1_l01_ex09",
       "order": 9,
       "type": "multiple_choice",
-      "question": "أي خيار يحتوي على أحرف أو رمز خاص بالألمانية؟",
-      "options": [
-        {"id": "a", "text": "ä – ö – ü – ß"},
-        {"id": "b", "text": "a – e – i – o – u"},
-        {"id": "c", "text": "m – n – t – p"}
-      ],
-      "correct_answer": "a",
-      "explanation": "ä و ö و ü و ß من الرموز والأحرف المميزة في الكتابة الألمانية."
+      "translations": {
+        "ar": {
+          "question": "أي خيار يحتوي على أحرف أو رمز خاص بالألمانية؟",
+          "options": [
+            {"id": "a", "text": "ä – ö – ü – ß"},
+            {"id": "b", "text": "a – e – i – o – u"},
+            {"id": "c", "text": "m – n – t – p"}
+          ],
+          "explanation": "ä و ö و ü و ß من الرموز والأحرف المميزة في الكتابة الألمانية."
+        },
+        "en": {
+          "question": "Which option contains special German letters or a symbol?",
+          "options": [
+            {"id": "a", "text": "ä – ö – ü – ß"},
+            {"id": "b", "text": "a – e – i – o – u"},
+            {"id": "c", "text": "m – n – t – p"}
+          ],
+          "explanation": "ä, ö, ü and ß are distinctive German writing symbols."
+        }
+      },
+      "correct_answer": "a"
     },
+
     {
       "id": "de_pre_a1_l01_ex10",
       "order": 10,
       "type": "multiple_choice",
-      "question": "ماذا تعني Hallo؟",
-      "options": [
-        {"id": "a", "text": "مرحبًا"},
-        {"id": "b", "text": "وداعًا"},
-        {"id": "c", "text": "شكرًا"}
-      ],
-      "correct_answer": "a",
-      "explanation": "Hallo تعني «مرحبًا» وتستخدم للتحية."
+      "translations": {
+        "ar": {
+          "question": "ماذا تعني Hallo؟",
+          "options": [
+            {"id": "a", "text": "مرحبًا"},
+            {"id": "b", "text": "وداعًا"},
+            {"id": "c", "text": "شكرًا"}
+          ],
+          "explanation": "Hallo تعني «مرحبًا» وتستخدم للتحية."
+        },
+        "en": {
+          "question": "What does Hallo mean?",
+          "options": [
+            {"id": "a", "text": "hello"},
+            {"id": "b", "text": "goodbye"},
+            {"id": "c", "text": "thank you"}
+          ],
+          "explanation": "Hallo means hello and is used as a greeting."
+        }
+      },
+      "correct_answer": "a"
     }
   ],
+
   "review": {
     "order": 1,
-    "title": "مراجعة سريعة",
+    "translations": {
+      "ar": {
+        "title": "مراجعة سريعة"
+      },
+      "en": {
+        "title": "Quick Review"
+      }
+    },
     "items": [
       {
         "target_text": "Hallo",
-        "translation": "مرحبًا",
-        "pronunciation": "هالو"
+        "pronunciation": "Hallo",
+        "translations": {
+          "ar": {"translation": "مرحبًا"},
+          "en": {"translation": "hello"}
+        }
       },
       {
         "target_text": "Mama",
-        "translation": "ماما / الأم",
-        "pronunciation": "ماما"
+        "pronunciation": "Mama",
+        "translations": {
+          "ar": {"translation": "ماما / الأم"},
+          "en": {"translation": "mom / mother"}
+        }
       },
       {
         "target_text": "Papa",
-        "translation": "بابا / الأب",
-        "pronunciation": "بابا"
+        "pronunciation": "Papa",
+        "translations": {
+          "ar": {"translation": "بابا / الأب"},
+          "en": {"translation": "dad / father"}
+        }
       },
       {
         "target_text": "Oma",
-        "translation": "الجدة",
-        "pronunciation": "أوما"
+        "pronunciation": "Oma",
+        "translations": {
+          "ar": {"translation": "الجدة"},
+          "en": {"translation": "grandmother"}
+        }
       },
       {
         "target_text": "Opa",
-        "translation": "الجد",
-        "pronunciation": "أوبا"
+        "pronunciation": "Opa",
+        "translations": {
+          "ar": {"translation": "الجد"},
+          "en": {"translation": "grandfather"}
+        }
       }
     ]
   },
+
   "end_test": {
     "passing_score": 80,
     "question_count": 5,
@@ -433,69 +867,139 @@
         "id": "de_pre_a1_l01_test01",
         "order": 1,
         "type": "multiple_choice",
-        "question": "ما النمط الذي يُنطق قريبًا من «ش»؟",
-        "options": [
-          {"id": "a", "text": "sch"},
-          {"id": "b", "text": "ie"},
-          {"id": "c", "text": "eu"}
-        ],
         "correct_answer": "a",
-        "explanation": "sch نمط نطقه قريب من «ش»."
+        "translations": {
+          "ar": {
+            "question": "ما النمط الذي يُنطق قريبًا من «ش»؟",
+            "options": [
+              {"id": "a", "text": "sch"},
+              {"id": "b", "text": "ie"},
+              {"id": "c", "text": "eu"}
+            ],
+            "explanation": "sch نمط نطقه قريب من «ش»."
+          },
+          "en": {
+            "question": "Which pattern is pronounced similarly to \"sh\"?",
+            "options": [
+              {"id": "a", "text": "sch"},
+              {"id": "b", "text": "ie"},
+              {"id": "c", "text": "eu"}
+            ],
+            "explanation": "The pattern sch is pronounced similarly to \"sh\"."
+          }
+        }
       },
+
       {
         "id": "de_pre_a1_l01_test02",
         "order": 2,
         "type": "multiple_choice",
-        "question": "ما معنى Oma؟",
-        "options": [
-          {"id": "a", "text": "الجد"},
-          {"id": "b", "text": "الجدة"},
-          {"id": "c", "text": "الأب"}
-        ],
         "correct_answer": "b",
-        "explanation": "Oma تعني الجدة."
+        "translations": {
+          "ar": {
+            "question": "ما معنى Oma؟",
+            "options": [
+              {"id": "a", "text": "الجد"},
+              {"id": "b", "text": "الجدة"},
+              {"id": "c", "text": "الأب"}
+            ],
+            "explanation": "Oma تعني الجدة."
+          },
+          "en": {
+            "question": "What does Oma mean?",
+            "options": [
+              {"id": "a", "text": "grandfather"},
+              {"id": "b", "text": "grandmother"},
+              {"id": "c", "text": "father"}
+            ],
+            "explanation": "Oma means grandmother."
+          }
+        }
       },
+
       {
         "id": "de_pre_a1_l01_test03",
         "order": 3,
         "type": "multiple_choice",
-        "question": "أي كلمة تحتوي على ei؟",
-        "options": [
-          {"id": "a", "text": "mein"},
-          {"id": "b", "text": "wie"},
-          {"id": "c", "text": "neu"}
-        ],
         "correct_answer": "a",
-        "explanation": "mein تحتوي على ei."
+        "translations": {
+          "ar": {
+            "question": "أي كلمة تحتوي على ei؟",
+            "options": [
+              {"id": "a", "text": "mein"},
+              {"id": "b", "text": "wie"},
+              {"id": "c", "text": "neu"}
+            ],
+            "explanation": "mein تحتوي على ei."
+          },
+          "en": {
+            "question": "Which word contains ei?",
+            "options": [
+              {"id": "a", "text": "mein"},
+              {"id": "b", "text": "wie"},
+              {"id": "c", "text": "neu"}
+            ],
+            "explanation": "mein contains ei."
+          }
+        }
       },
+
       {
         "id": "de_pre_a1_l01_test04",
         "order": 4,
         "type": "multiple_choice",
-        "question": "ما معنى Hallo؟",
-        "options": [
-          {"id": "a", "text": "مرحبًا"},
-          {"id": "b", "text": "بيت"},
-          {"id": "c", "text": "يوم"}
-        ],
         "correct_answer": "a",
-        "explanation": "Hallo تعني مرحبًا."
+        "translations": {
+          "ar": {
+            "question": "ما معنى Hallo؟",
+            "options": [
+              {"id": "a", "text": "مرحبًا"},
+              {"id": "b", "text": "بيت"},
+              {"id": "c", "text": "يوم"}
+            ],
+            "explanation": "Hallo تعني مرحبًا."
+          },
+          "en": {
+            "question": "What does Hallo mean?",
+            "options": [
+              {"id": "a", "text": "hello"},
+              {"id": "b", "text": "house"},
+              {"id": "c", "text": "day"}
+            ],
+            "explanation": "Hallo means hello."
+          }
+        }
       },
+
       {
         "id": "de_pre_a1_l01_test05",
         "order": 5,
         "type": "multiple_choice",
-        "question": "أي خيار يحتوي على أحرف ألمانية خاصة؟",
-        "options": [
-          {"id": "a", "text": "ä – ö – ü – ß"},
-          {"id": "b", "text": "a – e – i – o – u"},
-          {"id": "c", "text": "b – d – f – g"}
-        ],
         "correct_answer": "a",
-        "explanation": "هذه الأحرف والرموز جزء مهم من الكتابة الألمانية."
+        "translations": {
+          "ar": {
+            "question": "أي خيار يحتوي على أحرف ألمانية خاصة؟",
+            "options": [
+              {"id": "a", "text": "ä – ö – ü – ß"},
+              {"id": "b", "text": "a – e – i – o – u"},
+              {"id": "c", "text": "b – d – f – g"}
+            ],
+            "explanation": "هذه الأحرف والرموز جزء مهم من الكتابة الألمانية."
+          },
+          "en": {
+            "question": "Which option contains special German letters?",
+            "options": [
+              {"id": "a", "text": "ä – ö – ü – ß"},
+              {"id": "b", "text": "a – e – i – o – u"},
+              {"id": "c", "text": "b – d – f – g"}
+            ],
+            "explanation": "These letters and the symbol are important parts of German writing."
+          }
+        }
       }
     ]
   },
+
   "content_rules": {
     "stable_ids": true,
     "target_language_is_language": true,

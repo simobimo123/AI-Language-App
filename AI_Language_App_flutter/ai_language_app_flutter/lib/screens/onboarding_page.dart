@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../l10n/app_localizations.dart';
 import '../services/api/api_service.dart';
 import '../core/language/language_controller.dart';
@@ -34,14 +33,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
   String? userName;
   String? userEmail;
 
+  // All 18 languages supported by the backend.
+  // fa (Persian) and hi (Hindi) are intentionally excluded.
   final List<Map<String, String>> appLanguages = const [
     {'code': 'ar', 'name': 'العربية'},
+    {'code': 'de', 'name': 'Deutsch'},
     {'code': 'en', 'name': 'English'},
-    {'code': 'fr', 'name': 'Français'},
     {'code': 'es', 'name': 'Español'},
-    {'code': 'zh', 'name': '中文'},
+    {'code': 'fr', 'name': 'Français'},
+    {'code': 'id', 'name': 'Bahasa Indonesia'},
+    {'code': 'it', 'name': 'Italiano'},
     {'code': 'ja', 'name': '日本語'},
     {'code': 'ko', 'name': '한국어'},
+    {'code': 'nl', 'name': 'Nederlands'},
+    {'code': 'pl', 'name': 'Polski'},
+    {'code': 'pt', 'name': 'Português'},
+    {'code': 'ru', 'name': 'Русский'},
+    {'code': 'th', 'name': 'ไทย'},
+    {'code': 'tr', 'name': 'Türkçe'},
+    {'code': 'uk', 'name': 'Українська'},
+    {'code': 'vi', 'name': 'Tiếng Việt'},
+    {'code': 'zh', 'name': '中文'},
   ];
 
   // All 18 languages supported by the backend.

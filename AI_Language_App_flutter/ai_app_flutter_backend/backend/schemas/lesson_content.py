@@ -1,9 +1,17 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
 class GenerateLessonContentRequest(BaseModel):
     lesson_id: int = Field(gt=0)
-    instruction_language: str = Field(default="ar", min_length=2, max_length=10)
+
+    instruction_language: str = Field(
+        default="ar",
+        min_length=2,
+        max_length=10,
+    )
+
     force_regenerate: bool = False
 
 
@@ -14,6 +22,8 @@ class LessonContentResponse(BaseModel):
     instruction_language: str
     generator_model: str | None
     version: int
-    content: dict
+    content: dict[str, Any]
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True,
+    }
