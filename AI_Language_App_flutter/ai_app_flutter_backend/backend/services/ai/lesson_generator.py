@@ -1,13 +1,11 @@
 import json
 import logging
 
-from google.genai import types
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from models import CourseLesson
-from services.ai.client import AI_MODEL, client
 from services.ai.normalization import normalize_language, normalize_level
-from services.ai.usage import extract_token_usage
+from services.ai.provider import provider
 
 
 logger = logging.getLogger(__name__)
@@ -167,20 +165,19 @@ Requirements:
 Return JSON only.
 """
 
-    response = client.models.generate_content(
-        model=AI_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=LESSON_GENERATION_INSTRUCTION,
-            response_mime_type="application/json",
-            max_output_tokens=4000,
-        ),
+    response = provider.generate_text(
+        model="lesson-generation",
+        prompt=prompt,
+        system_instruction=LESSON_GENERATION_INSTRUCTION,
+        max_output_tokens=4000,
+        response_mime_type="application/json",
     )
 
     if not response.text:
-        raise RuntimeError("Gemini returned an empty lesson response.")
+        raise RuntimeError(
+            f"{provider.name} returned an empty lesson response."
+        )
 
-    prompt_tokens, completion_tokens, total_tokens = extract_token_usage(response)
     cleaned = _clean_json_response(response.text)
 
     try:
@@ -194,6 +191,13 @@ Return JSON only.
             exc,
             cleaned[:5000],
         )
-        raise RuntimeError("Gemini returned invalid lesson content JSON.") from exc
+        raise RuntimeError(
+            f"{provider.name} returned invalid lesson content JSON."
+        ) from exc
 
-    return content, prompt_tokens, completion_tokens, total_tokens
+    return (
+        content,
+        response.prompt_tokens,
+        response.completion_tokens,
+        response.total_tokens,
+    )
