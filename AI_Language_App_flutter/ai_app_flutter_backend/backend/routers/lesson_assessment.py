@@ -2,11 +2,18 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import CourseLesson, LearningProfile, User, UserLessonProgress
+from models import (
+    AIConversationMessage,
+    CourseLesson,
+    LearningProfile,
+    User,
+    UserLessonProgress,
+)
 from routers.auth import get_current_user
 from routers.learning_path import (
     calculate_normal_progress,
@@ -31,6 +38,7 @@ router = APIRouter(
 )
 
 LESSONS_ROOT = Path(__file__).resolve().parents[1] / "data" / "lessons"
+MIN_AI_LEARNER_TURNS = 2
 
 
 def _get_current_profile(current_user: User, db: Session) -> LearningProfile:
@@ -154,6 +162,67 @@ def _instruction_language(current_user: User) -> str:
     return normalize_language(current_user.native_language)
 
 
+def _conversation_ready(
+    current_user: User,
+    conversation_id: str,
+    lesson_id: int,
+    db: Session,
+) -> bool:
+    messages = (
+        db.execute(
+            select(AIConversationMessage)
+            .where(
+                AIConversationMessage.user_id == current_user.id,
+                AIConversationMessage.conversation_id == conversation_id,
+            )
+            .order_by(AIConversationMessage.created_at.asc(), AIConversationMessage.id.asc())
+        )
+        .scalars()
+        .all()
+    )
+
+    # Conversation records currently do not store lesson_id. The conversation
+    # is therefore tied to this lesson by the lesson page's fresh conversation
+    # id and by requiring actual learner turns, not merely START_LESSON.
+    del lesson_id
+
+    learner_turns = [
+        item
+        for item in messages
+        if item.role == "user" and item.content.strip() != "START_LESSON"
+    ]
+    tutor_turns = [item for item in messages if item.role == "model"]
+
+    return (
+        len(learner_turns) >= MIN_AI_LEARNER_TURNS
+        and len(tutor_turns) >= MIN_AI_LEARNER_TURNS
+    )
+
+
+def _require_conversation_ready(
+    current_user: User,
+    conversation_id: str,
+    lesson_id: int,
+    db: Session,
+) -> None:
+    if not conversation_id.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="An AI lesson conversation is required before the assessment.",
+        )
+
+    if not _conversation_ready(
+        current_user=current_user,
+        conversation_id=conversation_id,
+        lesson_id=lesson_id,
+        db=db,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Continue the AI lesson and answer at least two tutor prompts before starting the assessment.",
+        )
+
+
 def _translation(question: dict, language: str) -> dict:
     translations = question.get("translations")
     if not isinstance(translations, dict):
@@ -170,7 +239,10 @@ def _translation(question: dict, language: str) -> dict:
     return {}
 
 
-def _public_questions(assessment: dict, instruction_language: str) -> list[LessonAssessmentQuestion]:
+def _public_questions(
+    assessment: dict,
+    instruction_language: str,
+) -> list[LessonAssessmentQuestion]:
     result = []
 
     for question in assessment["questions"]:
@@ -213,10 +285,18 @@ def _public_questions(assessment: dict, instruction_language: str) -> list[Lesso
 )
 def get_lesson_assessment(
     lesson_id: int,
+    conversation_id: str = Query(min_length=1, max_length=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     lesson, _, _ = _get_lesson(lesson_id, current_user, db)
+    _require_conversation_ready(
+        current_user=current_user,
+        conversation_id=conversation_id,
+        lesson_id=lesson.id,
+        db=db,
+    )
+
     assessment = _load_assessment(lesson)
     questions = _public_questions(
         assessment,
@@ -228,6 +308,7 @@ def get_lesson_assessment(
         passing_score=assessment["passing_score"],
         question_count=len(questions),
         questions=questions,
+        conversation_ready=True,
     )
 
 
@@ -242,6 +323,13 @@ def submit_lesson_assessment(
     db: Session = Depends(get_db),
 ):
     lesson, profile, lessons = _get_lesson(lesson_id, current_user, db)
+    _require_conversation_ready(
+        current_user=current_user,
+        conversation_id=data.conversation_id,
+        lesson_id=lesson.id,
+        db=db,
+    )
+
     assessment = _load_assessment(lesson)
     questions = assessment["questions"]
 
