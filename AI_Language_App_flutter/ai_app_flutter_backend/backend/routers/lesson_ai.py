@@ -338,9 +338,9 @@ def lesson_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_rate_limit(current_user.id)
-    reserve_ai_request(user_id=current_user.id, db=db)
-
+    # Validate the requested lesson completely before reserving an AI request.
+    # Invalid lesson/language/level requests therefore do not consume the
+    # user's daily AI quota.
     lesson = db.get(CourseLesson, request.lesson_id)
     if lesson is None:
         raise HTTPException(
@@ -371,6 +371,12 @@ def lesson_chat(
         )
 
     curriculum = _load_lesson_curriculum(lesson)
+
+    # Only after all lesson validation succeeds do we enforce the AI rate
+    # limit and reserve a daily AI request.
+    check_rate_limit(current_user.id)
+    reserve_ai_request(user_id=current_user.id, db=db)
+
     conversation_id = request.conversation_id or uuid4().hex
 
     return StreamingResponse(
