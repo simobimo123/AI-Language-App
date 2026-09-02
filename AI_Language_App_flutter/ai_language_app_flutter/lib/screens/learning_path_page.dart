@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../controllers/learning_path_controller.dart';
 import '../core/language/language_controller.dart';
@@ -66,8 +66,6 @@ class _LearningPathPageState extends State<LearningPathPage> {
     }
   }
 
-  String _levelName(String level) =>
-      level.toUpperCase() == 'PRE_A1' ? 'Pre-A1' : level;
 
   String _title() {
     switch (widget.languageController.locale.languageCode) {
@@ -105,3 +103,4 @@ class _LearningPathPageState extends State<LearningPathPage> {
     );
   }
 }
+
