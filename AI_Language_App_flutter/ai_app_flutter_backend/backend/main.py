@@ -22,6 +22,10 @@ from routers.ai import (
     router as ai_router,
 )
 
+from routers.lesson_ai import (
+    router as lesson_ai_router,
+)
+
 from routers.placement_test import (
     router as placement_router,
 )
@@ -87,6 +91,8 @@ app.include_router(learning_router)
 app.include_router(learning_path_router)
 
 app.include_router(ai_router)
+
+app.include_router(lesson_ai_router)
 
 app.include_router(placement_router)
 
