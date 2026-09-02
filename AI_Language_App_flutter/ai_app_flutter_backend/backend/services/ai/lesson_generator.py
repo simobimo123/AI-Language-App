@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -9,6 +10,12 @@ from services.ai.provider import provider
 
 
 logger = logging.getLogger(__name__)
+
+
+LESSON_GENERATION_MODEL = os.getenv(
+    "LESSON_GENERATION_MODEL",
+    "gemini-3.6-flash",
+)
 
 
 class LessonVocabularyItem(BaseModel):
@@ -166,7 +173,7 @@ Return JSON only.
 """
 
     response = provider.generate_text(
-        model="lesson-generation",
+        model=LESSON_GENERATION_MODEL,
         prompt=prompt,
         system_instruction=LESSON_GENERATION_INSTRUCTION,
         max_output_tokens=4000,
