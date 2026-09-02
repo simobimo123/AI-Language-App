@@ -4,7 +4,6 @@ import '../api/api_client.dart';
 
 class LearningApiService {
   final ApiClient client;
-
   LearningApiService(this.client);
 
   Future<List<dynamic>> getLearningProfiles() async {
@@ -22,20 +21,14 @@ class LearningApiService {
   }
 
   Future<Map<String, dynamic>> createLearningProfile({required String language, required String level}) async {
-    final response = await client.post(
-      '/learning/profiles', authenticated: true, headers: client.jsonHeaders,
-      body: jsonEncode({'language': language, 'level': level}),
-    );
+    final response = await client.post('/learning/profiles', authenticated: true, headers: client.jsonHeaders, body: jsonEncode({'language': language, 'level': level}));
     final data = client.decodeResponse(response);
     if (response.statusCode == 200 || response.statusCode == 201) return Map<String, dynamic>.from(data as Map);
     throw client.apiException(data, 'Failed to create learning profile', statusCode: response.statusCode);
   }
 
   Future<Map<String, dynamic>> updateLearningProfile({required String language, required String level, required double progress}) async {
-    final response = await client.put(
-      '/learning/profiles/$language', authenticated: true, headers: client.jsonHeaders,
-      body: jsonEncode({'level': level, 'progress': progress}),
-    );
+    final response = await client.put('/learning/profiles/$language', authenticated: true, headers: client.jsonHeaders, body: jsonEncode({'level': level, 'progress': progress}));
     final data = client.decodeResponse(response);
     if (response.statusCode == 200) return Map<String, dynamic>.from(data as Map);
     throw client.apiException(data, 'Failed to update learning profile', statusCode: response.statusCode);
@@ -62,21 +55,17 @@ class LearningApiService {
     throw client.apiException(data, 'Failed to get lesson content', statusCode: response.statusCode);
   }
 
-  Future<Map<String, dynamic>> getLessonAssessment({required int lessonId, required String conversationId}) async {
-    final response = await client.get(
-      '/learning/lessons/$lessonId/assessment?conversation_id=${Uri.encodeQueryComponent(conversationId)}',
-      authenticated: true,
-    );
+  Future<Map<String, dynamic>> getLessonAssessment({required int lessonId, String? conversationId}) async {
+    final query = conversationId == null || conversationId.trim().isEmpty
+        ? ''
+        : '?conversation_id=${Uri.encodeQueryComponent(conversationId)}';
+    final response = await client.get('/learning/lessons/$lessonId/assessment$query', authenticated: true);
     final data = client.decodeResponse(response);
     if (response.statusCode == 200) return Map<String, dynamic>.from(data as Map);
     throw client.apiException(data, 'Failed to get lesson assessment', statusCode: response.statusCode);
   }
 
-  Future<Map<String, dynamic>> submitLessonAssessment({
-    required int lessonId,
-    required String conversationId,
-    required List<Map<String, String>> answers,
-  }) async {
+  Future<Map<String, dynamic>> submitLessonAssessment({required int lessonId, String? conversationId, required List<Map<String, String>> answers}) async {
     final response = await client.post(
       '/learning/lessons/$lessonId/assessment',
       authenticated: true,
@@ -89,10 +78,7 @@ class LearningApiService {
   }
 
   Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) async {
-    final response = await client.post(
-      '/learning/lessons/$lessonId/complete', authenticated: true, headers: client.jsonHeaders,
-      body: jsonEncode({'score': score}),
-    );
+    final response = await client.post('/learning/lessons/$lessonId/complete', authenticated: true, headers: client.jsonHeaders, body: jsonEncode({'score': score}));
     final data = client.decodeResponse(response);
     if (response.statusCode == 200) return Map<String, dynamic>.from(data as Map);
     throw client.apiException(data, 'Failed to complete lesson', statusCode: response.statusCode);
