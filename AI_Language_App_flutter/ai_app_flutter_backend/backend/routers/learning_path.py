@@ -10,6 +10,7 @@ from models import (
     LearningProfile,
     User,
     UserLessonProgress,
+    SUPPORTED_LANGUAGE_CODES,
 )
 from routers.auth import get_current_user
 from schemas import (
@@ -42,40 +43,23 @@ LEVELS = [
 
 
 # =========================================================
-# Vocabulary / learning languages
+# Learning languages
 # =========================================================
 #
-# These are the 20 languages supported by the global
-# vocabulary architecture.
+# Use the single canonical language list from models.base.
+# This prevents the learning-path router from drifting away
+# from the rest of the backend.
 #
-# The learning-path system can support all of them, but
-# actual course content is still generated from LEVEL_TOPICS.
-# Later, each language can receive language-specific
-# curriculum content.
+# The application currently supports exactly 18 languages:
+# ar, de, en, es, fr, id, it, ja, ko, nl, pl, pt, ru,
+# th, tr, uk, vi, zh.
+#
+# Persian (fa) and Hindi (hi) are intentionally not supported.
 # =========================================================
 
-SUPPORTED_LEARNING_LANGUAGES = [
-    "ar",
-    "de",
-    "en",
-    "es",
-    "fa",
-    "fr",
-    "hi",
-    "id",
-    "it",
-    "ja",
-    "ko",
-    "nl",
-    "pl",
-    "pt",
-    "ru",
-    "th",
-    "tr",
-    "uk",
-    "vi",
-    "zh",
-]
+SUPPORTED_LEARNING_LANGUAGES = list(
+    SUPPORTED_LANGUAGE_CODES
+)
 
 
 # =========================================================
@@ -83,10 +67,6 @@ SUPPORTED_LEARNING_LANGUAGES = [
 # =========================================================
 
 LEVEL_TOPICS = {
-    # -----------------------------------------------------
-    # PRE_A1
-    # -----------------------------------------------------
-
     "PRE_A1": [
         ("sounds_and_letters", 1),
         ("basic_greetings", 2),
@@ -97,11 +77,6 @@ LEVEL_TOPICS = {
         ("very_basic_phrases", 7),
         ("level_test", 8),
     ],
-
-    # -----------------------------------------------------
-    # A1
-    # -----------------------------------------------------
-
     "A1": [
         ("alphabet", 1),
         ("basic_words", 2),
@@ -112,11 +87,6 @@ LEVEL_TOPICS = {
         ("simple_sentences", 7),
         ("level_test", 8),
     ],
-
-    # -----------------------------------------------------
-    # A2
-    # -----------------------------------------------------
-
     "A2": [
         ("daily_life", 1),
         ("past_tense", 2),
@@ -127,11 +97,6 @@ LEVEL_TOPICS = {
         ("describing_people", 7),
         ("level_test", 8),
     ],
-
-    # -----------------------------------------------------
-    # B1
-    # -----------------------------------------------------
-
     "B1": [
         ("daily_conversations", 1),
         ("telling_stories", 2),
@@ -142,11 +107,6 @@ LEVEL_TOPICS = {
         ("extended_conversations", 7),
         ("level_test", 8),
     ],
-
-    # -----------------------------------------------------
-    # B2
-    # -----------------------------------------------------
-
     "B2": [
         ("debates", 1),
         ("arguments", 2),
@@ -157,11 +117,6 @@ LEVEL_TOPICS = {
         ("presentations", 7),
         ("level_test", 8),
     ],
-
-    # -----------------------------------------------------
-    # C1
-    # -----------------------------------------------------
-
     "C1": [
         ("language_nuance", 1),
         ("advanced_grammar", 2),
@@ -172,11 +127,6 @@ LEVEL_TOPICS = {
         ("critical_discussion", 7),
         ("level_test", 8),
     ],
-
-    # -----------------------------------------------------
-    # C2
-    # -----------------------------------------------------
-
     "C2": [
         ("language_mastery", 1),
         ("rhetoric", 2),
@@ -240,16 +190,6 @@ def normalize_level(
 
 # =========================================================
 # Course content seeding
-# =========================================================
-#
-# This function is idempotent.
-#
-# Unlike the old implementation, it only commits when
-# something was actually created.
-#
-# It still uses the current template-based curriculum.
-# Later we can replace this with language-specific lesson
-# content stored in the database.
 # =========================================================
 
 def seed_learning_content(
@@ -319,12 +259,6 @@ def seed_learning_content(
 
         except IntegrityError:
             db.rollback()
-
-            # A concurrent startup/request may have created
-            # the same lesson. This is safe to ignore here.
-            #
-            # The database unique constraint is the final
-            # protection against duplicates.
             pass
 
 
@@ -499,7 +433,6 @@ def get_or_create_lesson_progress(
 
     if progress is not None:
 
-        # Keep the profile relation correct.
         if (
             progress.learning_profile_id
             != profile.id
@@ -539,10 +472,6 @@ def get_current_lesson(
         if not lesson.is_test
     ]
 
-    # -----------------------------------------------------
-    # First incomplete normal lesson.
-    # -----------------------------------------------------
-
     for lesson in normal_lessons:
 
         progress = progress_map.get(
@@ -554,11 +483,6 @@ def get_current_lesson(
             or not progress.completed
         ):
             return lesson
-
-    # -----------------------------------------------------
-    # If every normal lesson is complete, the level test
-    # becomes the current lesson.
-    # -----------------------------------------------------
 
     for lesson in lessons:
 
@@ -652,8 +576,6 @@ def get_learning_path(
         progress_map,
     )
 
-    # Keep profile.progress synchronized with the actual
-    # lesson records.
     if (
         round(
             profile.progress,
@@ -794,11 +716,6 @@ def complete_lesson(
         db,
     )
 
-    # -----------------------------------------------------
-    # Load the lesson only from the user's current language
-    # and current level.
-    # -----------------------------------------------------
-
     lesson = (
         db.query(
             CourseLesson
@@ -819,10 +736,6 @@ def complete_lesson(
             status_code=404,
             detail="Lesson not found.",
         )
-
-    # -----------------------------------------------------
-    # Load ALL lessons for the current level.
-    # -----------------------------------------------------
 
     all_lessons = (
         db.query(
@@ -862,14 +775,6 @@ def complete_lesson(
         db=db,
     )
 
-    # =====================================================
-    # SECURITY / LOGIC CHECK:
-    #
-    # A user cannot complete an arbitrary locked lesson.
-    #
-    # Determine the lesson that is actually current.
-    # =====================================================
-
     current_lesson = get_current_lesson(
         lessons=all_lessons,
         progress_map=progress_map,
@@ -895,10 +800,6 @@ def complete_lesson(
             ),
         )
 
-    # =====================================================
-    # Get or create progress record
-    # =====================================================
-
     lesson_progress = (
         progress_map.get(
             lesson.id
@@ -915,14 +816,6 @@ def complete_lesson(
                 db=db,
             )
         )
-
-    # -----------------------------------------------------
-    # A lesson that was already completed is not allowed to
-    # be completed again through this endpoint.
-    #
-    # Retakes can later be implemented through a dedicated
-    # assessment endpoint.
-    # -----------------------------------------------------
 
     if lesson_progress.completed:
 
@@ -947,10 +840,6 @@ def complete_lesson(
     level_upgraded = False
     new_level = old_level
 
-    # =====================================================
-    # Normal lesson
-    # =====================================================
-
     if not lesson.is_test:
 
         lesson_progress.completed = True
@@ -958,10 +847,6 @@ def complete_lesson(
         lesson_progress.completed_at = (
             datetime.utcnow()
         )
-
-    # =====================================================
-    # Level test
-    # =====================================================
 
     else:
 
@@ -1002,15 +887,10 @@ def complete_lesson(
                 ),
             )
 
-        # -------------------------------------------------
-        # The test itself requires the configured score.
-        # -------------------------------------------------
-
         if data.score < lesson.passing_score:
 
             lesson_progress.completed = False
 
-            # The user's level does not change.
             profile.progress = (
                 calculate_normal_progress(
                     normal_lessons,
@@ -1036,10 +916,6 @@ def complete_lesson(
                 ),
             )
 
-        # -------------------------------------------------
-        # Level test passed.
-        # -------------------------------------------------
-
         lesson_progress.completed = True
 
         lesson_progress.completed_at = (
@@ -1052,9 +928,6 @@ def complete_lesson(
 
         if next_level is not None:
 
-            # The current level is finished.
-            #
-            # The user moves to the next level.
             profile.level = next_level
 
             profile.progress = 0.0
@@ -1065,12 +938,7 @@ def complete_lesson(
 
         else:
 
-            # C2 is the final level.
             profile.progress = 100.0
-
-    # =====================================================
-    # Normal lesson progress update
-    # =====================================================
 
     if not level_upgraded:
 
@@ -1090,10 +958,6 @@ def complete_lesson(
                 progress_map,
             )
         )
-
-    # =====================================================
-    # Persist everything
-    # =====================================================
 
     try:
 
