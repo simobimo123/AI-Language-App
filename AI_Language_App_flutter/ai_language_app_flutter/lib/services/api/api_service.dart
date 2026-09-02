@@ -110,7 +110,9 @@ class ApiService {
   Future<Map<String, dynamic>> switchLearningLanguage({
     required String language,
   }) =>
-      _learning.switchLearningLanguage(language: language);
+      _learning.switchLearningLanguage(
+        language: language,
+      );
 
   Future<Map<String, dynamic>> getLearningPath() =>
       _learning.getLearningPath();
@@ -119,6 +121,20 @@ class ApiService {
     required int lessonId,
   }) =>
       _learning.getLessonContent(lessonId: lessonId);
+
+  Future<Map<String, dynamic>> getLessonAssessment({
+    required int lessonId,
+  }) =>
+      _learning.getLessonAssessment(lessonId: lessonId);
+
+  Future<Map<String, dynamic>> submitLessonAssessment({
+    required int lessonId,
+    required List<Map<String, String>> answers,
+  }) =>
+      _learning.submitLessonAssessment(
+        lessonId: lessonId,
+        answers: answers,
+      );
 
   Future<Map<String, dynamic>> completeLesson({
     required int lessonId,
