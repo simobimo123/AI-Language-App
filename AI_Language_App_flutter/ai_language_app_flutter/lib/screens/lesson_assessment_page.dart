@@ -8,13 +8,13 @@ class LessonAssessmentPage extends StatefulWidget {
   final LearningLessonModel lesson;
   final LanguageController languageController;
   final LearningRepository? repository;
-  final String conversationId;
+  final String? conversationId;
 
   const LessonAssessmentPage({
     super.key,
     required this.lesson,
     required this.languageController,
-    required this.conversationId,
+    this.conversationId,
     this.repository,
   });
 
@@ -40,7 +40,6 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
   }
 
   String _locale() => widget.languageController.locale.languageCode;
-
   String _text({required String ar, required String en, String? fr, String? es, String? de, String? it, String? ja, String? ko, String? zh}) {
     switch (_locale()) {
       case 'fr': return fr ?? en;
@@ -66,23 +65,11 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
 
   Future<void> _loadAssessment() async {
     try {
-      if (widget.conversationId.trim().isEmpty) {
-        throw Exception(_text(ar: 'لم تبدأ محادثة الدرس بعد.', en: 'The AI lesson conversation has not started yet.'));
-      }
-      final data = await _repository.getLessonAssessment(
-        lessonId: widget.lesson.id,
-        conversationId: widget.conversationId,
-      );
+      final data = await _repository.getLessonAssessment(lessonId: widget.lesson.id, conversationId: widget.conversationId);
       final raw = data['questions'];
-      final questions = raw is List
-          ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
-          : <Map<String, dynamic>>[];
+      final questions = raw is List ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() : <Map<String, dynamic>>[];
       if (!mounted) return;
-      setState(() {
-        _questions = questions;
-        _passingScore = _toDouble(data['passing_score'], 80);
-        _loading = false;
-      });
+      setState(() { _questions = questions; _passingScore = _toDouble(data['passing_score'], 80); _loading = false; });
     } catch (e) {
       if (!mounted) return;
       setState(() { _loading = false; _error = e.toString(); });
@@ -120,20 +107,17 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: Text(passed ? _text(ar: 'أحسنت! اجتزت الاختبار', en: 'Great! You passed', fr: 'Bravo ! Vous avez réussi', es: '¡Has aprobado!', de: 'Bestanden!', it: 'Test superato!', ja: '合格しました！', ko: '통과했습니다!', zh: '通过了！') : _text(ar: 'لم تجتز الاختبار بعد', en: 'Not passed yet', fr: 'Pas encore réussi', es: 'Aún no aprobado', de: 'Noch nicht bestanden', it: 'Non ancora superato', ja: 'まだ合格していません', ko: '아직 통과하지 못했습니다', zh: '还未通过测试')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${_scoreLabel()}: ${score.toStringAsFixed(0)}%', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text('${_passingLabel()}: ${_passingScore.toStringAsFixed(0)}%'),
-            const SizedBox(height: 8),
-            Text('${_bestLabel()}: ${bestScore.toStringAsFixed(0)}%'),
-            if (levelUpgraded && newLevel.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Text(_text(ar: 'تم فتح المستوى $newLevel 🎉', en: 'Level $newLevel unlocked 🎉', fr: 'Niveau $newLevel débloqué 🎉', es: 'Nivel $newLevel desbloqueado 🎉', de: 'Level $newLevel freigeschaltet 🎉', it: 'Livello $newLevel sbloccato 🎉', ja: 'レベル $newLevel が解放されました 🎉', ko: '레벨 $newLevel 잠금 해제 🎉', zh: '已解锁 $newLevel 级 🎉'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
-            ],
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('${_scoreLabel()}: ${score.toStringAsFixed(0)}%', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text('${_passingLabel()}: ${_passingScore.toStringAsFixed(0)}%'),
+          const SizedBox(height: 8),
+          Text('${_bestLabel()}: ${bestScore.toStringAsFixed(0)}%'),
+          if (levelUpgraded && newLevel.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(_text(ar: 'تم فتح المستوى $newLevel 🎉', en: 'Level $newLevel unlocked 🎉', fr: 'Niveau $newLevel débloqué 🎉', es: 'Nivel $newLevel desbloqueado 🎉', de: 'Level $newLevel freigeschaltet 🎉', it: 'Livello $newLevel sbloccato 🎉', ja: 'レベル $newLevel が解放されました 🎉', ko: '레벨 $newLevel 잠금 해제 🎉', zh: '已解锁 $newLevel 级 🎉'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
           ],
-        ),
+        ]),
         actions: [
           if (!passed) TextButton(onPressed: () { Navigator.of(dialogContext).pop(); setState(() { _answers.clear(); _currentIndex = 0; _submitting = false; }); }, child: Text(_retryLabel())),
           FilledButton(onPressed: () { Navigator.of(dialogContext).pop(); if (passed) Navigator.of(context).pop(true); }, child: Text(passed ? _continueLabel() : _retryLabel())),
@@ -154,6 +138,7 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
     final options = question['options'] is List ? (question['options'] as List).whereType<Map>().toList() : <Map>[];
     final selected = _answers[id];
     final isLast = _currentIndex == _questions.length - 1;
+    final canContinue = selected != null && !_submitting && (!isLast || _answers.length == _questions.length);
 
     return Scaffold(
       appBar: AppBar(title: Text(_title()), actions: [Padding(padding: const EdgeInsetsDirectional.only(end: 16), child: Center(child: Text('${_currentIndex + 1}/${_questions.length}')))]),
@@ -175,7 +160,7 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
           }),
         ])),
         Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 16), child: SizedBox(width: double.infinity, child: FilledButton.icon(
-          onPressed: selected == null || _submitting ? null : () { if (isLast) { _submit(); } else { setState(() => _currentIndex++); } },
+          onPressed: canContinue ? () { if (isLast) { _submit(); } else { setState(() => _currentIndex++); } } : null,
           icon: Icon(isLast ? Icons.check_rounded : Icons.arrow_forward_rounded),
           label: Text(isLast ? _submitLabel() : _nextLabel()),
         ))),
