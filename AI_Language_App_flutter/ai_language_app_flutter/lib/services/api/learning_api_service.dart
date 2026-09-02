@@ -61,8 +61,7 @@ class LearningApiService {
 
     final data = client.decodeResponse(response);
 
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return Map<String, dynamic>.from(data as Map);
     }
 
@@ -137,6 +136,27 @@ class LearningApiService {
     throw client.apiException(
       data,
       'Failed to get learning path',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<Map<String, dynamic>> getLessonContent({
+    required int lessonId,
+  }) async {
+    final response = await client.get(
+      '/lesson-content/$lessonId',
+      authenticated: true,
+    );
+
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(
+      data,
+      'Failed to get lesson content',
       statusCode: response.statusCode,
     );
   }
