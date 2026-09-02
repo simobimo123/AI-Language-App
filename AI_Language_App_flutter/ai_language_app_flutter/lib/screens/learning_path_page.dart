@@ -4,6 +4,8 @@ import '../controllers/learning_path_controller.dart';
 import '../core/language/language_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/learning_lesson_model.dart';
+import '../repositories/learning_repository.dart';
+import '../screens/lesson_page.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/learning_path/learning_path_view.dart';
 
@@ -48,15 +50,20 @@ class _LearningPathPageState extends State<LearningPathPage> {
     if (mounted) setState(() {});
   }
 
-  void _openLesson(LearningLessonModel lesson) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${lesson.title} • ${_controller.currentLevel.isNotEmpty ? _levelName(_controller.currentLevel) : ''}',
+  Future<void> _openLesson(LearningLessonModel lesson) async {
+    final completed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => LessonPage(
+          lesson: lesson,
+          languageController: widget.languageController,
+          repository: LearningRepository(),
         ),
-        behavior: SnackBarBehavior.floating,
       ),
     );
+
+    if (completed == true && mounted) {
+      await _controller.refresh();
+    }
   }
 
   String _levelName(String level) =>
