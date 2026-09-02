@@ -22,6 +22,15 @@ from .words_learning import (
     WordResponse,
 )
 
+from .lesson_assessment import (
+    LessonAssessmentAnswer,
+    LessonAssessmentOption,
+    LessonAssessmentQuestion,
+    LessonAssessmentResponse,
+    LessonAssessmentResult,
+    LessonAssessmentSubmitRequest,
+)
+
 from .vocabulary import (
     VocabularyCEFRAssessmentCreate,
     VocabularyCEFRAssessmentResponse,
