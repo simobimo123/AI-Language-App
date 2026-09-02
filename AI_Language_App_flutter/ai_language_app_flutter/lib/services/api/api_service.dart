@@ -52,6 +52,8 @@ class ApiService {
   Future<Map<String, dynamic>> switchLearningLanguage({required String language}) =>
       _learning.switchLearningLanguage(language: language);
   Future<Map<String, dynamic>> getLearningPath() => _learning.getLearningPath();
+  Future<Map<String, dynamic>> getLessonContent({required int lessonId}) =>
+      _learning.getLessonContent(lessonId: lessonId);
   Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) =>
       _learning.completeLesson(lessonId: lessonId, score: score);
 
