@@ -53,6 +53,20 @@ class LearningRepository {
     return apiService.getLessonContent(lessonId: lessonId);
   }
 
+  Future<Map<String, dynamic>> getLessonAssessment({required int lessonId}) {
+    return apiService.getLessonAssessment(lessonId: lessonId);
+  }
+
+  Future<Map<String, dynamic>> submitLessonAssessment({
+    required int lessonId,
+    required List<Map<String, String>> answers,
+  }) {
+    return apiService.submitLessonAssessment(
+      lessonId: lessonId,
+      answers: answers,
+    );
+  }
+
   Future<Map<String, dynamic>> completeLesson({
     required int lessonId,
     double score = 100,
