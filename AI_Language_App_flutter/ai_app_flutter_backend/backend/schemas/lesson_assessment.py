@@ -19,6 +19,7 @@ class LessonAssessmentResponse(BaseModel):
     passing_score: float
     question_count: int
     questions: list[LessonAssessmentQuestion]
+    conversation_ready: bool
 
 
 class LessonAssessmentAnswer(BaseModel):
@@ -27,6 +28,7 @@ class LessonAssessmentAnswer(BaseModel):
 
 
 class LessonAssessmentSubmitRequest(BaseModel):
+    conversation_id: str = Field(min_length=1, max_length=100)
     answers: list[LessonAssessmentAnswer] = Field(default_factory=list)
 
 
