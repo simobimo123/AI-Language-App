@@ -163,7 +163,7 @@ class _LessonPageState extends State<LessonPage> {
         es: 'La traducción falló. Inténtalo de nuevo.',
         de: 'Die Übersetzung ist fehlgeschlagen. Bitte erneut versuchen.',
         it: 'La traduzione non è riuscita. Riprova.',
-        ja: '翻訳に失敗しました。もう一度お試しください。',
+        ja: '翻訳に失敗しました。もう一度お試してください。',
         ko: '번역에 실패했습니다. 다시 시도하세요.',
         zh: '翻译失败，请重试。',
       );
@@ -589,7 +589,7 @@ class _LessonPageState extends State<LessonPage> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withOpacity(0.55),
+                    color: theme.colorScheme.surface.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
