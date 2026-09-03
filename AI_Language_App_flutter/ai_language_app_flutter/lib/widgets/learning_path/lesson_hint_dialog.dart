@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../services/api/api_service.dart';
+import '../../services/api/lesson_hint_api_service.dart';
 
 Future<void> showLessonHintDialog(
   BuildContext context, {
@@ -27,17 +27,19 @@ Future<void> showLessonHintDialog(
           children: [
             Icon(Icons.lightbulb_rounded, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
-            Text(
-              text(
-                ar: 'اقتراح للإجابة',
-                en: 'Suggested answer',
-                fr: 'Réponse suggérée',
-                es: 'Respuesta sugerida',
-                de: 'Vorgeschlagene Antwort',
-                it: 'Risposta suggerita',
-                ja: '回答のヒント',
-                ko: '추천 답변',
-                zh: '建议回答',
+            Expanded(
+              child: Text(
+                text(
+                  ar: 'اقتراح للإجابة',
+                  en: 'Suggested answer',
+                  fr: 'Réponse suggérée',
+                  es: 'Respuesta sugerida',
+                  de: 'Vorgeschlagene Antwort',
+                  it: 'Risposta suggerita',
+                  ja: '回答のヒント',
+                  ko: '추천 답변',
+                  zh: '建议回答',
+                ),
               ),
             ),
           ],
