@@ -45,5 +45,5 @@ httpx==0.28.1
 cryptography==50.0.0
 cffi==2.1.1
 pycparser==3.0
-pyasn1==0.6.0
+pyasn1==0.6.4
 pyasn1_modules==0.4.2
