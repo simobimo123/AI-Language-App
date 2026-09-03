@@ -4,7 +4,6 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
-import '../widgets/words/save_sentence_dialog.dart';
 import '../widgets/words/word_detail_dialog.dart';
 import 'lesson_assessment_page.dart';
 
@@ -129,30 +128,6 @@ class _LessonPageState extends State<LessonPage> {
         ja: '送信',
         ko: '보내기',
         zh: '发送',
-      );
-
-  String _saveSentenceLabel() => _text(
-        ar: 'حفظ الجملة',
-        en: 'Save sentence',
-        fr: 'Enregistrer la phrase',
-        es: 'Guardar frase',
-        de: 'Satz speichern',
-        it: 'Salva frase',
-        ja: '文を保存',
-        ko: '문장 저장',
-        zh: '保存句子',
-      );
-
-  String _savedSentenceLabel() => _text(
-        ar: 'تم حفظ الجملة',
-        en: 'Sentence saved',
-        fr: 'Sentence saved',
-        es: 'Frase guardada',
-        de: 'Satz gespeichert',
-        it: 'Frase salvata',
-        ja: '文を保存しました',
-        ko: '문장이 저장되었습니다',
-        zh: '句子已保存',
       );
 
   String _finishLabel() => _text(
@@ -351,29 +326,6 @@ class _LessonPageState extends State<LessonPage> {
     });
   }
 
-  String _firstSentence(String text) {
-    final cleaned = text.trim();
-    if (cleaned.isEmpty) return cleaned;
-    final match = RegExp(r'^(.+?[.!?。！？])(?:\s|$)').firstMatch(cleaned);
-    return match?.group(1)?.trim() ?? cleaned;
-  }
-
-  Future<void> _saveAssistantSentence(String text) async {
-    final sentence = _firstSentence(text);
-    if (sentence.isEmpty) return;
-
-    final saved = await showSaveSentenceDialog(
-      context,
-      sentence: sentence,
-    );
-
-    if (saved == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_savedSentenceLabel())),
-      );
-    }
-  }
-
   String _cleanWordToken(String token) {
     return token.replaceAll(
       RegExp(
@@ -485,10 +437,7 @@ class _LessonPageState extends State<LessonPage> {
                 child: Text(
                   token,
                   textDirection: _textDirection(token),
-                  style: baseStyle?.copyWith(
-                    decoration: TextDecoration.underline,
-                    decorationStyle: TextDecorationStyle.dotted,
-                  ),
+                  style: baseStyle,
                 ),
               ),
             ),
@@ -513,25 +462,7 @@ class _LessonPageState extends State<LessonPage> {
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildClickableMessage(message.text, theme),
-            if (!isUser) ...[
-              const SizedBox(height: 6),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton.icon(
-                  onPressed: _sending
-                      ? null
-                      : () => _saveAssistantSentence(message.text),
-                  icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                  label: Text(_saveSentenceLabel()),
-                ),
-              ),
-            ],
-          ],
-        ),
+        child: _buildClickableMessage(message.text, theme),
       ),
     );
   }
