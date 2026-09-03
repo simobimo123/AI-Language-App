@@ -30,7 +30,6 @@ router = APIRouter(
 
 
 LEVELS = [
-    "PRE_A1",
     "A1",
     "A2",
     "B1",
@@ -133,7 +132,6 @@ def _load_lesson_manifest(
         or str(topic_key).lower() in {
             "level_test",
             "final_test",
-            "pre_a1_final_test",
         }
     )
 
@@ -235,13 +233,10 @@ def sync_learning_content(
         for item in manifests
     }
 
-    # Remove old database lessons that no longer exist
-    # in the canonical JSON curriculum.
     for lesson in existing_lessons:
         if lesson.lesson_order not in manifest_orders:
             db.delete(lesson)
 
-    # Create or update lessons from JSON.
     for manifest in manifests:
         lesson = existing_by_order.get(
             manifest["lesson_order"]
@@ -381,10 +376,10 @@ def get_previous_level(level: str) -> str:
     try:
         index = LEVELS.index(level)
     except ValueError:
-        return "PRE_A1"
+        return LEVELS[0]
 
     if index <= 0:
-        return "PRE_A1"
+        return LEVELS[0]
 
     return LEVELS[index - 1]
 
