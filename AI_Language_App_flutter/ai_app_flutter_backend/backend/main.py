@@ -29,6 +29,10 @@ from routers.lesson_ai import (
     router as lesson_ai_router,
 )
 
+from routers.lesson_hint import (
+    router as lesson_hint_router,
+)
+
 from routers.lesson_assessment import (
     router as lesson_assessment_router,
 )
@@ -100,6 +104,7 @@ app.include_router(learning_router)
 app.include_router(learning_path_router)
 app.include_router(ai_router)
 app.include_router(lesson_ai_router)
+app.include_router(lesson_hint_router)
 app.include_router(lesson_assessment_router)
 app.include_router(placement_router)
 app.include_router(vocabulary_router)
