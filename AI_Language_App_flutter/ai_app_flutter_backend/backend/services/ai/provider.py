@@ -93,6 +93,27 @@ class OpenRouterProvider(AIProvider):
 
         return messages
 
+    @staticmethod
+    def _extract_text(message: dict[str, Any]) -> str:
+        """Extract text from OpenRouter/OpenAI-compatible message content."""
+        content = message.get("content")
+
+        if isinstance(content, str):
+            return content
+
+        if isinstance(content, list):
+            parts: list[str] = []
+            for part in content:
+                if isinstance(part, str):
+                    parts.append(part)
+                elif isinstance(part, dict):
+                    text = part.get("text")
+                    if isinstance(text, str):
+                        parts.append(text)
+            return "".join(parts)
+
+        return ""
+
     def generate_text(
         self,
         *,
@@ -118,7 +139,8 @@ class OpenRouterProvider(AIProvider):
         text = ""
         if choices:
             message = choices[0].get("message") or {}
-            text = str(message.get("content") or "")
+            if isinstance(message, dict):
+                text = self._extract_text(message)
 
         usage = response.get("usage") or {}
 
@@ -149,7 +171,16 @@ class OpenRouterProvider(AIProvider):
 
             if choices:
                 delta = choices[0].get("delta") or {}
-                text = str(delta.get("content") or "")
+                if isinstance(delta, dict):
+                    content = delta.get("content")
+                    if isinstance(content, str):
+                        text = content
+                    elif isinstance(content, list):
+                        text = "".join(
+                            str(part.get("text", ""))
+                            for part in content
+                            if isinstance(part, dict) and isinstance(part.get("text"), str)
+                        )
 
             usage = chunk.get("usage") or {}
 
