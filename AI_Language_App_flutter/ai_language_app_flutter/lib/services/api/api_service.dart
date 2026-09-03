@@ -5,6 +5,7 @@ import 'learning_api_service.dart';
 import 'lesson_ai_api_service.dart';
 import 'placement_api_service.dart';
 import 'stats_api_service.dart';
+import 'translation_api_service.dart';
 import 'word_api_service.dart';
 
 class ApiService {
@@ -15,6 +16,7 @@ class ApiService {
   late final LessonAiApiService _lessonAi;
   late final PlacementApiService _placement;
   late final StatsApiService _stats;
+  late final TranslationApiService _translation;
   late final WordApiService _words;
 
   ApiService() {
@@ -24,6 +26,7 @@ class ApiService {
     _lessonAi = LessonAiApiService(_client);
     _placement = PlacementApiService(_client);
     _stats = StatsApiService(_client);
+    _translation = TranslationApiService(_client);
     _words = WordApiService(_client);
   }
 
@@ -52,6 +55,8 @@ class ApiService {
   Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) => _learning.completeLesson(lessonId: lessonId, score: score);
 
   Stream<LessonAiChunk> lessonAiChat({required int lessonId, required String message, String? conversationId}) => _lessonAi.chat(lessonId: lessonId, message: message, conversationId: conversationId);
+
+  Future<String> translateText({required String text}) => _translation.translate(text: text);
 
   Future<int> startPlacementAttempt({required String language}) => _placement.startPlacementAttempt(language: language);
   Future<PlacementWordsResponse> getPlacementWords({required int attemptId, required String language, required String level}) => _placement.getPlacementWords(attemptId: attemptId, language: language, level: level);
