@@ -95,11 +95,11 @@ class OpenRouterProvider(AIProvider):
 
     @staticmethod
     def _extract_text(message: dict[str, Any]) -> str:
-        """Extract text from OpenRouter/OpenAI-compatible message content."""
+        """Extract only the final answer text from OpenRouter/OpenAI content."""
         content = message.get("content")
 
         if isinstance(content, str):
-            return content
+            return content.strip()
 
         if isinstance(content, list):
             parts: list[str] = []
@@ -110,7 +110,7 @@ class OpenRouterProvider(AIProvider):
                     text = part.get("text")
                     if isinstance(text, str):
                         parts.append(text)
-            return "".join(parts)
+            return "".join(parts).strip()
 
         return ""
 
@@ -137,10 +137,23 @@ class OpenRouterProvider(AIProvider):
 
         choices = response.get("choices") or []
         text = ""
+        finish_reason = None
+
         if choices:
-            message = choices[0].get("message") or {}
+            first_choice = choices[0] or {}
+            finish_reason = first_choice.get("finish_reason")
+            message = first_choice.get("message") or {}
             if isinstance(message, dict):
                 text = self._extract_text(message)
+
+        if not text:
+            # Do not silently return an empty answer. This gives the caller a
+            # useful failure instead of making the API look like a successful
+            # translation with no content.
+            raise RuntimeError(
+                "OpenRouter returned no final text "
+                f"(model={model!r}, finish_reason={finish_reason!r})."
+            )
 
         usage = response.get("usage") or {}
 
