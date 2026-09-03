@@ -14,12 +14,18 @@ class LessonAssessmentQuestion(BaseModel):
     options: list[LessonAssessmentOption]
 
 
+class LessonKeySentence(BaseModel):
+    sentence: str
+    translation: str
+
+
 class LessonAssessmentResponse(BaseModel):
     lesson_id: int
     passing_score: float
     question_count: int
     questions: list[LessonAssessmentQuestion]
     conversation_ready: bool
+    key_sentences: list[LessonKeySentence] = Field(default_factory=list)
 
 
 class LessonAssessmentAnswer(BaseModel):
