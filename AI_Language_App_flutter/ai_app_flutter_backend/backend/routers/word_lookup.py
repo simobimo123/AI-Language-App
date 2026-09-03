@@ -72,6 +72,11 @@ def _build_result(
     translation = get_translation(sense.id, native_language, db)
     examples = get_examples(sense.id, db)
     example = examples[0] if examples else None
+    example_translation = (
+        _example_translation(example.id, native_language, db)
+        if example
+        else None
+    )
 
     return {
         "word": entry.word or entry.lemma,
@@ -82,11 +87,7 @@ def _build_result(
         "part_of_speech": entry.part_of_speech,
         "pronunciation": entry.pronunciation,
         "example_sentence": example.sentence if example else None,
-        "example_translation": (
-            _example_translation(example.id, native_language, db)
-            if example
-            else None
-        ),
+        "example_translation": example_translation,
     }
 
 
@@ -104,7 +105,11 @@ def lookup_word(
     # complete vocabulary item does not consume an AI request.
     try:
         result = _build_result(word, current_user, db)
-        if result.get("translation") and result.get("example_sentence"):
+        if (
+            result.get("translation")
+            and result.get("example_sentence")
+            and result.get("example_translation")
+        ):
             return result
     except HTTPException:
         pass
