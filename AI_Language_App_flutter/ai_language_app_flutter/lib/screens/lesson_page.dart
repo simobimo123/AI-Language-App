@@ -42,6 +42,8 @@ class _LessonPageState extends State<LessonPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_TutorMessage> _messages = [];
+  final Map<String, String> _translations = {};
+  final Set<String> _translationLoading = {};
 
   String? _conversationId;
   String? _error;
@@ -130,6 +132,42 @@ class _LessonPageState extends State<LessonPage> {
         zh: '发送',
       );
 
+  String _translateLabel() => _text(
+        ar: 'ترجمة',
+        en: 'Translate',
+        fr: 'Traduire',
+        es: 'Traducir',
+        de: 'Übersetzen',
+        it: 'Traduci',
+        ja: '翻訳',
+        ko: '번역',
+        zh: '翻译',
+      );
+
+  String _hideTranslationLabel() => _text(
+        ar: 'إخفاء الترجمة',
+        en: 'Hide translation',
+        fr: 'Masquer la traduction',
+        es: 'Ocultar traducción',
+        de: 'Übersetzung ausblenden',
+        it: 'Nascondi traduzione',
+        ja: '翻訳を隠す',
+        ko: '번역 숨기기',
+        zh: '隐藏翻译',
+      );
+
+  String _translationErrorLabel() => _text(
+        ar: 'تعذرت الترجمة. حاول مرة أخرى.',
+        en: 'Translation failed. Please try again.',
+        fr: 'La traduction a échoué. Réessayez.',
+        es: 'La traducción falló. Inténtalo de nuevo.',
+        de: 'Die Übersetzung ist fehlgeschlagen. Bitte erneut versuchen.',
+        it: 'La traduzione non è riuscita. Riprova.',
+        ja: '翻訳に失敗しました。もう一度お試しください。',
+        ko: '번역에 실패했습니다. 다시 시도하세요.',
+        zh: '翻译失败，请重试。',
+      );
+
   String _finishLabel() => _text(
         ar: 'إنهاء الدرس',
         en: 'Finish lesson',
@@ -201,6 +239,36 @@ class _LessonPageState extends State<LessonPage> {
         ko: 'AI 튜터 연결 중 오류가 발생했습니다.',
         zh: '连接 AI 导师时发生错误。',
       );
+
+  String _translationKey(_TutorMessage message) => '${message.role}:${message.text}';
+
+  Future<void> _toggleTranslation(_TutorMessage message) async {
+    final key = _translationKey(message);
+
+    if (_translations.containsKey(key)) {
+      setState(() => _translations.remove(key));
+      return;
+    }
+
+    if (_translationLoading.contains(key)) return;
+
+    setState(() => _translationLoading.add(key));
+
+    try {
+      final translation = await _apiService.translateText(text: message.text);
+      if (!mounted) return;
+      setState(() {
+        _translations[key] = translation;
+        _translationLoading.remove(key);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _translationLoading.remove(key));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_translationErrorLabel())),
+      );
+    }
+  }
 
   Future<void> _startTutor() async {
     if (_lessonStarted || _sending) return;
@@ -445,6 +513,49 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
+  Widget _buildTranslationButton(
+    _TutorMessage message,
+    ThemeData theme,
+  ) {
+    final key = _translationKey(message);
+    final translation = _translations[key];
+    final loading = _translationLoading.contains(key);
+
+    return Align(
+      alignment: message.isUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(top: 2),
+        child: TextButton.icon(
+          onPressed: loading ? null : () => _toggleTranslation(message),
+          icon: loading
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  translation == null
+                      ? Icons.translate_rounded
+                      : Icons.keyboard_arrow_up_rounded,
+                  size: 18,
+                ),
+          label: Text(
+            translation == null
+                ? _translateLabel()
+                : _hideTranslationLabel(),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            minimumSize: const Size(0, 32),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessage(_TutorMessage message, ThemeData theme) {
     final isUser = message.isUser;
 
@@ -462,7 +573,39 @@ class _LessonPageState extends State<LessonPage> {
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
         ),
-        child: _buildClickableMessage(message.text, theme),
+        child: Column(
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            _buildClickableMessage(message.text, theme),
+            if (_translations.containsKey(_translationKey(message)))
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _translations[_translationKey(message)]!,
+                    textDirection: _textDirection(
+                      _translations[_translationKey(message)]!,
+                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            _buildTranslationButton(message, theme),
+          ],
+        ),
       ),
     );
   }
