@@ -46,9 +46,6 @@ def stream_openrouter_response(
     completion_tokens = 0
     total_tokens = 0
 
-    # OpenRouter does not create application conversation IDs for us.
-    # Generate one server-side so the existing Flutter conversation flow
-    # continues to work even when the first request has no ID yet.
     conversation_id = request.conversation_id or str(uuid.uuid4())
 
     yield sse_event(
@@ -58,8 +55,6 @@ def stream_openrouter_response(
         }
     )
 
-    # The system instruction is sent separately from the stored conversation
-    # so it is never persisted as a user/model message.
     openrouter_messages = [
         {
             "role": "system",
@@ -168,3 +163,7 @@ def stream_openrouter_response(
                 "message": "AI service is temporarily unavailable.",
             }
         )
+
+
+# Backward-compatible name used by the existing router.
+stream_gemini_response = stream_openrouter_response
