@@ -66,7 +66,6 @@ class _CachedLessonConversation {
   final List<Map<String, String>> messages;
 
   _CachedLessonConversation({
-    this.conversationId,
     List<Map<String, String>>? messages,
   }) : messages = messages ?? [];
 }
