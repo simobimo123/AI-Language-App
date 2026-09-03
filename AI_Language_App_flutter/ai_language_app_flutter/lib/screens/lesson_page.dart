@@ -343,7 +343,7 @@ class _LessonPageState extends State<LessonPage> {
         conversationId: _conversationId,
       )) {
         if (!mounted) {
-          return;
+          break;
         }
 
         if (chunk.type == 'conversation') {
@@ -361,9 +361,8 @@ class _LessonPageState extends State<LessonPage> {
           _messages.clear();
 
           for (final item in chunk.history!) {
-            final role = item['role'] == 'user'
-                ? 'user'
-                : 'assistant';
+            final role =
+                item['role'] == 'user' ? 'user' : 'assistant';
             final text = item['text'] ?? '';
 
             if (text.isNotEmpty) {
@@ -426,24 +425,23 @@ class _LessonPageState extends State<LessonPage> {
         }
       }
     } catch (e) {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorLabel()),
+          ),
+        );
       }
+    }
 
-      setState(() {
-        _error = e.toString();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_errorLabel()),
-        ),
-      );
-    } finally {
-      if (!mounted) {
-        return;
-      }
-
+    // Do not return from a finally block. The cleanup is performed after
+    // the request finishes or fails, while still checking whether the
+    // widget is mounted before touching its state.
+    if (mounted) {
       setState(() {
         _sending = false;
         _loading = false;

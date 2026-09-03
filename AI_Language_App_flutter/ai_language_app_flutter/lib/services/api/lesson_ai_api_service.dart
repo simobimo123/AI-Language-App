@@ -87,7 +87,7 @@ class LessonAiApiService {
   Stream<LessonAiChunk> chat({
     required int lessonId,
     required String message,
-    String? conversationId,
+    required String? conversationId,
   }) async* {
     final cached = _sessionCache[lessonId];
 
@@ -113,6 +113,7 @@ class LessonAiApiService {
     }
 
     final token = await _client.getToken();
+
     final effectiveConversationId =
         conversationId ?? cached?.conversationId;
 
@@ -136,6 +137,7 @@ class LessonAiApiService {
     });
 
     late final http.StreamedResponse response;
+
     try {
       response = await _httpClient.send(request);
     } on http.ClientException catch (e) {
@@ -152,12 +154,15 @@ class LessonAiApiService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
+
       dynamic data;
+
       try {
         data = jsonDecode(body);
       } catch (_) {
         data = body;
       }
+
       throw _client.apiException(
         data,
         'Failed to contact the AI tutor.',
@@ -167,7 +172,9 @@ class LessonAiApiService {
 
     String? pendingEvent;
     final dataLines = <String>[];
+
     String? streamedConversationId = effectiveConversationId;
+
     final streamedAssistantText = StringBuffer();
 
     await for (final line in response.stream
@@ -188,6 +195,7 @@ class LessonAiApiService {
           dataLines.join('\n'),
           fallbackType: pendingEvent,
         );
+
         dataLines.clear();
         pendingEvent = null;
 
@@ -215,6 +223,8 @@ class LessonAiApiService {
       }
     }
 
+    // Handle the final SSE event if the stream does not end with
+    // an additional empty line.
     if (dataLines.isNotEmpty) {
       final chunk = _parseEvent(
         dataLines.join('\n'),
@@ -278,21 +288,35 @@ class LessonAiApiService {
     });
   }
 
-  LessonAiChunk? _parseEvent(String payload, {String? fallbackType}) {
-    if (payload.isEmpty || payload == '[DONE]') return null;
+  LessonAiChunk? _parseEvent(
+    String payload, {
+    String? fallbackType,
+  }) {
+    if (payload.isEmpty || payload == '[DONE]') {
+      return null;
+    }
 
     try {
       final decoded = jsonDecode(payload);
+
       if (decoded is Map) {
-        return LessonAiChunk.fromJson(Map<String, dynamic>.from(decoded));
+        return LessonAiChunk.fromJson(
+          Map<String, dynamic>.from(decoded),
+        );
       }
     } catch (_) {
       if (fallbackType != null && fallbackType.isNotEmpty) {
-        return LessonAiChunk(type: fallbackType, text: payload);
+        return LessonAiChunk(
+          type: fallbackType,
+          text: payload,
+        );
       }
     }
+
     return null;
   }
 
-  void dispose() => _httpClient.close();
+  void dispose() {
+    _httpClient.close();
+  }
 }
