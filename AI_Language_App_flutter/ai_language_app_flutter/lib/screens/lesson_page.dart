@@ -339,6 +339,18 @@ class _LessonPageState extends State<LessonPage> {
     }
   }
 
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   String _firstSentence(String text) {
     final cleaned = text.trim();
     if (cleaned.isEmpty) return cleaned;
@@ -400,10 +412,6 @@ class _LessonPageState extends State<LessonPage> {
       return text.split(RegExp(r'(\s+)'));
     }
 
-    // CJK languages do not reliably separate words with spaces. We therefore
-    // keep Latin/digit runs together, while exposing each CJK character as a
-    // tappable lookup unit. This avoids treating an entire sentence as one
-    // lookup request and requires no extra tokenizer dependency.
     final result = <String>[];
     var buffer = StringBuffer();
 
