@@ -103,12 +103,6 @@ def _get_expected_vocabulary_level(attempt: PlacementAttempt) -> str:
     if attempt.preliminary_level is None:
         return "A1"
 
-    if attempt.preliminary_level == "PRE_A1":
-        raise HTTPException(
-            status_code=400,
-            detail="This placement attempt is already assigned to PRE_A1.",
-        )
-
     next_level = calculate_next_level(attempt.preliminary_level)
     if next_level is None:
         raise HTTPException(
@@ -129,12 +123,6 @@ def get_placement_words(
 ):
     language = normalize_language(language)
     level = normalize_level(level)
-
-    if level == "PRE_A1":
-        raise HTTPException(
-            status_code=400,
-            detail="PRE_A1 does not use a vocabulary test.",
-        )
 
     if attempt_id is not None:
         attempt = get_attempt_or_404(
@@ -320,8 +308,8 @@ def evaluate_placement_words_secure(
 
     # Vocabulary-only placement rule:
     #   >= 50% -> move up one level.
-    #   < 50%  -> move down one level.
-    # A1 failure becomes PRE_A1. C2 success stays C2.
+    #   < 50%  -> stay at the current level.
+    # A1 failure stays A1. C2 success stays C2.
     if passed:
         final_or_next_level = calculate_next_level(level)
 
