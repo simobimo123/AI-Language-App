@@ -1,10 +1,8 @@
 import json
 import logging
 
-from google.genai import types
-
 from models import User
-from services.ai.client import AI_MODEL, client
+from services.ai.client import AI_MODEL, chat_completion
 from services.ai.normalization import (
     normalize_confidence,
     normalize_language,
@@ -234,35 +232,16 @@ Return valid JSON only.
 """
 
 
-def clean_json_response(
-    text: str,
-) -> str:
-
+def clean_json_response(text: str) -> str:
     text = text.strip()
 
-    if text.startswith(
-        "```json"
-    ):
+    if text.startswith("```json"):
+        text = text[len("```json"):].strip()
+    elif text.startswith("```"):
+        text = text[len("```"):].strip()
 
-        text = text[
-            len("```json"):
-        ].strip()
-
-    elif text.startswith(
-        "```"
-    ):
-
-        text = text[
-            len("```"):
-        ].strip()
-
-    if text.endswith(
-        "```"
-    ):
-
-        text = text[
-            :-3
-        ].strip()
+    if text.endswith("```"):
+        text = text[:-3].strip()
 
     return text
 
@@ -277,7 +256,6 @@ def generate_vocabulary_enrichment(
     int,
     int,
 ]:
-
     learning_language = normalize_language(
         current_user.learning_language
     )
@@ -288,14 +266,8 @@ def generate_vocabulary_enrichment(
 
     instruction = (
         VOCABULARY_ENRICHMENT_INSTRUCTION
-        .replace(
-            "__LEARNING_LANGUAGE__",
-            learning_language,
-        )
-        .replace(
-            "__NATIVE_LANGUAGE__",
-            native_language,
-        )
+        .replace("__LEARNING_LANGUAGE__", learning_language)
+        .replace("__NATIVE_LANGUAGE__", native_language)
     )
 
     prompt = f"""
@@ -376,134 +348,83 @@ Important:
   learning language is not English.
 """
 
-    response = client.models.generate_content(
+    response = chat_completion(
         model=AI_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=instruction,
-            response_mime_type="application/json",
-            max_output_tokens=1800,
-        ),
+        messages=[
+            {
+                "role": "system",
+                "content": instruction,
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        max_tokens=1800,
+        response_format={
+            "type": "json_object",
+        },
     )
 
-    if not response.text:
+    content = (
+        response.get("choices", [{}])[0]
+        .get("message", {})
+        .get("content")
+    )
 
+    if not content:
         raise RuntimeError(
-            "Vocabulary enrichment returned an empty response."
+            "OpenRouter vocabulary enrichment returned an empty response."
         )
 
-    (
-        prompt_tokens,
-        completion_tokens,
-        total_tokens,
-    ) = extract_token_usage(
-        response
+    usage = response.get("usage") or {}
+    prompt_tokens, completion_tokens, total_tokens = extract_token_usage(
+        usage
     )
 
-    cleaned_json = clean_json_response(
-        response.text
-    )
+    cleaned_json = clean_json_response(content)
 
     try:
+        raw_data = json.loads(cleaned_json)
 
-        raw_data = json.loads(
-            cleaned_json
-        )
-
-        if not isinstance(
-            raw_data,
-            dict,
-        ):
-
+        if not isinstance(raw_data, dict):
             raise ValueError(
-                "Gemini vocabulary response must be a JSON object."
+                "OpenRouter vocabulary response must be a JSON object."
             )
 
-        # -------------------------------------------------
-        # Required identity
-        # -------------------------------------------------
-
-        if not raw_data.get(
-            "word"
-        ):
-
+        if not raw_data.get("word"):
             raw_data["word"] = word
 
-        raw_data["language"] = (
-            learning_language
+        raw_data["language"] = learning_language
+
+        raw_data["cefr_confidence"] = normalize_confidence(
+            raw_data.get("cefr_confidence")
         )
-
-        # -------------------------------------------------
-        # CEFR confidence
-        # -------------------------------------------------
-
-        raw_data["cefr_confidence"] = (
-            normalize_confidence(
-                raw_data.get(
-                    "cefr_confidence"
-                )
-            )
-        )
-
-        # -------------------------------------------------
-        # Forms
-        # -------------------------------------------------
 
         normalized_forms = []
 
-        for form_data in (
-            raw_data.get(
-                "forms",
-                [],
-            )
-            or []
-        ):
-
-            if isinstance(
-                form_data,
-                str,
-            ):
-
-                form_value = (
-                    form_data.strip()
-                )
-
+        for form_data in raw_data.get("forms", []) or []:
+            if isinstance(form_data, str):
+                form_value = form_data.strip()
                 if form_value:
-
                     normalized_forms.append(
                         {
                             "form": form_value,
                             "form_type": None,
-                            "is_lemma": (
-                                normalize_text(
-                                    form_value
-                                )
-                                == normalize_text(
-                                    word
-                                )
-                            ),
+                            "is_lemma": normalize_text(form_value)
+                            == normalize_text(word),
                             "grammatical_features": None,
                         }
                     )
-
                 continue
 
-            if not isinstance(
-                form_data,
-                dict,
-            ):
+            if not isinstance(form_data, dict):
                 continue
 
             form_value = (
-                form_data.get(
-                    "form"
-                )
-                or form_data.get(
-                    "value"
-                )
-                or form_data.get(
-                    "word"
-                )
+                form_data.get("form")
+                or form_data.get("value")
+                or form_data.get("word")
             )
 
             if not form_value:
@@ -511,64 +432,31 @@ Important:
 
             normalized_forms.append(
                 {
-                    "form": str(
-                        form_value
-                    ).strip(),
+                    "form": str(form_value).strip(),
                     "form_type": (
-                        str(
-                            form_data.get(
-                                "form_type"
-                            )
-                        ).strip()
-                        if form_data.get(
-                            "form_type"
-                        )
+                        str(form_data.get("form_type")).strip()
+                        if form_data.get("form_type")
                         else None
                     ),
-                    "is_lemma": bool(
-                        form_data.get(
-                            "is_lemma",
-                            False,
-                        )
-                    ),
+                    "is_lemma": bool(form_data.get("is_lemma", False)),
                     "grammatical_features": (
-                        form_data.get(
-                            "grammatical_features"
-                        )
-                        if isinstance(
-                            form_data.get(
-                                "grammatical_features"
-                            ),
-                            dict,
-                        )
+                        form_data.get("grammatical_features")
+                        if isinstance(form_data.get("grammatical_features"), dict)
                         else None
                     ),
                 }
             )
 
-        raw_data["forms"] = (
-            normalized_forms
-        )
+        raw_data["forms"] = normalized_forms
 
-        requested_normalized = (
-            normalize_text(
-                word
-            )
-        )
-
+        requested_normalized = normalize_text(word)
         normalized_form_values = {
-            normalize_text(
-                item["form"]
-            )
+            normalize_text(item["form"])
             for item in normalized_forms
             if item.get("form")
         }
 
-        if (
-            requested_normalized
-            not in normalized_form_values
-        ):
-
+        if requested_normalized not in normalized_form_values:
             raw_data["forms"].insert(
                 0,
                 {
@@ -579,12 +467,7 @@ Important:
                 },
             )
 
-        # -------------------------------------------------
-        # Relations
-        # -------------------------------------------------
-
         normalized_relations = []
-
         allowed_relation_types = {
             "synonym",
             "antonym",
@@ -598,127 +481,54 @@ Important:
             "see_also",
         }
 
-        for relation_data in (
-            raw_data.get(
-                "relations",
-                [],
-            )
-            or []
-        ):
-
-            if not isinstance(
-                relation_data,
-                dict,
-            ):
+        for relation_data in raw_data.get("relations", []) or []:
+            if not isinstance(relation_data, dict):
                 continue
 
             target_word = (
-                relation_data.get(
-                    "word"
-                )
-                or relation_data.get(
-                    "target_word"
-                )
+                relation_data.get("word")
+                or relation_data.get("target_word")
             )
+            relation_type = relation_data.get("relation_type")
 
-            relation_type = (
-                relation_data.get(
-                    "relation_type"
-                )
-            )
-
-            if (
-                not target_word
-                or not relation_type
-            ):
+            if not target_word or not relation_type:
                 continue
 
-            relation_type = (
-                str(
-                    relation_type
-                )
-                .strip()
-                .lower()
-            )
-
-            if (
-                relation_type
-                not in allowed_relation_types
-            ):
+            relation_type = str(relation_type).strip().lower()
+            if relation_type not in allowed_relation_types:
                 continue
 
             normalized_relations.append(
                 {
-                    "word": str(
-                        target_word
-                    ).strip(),
+                    "word": str(target_word).strip(),
                     "relation_type": relation_type,
-                    "part_of_speech": (
-                        relation_data.get(
-                            "part_of_speech"
-                        )
-                    ),
+                    "part_of_speech": relation_data.get("part_of_speech"),
                 }
             )
 
-        raw_data["relations"] = (
-            normalized_relations
-        )
-
-        # -------------------------------------------------
-        # Example translations
-        # -------------------------------------------------
+        raw_data["relations"] = normalized_relations
 
         normalized_translations = []
 
-        for translation_data in (
-            raw_data.get(
-                "example_translations",
-                [],
-            )
-            or []
-        ):
-
-            if isinstance(
-                translation_data,
-                str,
-            ):
-
-                translation_text = (
-                    translation_data.strip()
-                )
-
+        for translation_data in raw_data.get("example_translations", []) or []:
+            if isinstance(translation_data, str):
+                translation_text = translation_data.strip()
                 if translation_text:
-
                     normalized_translations.append(
                         {
-                            "language": (
-                                native_language
-                            ),
-                            "translation": (
-                                translation_text
-                            ),
+                            "language": native_language,
+                            "translation": translation_text,
                         }
                     )
-
                 continue
 
-            if not isinstance(
-                translation_data,
-                dict,
-            ):
+            if not isinstance(translation_data, dict):
                 continue
 
             translation_text = (
-                translation_data.get(
-                    "translation"
-                )
-                or translation_data.get(
-                    "text"
-                )
-                or translation_data.get(
-                    "value"
-                )
+                translation_data.get("translation")
+                or translation_data.get("text")
+                or translation_data.get("value")
             )
 
             if not translation_text:
@@ -726,65 +536,29 @@ Important:
 
             normalized_translations.append(
                 {
-                    "language": (
-                        native_language
-                    ),
-                    "translation": (
-                        str(
-                            translation_text
-                        ).strip()
-                    ),
+                    "language": native_language,
+                    "translation": str(translation_text).strip(),
                 }
             )
 
-        raw_data[
-            "example_translations"
-        ] = normalized_translations
+        raw_data["example_translations"] = normalized_translations
 
-        # -------------------------------------------------
-        # Optional fields
-        # -------------------------------------------------
+        if raw_data.get("cefr_level"):
+            raw_data["cefr_level"] = str(
+                raw_data["cefr_level"]
+            ).strip().upper()
 
-        if raw_data.get(
-            "cefr_level"
-        ):
-
-            raw_data[
-                "cefr_level"
-            ] = (
-                str(
-                    raw_data[
-                        "cefr_level"
-                    ]
-                )
-                .strip()
-                .upper()
-            )
-
-        # -------------------------------------------------
-        # Final validation
-        # -------------------------------------------------
-
-        result = (
-            AIVocabularyEnrichment
-            .model_validate(
-                raw_data
-            )
-        )
+        result = AIVocabularyEnrichment.model_validate(raw_data)
 
     except Exception as exc:
-
         logger.error(
-            "Invalid vocabulary enrichment JSON "
-            "for word=%s: %s "
-            "response=%s",
+            "Invalid vocabulary enrichment JSON for word=%s: %s response=%s",
             word,
             exc,
             cleaned_json[:5000],
         )
-
         raise RuntimeError(
-            "Gemini returned invalid vocabulary JSON."
+            "OpenRouter returned invalid vocabulary JSON."
         ) from exc
 
     return (
