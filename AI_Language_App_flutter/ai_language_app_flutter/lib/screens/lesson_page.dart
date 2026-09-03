@@ -42,7 +42,12 @@ class _LessonPageState extends State<LessonPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_TutorMessage> _messages = [];
-  final Map<String, String> _translations = {};
+
+  // Translation cache is intentionally kept separate from visibility.
+  // Hiding a translation must not delete it, so showing it again is instant
+  // and does not make another AI request.
+  final Map<String, String> _translationCache = {};
+  final Set<String> _visibleTranslations = {};
   final Set<String> _translationLoading = {};
 
   String? _conversationId;
@@ -240,13 +245,23 @@ class _LessonPageState extends State<LessonPage> {
         zh: '连接 AI 导师时发生错误。',
       );
 
-  String _translationKey(_TutorMessage message) => '${message.role}:${message.text}';
+  String _translationKey(_TutorMessage message) {
+    return '${_locale()}:${message.role}:${message.text}';
+  }
 
   Future<void> _toggleTranslation(_TutorMessage message) async {
     final key = _translationKey(message);
 
-    if (_translations.containsKey(key)) {
-      setState(() => _translations.remove(key));
+    // A cached translation is already available: only toggle its visibility.
+    // No network/AI request is made here.
+    if (_translationCache.containsKey(key)) {
+      setState(() {
+        if (_visibleTranslations.contains(key)) {
+          _visibleTranslations.remove(key);
+        } else {
+          _visibleTranslations.add(key);
+        }
+      });
       return;
     }
 
@@ -258,7 +273,8 @@ class _LessonPageState extends State<LessonPage> {
       final translation = await _apiService.translateText(text: message.text);
       if (!mounted) return;
       setState(() {
-        _translations[key] = translation;
+        _translationCache[key] = translation;
+        _visibleTranslations.add(key);
         _translationLoading.remove(key);
       });
     } catch (_) {
@@ -518,7 +534,8 @@ class _LessonPageState extends State<LessonPage> {
     ThemeData theme,
   ) {
     final key = _translationKey(message);
-    final translation = _translations[key];
+    final cached = _translationCache.containsKey(key);
+    final visible = _visibleTranslations.contains(key);
     final loading = _translationLoading.contains(key);
 
     return Align(
@@ -536,15 +553,15 @@ class _LessonPageState extends State<LessonPage> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(
-                  translation == null
-                      ? Icons.translate_rounded
-                      : Icons.keyboard_arrow_up_rounded,
+                  cached && visible
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.translate_rounded,
                   size: 18,
                 ),
           label: Text(
-            translation == null
-                ? _translateLabel()
-                : _hideTranslationLabel(),
+            cached && visible
+                ? _hideTranslationLabel()
+                : _translateLabel(),
           ),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -558,6 +575,9 @@ class _LessonPageState extends State<LessonPage> {
 
   Widget _buildMessage(_TutorMessage message, ThemeData theme) {
     final isUser = message.isUser;
+    final key = _translationKey(message);
+    final translation = _translationCache[key];
+    final visible = _visibleTranslations.contains(key);
 
     return Align(
       alignment: isUser
@@ -579,7 +599,7 @@ class _LessonPageState extends State<LessonPage> {
               : CrossAxisAlignment.start,
           children: [
             _buildClickableMessage(message.text, theme),
-            if (_translations.containsKey(_translationKey(message)))
+            if (visible && translation != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Container(
@@ -593,10 +613,8 @@ class _LessonPageState extends State<LessonPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    _translations[_translationKey(message)]!,
-                    textDirection: _textDirection(
-                      _translations[_translationKey(message)]!,
-                    ),
+                    translation,
+                    textDirection: _textDirection(translation),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       height: 1.4,
                     ),
