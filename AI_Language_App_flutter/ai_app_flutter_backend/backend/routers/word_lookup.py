@@ -1,31 +1,20 @@
-import os
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import (
-    User,
-    VocabularyEntry,
-    VocabularyExample,
-    VocabularyExampleTranslation,
-    VocabularySense,
-    VocabularyTranslation,
-)
+from models import User, VocabularyExampleTranslation
 from routers.auth import get_current_user
 from services.ai.context import (
+    find_vocabulary_entry,
     get_examples,
     get_senses,
     get_translation,
-    find_vocabulary_entry,
 )
 from services.ai.enrichment.service import enrich_vocabulary_on_demand
 from services.ai.normalization import normalize_language
 from services.ai.rate_limit import check_rate_limit
-from services.ai.client import AI_CLASSIFIER_MODEL
-from services.ai.provider import provider
 from services.ai.usage import record_api_usage, reserve_ai_request
 
 
@@ -118,7 +107,7 @@ def lookup_word(
         if result.get("translation") or result.get("example_sentence"):
             return result
     except HTTPException:
-        result = None
+        pass
 
     # If the word is not available or is incomplete, enrich it once and
     # persist the result so future taps are served from the database.
