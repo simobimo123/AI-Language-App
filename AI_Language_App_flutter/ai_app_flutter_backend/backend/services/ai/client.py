@@ -19,15 +19,20 @@ OPENROUTER_BASE_URL = os.getenv(
     "https://openrouter.ai/api/v1",
 ).rstrip("/")
 
-AI_MODEL = os.getenv(
-    "OPENROUTER_MAIN_MODEL",
-    "openai/gpt-5-mini",
-)
+# The model is intentionally configured only through .env.
+# Do not hard-code a model here.
+AI_MODEL = os.getenv("OPENROUTER_MAIN_MODEL")
+AI_CLASSIFIER_MODEL = os.getenv("OPENROUTER_CLASSIFIER_MODEL")
 
-AI_CLASSIFIER_MODEL = os.getenv(
-    "OPENROUTER_CLASSIFIER_MODEL",
-    "openai/gpt-5-mini",
-)
+if not AI_MODEL:
+    raise RuntimeError(
+        "OPENROUTER_MAIN_MODEL is not configured in the .env file"
+    )
+
+if not AI_CLASSIFIER_MODEL:
+    raise RuntimeError(
+        "OPENROUTER_CLASSIFIER_MODEL is not configured in the .env file"
+    )
 
 
 # OpenRouter exposes an OpenAI-compatible Chat Completions API.
