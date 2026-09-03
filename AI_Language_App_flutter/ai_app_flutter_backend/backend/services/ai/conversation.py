@@ -1,6 +1,5 @@
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
-from google.genai import types
 
 from models import AIConversationMessage
 
@@ -34,22 +33,29 @@ def get_conversation_history(
     return messages
 
 
-def build_gemini_contents(
+def build_chat_messages(
     history: list[AIConversationMessage],
     current_message: str,
     vocabulary_context: str | None,
-) -> list[types.Content]:
-    contents: list[types.Content] = []
+) -> list[dict[str, str]]:
+    """Convert database conversation rows to OpenAI-compatible messages."""
+    messages: list[dict[str, str]] = []
 
     for message in history:
-        contents.append(
-            types.Content(
-                role=message.role,
-                parts=[types.Part(text=message.content)],
-            )
+        role = "assistant" if message.role == "model" else message.role
+
+        if role not in {"user", "assistant", "system"}:
+            role = "assistant"
+
+        messages.append(
+            {
+                "role": role,
+                "content": message.content,
+            }
         )
 
     current_text = current_message
+
     if vocabulary_context:
         current_text = (
             "VOCABULARY DATABASE DATA\n\n"
@@ -58,13 +64,14 @@ def build_gemini_contents(
             + current_message
         )
 
-    contents.append(
-        types.Content(
-            role="user",
-            parts=[types.Part(text=current_text)],
-        )
+    messages.append(
+        {
+            "role": "user",
+            "content": current_text,
+        }
     )
-    return contents
+
+    return messages
 
 
 def save_conversation_message(
@@ -116,5 +123,3 @@ def cleanup_old_conversation_messages(
                 AIConversationMessage.id.in_(message_ids)
             )
         )
-
-
