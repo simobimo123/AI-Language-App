@@ -1,6 +1,4 @@
-
 import 'package:flutter/material.dart';
-
 import '../../controllers/learning_path_controller.dart';
 import '../../core/language/language_controller.dart';
 import '../../models/learning_lesson_model.dart';
@@ -47,9 +45,6 @@ class LearningPathView extends StatelessWidget {
     }
   }
 
-  String _level(String value) =>
-      value.toUpperCase() == 'PRE_A1' ? 'Pre-A1' : value;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -88,8 +83,8 @@ class LearningPathView extends StatelessWidget {
   }
 
   Widget _buildProgressCard(ThemeData theme) {
-    final current = _level(controller.currentLevel);
-    final next = _level(controller.nextLevel);
+    final current = controller.currentLevel;
+    final next = controller.nextLevel;
     final progress = (controller.progress / 100).clamp(0.0, 1.0);
 
     return Container(
@@ -267,7 +262,7 @@ class LearningPathView extends StatelessWidget {
   }
 
   Widget _buildPathHeader(ThemeData theme) {
-    final current = _level(controller.currentLevel);
+    final current = controller.currentLevel;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
