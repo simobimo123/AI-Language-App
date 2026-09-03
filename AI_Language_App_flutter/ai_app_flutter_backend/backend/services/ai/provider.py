@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+
+from services.ai.client import chat_completion, stream_chat_completion
 
 
 load_dotenv()
@@ -19,11 +19,7 @@ class AITextResponse:
 
 
 class AIProvider:
-    """Small provider interface used by application-level AI services.
-
-    The rest of the application should depend on these methods rather than
-    importing a provider SDK directly. This makes the provider replaceable.
-    """
+    """Provider interface used by application-level AI services."""
 
     name: str
 
@@ -49,28 +45,53 @@ class AIProvider:
         raise NotImplementedError
 
 
-class GeminiProvider(AIProvider):
-    name = "gemini"
-
-    def __init__(self, api_key: str) -> None:
-        self.client = genai.Client(api_key=api_key)
+class OpenRouterProvider(AIProvider):
+    name = "openrouter"
 
     @staticmethod
-    def _usage(response: Any) -> tuple[int, int, int]:
-        usage = getattr(response, "usage_metadata", None)
-        if usage is None:
-            return 0, 0, 0
+    def _messages(
+        prompt: Any,
+        system_instruction: str | None,
+    ) -> list[dict[str, str]]:
+        messages: list[dict[str, str]] = []
 
-        prompt_tokens = int(
-            getattr(usage, "prompt_token_count", 0) or 0
-        )
-        completion_tokens = int(
-            getattr(usage, "candidates_token_count", 0) or 0
-        )
-        total_tokens = int(
-            getattr(usage, "total_token_count", 0) or 0
-        )
-        return prompt_tokens, completion_tokens, total_tokens
+        if system_instruction:
+            messages.append({
+                "role": "system",
+                "content": system_instruction,
+            })
+
+        if isinstance(prompt, list):
+            for item in prompt:
+                if not isinstance(item, dict):
+                    continue
+
+                role = str(item.get("role", "user"))
+                content = item.get("content")
+
+                if content is None:
+                    parts = item.get("parts")
+                    if isinstance(parts, list):
+                        content = "\n".join(
+                            str(part.get("text", ""))
+                            for part in parts
+                            if isinstance(part, dict) and part.get("text")
+                        )
+
+                if content is None:
+                    continue
+
+                messages.append({
+                    "role": role,
+                    "content": str(content),
+                })
+        else:
+            messages.append({
+                "role": "user",
+                "content": str(prompt),
+            })
+
+        return messages
 
     def generate_text(
         self,
@@ -81,28 +102,31 @@ class GeminiProvider(AIProvider):
         max_output_tokens: int = 1024,
         response_mime_type: str | None = None,
     ) -> AITextResponse:
-        config_kwargs: dict[str, Any] = {
-            "max_output_tokens": max_output_tokens,
-        }
+        response_format = None
 
-        if system_instruction:
-            config_kwargs["system_instruction"] = system_instruction
+        if response_mime_type == "application/json":
+            response_format = {"type": "json_object"}
 
-        if response_mime_type:
-            config_kwargs["response_mime_type"] = response_mime_type
-
-        response = self.client.models.generate_content(
+        response = chat_completion(
             model=model,
-            contents=prompt,
-            config=types.GenerateContentConfig(**config_kwargs),
+            messages=self._messages(prompt, system_instruction),
+            max_tokens=max_output_tokens,
+            response_format=response_format,
         )
 
-        prompt_tokens, completion_tokens, total_tokens = self._usage(response)
+        choices = response.get("choices") or []
+        text = ""
+        if choices:
+            message = choices[0].get("message") or {}
+            text = str(message.get("content") or "")
+
+        usage = response.get("usage") or {}
+
         return AITextResponse(
-            text=getattr(response, "text", "") or "",
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
+            text=text,
+            prompt_tokens=int(usage.get("prompt_tokens") or 0),
+            completion_tokens=int(usage.get("completion_tokens") or 0),
+            total_tokens=int(usage.get("total_tokens") or 0),
         )
 
     def stream_text(
@@ -113,43 +137,39 @@ class GeminiProvider(AIProvider):
         system_instruction: str | None = None,
         max_output_tokens: int = 1024,
     ) -> Iterable[AITextResponse]:
-        config_kwargs: dict[str, Any] = {
-            "max_output_tokens": max_output_tokens,
-        }
+        messages = self._messages(prompt, system_instruction)
 
-        if system_instruction:
-            config_kwargs["system_instruction"] = system_instruction
-
-        response_stream = self.client.models.generate_content_stream(
+        for chunk in stream_chat_completion(
             model=model,
-            contents=prompt,
-            config=types.GenerateContentConfig(**config_kwargs),
-        )
+            messages=messages,
+            max_tokens=max_output_tokens,
+        ):
+            choices = chunk.get("choices") or []
+            text = ""
 
-        for chunk in response_stream:
-            prompt_tokens, completion_tokens, total_tokens = self._usage(chunk)
+            if choices:
+                delta = choices[0].get("delta") or {}
+                text = str(delta.get("content") or "")
+
+            usage = chunk.get("usage") or {}
+
             yield AITextResponse(
-                text=getattr(chunk, "text", "") or "",
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=total_tokens,
+                text=text,
+                prompt_tokens=int(usage.get("prompt_tokens") or 0),
+                completion_tokens=int(usage.get("completion_tokens") or 0),
+                total_tokens=int(usage.get("total_tokens") or 0),
             )
 
 
 def _build_provider() -> AIProvider:
-    provider_name = os.getenv("AI_PROVIDER", "gemini").strip().lower()
+    provider_name = os.getenv("AI_PROVIDER", "openrouter").strip().lower()
 
-    if provider_name == "gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                "GEMINI_API_KEY is not configured in the .env file"
-            )
-        return GeminiProvider(api_key)
+    if provider_name == "openrouter":
+        return OpenRouterProvider()
 
     raise RuntimeError(
         f"Unsupported AI_PROVIDER={provider_name!r}. "
-        "Add a provider implementation before selecting it."
+        "The backend currently supports OpenRouter only."
     )
 
 
