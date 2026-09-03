@@ -3,6 +3,7 @@ import 'api_client.dart';
 import 'auth_api_service.dart';
 import 'learning_api_service.dart';
 import 'lesson_ai_api_service.dart';
+import 'lesson_preview_api_service.dart';
 import 'placement_api_service.dart';
 import 'stats_api_service.dart';
 import 'translation_api_service.dart';
@@ -14,6 +15,7 @@ class ApiService {
   late final AuthApiService _auth;
   late final LearningApiService _learning;
   late final LessonAiApiService _lessonAi;
+  late final LessonPreviewApiService _lessonPreview;
   late final PlacementApiService _placement;
   late final StatsApiService _stats;
   late final TranslationApiService _translation;
@@ -24,6 +26,7 @@ class ApiService {
     _auth = AuthApiService(_client);
     _learning = LearningApiService(_client);
     _lessonAi = LessonAiApiService(_client);
+    _lessonPreview = LessonPreviewApiService(_client);
     _placement = PlacementApiService(_client);
     _stats = StatsApiService(_client);
     _translation = TranslationApiService(_client);
@@ -53,6 +56,7 @@ class ApiService {
   Future<Map<String, dynamic>> getLessonAssessment({required int lessonId, String? conversationId}) => _learning.getLessonAssessment(lessonId: lessonId, conversationId: conversationId);
   Future<Map<String, dynamic>> submitLessonAssessment({required int lessonId, String? conversationId, required List<Map<String, String>> answers}) => _learning.submitLessonAssessment(lessonId: lessonId, conversationId: conversationId, answers: answers);
   Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) => _learning.completeLesson(lessonId: lessonId, score: score);
+  Future<Map<String, dynamic>> getLessonPreview({required int lessonId}) => _lessonPreview.getLessonPreview(lessonId: lessonId);
 
   Stream<LessonAiChunk> lessonAiChat({required int lessonId, required String message, String? conversationId}) => _lessonAi.chat(lessonId: lessonId, message: message, conversationId: conversationId);
 
