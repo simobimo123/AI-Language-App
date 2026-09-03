@@ -1,0 +1,233 @@
+{
+  "lesson_id": "de_pre_a1_u01_l01",
+  "language": "de",
+  "level": "PRE_A1",
+
+  "unit": {
+    "unit_id": "de_pre_a1_u01",
+    "unit_number": 1,
+    "title": "الحروف الألمانية",
+    "description": "التعرف على الحروف الأساسية في اللغة الألمانية."
+  },
+
+  "lesson": {
+    "lesson_number": 1,
+    "title": "التعرف على الحروف A–F",
+    "description": "التعرف على الحروف A وB وC وD وE وF ومعرفة أسمائها ونطقها."
+  },
+
+  "preview": {
+    "what_you_will_learn": [
+      "التعرف على الحروف A وB وC وD وE وF",
+      "معرفة اسم كل حرف باللغة الألمانية",
+      "التمييز بين الحروف عند رؤيتها",
+      "التمييز بين الحروف عند سماع أسمائها"
+    ],
+
+    "new_items": [
+      {
+        "type": "letter",
+        "value": "A",
+        "display": "A a"
+      },
+      {
+        "type": "letter",
+        "value": "B",
+        "display": "B b"
+      },
+      {
+        "type": "letter",
+        "value": "C",
+        "display": "C c"
+      },
+      {
+        "type": "letter",
+        "value": "D",
+        "display": "D d"
+      },
+      {
+        "type": "letter",
+        "value": "E",
+        "display": "E e"
+      },
+      {
+        "type": "letter",
+        "value": "F",
+        "display": "F f"
+      }
+    ],
+
+    "new_vocabulary": [],
+
+    "new_grammar": [],
+
+    "skills": [
+      "التعرف البصري",
+      "الاستماع",
+      "النطق",
+      "تمييز الحروف"
+    ],
+
+    "goal": "في نهاية الدرس، يستطيع المتعلم التعرف على الحروف A–F وتمييز أسمائها عند سماعها.",
+
+    "estimated_minutes": 10
+  },
+
+  "prerequisites": {
+    "required_lessons": [],
+    "required_units": []
+  },
+
+  "content": {
+
+    "learning_objectives": [
+      "التعرف على الحروف A–F",
+      "معرفة أسماء الحروف باللغة الألمانية",
+      "التدرب على نطق أسماء الحروف",
+      "تمييز الحروف عند سماعها"
+    ],
+
+    "letters": [
+      {
+        "uppercase": "A",
+        "lowercase": "a",
+        "letter_name": "A",
+        "pronunciation": "..."
+      },
+      {
+        "uppercase": "B",
+        "lowercase": "b",
+        "letter_name": "Be",
+        "pronunciation": "..."
+      },
+      {
+        "uppercase": "C",
+        "lowercase": "c",
+        "letter_name": "Ce",
+        "pronunciation": "..."
+      },
+      {
+        "uppercase": "D",
+        "lowercase": "d",
+        "letter_name": "De",
+        "pronunciation": "..."
+      },
+      {
+        "uppercase": "E",
+        "lowercase": "e",
+        "letter_name": "E",
+        "pronunciation": "..."
+      },
+      {
+        "uppercase": "F",
+        "lowercase": "f",
+        "letter_name": "Eff",
+        "pronunciation": "..."
+      }
+    ],
+
+    "teaching_points": [
+      {
+        "id": "tp_01",
+        "title": "التعرف على الحروف",
+        "explanation": "يتعرف المتعلم على شكل الحروف الكبيرة والصغيرة."
+      },
+      {
+        "id": "tp_02",
+        "title": "أسماء الحروف",
+        "explanation": "يتعلم المتعلم اسم كل حرف باللغة الألمانية."
+      }
+    ],
+
+    "examples": [],
+
+    "common_mistakes": [],
+
+    "teacher_instructions": {
+      "language": "de",
+      "teaching_language": "ar",
+
+      "rules": [
+        "ابدأ بالشرح البسيط ولا تقدم معلومات خارج أهداف الدرس.",
+        "قدم عددًا قليلًا من المعلومات في كل مرة.",
+        "اطلب من المتعلم المشاركة بدل إعطائه الإجابة مباشرة.",
+        "استخدم التكرار عند الحاجة.",
+        "صحح الأخطاء بطريقة بسيطة ومشجعة.",
+        "لا تنتقل إلى موضوع جديد قبل التأكد من فهم النقطة الحالية.",
+        "التزم بالمعلومات الموجودة في هذا الملف."
+      ]
+    }
+  },
+
+  "practice": {
+
+    "enabled": true,
+
+    "activities": [
+      {
+        "type": "recognition",
+        "instruction": "اختر الحرف الذي نطقه المدرس."
+      },
+      {
+        "type": "pronunciation",
+        "instruction": "انطق اسم الحرف."
+      },
+      {
+        "type": "matching",
+        "instruction": "طابق الحرف الكبير مع الحرف الصغير."
+      }
+    ]
+  },
+
+  "assessment": {
+
+    "enabled": true,
+
+    "type": "lesson_assessment",
+
+    "questions_count": 5,
+
+    "passing_score": 80,
+
+    "retry_allowed": true,
+
+    "questions": [
+      {
+        "id": "q01",
+        "type": "multiple_choice",
+        "question": "أي حرف هو A؟",
+        "options": [
+          "A",
+          "B",
+          "D",
+          "F"
+        ],
+        "correct_answer": "A"
+      }
+    ]
+  },
+
+  "completion": {
+
+    "requires_assessment": true,
+
+    "passing_score": 80,
+
+    "minimum_practice": false,
+
+    "mark_completed_after": "assessment_passed"
+  },
+
+  "metadata": {
+
+    "version": 1,
+
+    "status": "draft",
+
+    "author": "AI Language App",
+
+    "created_at": null,
+
+    "updated_at": null
+  }
+}
