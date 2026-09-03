@@ -355,6 +355,36 @@ class _LessonPageState extends State<LessonPage> {
           }
         }
 
+        // Restore the complete visible conversation when the page is opened
+        // again during the same app session.
+        if (chunk.type == 'history' && chunk.history != null) {
+          _messages.clear();
+
+          for (final item in chunk.history!) {
+            final role = item['role'] == 'user'
+                ? 'user'
+                : 'assistant';
+            final text = item['text'] ?? '';
+
+            if (text.isNotEmpty) {
+              _messages.add(
+                _TutorMessage(
+                  role: role,
+                  text: text,
+                ),
+              );
+            }
+          }
+
+          setState(() {
+            _loading = false;
+            _error = null;
+          });
+
+          _scrollToBottom();
+          continue;
+        }
+
         if (chunk.type == 'chunk') {
           final text = chunk.text ?? '';
 
