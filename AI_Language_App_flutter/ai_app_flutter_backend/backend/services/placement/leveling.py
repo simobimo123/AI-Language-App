@@ -36,16 +36,12 @@ def normalize_level(
 def calculate_previous_level(
     level: str,
 ) -> str:
-
-    if level == "A1":
-        return "PRE_A1"
-
     index = LEVELS.index(
         level
     )
 
     if index == 0:
-        return "PRE_A1"
+        return LEVELS[0]
 
     return LEVELS[
         index - 1
