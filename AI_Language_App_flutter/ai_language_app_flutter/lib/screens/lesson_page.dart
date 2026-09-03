@@ -5,6 +5,7 @@ import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
 import '../widgets/words/save_sentence_dialog.dart';
+import '../widgets/words/word_detail_dialog.dart';
 import 'lesson_assessment_page.dart';
 
 class LessonPage extends StatefulWidget {
@@ -179,14 +180,27 @@ class _LessonPageState extends State<LessonPage> {
       );
 
   String _cancelLabel() => _text(
-        ar: 'إلغاء', en: 'Cancel', fr: 'Annuler', es: 'Cancelar',
-        de: 'Abbrechen', it: 'Annulla', ja: 'キャンセル', ko: '취소', zh: '取消',
+        ar: 'إلغاء',
+        en: 'Cancel',
+        fr: 'Annuler',
+        es: 'Cancelar',
+        de: 'Abbrechen',
+        it: 'Annulla',
+        ja: 'キャンセル',
+        ko: '취소',
+        zh: '取消',
       );
 
   String _confirmLabel() => _text(
-        ar: 'بدء الاختبار', en: 'Start assessment', fr: 'Commencer l’évaluation',
-        es: 'Iniciar evaluación', de: 'Test starten', it: 'Inizia verifica',
-        ja: 'テスト開始', ko: '평가 시작', zh: '开始测试',
+        ar: 'بدء الاختبار',
+        en: 'Start assessment',
+        fr: 'Commencer l’évaluation',
+        es: 'Iniciar evaluación',
+        de: 'Test starten',
+        it: 'Inizia verifica',
+        ja: 'テスト開始',
+        ko: '평가 시작',
+        zh: '开始测试',
       );
 
   String _startingLabel() => _text(
@@ -348,6 +362,64 @@ class _LessonPageState extends State<LessonPage> {
     }
   }
 
+  String _cleanWordToken(String token) {
+    return token.replaceAll(
+      RegExp(r'^[\.,!?;:()\[\]{}"“”„«»…*_~`]+|[\.,!?;:()\[\]{}"“”„«»…*_~`]+$'),
+      '',
+    );
+  }
+
+  List<String> _messageTokens(String text) {
+    return text.split(RegExp(r'(\s+)'));
+  }
+
+  Future<void> _openWord(String token) async {
+    final word = _cleanWordToken(token).trim();
+    if (word.isEmpty) return;
+
+    await showWordDetailDialog(
+      context,
+      word: word,
+      languageCode: _locale(),
+    );
+  }
+
+  Widget _buildClickableMessage(
+    String text,
+    ThemeData theme,
+  ) {
+    final tokens = _messageTokens(text);
+    final baseStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.45);
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.end,
+      children: [
+        for (final token in tokens)
+          if (token.trim().isEmpty)
+            Text(token, style: baseStyle)
+          else
+            InkWell(
+              borderRadius: BorderRadius.circular(5),
+              onTap: () => _openWord(token),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 1,
+                  vertical: 1,
+                ),
+                child: Text(
+                  token,
+                  textDirection: _textDirection(token),
+                  style: baseStyle?.copyWith(
+                    decoration: TextDecoration.underline,
+                    decorationStyle: TextDecorationStyle.dotted,
+                  ),
+                ),
+              ),
+            ),
+      ],
+    );
+  }
+
   Widget _buildMessage(_TutorMessage message, ThemeData theme) {
     final isUser = message.isUser;
 
@@ -368,11 +440,7 @@ class _LessonPageState extends State<LessonPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message.text,
-              textDirection: _textDirection(message.text),
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
-            ),
+            _buildClickableMessage(message.text, theme),
             if (!isUser) ...[
               const SizedBox(height: 6),
               Align(
