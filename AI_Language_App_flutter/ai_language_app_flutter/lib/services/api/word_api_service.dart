@@ -24,35 +24,22 @@ class WordApiService {
 
     final data = client.decodeResponse(response);
 
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return Map<String, dynamic>.from(data as Map);
     }
 
-    throw client.apiException(
-      data,
-      'Failed to create word',
-      statusCode: response.statusCode,
-    );
+    throw client.apiException(data, 'Failed to create word', statusCode: response.statusCode);
   }
 
   Future<List<dynamic>> getWords() async {
-    final response = await client.get(
-      '/words/',
-      authenticated: true,
-    );
-
+    final response = await client.get('/words/', authenticated: true);
     final data = client.decodeResponse(response);
 
     if (response.statusCode == 200) {
       return List<dynamic>.from(data as List);
     }
 
-    throw client.apiException(
-      data,
-      'Failed to get words',
-      statusCode: response.statusCode,
-    );
+    throw client.apiException(data, 'Failed to get words', statusCode: response.statusCode);
   }
 
   Future<Map<String, dynamic>> updateWordStatus({
@@ -63,9 +50,7 @@ class WordApiService {
       '/words/$wordId',
       authenticated: true,
       headers: client.jsonHeaders,
-      body: jsonEncode({
-        'learned': learned,
-      }),
+      body: jsonEncode({'learned': learned}),
     );
 
     final data = client.decodeResponse(response);
@@ -74,32 +59,81 @@ class WordApiService {
       return Map<String, dynamic>.from(data as Map);
     }
 
-    throw client.apiException(
-      data,
-      'Failed to update word',
-      statusCode: response.statusCode,
-    );
+    throw client.apiException(data, 'Failed to update word', statusCode: response.statusCode);
   }
 
-  Future<void> deleteWord({
-    required int wordId,
-  }) async {
-    final response = await client.delete(
-      '/words/$wordId',
-      authenticated: true,
-    );
+  Future<void> deleteWord({required int wordId}) async {
+    final response = await client.delete('/words/$wordId', authenticated: true);
 
-    if (response.statusCode == 200 ||
-        response.statusCode == 204) {
-      return;
-    }
+    if (response.statusCode == 200 || response.statusCode == 204) return;
+
+    final data = client.decodeResponse(response);
+    throw client.apiException(data, 'Failed to delete word', statusCode: response.statusCode);
+  }
+
+  Future<Map<String, dynamic>> createSentence({
+    required String sentence,
+    required String translation,
+  }) async {
+    final response = await client.post(
+      '/words/sentences',
+      authenticated: true,
+      headers: client.jsonHeaders,
+      body: jsonEncode({
+        'sentence': sentence,
+        'translation': translation,
+      }),
+    );
 
     final data = client.decodeResponse(response);
 
-    throw client.apiException(
-      data,
-      'Failed to delete word',
-      statusCode: response.statusCode,
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(data, 'Failed to save sentence', statusCode: response.statusCode);
+  }
+
+  Future<List<dynamic>> getSentences() async {
+    final response = await client.get('/words/sentences', authenticated: true);
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return List<dynamic>.from(data as List);
+    }
+
+    throw client.apiException(data, 'Failed to get sentences', statusCode: response.statusCode);
+  }
+
+  Future<Map<String, dynamic>> updateSentenceStatus({
+    required int sentenceId,
+    required bool learned,
+  }) async {
+    final response = await client.patch(
+      '/words/sentences/$sentenceId',
+      authenticated: true,
+      headers: client.jsonHeaders,
+      body: jsonEncode({'learned': learned}),
     );
+
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(data, 'Failed to update sentence', statusCode: response.statusCode);
+  }
+
+  Future<void> deleteSentence({required int sentenceId}) async {
+    final response = await client.delete(
+      '/words/sentences/$sentenceId',
+      authenticated: true,
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) return;
+
+    final data = client.decodeResponse(response);
+    throw client.apiException(data, 'Failed to delete sentence', statusCode: response.statusCode);
   }
 }
