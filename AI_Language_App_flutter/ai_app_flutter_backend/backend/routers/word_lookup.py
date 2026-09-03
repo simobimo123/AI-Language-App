@@ -101,16 +101,16 @@ def lookup_word(
         raise HTTPException(status_code=422, detail="Word cannot be empty")
 
     # Database is always the first source of truth. A tap on an already
-    # enriched vocabulary item does not consume an AI request.
+    # complete vocabulary item does not consume an AI request.
     try:
         result = _build_result(word, current_user, db)
-        if result.get("translation") or result.get("example_sentence"):
+        if result.get("translation") and result.get("example_sentence"):
             return result
     except HTTPException:
         pass
 
-    # If the word is not available or is incomplete, enrich it once and
-    # persist the result so future taps are served from the database.
+    # If the item is missing or incomplete, enrich it once and persist it.
+    # Future taps are then served from the database.
     check_rate_limit(current_user.id)
     reserve_ai_request(user_id=current_user.id, db=db)
 
