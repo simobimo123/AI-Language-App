@@ -8,6 +8,7 @@ import '../repositories/learning_repository.dart';
 import '../screens/lesson_page.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/learning_path/learning_path_view.dart';
+import '../widgets/learning_path/lesson_info_dialog.dart';
 
 class LearningPathPage extends StatefulWidget {
   final ThemeController themeController;
@@ -51,6 +52,17 @@ class _LearningPathPageState extends State<LearningPathPage> {
   }
 
   Future<void> _openLesson(LearningLessonModel lesson) async {
+    final shouldStart = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => LessonInfoDialog(
+        lesson: lesson,
+        onStart: () => Navigator.of(context).pop(true),
+      ),
+    );
+
+    if (shouldStart != true || !mounted) return;
+
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => LessonPage(
@@ -65,7 +77,6 @@ class _LearningPathPageState extends State<LearningPathPage> {
       await _controller.refresh();
     }
   }
-
 
   String _title() {
     switch (widget.languageController.locale.languageCode) {
@@ -103,4 +114,3 @@ class _LearningPathPageState extends State<LearningPathPage> {
     );
   }
 }
-
