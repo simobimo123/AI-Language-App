@@ -61,15 +61,25 @@ def _load_assessment(lesson: CourseLesson) -> dict:
 
     if not isinstance(data, dict):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Lesson assessment source must be an object.")
-    end_test = data.get("end_test")
-    if not isinstance(end_test, dict):
+
+    source = data.get("end_test")
+    if not isinstance(source, dict):
+        source = data.get("assessment")
+    if not isinstance(source, dict):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This lesson has no final assessment.")
-    questions = end_test.get("questions")
+
+    questions = source.get("questions")
     if not isinstance(questions, list) or not questions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This lesson has no assessment questions.")
+
+    key_sentences = data.get("key_sentences", [])
+    if not isinstance(key_sentences, list):
+        key_sentences = []
+
     return {
-        "passing_score": float(end_test.get("passing_score", lesson.passing_score)),
+        "passing_score": float(source.get("passing_score", lesson.passing_score)),
         "questions": [item for item in questions if isinstance(item, dict)],
+        "key_sentences": [item for item in key_sentences if isinstance(item, dict)],
     }
 
 
@@ -136,28 +146,51 @@ def _translation(question: dict, language: str) -> dict:
 
 def _public_questions(assessment: dict, instruction_language: str) -> list[LessonAssessmentQuestion]:
     result = []
-    for question in assessment["questions"]:
+    for index, question in enumerate(assessment["questions"], start=1):
         question_id = str(question.get("id", "")).strip()
         if not question_id:
             continue
+
         translation = _translation(question, instruction_language)
-        options = translation.get("options") if isinstance(translation.get("options"), list) else []
+        question_text = str(translation.get("question", question.get("question", ""))).strip()
+        raw_options = translation.get("options", question.get("options", []))
         public_options = []
-        for option in options:
-            if not isinstance(option, dict):
-                continue
-            option_id = str(option.get("id", "")).strip()
-            text = str(option.get("text", "")).strip()
-            if option_id and text:
-                public_options.append({"id": option_id, "text": text})
+
+        if isinstance(raw_options, list):
+            for option_index, option in enumerate(raw_options, start=1):
+                if isinstance(option, dict):
+                    option_id = str(option.get("id", "")).strip()
+                    text = str(option.get("text", "")).strip()
+                else:
+                    option_id = str(option_index)
+                    text = str(option).strip()
+                if option_id and text:
+                    public_options.append({"id": option_id, "text": text})
+
         result.append(LessonAssessmentQuestion(
             id=question_id,
-            order=int(question.get("order", len(result) + 1)),
+            order=int(question.get("order", index)),
             type=str(question.get("type", "multiple_choice")),
-            question=str(translation.get("question", "")).strip(),
+            question=question_text,
             options=public_options,
         ))
+
     result.sort(key=lambda item: item.order)
+    return result
+
+
+def _public_key_sentences(assessment: dict) -> list[dict]:
+    result = []
+    for item in assessment.get("key_sentences", []):
+        sentence = str(item.get("sentence", "")).strip()
+        if not sentence:
+            continue
+        translation = item.get("translation", "")
+        if isinstance(translation, dict):
+            translation = translation.get("ar", "")
+        translation = str(translation).strip()
+        if translation:
+            result.append({"sentence": sentence, "translation": translation})
     return result
 
 
@@ -178,6 +211,7 @@ def get_lesson_assessment(
         question_count=len(questions),
         questions=questions,
         conversation_ready=bool(resolved_conversation),
+        key_sentences=_public_key_sentences(assessment),
     )
 
 
@@ -204,8 +238,20 @@ def submit_lesson_assessment(
     correct_count = 0
     for question in questions:
         question_id = str(question.get("id", "")).strip()
-        if answer_map.get(question_id) is not None and answer_map.get(question_id) == str(question.get("correct_answer", "")).strip():
+        submitted = answer_map.get(question_id)
+        if submitted is None:
+            continue
+
+        correct_answer = question.get("correct_answer")
+        if correct_answer is not None and submitted == str(correct_answer).strip():
             correct_count += 1
+            continue
+
+        accepted_answers = question.get("accepted_answers")
+        if isinstance(accepted_answers, list):
+            normalized = {str(value).strip().casefold() for value in accepted_answers}
+            if submitted.casefold() in normalized:
+                correct_count += 1
 
     total_questions = len(questions)
     score = round((correct_count / total_questions) * 100.0, 2) if total_questions else 0.0
