@@ -1,15 +1,13 @@
+import json
 import logging
 
-from google.genai import types
-
 from models import User
-from services.ai.client import AI_CLASSIFIER_MODEL, client
+from services.ai.client import AI_CLASSIFIER_MODEL, chat_completion
 from services.ai.usage import extract_token_usage
 from services.ai.schemas import AIRequestClassification
 
 
 logger = logging.getLogger(__name__)
-
 
 
 NORMAL_MAX_OUTPUT_TOKENS = 1200
@@ -130,7 +128,6 @@ def classify_ai_request(
     int,
     int,
 ]:
-
     classifier_context = f"""
 USER PROFILE
 
@@ -145,49 +142,46 @@ USER REQUEST:
 """
 
     try:
-
-        response = client.models.generate_content(
+        response = chat_completion(
             model=AI_CLASSIFIER_MODEL,
-            contents=classifier_context,
-            config=types.GenerateContentConfig(
-                system_instruction=(
-                    CLASSIFIER_SYSTEM_INSTRUCTION
-                ),
-                response_mime_type="application/json",
-                response_schema=(
-                    AIRequestClassification
-                ),
-                max_output_tokens=180,
-            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": CLASSIFIER_SYSTEM_INSTRUCTION,
+                },
+                {
+                    "role": "user",
+                    "content": classifier_context,
+                },
+            ],
+            max_tokens=180,
+            response_format={
+                "type": "json_object",
+            },
         )
 
-        if not response.text:
+        content = (
+            response.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content")
+        )
 
+        if not content:
             raise RuntimeError(
-                "AI classifier returned an empty response."
+                "OpenRouter classifier returned an empty response."
             )
 
-        (
-            prompt_tokens,
-            completion_tokens,
-            total_tokens,
-        ) = extract_token_usage(
-            response
+        usage = response.get("usage") or {}
+        prompt_tokens, completion_tokens, total_tokens = extract_token_usage(
+            usage
         )
 
-        result = (
-            AIRequestClassification
-            .model_validate_json(
-                response.text
-            )
+        result = AIRequestClassification.model_validate(
+            json.loads(content)
         )
 
         logger.info(
-            "AI classifier user_id=%s "
-            "decision=%s "
-            "vocabulary=%s "
-            "word=%s "
-            "type=%s",
+            "AI classifier user_id=%s decision=%s vocabulary=%s word=%s type=%s",
             current_user.id,
             result.decision,
             result.needs_vocabulary_enrichment,
@@ -203,7 +197,6 @@ USER REQUEST:
         )
 
     except Exception as exc:
-
         logger.exception(
             "AI classifier failed user_id=%s: %s",
             current_user.id,
@@ -213,10 +206,7 @@ USER REQUEST:
         return (
             AIRequestClassification(
                 decision="ALLOW",
-                reason=(
-                    "Classifier unavailable; "
-                    "allowing request."
-                ),
+                reason="Classifier unavailable; allowing request.",
                 needs_vocabulary_enrichment=False,
                 vocabulary_word=None,
                 vocabulary_request_type="none",
@@ -227,14 +217,9 @@ USER REQUEST:
         )
 
 
-# =========================================================
-# Output size
-# =========================================================
-
 def get_max_output_tokens(
     classification: AIRequestClassification,
 ) -> int:
-
     if classification.decision == "LIMIT":
         return MEDIUM_MAX_OUTPUT_TOKENS
 
