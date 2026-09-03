@@ -62,5 +62,6 @@ class ApiService {
   Future<List<dynamic>> getWords() => _words.getWords();
   Future<Map<String, dynamic>> updateWordStatus({required int wordId, required bool learned}) => _words.updateWordStatus(wordId: wordId, learned: learned);
   Future<void> deleteWord({required int wordId}) => _words.deleteWord(wordId: wordId);
+  Future<Map<String, dynamic>> lookupWord({required String word}) => _words.lookupWord(word: word);
   Future<Map<String, dynamic>> getHomeStats() => _stats.getHomeStats();
 }
