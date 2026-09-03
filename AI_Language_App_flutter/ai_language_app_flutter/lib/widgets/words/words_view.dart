@@ -20,7 +20,6 @@ class WordsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     if (controller.isLoading) return const Center(child: CircularProgressIndicator());
