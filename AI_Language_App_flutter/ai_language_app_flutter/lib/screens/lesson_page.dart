@@ -4,7 +4,10 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
+<<<<<<< Updated upstream
 import '../services/api/lesson_ai_api_service.dart';
+=======
+>>>>>>> Stashed changes
 import 'lesson_assessment_page.dart';
 
 class LessonPage extends StatefulWidget {
@@ -27,7 +30,10 @@ class _TutorMessage {
   final String role;
   String text;
 
-  _TutorMessage({required this.role, required this.text});
+  _TutorMessage({
+    required this.role,
+    required this.text,
+  });
 
   bool get isUser => role == 'user';
 }
@@ -36,12 +42,14 @@ class _LessonPageState extends State<LessonPage> {
   late final LearningRepository _repository;
   late final ApiService _apiService;
 
-  final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _messageController =
+      TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_TutorMessage> _messages = [];
 
   String? _conversationId;
   String? _error;
+
   int? _dailyLimit;
   int? _dailyRemaining;
 
@@ -53,9 +61,13 @@ class _LessonPageState extends State<LessonPage> {
   @override
   void initState() {
     super.initState();
+
     _repository = widget.repository ?? LearningRepository();
     _apiService = ApiService();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startTutor());
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _startTutor(),
+    );
   }
 
   @override
@@ -65,7 +77,9 @@ class _LessonPageState extends State<LessonPage> {
     super.dispose();
   }
 
-  String _locale() => widget.languageController.locale.languageCode;
+  String _locale() {
+    return widget.languageController.locale.languageCode;
+  }
 
   String _text({
     required String ar,
@@ -88,137 +102,211 @@ class _LessonPageState extends State<LessonPage> {
     String? zh,
   }) {
     switch (_locale()) {
-      case 'fr': return fr ?? en;
-      case 'es': return es ?? en;
-      case 'de': return de ?? en;
-      case 'id': return id ?? en;
-      case 'it': return it ?? en;
-      case 'ja': return ja ?? en;
-      case 'ko': return ko ?? en;
-      case 'nl': return nl ?? en;
-      case 'pl': return pl ?? en;
-      case 'pt': return pt ?? en;
-      case 'ru': return ru ?? en;
-      case 'th': return th ?? en;
-      case 'tr': return tr ?? en;
-      case 'uk': return uk ?? en;
-      case 'vi': return vi ?? en;
-      case 'zh': return zh ?? en;
+      case 'fr':
+        return fr ?? en;
+      case 'es':
+        return es ?? en;
+      case 'de':
+        return de ?? en;
+      case 'id':
+        return id ?? en;
+      case 'it':
+        return it ?? en;
+      case 'ja':
+        return ja ?? en;
+      case 'ko':
+        return ko ?? en;
+      case 'nl':
+        return nl ?? en;
+      case 'pl':
+        return pl ?? en;
+      case 'pt':
+        return pt ?? en;
+      case 'ru':
+        return ru ?? en;
+      case 'th':
+        return th ?? en;
+      case 'tr':
+        return tr ?? en;
+      case 'uk':
+        return uk ?? en;
+      case 'vi':
+        return vi ?? en;
+      case 'zh':
+        return zh ?? en;
       case 'ar':
-      default: return ar;
+      default:
+        return ar;
     }
   }
 
-  String _pageTitle() => _text(
-    ar: 'الدرس ${widget.lesson.lessonOrder}',
-    en: 'Lesson ${widget.lesson.lessonOrder}',
-    fr: 'Leçon ${widget.lesson.lessonOrder}',
-    es: 'Lección ${widget.lesson.lessonOrder}',
-    de: 'Lektion ${widget.lesson.lessonOrder}',
-    it: 'Lezione ${widget.lesson.lessonOrder}',
-    ja: 'レッスン ${widget.lesson.lessonOrder}',
-    ko: '레슨 ${widget.lesson.lessonOrder}',
-    zh: '课程 ${widget.lesson.lessonOrder}',
-  );
+  String _pageTitle() {
+    return _text(
+      ar: 'الدرس ${widget.lesson.lessonOrder}',
+      en: 'Lesson ${widget.lesson.lessonOrder}',
+      fr: 'Leçon ${widget.lesson.lessonOrder}',
+      es: 'Lección ${widget.lesson.lessonOrder}',
+      de: 'Lektion ${widget.lesson.lessonOrder}',
+      it: 'Lezione ${widget.lesson.lessonOrder}',
+      ja: 'レッスン ${widget.lesson.lessonOrder}',
+      ko: '레슨 ${widget.lesson.lessonOrder}',
+      zh: '课程 ${widget.lesson.lessonOrder}',
+    );
+  }
 
-  String _inputHint() => _text(
-    ar: 'اكتب إجابتك...',
-    en: 'Write your answer...',
-    fr: 'Écrivez votre réponse...',
-    es: 'Escribe tu respuesta...',
-    de: 'Schreibe deine Antwort...',
-    it: 'Scrivi la tua risposta...',
-    ja: '答えを入力...',
-    ko: '답변을 입력하세요...',
-    zh: '输入你的回答...',
-  );
+  String _inputHint() {
+    return _text(
+      ar: 'اكتب إجابتك...',
+      en: 'Write your answer...',
+      fr: 'Écrivez votre réponse...',
+      es: 'Escribe tu respuesta...',
+      de: 'Schreibe deine Antwort...',
+      it: 'Scrivi la tua risposta...',
+      ja: '答えを入力...',
+      ko: '답변을 입력하세요...',
+      zh: '输入你的回答...',
+    );
+  }
 
-  String _sendLabel() => _text(
-    ar: 'إرسال',
-    en: 'Send',
-    fr: 'Envoyer',
-    es: 'Enviar',
-    de: 'Senden',
-    it: 'Invia',
-    ja: '送信',
-    ko: '보내기',
-    zh: '发送',
-  );
+  String _sendLabel() {
+    return _text(
+      ar: 'إرسال',
+      en: 'Send',
+      fr: 'Envoyer',
+      es: 'Enviar',
+      de: 'Senden',
+      it: 'Invia',
+      ja: '送信',
+      ko: '보내기',
+      zh: '发送',
+    );
+  }
 
-  String _finishLabel() => _text(
-    ar: 'إنهاء الدرس',
-    en: 'Finish lesson',
-    fr: 'Terminer la leçon',
-    es: 'Terminar lección',
-    de: 'Lektion beenden',
-    it: 'Termina lezione',
-    ja: 'レッスンを終了',
-    ko: '레슨 완료',
-    zh: '完成课程',
-  );
+  String _finishLabel() {
+    return _text(
+      ar: 'إنهاء الدرس',
+      en: 'Finish lesson',
+      fr: 'Terminer la leçon',
+      es: 'Terminar lección',
+      de: 'Lektion beenden',
+      it: 'Termina lezione',
+      ja: 'レッスンを終了',
+      ko: '레슨 완료',
+      zh: '完成课程',
+    );
+  }
 
-  String _finishQuestion() => _text(
-    ar: 'هل أنهيت التعلم؟ سيبدأ اختبار الدرس بعد ذلك، ولن يُسجّل الدرس كمكتمل إلا بعد النجاح.',
-    en: 'Ready to finish learning? The lesson assessment will start next, and the lesson is completed only after you pass it.',
-    fr: 'Prêt à terminer ? L’évaluation commencera ensuite et la leçon ne sera validée qu’après réussite.',
-    es: '¿Listo para terminar? Después comenzará la evaluación y la lección se completará al aprobarla.',
-    de: 'Möchtest du die Lektion beenden? Danach startet der Test und die Lektion wird erst nach Bestehen abgeschlossen.',
-    it: 'Vuoi terminare? Dopo inizierà la verifica e la lezione sarà completata solo dopo il superamento.',
-    ja: '学習を終了しますか？次にテストが始まり、合格するとレッスンが完了します。',
-    ko: '학습을 끝낼까요? 다음에 평가가 시작되며 통과해야 레슨이 완료됩니다.',
-    zh: '要结束学习吗？接下来会开始测试，只有通过后课程才会完成。',
-  );
+  String _finishQuestion() {
+    return _text(
+      ar:
+          'هل أنهيت التعلم؟ سيبدأ اختبار الدرس بعد ذلك، ولن يُسجّل الدرس كمكتمل إلا بعد النجاح.',
+      en:
+          'Ready to finish learning? The lesson assessment will start next, and the lesson is completed only after you pass it.',
+      fr:
+          'Prêt à terminer ? L’évaluation commencera ensuite et la leçon ne sera validée qu’après réussite.',
+      es:
+          '¿Listo para terminar? Después comenzará la evaluación y la lección se completará al aprobarla.',
+      de:
+          'Möchtest du die Lektion beenden? Danach startet der Test und die Lektion wird erst nach Bestehen abgeschlossen.',
+      it:
+          'Vuoi terminare? Dopo inizierà la verifica e la lezione sarà completata solo dopo il superamento.',
+      ja:
+          '学習を終了しますか？次にテストが始まり、合格するとレッスンが完了します。',
+      ko:
+          '학습을 끝낼까요? 다음에 평가가 시작되며 통과해야 레슨이 완료됩니다.',
+      zh:
+          '要结束学习吗？接下来会开始测试，只有通过后课程才会完成。',
+    );
+  }
 
-  String _cancelLabel() => _text(
-    ar: 'إلغاء', en: 'Cancel', fr: 'Annuler', es: 'Cancelar', de: 'Abbrechen',
-    it: 'Annulla', ja: 'キャンセル', ko: '취소', zh: '取消',
-  );
+  String _cancelLabel() {
+    return _text(
+      ar: 'إلغاء',
+      en: 'Cancel',
+      fr: 'Annuler',
+      es: 'Cancelar',
+      de: 'Abbrechen',
+      it: 'Annulla',
+      ja: 'キャンセル',
+      ko: '취소',
+      zh: '取消',
+    );
+  }
 
-  String _confirmLabel() => _text(
-    ar: 'بدء الاختبار', en: 'Start assessment', fr: 'Commencer l’évaluation',
-    es: 'Iniciar evaluación', de: 'Test starten', it: 'Inizia verifica',
-    ja: 'テスト開始', ko: '평가 시작', zh: '开始测试',
-  );
+  String _confirmLabel() {
+    return _text(
+      ar: 'بدء الاختبار',
+      en: 'Start assessment',
+      fr: 'Commencer l’évaluation',
+      es: 'Iniciar evaluación',
+      de: 'Test starten',
+      it: 'Inizia verifica',
+      ja: 'テスト開始',
+      ko: '평가 시작',
+      zh: '开始测试',
+    );
+  }
 
-  String _startingLabel() => _text(
-    ar: 'يبدأ المدرّس الذكي الدرس...',
-    en: 'Your AI tutor is starting the lesson...',
-    fr: 'Votre tuteur IA démarre la leçon...',
-    es: 'Tu tutor de IA está iniciando la lección...',
-    de: 'Dein KI-Tutor startet die Lektion...',
-    it: 'Il tuo tutor IA sta iniziando la lezione...',
-    ja: 'AIチューターがレッスンを開始しています...',
-    ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
-    zh: 'AI 导师正在开始课程...',
-  );
+  String _startingLabel() {
+    return _text(
+      ar: 'يبدأ المدرّس الذكي الدرس...',
+      en: 'Your AI tutor is starting the lesson...',
+      fr: 'Votre tuteur IA démarre la leçon...',
+      es: 'Tu tutor de IA está iniciando la lección...',
+      de: 'Dein KI-Tutor startet die Lektion...',
+      it: 'Il tuo tutor IA sta iniziando la lezione...',
+      ja: 'AIチューターがレッスンを開始しています...',
+      ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
+      zh: 'AI 导师正在开始课程...',
+    );
+  }
 
-  String _errorLabel() => _text(
-    ar: 'حدث خطأ أثناء الاتصال بالمدرّس الذكي.',
-    en: 'Something went wrong while connecting to the AI tutor.',
-    fr: 'Une erreur est survenue avec le tuteur IA.',
-    es: 'Ocurrió un error al conectar con el tutor de IA.',
-    de: 'Beim Verbinden mit dem KI-Tutor ist ein Fehler aufgetreten.',
-    it: 'Si è verificato un errore con il tutor IA.',
-    ja: 'AIチューターへの接続中にエラーが発生しました。',
-    ko: 'AI 튜터 연결 중 오류가 발생했습니다.',
-    zh: '连接 AI 导师时发生错误。',
-  );
+  String _errorLabel() {
+    return _text(
+      ar: 'حدث خطأ أثناء الاتصال بالمدرّس الذكي.',
+      en: 'Something went wrong while connecting to the AI tutor.',
+      fr: 'Une erreur est survenue avec le tuteur IA.',
+      es: 'Ocurrió un error al conectar con el tutor de IA.',
+      de: 'Beim Verbinden mit dem KI-Tutor ist ein Fehler aufgetreten.',
+      it: 'Si è verificato un errore con il tutor IA.',
+      ja: 'AIチューターへの接続中にエラーが発生しました。',
+      ko: 'AI 튜터 연결 중 오류가 발생했습니다.',
+      zh: '连接 AI 导师时发生错误。',
+    );
+  }
 
   Future<void> _startTutor() async {
     if (_lessonStarted || _sending) return;
+
     setState(() {
       _lessonStarted = true;
       _loading = true;
       _error = null;
     });
-    await _sendMessage('START_LESSON', showUserMessage: false);
+
+    await _sendMessage(
+      'START_LESSON',
+      showUserMessage: false,
+    );
   }
 
   Future<void> _sendCurrentMessage() async {
     final message = _messageController.text.trim();
-    if (message.isEmpty || _sending || _submitting) return;
+
+    if (message.isEmpty || _sending || _submitting) {
+      return;
+    }
+
     _messageController.clear();
+<<<<<<< Updated upstream
     await _sendMessage(message, showUserMessage: true);
+=======
+
+    await _sendMessage(
+      message,
+      showUserMessage: true,
+    );
+>>>>>>> Stashed changes
   }
 
   Future<void> _sendMessage(
@@ -229,7 +317,13 @@ class _LessonPageState extends State<LessonPage> {
 
     if (showUserMessage) {
       setState(() {
-        _messages.add(_TutorMessage(role: 'user', text: message));
+        _messages.add(
+          _TutorMessage(
+            role: 'user',
+            text: message,
+          ),
+        );
+
         _error = null;
       });
       _scrollToBottom();
@@ -255,6 +349,7 @@ class _LessonPageState extends State<LessonPage> {
           _conversationId = chunk.conversationId;
         }
 
+<<<<<<< Updated upstream
         if (chunk.type == 'chunk' && chunk.text.isNotEmpty) {
           if (assistantIndex == -1) {
             _messages.add(_TutorMessage(role: 'assistant', text: chunk.text));
@@ -268,6 +363,47 @@ class _LessonPageState extends State<LessonPage> {
 
         if (chunk.type == 'done') {
           _conversationId = chunk.conversationId ?? _conversationId;
+=======
+        if (chunk.type == 'conversation') {
+          final conversationId = chunk.conversationId;
+
+          if (conversationId != null &&
+              conversationId.isNotEmpty) {
+            _conversationId = conversationId;
+          }
+        }
+
+        if (chunk.type == 'chunk') {
+          final text = chunk.text ?? '';
+
+          if (text.isNotEmpty) {
+            if (assistantIndex == -1) {
+              _messages.add(
+                _TutorMessage(
+                  role: 'assistant',
+                  text: text,
+                ),
+              );
+
+              assistantIndex = _messages.length - 1;
+            } else {
+              _messages[assistantIndex].text += text;
+            }
+
+            setState(() {});
+            _scrollToBottom();
+          }
+        }
+
+        if (chunk.type == 'done') {
+          final conversationId = chunk.conversationId;
+
+          if (conversationId != null &&
+              conversationId.isNotEmpty) {
+            _conversationId = conversationId;
+          }
+
+>>>>>>> Stashed changes
           _dailyLimit = chunk.dailyLimit;
           _dailyRemaining = chunk.dailyRemaining;
         }
@@ -278,6 +414,7 @@ class _LessonPageState extends State<LessonPage> {
       }
     } catch (e) {
       if (!mounted) return;
+<<<<<<< Updated upstream
       setState(() => _error = e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_errorLabel())),
@@ -289,12 +426,34 @@ class _LessonPageState extends State<LessonPage> {
         _loading = false;
       });
       _scrollToBottom();
+=======
+
+      setState(() {
+        _error = e.toString();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_errorLabel()),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _loading = false;
+        });
+
+        _scrollToBottom();
+      }
+>>>>>>> Stashed changes
     }
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
+
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 250),
@@ -308,23 +467,31 @@ class _LessonPageState extends State<LessonPage> {
 
     final shouldStart = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_finishLabel()),
-        content: Text(_finishQuestion()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(_cancelLabel()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(_confirmLabel()),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return AlertDialog(
+          title: Text(_finishLabel()),
+          content: Text(_finishQuestion()),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: Text(_cancelLabel()),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: Text(_confirmLabel()),
+            ),
+          ],
+        );
+      },
     );
 
-    if (shouldStart != true || !mounted) return;
+    if (shouldStart != true || !mounted) {
+      return;
+    }
 
     setState(() {
       _submitting = true;
@@ -333,25 +500,34 @@ class _LessonPageState extends State<LessonPage> {
 
     final passed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => LessonAssessmentPage(
-          lesson: widget.lesson,
-          languageController: widget.languageController,
-          repository: _repository,
-        ),
+        builder: (_) {
+          return LessonAssessmentPage(
+            lesson: widget.lesson,
+            languageController: widget.languageController,
+            repository: _repository,
+            conversationId: _conversationId,
+          );
+        },
       ),
     );
 
     if (!mounted) return;
 
-    setState(() => _submitting = false);
+    setState(() {
+      _submitting = false;
+    });
 
     if (passed == true) {
       Navigator.of(context).pop(true);
     }
   }
 
-  Widget _buildMessage(_TutorMessage message, ThemeData theme) {
+  Widget _buildMessage(
+    _TutorMessage message,
+    ThemeData theme,
+  ) {
     final isUser = message.isUser;
+
     return Align(
       alignment: isUser
           ? AlignmentDirectional.centerEnd
@@ -359,7 +535,10 @@ class _LessonPageState extends State<LessonPage> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 620),
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         decoration: BoxDecoration(
           color: isUser
               ? theme.colorScheme.primaryContainer
@@ -369,14 +548,24 @@ class _LessonPageState extends State<LessonPage> {
         child: Text(
           message.text,
           textDirection: _textDirection(message.text),
-          style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            height: 1.45,
+          ),
         ),
       ),
     );
   }
 
   TextDirection _textDirection(String text) {
+<<<<<<< Updated upstream
     return RegExp(r'[\u0600-\u06FF]').hasMatch(text)
+=======
+    final arabic = RegExp(
+      r'[\u0600-\u06FF]',
+    ).hasMatch(text);
+
+    return arabic
+>>>>>>> Stashed changes
         ? TextDirection.rtl
         : TextDirection.ltr;
   }
@@ -411,7 +600,10 @@ class _LessonPageState extends State<LessonPage> {
             ),
             const SizedBox(width: 8),
             IconButton.filled(
-              onPressed: _sending || _submitting ? null : _sendCurrentMessage,
+              onPressed:
+                  _sending || _submitting
+                      ? null
+                      : _sendCurrentMessage,
               tooltip: _sendLabel(),
               icon: const Icon(Icons.send_rounded),
             ),
@@ -428,7 +620,10 @@ class _LessonPageState extends State<LessonPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.smart_toy_outlined, size: 56),
+            const Icon(
+              Icons.smart_toy_outlined,
+              size: 56,
+            ),
             const SizedBox(height: 16),
             Text(
               _startingLabel(),
@@ -453,7 +648,13 @@ class _LessonPageState extends State<LessonPage> {
         titleSpacing: 16,
         title: Text(
           _pageTitle(),
+<<<<<<< Updated upstream
           style: const TextStyle(fontWeight: FontWeight.w700),
+=======
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+>>>>>>> Stashed changes
         ),
         actions: [
           if (_dailyRemaining != null)
@@ -467,7 +668,14 @@ class _LessonPageState extends State<LessonPage> {
               ),
             ),
           IconButton(
+<<<<<<< Updated upstream
             onPressed: _sending || _submitting ? null : _finishLesson,
+=======
+            onPressed:
+                _sending || _submitting
+                    ? null
+                    : _finishLesson,
+>>>>>>> Stashed changes
             tooltip: _finishLabel(),
             icon: const Icon(Icons.check_circle_outline_rounded),
           ),
@@ -475,48 +683,82 @@ class _LessonPageState extends State<LessonPage> {
         ],
       ),
       body: Directionality(
-        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+        textDirection:
+            isRtl
+                ? TextDirection.rtl
+                : TextDirection.ltr,
         child: Column(
           children: [
             Expanded(
-              child: _messages.isEmpty && _loading
-                  ? _buildEmptyState(theme)
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                      itemCount: _messages.length + (_sending ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= _messages.length) {
-                          return Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+              child:
+                  _messages.isEmpty && _loading
+                      ? _buildEmptyState(theme)
+                      : ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(
+                            16,
+                            20,
+                            16,
+                            12,
+                          ),
+                          itemCount:
+                              _messages.length +
+                              (_sending ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= _messages.length) {
+                              return Align(
+                                alignment:
+                                    AlignmentDirectional
+                                        .centerStart,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.only(
+                                    bottom: 12,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Text(_startingLabel()),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                        return _buildMessage(_messages[index], theme);
-                      },
-                    ),
+                                  child: Row(
+                                    mainAxisSize:
+                                        MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child:
+                                            CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        _startingLabel(),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return _buildMessage(
+                              _messages[index],
+                              theme,
+                            );
+                          },
+                        ),
             ),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                ),
                 child: Text(
                   _errorLabel(),
                   textAlign: TextAlign.center,
+<<<<<<< Updated upstream
                   style: TextStyle(color: theme.colorScheme.error),
+=======
+                  style: TextStyle(
+                    color: theme.colorScheme.error,
+                  ),
+>>>>>>> Stashed changes
                 ),
               ),
             _buildComposer(theme),

@@ -42,8 +42,20 @@ LEVELS = [
 SUPPORTED_LEARNING_LANGUAGES = list(SUPPORTED_LANGUAGE_CODES)
 
 
-# The JSON curriculum is the single source of truth for lesson order,
-# units, test flags and lesson metadata.
+# =========================================================
+# Lesson JSON configuration
+# =========================================================
+#
+# The JSON curriculum is the single source of truth for:
+# - lesson order
+# - units
+# - topic keys
+# - test flags
+# - passing scores
+#
+# We do NOT generate lesson JSON files automatically.
+# Only JSON files that actually exist are synchronized.
+#
 LESSONS_ROOT = (
     Path(__file__).resolve().parents[1]
     / "data"
@@ -126,6 +138,7 @@ def _load_lesson_manifest(
     )
 
     unit_number = data.get("unit_number")
+
     if not isinstance(unit_number, int) or unit_number < 1:
         unit_number = metadata.get("unit_number")
 
@@ -133,6 +146,7 @@ def _load_lesson_manifest(
         unit_number = ((lesson_order - 1) // 2) + 1
 
     passing_score = data.get("passing_score")
+
     if not isinstance(passing_score, (int, float)):
         passing_score = metadata.get("passing_score")
 
@@ -151,7 +165,10 @@ def _load_lesson_manifest(
     }
 
 
-def load_lesson_manifests(language: str, level: str) -> list[dict]:
+def load_lesson_manifests(
+    language: str,
+    level: str,
+) -> list[dict]:
     manifests: list[dict] = []
     seen_orders: set[int] = set()
 
@@ -163,6 +180,7 @@ def load_lesson_manifests(language: str, level: str) -> list[dict]:
         )
 
         lesson_order = manifest["lesson_order"]
+
         if lesson_order in seen_orders:
             raise RuntimeError(
                 f"Duplicate lesson_order {lesson_order} in "
@@ -172,7 +190,10 @@ def load_lesson_manifests(language: str, level: str) -> list[dict]:
         seen_orders.add(lesson_order)
         manifests.append(manifest)
 
-    manifests.sort(key=lambda item: item["lesson_order"])
+    manifests.sort(
+        key=lambda item: item["lesson_order"]
+    )
+
     return manifests
 
 
@@ -181,8 +202,18 @@ def sync_learning_content(
     level: str,
     db: Session,
 ) -> list[CourseLesson]:
-    """Synchronize CourseLesson with the canonical lesson JSON files."""
-    manifests = load_lesson_manifests(language, level)
+    """
+    Synchronize CourseLesson with the canonical lesson JSON files.
+
+    JSON files are the source of truth.
+
+    If no JSON files exist for a language/level, nothing is created.
+    """
+
+    manifests = load_lesson_manifests(
+        language=language,
+        level=level,
+    )
 
     existing_lessons = (
         db.query(CourseLesson)
@@ -198,18 +229,23 @@ def sync_learning_content(
         lesson.lesson_order: lesson
         for lesson in existing_lessons
     }
+
     manifest_orders = {
         item["lesson_order"]
         for item in manifests
     }
 
-    # Remove old template lessons when they are not present in JSON.
+    # Remove old database lessons that no longer exist
+    # in the canonical JSON curriculum.
     for lesson in existing_lessons:
         if lesson.lesson_order not in manifest_orders:
             db.delete(lesson)
 
+    # Create or update lessons from JSON.
     for manifest in manifests:
-        lesson = existing_by_order.get(manifest["lesson_order"])
+        lesson = existing_by_order.get(
+            manifest["lesson_order"]
+        )
 
         if lesson is None:
             lesson = CourseLesson(
@@ -221,8 +257,12 @@ def sync_learning_content(
                 is_test=manifest["is_test"],
                 passing_score=manifest["passing_score"],
             )
+
             db.add(lesson)
-            existing_by_order[manifest["lesson_order"]] = lesson
+            existing_by_order[
+                manifest["lesson_order"]
+            ] = lesson
+
             continue
 
         lesson.language = manifest["language"]
@@ -236,6 +276,7 @@ def sync_learning_content(
         db.commit()
     except IntegrityError as exc:
         db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail="Unable to synchronize learning curriculum.",
@@ -247,8 +288,50 @@ def sync_learning_content(
             CourseLesson.language == language,
             CourseLesson.level == level,
         )
-        .order_by(CourseLesson.lesson_order.asc())
+        .order_by(
+            CourseLesson.lesson_order.asc()
+        )
         .all()
+    )
+
+
+def seed_learning_content(db: Session) -> None:
+    """
+    Synchronize all existing lesson JSON curricula at startup.
+
+    This function does NOT create lesson JSON files.
+
+    It only imports lesson metadata from JSON files that already
+    exist under:
+
+        data/lessons/<language>/<level>/
+
+    Missing language/level directories are simply ignored.
+    """
+
+    synchronized = 0
+
+    for language in SUPPORTED_LEARNING_LANGUAGES:
+        for level in LEVELS:
+            lesson_files = _lesson_json_files(
+                language,
+                level,
+            )
+
+            if not lesson_files:
+                continue
+
+            sync_learning_content(
+                language=language,
+                level=level,
+                db=db,
+            )
+
+            synchronized += 1
+
+    print(
+        f"Learning curriculum synchronization completed. "
+        f"Curricula synchronized: {synchronized}"
     )
 
 
@@ -258,7 +341,10 @@ def normalize_language(language: str) -> str:
     if normalized not in SUPPORTED_LEARNING_LANGUAGES:
         raise HTTPException(
             status_code=422,
-            detail=f"Unsupported learning language '{normalized}'.",
+            detail=(
+                f"Unsupported learning language "
+                f"'{normalized}'."
+            ),
         )
 
     return normalized
@@ -270,7 +356,10 @@ def normalize_level(level: str) -> str:
     if normalized not in LEVELS:
         raise HTTPException(
             status_code=422,
-            detail=f"Unsupported learning level '{normalized}'.",
+            detail=(
+                f"Unsupported learning level "
+                f"'{normalized}'."
+            ),
         )
 
     return normalized
@@ -304,7 +393,9 @@ def get_current_profile(
     current_user: User,
     db: Session,
 ) -> LearningProfile:
-    language = normalize_language(current_user.learning_language)
+    language = normalize_language(
+        current_user.learning_language
+    )
 
     profile = (
         db.query(LearningProfile)
@@ -337,8 +428,11 @@ def get_progress_map(
         db.query(UserLessonProgress)
         .filter(
             UserLessonProgress.user_id == user_id,
-            UserLessonProgress.learning_profile_id == profile_id,
-            UserLessonProgress.lesson_id.in_(lesson_ids),
+            UserLessonProgress.learning_profile_id
+            == profile_id,
+            UserLessonProgress.lesson_id.in_(
+                lesson_ids
+            ),
         )
         .all()
     )
@@ -365,7 +459,11 @@ def calculate_normal_progress(
         )
     )
 
-    return completed_count / len(normal_lessons) * 100.0
+    return (
+        completed_count
+        / len(normal_lessons)
+        * 100.0
+    )
 
 
 def get_or_create_lesson_progress(
@@ -377,8 +475,10 @@ def get_or_create_lesson_progress(
     progress = (
         db.query(UserLessonProgress)
         .filter(
-            UserLessonProgress.user_id == current_user.id,
-            UserLessonProgress.lesson_id == lesson.id,
+            UserLessonProgress.user_id
+            == current_user.id,
+            UserLessonProgress.lesson_id
+            == lesson.id,
         )
         .first()
     )
@@ -386,6 +486,7 @@ def get_or_create_lesson_progress(
     if progress is not None:
         if progress.learning_profile_id != profile.id:
             progress.learning_profile_id = profile.id
+
         return progress
 
     progress = UserLessonProgress(
@@ -398,6 +499,7 @@ def get_or_create_lesson_progress(
     )
 
     db.add(progress)
+
     return progress
 
 
@@ -413,12 +515,14 @@ def get_current_lesson(
 
     for lesson in normal_lessons:
         progress = progress_map.get(lesson.id)
+
         if progress is None or not progress.completed:
             return lesson
 
     for lesson in lessons:
         if lesson.is_test:
             progress = progress_map.get(lesson.id)
+
             if progress is None or not progress.completed:
                 return lesson
 
@@ -433,7 +537,10 @@ def get_learning_path(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    profile = get_current_profile(current_user, db)
+    profile = get_current_profile(
+        current_user,
+        db,
+    )
 
     try:
         lessons = sync_learning_content(
@@ -456,7 +563,11 @@ def get_learning_path(
             ),
         )
 
-    lesson_ids = [lesson.id for lesson in lessons]
+    lesson_ids = [
+        lesson.id
+        for lesson in lessons
+    ]
+
     progress_map = get_progress_map(
         user_id=current_user.id,
         profile_id=profile.id,
@@ -475,7 +586,10 @@ def get_learning_path(
         progress_map,
     )
 
-    if round(profile.progress, 4) != round(calculated_progress, 4):
+    if round(profile.progress, 4) != round(
+        calculated_progress,
+        4,
+    ):
         profile.progress = calculated_progress
         db.commit()
 
@@ -494,21 +608,39 @@ def get_learning_path(
     )
 
     total_normal = len(normal_lessons)
+
     path_lessons = []
 
     for lesson in lessons:
         progress = progress_map.get(lesson.id)
-        completed = progress.completed if progress else False
-        best_score = progress.best_score if progress else 0.0
-        attempts = progress.attempts if progress else 0
+
+        completed = (
+            progress.completed
+            if progress
+            else False
+        )
+
+        best_score = (
+            progress.best_score
+            if progress
+            else 0.0
+        )
+
+        attempts = (
+            progress.attempts
+            if progress
+            else 0
+        )
 
         if completed:
             status = "completed"
+
         elif (
             current_lesson is not None
             and lesson.id == current_lesson.id
         ):
             status = "current"
+
         else:
             status = "locked"
 
@@ -532,10 +664,15 @@ def get_learning_path(
     return LearningPathResponse(
         language=profile.language,
         level=profile.level,
-        progress=round(calculated_progress, 2),
+        progress=round(
+            calculated_progress,
+            2,
+        ),
         completed_lessons=completed_normal,
         total_lessons=total_normal,
-        next_level=get_next_level(profile.level),
+        next_level=get_next_level(
+            profile.level
+        ),
         lessons=path_lessons,
     )
 
@@ -550,7 +687,10 @@ def complete_lesson(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    profile = get_current_profile(current_user, db)
+    profile = get_current_profile(
+        current_user,
+        db,
+    )
 
     try:
         all_lessons = sync_learning_content(
@@ -565,23 +705,37 @@ def complete_lesson(
         ) from exc
 
     lesson = next(
-        (item for item in all_lessons if item.id == lesson_id),
+        (
+            item
+            for item in all_lessons
+            if item.id == lesson_id
+        ),
         None,
     )
 
     if lesson is None:
         raise HTTPException(
             status_code=404,
-            detail="Lesson not found in the current curriculum.",
+            detail=(
+                "Lesson not found in the current "
+                "curriculum."
+            ),
         )
 
     if not all_lessons:
         raise HTTPException(
             status_code=404,
-            detail="No learning lessons found for the current level.",
+            detail=(
+                "No learning lessons found for the "
+                "current level."
+            ),
         )
 
-    lesson_ids = [item.id for item in all_lessons]
+    lesson_ids = [
+        item.id
+        for item in all_lessons
+    ]
+
     progress_map = get_progress_map(
         user_id=current_user.id,
         profile_id=profile.id,
@@ -597,7 +751,10 @@ def complete_lesson(
     if current_lesson is None:
         raise HTTPException(
             status_code=400,
-            detail="All lessons in this level are already completed.",
+            detail=(
+                "All lessons in this level are "
+                "already completed."
+            ),
         )
 
     if current_lesson.id != lesson.id:
@@ -609,20 +766,27 @@ def complete_lesson(
             ),
         )
 
-    lesson_progress = progress_map.get(lesson.id)
+    lesson_progress = progress_map.get(
+        lesson.id
+    )
 
     if lesson_progress is None:
-        lesson_progress = get_or_create_lesson_progress(
-            current_user=current_user,
-            profile=profile,
-            lesson=lesson,
-            db=db,
+        lesson_progress = (
+            get_or_create_lesson_progress(
+                current_user=current_user,
+                profile=profile,
+                lesson=lesson,
+                db=db,
+            )
         )
 
     if lesson_progress.completed:
         raise HTTPException(
             status_code=400,
-            detail="This lesson has already been completed.",
+            detail=(
+                "This lesson has already been "
+                "completed."
+            ),
         )
 
     lesson_progress.attempts += 1
@@ -637,6 +801,7 @@ def complete_lesson(
     if not lesson.is_test:
         lesson_progress.completed = True
         lesson_progress.completed_at = datetime.utcnow()
+
     else:
         normal_lessons = [
             item
@@ -654,51 +819,66 @@ def complete_lesson(
             for progress in progress_map.values()
             if (
                 progress.completed
-                and progress.lesson_id in normal_ids
+                and progress.lesson_id
+                in normal_ids
             )
         }
 
-        missing_lessons = normal_ids - completed_ids
+        missing_lessons = (
+            normal_ids - completed_ids
+        )
 
         if missing_lessons:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "You must complete all normal lessons "
-                    "before taking the level test."
+                    "You must complete all normal "
+                    "lessons before taking the "
+                    "level test."
                 ),
             )
 
         if data.score < lesson.passing_score:
             lesson_progress.completed = False
-            profile.progress = calculate_normal_progress(
-                normal_lessons,
-                progress_map,
+
+            profile.progress = (
+                calculate_normal_progress(
+                    normal_lessons,
+                    progress_map,
+                )
             )
 
             db.commit()
 
             return CompleteLessonResponse(
-                message="Level test was not passed.",
+                message=(
+                    "Level test was not passed."
+                ),
                 lesson_id=lesson.id,
                 completed=False,
                 score=data.score,
                 level_upgraded=False,
                 old_level=old_level,
                 new_level=old_level,
-                new_progress=round(profile.progress, 2),
+                new_progress=round(
+                    profile.progress,
+                    2,
+                ),
             )
 
         lesson_progress.completed = True
         lesson_progress.completed_at = datetime.utcnow()
 
-        next_level = get_next_level(profile.level)
+        next_level = get_next_level(
+            profile.level
+        )
 
         if next_level is not None:
             profile.level = next_level
             profile.progress = 0.0
             new_level = next_level
             level_upgraded = True
+
         else:
             profile.progress = 100.0
 
@@ -709,16 +889,23 @@ def complete_lesson(
             if not item.is_test
         ]
 
-        progress_map[lesson_progress.lesson_id] = lesson_progress
-        profile.progress = calculate_normal_progress(
-            normal_lessons,
-            progress_map,
+        progress_map[
+            lesson_progress.lesson_id
+        ] = lesson_progress
+
+        profile.progress = (
+            calculate_normal_progress(
+                normal_lessons,
+                progress_map,
+            )
         )
 
     try:
         db.commit()
+
     except IntegrityError as exc:
         db.rollback()
+
         raise HTTPException(
             status_code=400,
             detail="Unable to save lesson progress.",
@@ -731,7 +918,10 @@ def complete_lesson(
         message=(
             "Lesson completed successfully"
             if lesson_progress.completed
-            else "Lesson completed but the level test was not passed"
+            else (
+                "Lesson completed but the level "
+                "test was not passed"
+            )
         ),
         lesson_id=lesson.id,
         completed=lesson_progress.completed,
@@ -739,5 +929,8 @@ def complete_lesson(
         level_upgraded=level_upgraded,
         old_level=old_level,
         new_level=new_level,
-        new_progress=round(profile.progress, 2),
+        new_progress=round(
+            profile.progress,
+            2,
+        ),
     )

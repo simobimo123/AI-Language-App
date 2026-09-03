@@ -113,7 +113,7 @@ class _AddWordDialogState extends State<AddWordDialog> {
           TextField(
             controller: wordController,
             textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
+              decoration: InputDecoration(
               labelText: t(context, 'word'),
               hintText: t(context, 'wordHint'),
               prefixIcon: const Icon(Icons.language),

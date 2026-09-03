@@ -252,7 +252,20 @@ def _stream_lesson_response(
     curriculum: dict,
     conversation_id: str,
 ) -> Generator[str, None, None]:
+<<<<<<< Updated upstream
     """Stream the lesson response without using detached ORM objects."""
+=======
+    """
+    Stream the AI lesson response.
+
+    IMPORTANT:
+    Do not access SQLAlchemy User/LearningProfile ORM instances here.
+    Streaming continues after the original endpoint has returned, so ORM
+    instances such as current_user can become detached/expired.
+    Primitive values are captured before StreamingResponse starts.
+    """
+
+>>>>>>> Stashed changes
     history = get_conversation_history(
         user_id=user_id,
         conversation_id=conversation_id,
@@ -260,7 +273,11 @@ def _stream_lesson_response(
         db=db,
     )
 
-    contents = _build_contents(history, request.message)
+    contents = _build_contents(
+        history,
+        request.message,
+    )
+
     system_instruction = _build_system_instruction(
         native_language=native_language,
         target_language=target_language,
@@ -291,10 +308,18 @@ def _stream_lesson_response(
                 prompt_tokens,
                 chunk.prompt_tokens,
             )
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
             completion_tokens = max(
                 completion_tokens,
                 chunk.completion_tokens,
             )
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
             total_tokens = max(
                 total_tokens,
                 chunk.total_tokens,
@@ -419,7 +444,15 @@ def lesson_chat(
     # Validate the requested lesson completely before reserving an AI request.
     # Invalid lesson/language/level requests therefore do not consume the
     # user's daily AI quota.
+<<<<<<< Updated upstream
     lesson = db.get(CourseLesson, request.lesson_id)
+=======
+
+    lesson = db.get(
+        CourseLesson,
+        request.lesson_id,
+    )
+>>>>>>> Stashed changes
 
     if lesson is None:
         raise HTTPException(
@@ -427,6 +460,7 @@ def lesson_chat(
             detail="Lesson not found.",
         )
 
+<<<<<<< Updated upstream
     # Capture primitive values while the SQLAlchemy session is active. The
     # streaming generator must not depend on ORM User/Profile instances.
     user_id = current_user.id
@@ -441,6 +475,25 @@ def lesson_chat(
 
     lesson_language = normalize_language(lesson.language)
 
+=======
+    # Capture primitive user information while the SQLAlchemy session is
+    # definitely active. These values are passed into the streaming generator
+    # instead of the ORM User object.
+    user_id = current_user.id
+
+    target_language = normalize_language(
+        current_user.learning_language
+    )
+
+    native_language = normalize_language(
+        current_user.native_language
+    )
+
+    lesson_language = normalize_language(
+        lesson.language
+    )
+
+>>>>>>> Stashed changes
     if lesson_language != target_language:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -460,8 +513,18 @@ def lesson_chat(
             detail="This lesson is not part of your current learning level.",
         )
 
+<<<<<<< Updated upstream
     profile_level = normalize_level(profile.level)
     lesson_level = normalize_level(lesson.level)
+=======
+    profile_level = normalize_level(
+        profile.level
+    )
+
+    lesson_level = normalize_level(
+        lesson.level
+    )
+>>>>>>> Stashed changes
 
     if profile_level != lesson_level:
         raise HTTPException(
@@ -470,11 +533,19 @@ def lesson_chat(
         )
 
     level = profile_level or "A1"
+<<<<<<< Updated upstream
     curriculum = _load_lesson_curriculum(lesson)
+=======
+
+    curriculum = _load_lesson_curriculum(
+        lesson
+    )
+>>>>>>> Stashed changes
 
     # Only after all lesson validation succeeds do we enforce the AI rate
     # limit and reserve a daily AI request.
     check_rate_limit(user_id)
+<<<<<<< Updated upstream
     reserve_ai_request(
         user_id=user_id,
         db=db,
@@ -495,6 +566,18 @@ def lesson_chat(
             f"{request.lesson_id}_"
             f"{uuid4().hex}"
         )
+=======
+
+    reserve_ai_request(
+        user_id=user_id,
+        db=db,
+    )
+
+    conversation_id = (
+        request.conversation_id
+        or uuid4().hex
+    )
+>>>>>>> Stashed changes
 
     return StreamingResponse(
         _stream_lesson_response(
