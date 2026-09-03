@@ -9,6 +9,7 @@ import migrations_learning_bank  # noqa: F401
 from routers.auth import router as auth_router
 from routers.users import router as users_router
 from routers.words import router as words_router
+from routers.word_lookup import router as word_lookup_router
 
 from routers.learning_profiles import (
     router as learning_router,
@@ -88,6 +89,7 @@ def home():
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(words_router)
+app.include_router(word_lookup_router)
 app.include_router(learning_router)
 app.include_router(learning_path_router)
 app.include_router(ai_router)
