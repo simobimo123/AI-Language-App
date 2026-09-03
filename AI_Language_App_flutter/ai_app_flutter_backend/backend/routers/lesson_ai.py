@@ -86,9 +86,17 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
         )
 
     try:
-        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        data = json.loads(
+            path.read_text(
+                encoding="utf-8-sig",
+            )
+        )
     except (OSError, json.JSONDecodeError) as exc:
-        logger.exception("Failed to load lesson curriculum: %s", exc)
+        logger.exception(
+            "Failed to load lesson curriculum: %s",
+            exc,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Lesson curriculum could not be loaded.",
@@ -110,6 +118,7 @@ def _lesson_context(data: dict) -> str:
     slice so it does not try to teach the whole lesson at once.
     """
     metadata = data.get("metadata", {})
+
     if not isinstance(metadata, dict):
         metadata = {}
 
@@ -121,7 +130,10 @@ def _lesson_context(data: dict) -> str:
             if not isinstance(section, dict):
                 continue
 
-            section_type = str(section.get("type", "")).lower()
+            section_type = str(
+                section.get("type", "")
+            ).lower()
+
             if section_type not in {
                 "test",
                 "assessment",
@@ -221,21 +233,32 @@ OUTPUT
 """
 
 
-def _build_contents(history, message: str) -> list[types.Content]:
+def _build_contents(
+    history,
+    message: str,
+) -> list[types.Content]:
     contents: list[types.Content] = []
 
     for item in history:
         contents.append(
             types.Content(
                 role=item.role,
-                parts=[types.Part(text=item.content)],
+                parts=[
+                    types.Part(
+                        text=item.content,
+                    )
+                ],
             )
         )
 
     contents.append(
         types.Content(
             role="user",
-            parts=[types.Part(text=message)],
+            parts=[
+                types.Part(
+                    text=message,
+                )
+            ],
         )
     )
 
@@ -252,20 +275,12 @@ def _stream_lesson_response(
     curriculum: dict,
     conversation_id: str,
 ) -> Generator[str, None, None]:
-<<<<<<< Updated upstream
-    """Stream the lesson response without using detached ORM objects."""
-=======
-    """
-    Stream the AI lesson response.
+    """Stream the lesson response without using detached ORM objects.
 
-    IMPORTANT:
-    Do not access SQLAlchemy User/LearningProfile ORM instances here.
-    Streaming continues after the original endpoint has returned, so ORM
-    instances such as current_user can become detached/expired.
-    Primitive values are captured before StreamingResponse starts.
+    Streaming continues after the original endpoint has returned, so this
+    generator receives primitive values instead of ORM User/Profile objects.
     """
 
->>>>>>> Stashed changes
     history = get_conversation_history(
         user_id=user_id,
         conversation_id=conversation_id,
@@ -308,18 +323,12 @@ def _stream_lesson_response(
                 prompt_tokens,
                 chunk.prompt_tokens,
             )
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
             completion_tokens = max(
                 completion_tokens,
                 chunk.completion_tokens,
             )
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
             total_tokens = max(
                 total_tokens,
                 chunk.total_tokens,
@@ -425,12 +434,18 @@ def _find_saved_lesson_conversation(
     prefix = f"{LESSON_CONVERSATION_PREFIX}{lesson_id}_"
 
     return db.execute(
-        select(AIConversationMessage.conversation_id)
+        select(
+            AIConversationMessage.conversation_id
+        )
         .where(
             AIConversationMessage.user_id == user_id,
-            AIConversationMessage.conversation_id.like(f"{prefix}%"),
+            AIConversationMessage.conversation_id.like(
+                f"{prefix}%"
+            ),
         )
-        .order_by(AIConversationMessage.created_at.desc())
+        .order_by(
+            AIConversationMessage.created_at.desc()
+        )
         .limit(1)
     ).scalar_one_or_none()
 
@@ -444,15 +459,11 @@ def lesson_chat(
     # Validate the requested lesson completely before reserving an AI request.
     # Invalid lesson/language/level requests therefore do not consume the
     # user's daily AI quota.
-<<<<<<< Updated upstream
-    lesson = db.get(CourseLesson, request.lesson_id)
-=======
 
     lesson = db.get(
         CourseLesson,
         request.lesson_id,
     )
->>>>>>> Stashed changes
 
     if lesson is None:
         raise HTTPException(
@@ -460,25 +471,10 @@ def lesson_chat(
             detail="Lesson not found.",
         )
 
-<<<<<<< Updated upstream
-    # Capture primitive values while the SQLAlchemy session is active. The
-    # streaming generator must not depend on ORM User/Profile instances.
-    user_id = current_user.id
-
-    target_language = normalize_language(
-        current_user.learning_language
-    )
-
-    native_language = normalize_language(
-        current_user.native_language
-    )
-
-    lesson_language = normalize_language(lesson.language)
-
-=======
     # Capture primitive user information while the SQLAlchemy session is
     # definitely active. These values are passed into the streaming generator
     # instead of the ORM User object.
+
     user_id = current_user.id
 
     target_language = normalize_language(
@@ -493,7 +489,6 @@ def lesson_chat(
         lesson.language
     )
 
->>>>>>> Stashed changes
     if lesson_language != target_language:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -513,10 +508,6 @@ def lesson_chat(
             detail="This lesson is not part of your current learning level.",
         )
 
-<<<<<<< Updated upstream
-    profile_level = normalize_level(profile.level)
-    lesson_level = normalize_level(lesson.level)
-=======
     profile_level = normalize_level(
         profile.level
     )
@@ -524,7 +515,6 @@ def lesson_chat(
     lesson_level = normalize_level(
         lesson.level
     )
->>>>>>> Stashed changes
 
     if profile_level != lesson_level:
         raise HTTPException(
@@ -533,19 +523,16 @@ def lesson_chat(
         )
 
     level = profile_level or "A1"
-<<<<<<< Updated upstream
-    curriculum = _load_lesson_curriculum(lesson)
-=======
 
     curriculum = _load_lesson_curriculum(
         lesson
     )
->>>>>>> Stashed changes
 
     # Only after all lesson validation succeeds do we enforce the AI rate
     # limit and reserve a daily AI request.
+
     check_rate_limit(user_id)
-<<<<<<< Updated upstream
+
     reserve_ai_request(
         user_id=user_id,
         db=db,
@@ -566,18 +553,6 @@ def lesson_chat(
             f"{request.lesson_id}_"
             f"{uuid4().hex}"
         )
-=======
-
-    reserve_ai_request(
-        user_id=user_id,
-        db=db,
-    )
-
-    conversation_id = (
-        request.conversation_id
-        or uuid4().hex
-    )
->>>>>>> Stashed changes
 
     return StreamingResponse(
         _stream_lesson_response(

@@ -4,10 +4,6 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
-<<<<<<< Updated upstream
-import '../services/api/lesson_ai_api_service.dart';
-=======
->>>>>>> Stashed changes
 import 'lesson_assessment_page.dart';
 
 class LessonPage extends StatefulWidget {
@@ -44,7 +40,9 @@ class _LessonPageState extends State<LessonPage> {
 
   final TextEditingController _messageController =
       TextEditingController();
+
   final ScrollController _scrollController = ScrollController();
+
   final List<_TutorMessage> _messages = [];
 
   String? _conversationId;
@@ -276,7 +274,9 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   Future<void> _startTutor() async {
-    if (_lessonStarted || _sending) return;
+    if (_lessonStarted || _sending) {
+      return;
+    }
 
     setState(() {
       _lessonStarted = true;
@@ -298,22 +298,20 @@ class _LessonPageState extends State<LessonPage> {
     }
 
     _messageController.clear();
-<<<<<<< Updated upstream
-    await _sendMessage(message, showUserMessage: true);
-=======
 
     await _sendMessage(
       message,
       showUserMessage: true,
     );
->>>>>>> Stashed changes
   }
 
   Future<void> _sendMessage(
     String message, {
     required bool showUserMessage,
   }) async {
-    if (_sending || _submitting) return;
+    if (_sending || _submitting) {
+      return;
+    }
 
     if (showUserMessage) {
       setState(() {
@@ -326,6 +324,7 @@ class _LessonPageState extends State<LessonPage> {
 
         _error = null;
       });
+
       _scrollToBottom();
     }
 
@@ -343,27 +342,10 @@ class _LessonPageState extends State<LessonPage> {
         message: message,
         conversationId: _conversationId,
       )) {
-        if (!mounted) return;
-
-        if (chunk.type == 'conversation' && chunk.conversationId != null) {
-          _conversationId = chunk.conversationId;
+        if (!mounted) {
+          return;
         }
 
-<<<<<<< Updated upstream
-        if (chunk.type == 'chunk' && chunk.text.isNotEmpty) {
-          if (assistantIndex == -1) {
-            _messages.add(_TutorMessage(role: 'assistant', text: chunk.text));
-            assistantIndex = _messages.length - 1;
-          } else {
-            _messages[assistantIndex].text += chunk.text;
-          }
-          setState(() {});
-          _scrollToBottom();
-        }
-
-        if (chunk.type == 'done') {
-          _conversationId = chunk.conversationId ?? _conversationId;
-=======
         if (chunk.type == 'conversation') {
           final conversationId = chunk.conversationId;
 
@@ -403,30 +385,20 @@ class _LessonPageState extends State<LessonPage> {
             _conversationId = conversationId;
           }
 
->>>>>>> Stashed changes
           _dailyLimit = chunk.dailyLimit;
           _dailyRemaining = chunk.dailyRemaining;
         }
 
         if (chunk.type == 'error') {
-          throw Exception(chunk.message ?? _errorLabel());
+          throw Exception(
+            chunk.message ?? _errorLabel(),
+          );
         }
       }
     } catch (e) {
-      if (!mounted) return;
-<<<<<<< Updated upstream
-      setState(() => _error = e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_errorLabel())),
-      );
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _sending = false;
-        _loading = false;
-      });
-      _scrollToBottom();
-=======
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         _error = e.toString();
@@ -438,21 +410,24 @@ class _LessonPageState extends State<LessonPage> {
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _sending = false;
-          _loading = false;
-        });
-
-        _scrollToBottom();
+      if (!mounted) {
+        return;
       }
->>>>>>> Stashed changes
+
+      setState(() {
+        _sending = false;
+        _loading = false;
+      });
+
+      _scrollToBottom();
     }
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
+      if (!_scrollController.hasClients) {
+        return;
+      }
 
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
@@ -463,7 +438,9 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   Future<void> _finishLesson() async {
-    if (_submitting || _sending) return;
+    if (_submitting || _sending) {
+      return;
+    }
 
     final shouldStart = await showDialog<bool>(
       context: context,
@@ -511,7 +488,9 @@ class _LessonPageState extends State<LessonPage> {
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _submitting = false;
@@ -533,7 +512,9 @@ class _LessonPageState extends State<LessonPage> {
           ? AlignmentDirectional.centerEnd
           : AlignmentDirectional.centerStart,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 620),
+        constraints: const BoxConstraints(
+          maxWidth: 620,
+        ),
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -557,15 +538,11 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   TextDirection _textDirection(String text) {
-<<<<<<< Updated upstream
-    return RegExp(r'[\u0600-\u06FF]').hasMatch(text)
-=======
     final arabic = RegExp(
       r'[\u0600-\u06FF]',
     ).hasMatch(text);
 
     return arabic
->>>>>>> Stashed changes
         ? TextDirection.rtl
         : TextDirection.ltr;
   }
@@ -574,7 +551,12 @@ class _LessonPageState extends State<LessonPage> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        padding: const EdgeInsets.fromLTRB(
+          12,
+          8,
+          12,
+          12,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -600,12 +582,13 @@ class _LessonPageState extends State<LessonPage> {
             ),
             const SizedBox(width: 8),
             IconButton.filled(
-              onPressed:
-                  _sending || _submitting
-                      ? null
-                      : _sendCurrentMessage,
+              onPressed: _sending || _submitting
+                  ? null
+                  : _sendCurrentMessage,
               tooltip: _sendLabel(),
-              icon: const Icon(Icons.send_rounded),
+              icon: const Icon(
+                Icons.send_rounded,
+              ),
             ),
           ],
         ),
@@ -648,18 +631,16 @@ class _LessonPageState extends State<LessonPage> {
         titleSpacing: 16,
         title: Text(
           _pageTitle(),
-<<<<<<< Updated upstream
-          style: const TextStyle(fontWeight: FontWeight.w700),
-=======
           style: const TextStyle(
             fontWeight: FontWeight.w700,
           ),
->>>>>>> Stashed changes
         ),
         actions: [
           if (_dailyRemaining != null)
             Padding(
-              padding: const EdgeInsetsDirectional.only(end: 4),
+              padding: const EdgeInsetsDirectional.only(
+                end: 4,
+              ),
               child: Center(
                 child: Text(
                   '$_dailyRemaining/${_dailyLimit ?? ''}',
@@ -668,81 +649,73 @@ class _LessonPageState extends State<LessonPage> {
               ),
             ),
           IconButton(
-<<<<<<< Updated upstream
-            onPressed: _sending || _submitting ? null : _finishLesson,
-=======
-            onPressed:
-                _sending || _submitting
-                    ? null
-                    : _finishLesson,
->>>>>>> Stashed changes
+            onPressed: _sending || _submitting
+                ? null
+                : _finishLesson,
             tooltip: _finishLabel(),
-            icon: const Icon(Icons.check_circle_outline_rounded),
+            icon: const Icon(
+              Icons.check_circle_outline_rounded,
+            ),
           ),
           const SizedBox(width: 4),
         ],
       ),
       body: Directionality(
         textDirection:
-            isRtl
-                ? TextDirection.rtl
-                : TextDirection.ltr,
+            isRtl ? TextDirection.rtl : TextDirection.ltr,
         child: Column(
           children: [
             Expanded(
-              child:
-                  _messages.isEmpty && _loading
-                      ? _buildEmptyState(theme)
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.fromLTRB(
-                            16,
-                            20,
-                            16,
-                            12,
-                          ),
-                          itemCount:
-                              _messages.length +
-                              (_sending ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index >= _messages.length) {
-                              return Align(
-                                alignment:
-                                    AlignmentDirectional
-                                        .centerStart,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.only(
-                                    bottom: 12,
+              child: _messages.isEmpty && _loading
+                  ? _buildEmptyState(theme)
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        20,
+                        16,
+                        12,
+                      ),
+                      itemCount:
+                          _messages.length +
+                          (_sending ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= _messages.length) {
+                          return Align(
+                            alignment:
+                                AlignmentDirectional.centerStart,
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 12,
+                              ),
+                              child: Row(
+                                mainAxisSize:
+                                    MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize:
-                                        MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child:
-                                            CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        _startingLabel(),
-                                      ),
-                                    ],
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    _startingLabel(),
                                   ),
-                                ),
-                              );
-                            }
+                                ],
+                              ),
+                            ),
+                          );
+                        }
 
-                            return _buildMessage(
-                              _messages[index],
-                              theme,
-                            );
-                          },
-                        ),
+                        return _buildMessage(
+                          _messages[index],
+                          theme,
+                        );
+                      },
+                    ),
             ),
             if (_error != null)
               Padding(
@@ -752,13 +725,9 @@ class _LessonPageState extends State<LessonPage> {
                 child: Text(
                   _errorLabel(),
                   textAlign: TextAlign.center,
-<<<<<<< Updated upstream
-                  style: TextStyle(color: theme.colorScheme.error),
-=======
                   style: TextStyle(
                     color: theme.colorScheme.error,
                   ),
->>>>>>> Stashed changes
                 ),
               ),
             _buildComposer(theme),
