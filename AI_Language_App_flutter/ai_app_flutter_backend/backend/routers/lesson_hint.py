@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -34,6 +33,8 @@ logger = logging.getLogger(__name__)
 HINT_MODEL = os.getenv("OPENROUTER_MAIN_MODEL")
 if not HINT_MODEL:
     raise RuntimeError("OPENROUTER_MAIN_MODEL is not configured in the .env file")
+
+HINT_MAX_OUTPUT_TOKENS = 400
 
 
 class LessonHintRequest(BaseModel):
@@ -88,6 +89,8 @@ SUGGESTION: <one sentence in {target_language}>
 TRANSLATION: <the meaning of that sentence in {native_language}>
 
 IMPORTANT
+- Keep both lines very short.
+- Do not use markdown, bullets, labels other than SUGGESTION and TRANSLATION, or explanations.
 - The suggestion is only a hint. It must NOT be treated as the learner's answer.
 - Do not say that you sent, saved, or submitted it.
 - Never output unrelated languages.
@@ -100,9 +103,10 @@ def _parse_hint(text: str) -> tuple[str, str]:
 
     for line in text.splitlines():
         stripped = line.strip()
-        if stripped.upper().startswith("SUGGESTION:"):
+        upper = stripped.upper()
+        if upper.startswith("SUGGESTION:"):
             suggestion = stripped.split(":", 1)[1].strip()
-        elif stripped.upper().startswith("TRANSLATION:"):
+        elif upper.startswith("TRANSLATION:"):
             translation = stripped.split(":", 1)[1].strip()
 
     if not suggestion or not translation:
@@ -200,7 +204,7 @@ def lesson_hint(
                 curriculum=curriculum,
                 history=history,
             ),
-            max_output_tokens=180,
+            max_output_tokens=HINT_MAX_OUTPUT_TOKENS,
         )
 
         suggestion, translation = _parse_hint(response.text)
