@@ -52,7 +52,6 @@ SUPPORTED_LANGUAGE_CODES = (
 
 
 SUPPORTED_CEFR_LEVELS = (
-    "PRE_A1",
     "A1",
     "A2",
     "B1",
