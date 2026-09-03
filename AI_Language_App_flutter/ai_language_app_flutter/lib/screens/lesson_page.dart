@@ -4,6 +4,7 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
+import '../widgets/learning_path/lesson_hint_dialog.dart';
 import '../widgets/words/word_detail_dialog.dart';
 import 'lesson_assessment_page.dart';
 
@@ -43,9 +44,6 @@ class _LessonPageState extends State<LessonPage> {
   final ScrollController _scrollController = ScrollController();
   final List<_TutorMessage> _messages = [];
 
-  // Translation cache is intentionally kept separate from visibility.
-  // Hiding a translation must not delete it, so showing it again is instant
-  // and does not make another AI request.
   final Map<String, String> _translationCache = {};
   final Set<String> _visibleTranslations = {};
   final Set<String> _translationLoading = {};
@@ -59,6 +57,7 @@ class _LessonPageState extends State<LessonPage> {
   bool _sending = false;
   bool _submitting = false;
   bool _lessonStarted = false;
+  bool _hintLoading = false;
 
   @override
   void initState() {
@@ -135,6 +134,30 @@ class _LessonPageState extends State<LessonPage> {
         ja: '送信',
         ko: '보내기',
         zh: '发送',
+      );
+
+  String _hintLabel() => _text(
+        ar: 'اقتراح إجابة',
+        en: 'Answer hint',
+        fr: 'Indice de réponse',
+        es: 'Pista de respuesta',
+        de: 'Antwort-Hinweis',
+        it: 'Suggerimento risposta',
+        ja: '回答ヒント',
+        ko: '답변 힌트',
+        zh: '回答提示',
+      );
+
+  String _hintErrorLabel() => _text(
+        ar: 'تعذر الحصول على اقتراح. حاول مرة أخرى.',
+        en: 'Could not get a hint. Please try again.',
+        fr: 'Impossible d’obtenir un indice. Réessayez.',
+        es: 'No se pudo obtener una pista. Inténtalo de nuevo.',
+        de: 'Hinweis konnte nicht geladen werden. Bitte erneut versuchen.',
+        it: 'Impossibile ottenere un suggerimento. Riprova.',
+        ja: 'ヒントを取得できませんでした。もう一度お試しください。',
+        ko: '힌트를 가져오지 못했습니다. 다시 시도하세요.',
+        zh: '无法获取提示，请重试。',
       );
 
   String _translateLabel() => _text(
@@ -245,15 +268,12 @@ class _LessonPageState extends State<LessonPage> {
         zh: '连接 AI 导师时发生错误。',
       );
 
-  String _translationKey(_TutorMessage message) {
-    return '${_locale()}:${message.role}:${message.text}';
-  }
+  String _translationKey(_TutorMessage message) =>
+      '${_locale()}:${message.role}:${message.text}';
 
   Future<void> _toggleTranslation(_TutorMessage message) async {
     final key = _translationKey(message);
 
-    // A cached translation is already available: only toggle its visibility.
-    // No network/AI request is made here.
     if (_translationCache.containsKey(key)) {
       setState(() {
         if (_visibleTranslations.contains(key)) {
@@ -283,6 +303,34 @@ class _LessonPageState extends State<LessonPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_translationErrorLabel())),
       );
+    }
+  }
+
+  Future<void> _showHint() async {
+    if (_hintLoading || _sending || _submitting || _messages.isEmpty) return;
+
+    setState(() => _hintLoading = true);
+
+    try {
+      final hint = await _apiService.getLessonHint(
+        lessonId: widget.lesson.id,
+        conversationId: _conversationId,
+      );
+
+      if (!mounted) return;
+
+      await showLessonHintDialog(
+        context,
+        hint: hint,
+        text: _text,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_hintErrorLabel())),
+      );
+    } finally {
+      if (mounted) setState(() => _hintLoading = false);
     }
   }
 
@@ -419,15 +467,13 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
-  bool _isWhitespaceRune(int rune) {
-    return RegExp(r'\s').hasMatch(String.fromCharCode(rune));
-  }
+  bool _isWhitespaceRune(int rune) =>
+      RegExp(r'\s').hasMatch(String.fromCharCode(rune));
 
-  bool _isCjkPunctuationRune(int rune) {
-    return RegExp(r'[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]').hasMatch(
-      String.fromCharCode(rune),
-    );
-  }
+  bool _isCjkPunctuationRune(int rune) =>
+      RegExp(r'[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]').hasMatch(
+        String.fromCharCode(rune),
+      );
 
   bool _isCjkIdeographRune(int rune) {
     return (rune >= 0x3400 && rune <= 0x4DBF) ||
@@ -496,10 +542,7 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
-  Widget _buildClickableMessage(
-    String text,
-    ThemeData theme,
-  ) {
+  Widget _buildClickableMessage(String text, ThemeData theme) {
     final tokens = _messageTokens(text);
     final baseStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.45);
 
@@ -514,10 +557,7 @@ class _LessonPageState extends State<LessonPage> {
               borderRadius: BorderRadius.circular(5),
               onTap: () => _openWord(token),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 1,
-                  vertical: 1,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
                 child: Text(
                   token,
                   textDirection: _textDirection(token),
@@ -529,10 +569,7 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
-  Widget _buildTranslationButton(
-    _TutorMessage message,
-    ThemeData theme,
-  ) {
+  Widget _buildTranslationButton(_TutorMessage message, ThemeData theme) {
     final key = _translationKey(message);
     final cached = _translationCache.containsKey(key);
     final visible = _visibleTranslations.contains(key);
@@ -558,11 +595,7 @@ class _LessonPageState extends State<LessonPage> {
                       : Icons.translate_rounded,
                   size: 18,
                 ),
-          label: Text(
-            cached && visible
-                ? _hideTranslationLabel()
-                : _translateLabel(),
-          ),
+          label: Text(cached && visible ? _hideTranslationLabel() : _translateLabel()),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             minimumSize: const Size(0, 32),
@@ -604,10 +637,7 @@ class _LessonPageState extends State<LessonPage> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(10),
@@ -615,9 +645,7 @@ class _LessonPageState extends State<LessonPage> {
                   child: Text(
                     translation,
                     textDirection: _textDirection(translation),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      height: 1.4,
-                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
                   ),
                 ),
               ),
@@ -642,6 +670,20 @@ class _LessonPageState extends State<LessonPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            IconButton(
+              onPressed: _hintLoading || _sending || _submitting || _messages.isEmpty
+                  ? null
+                  : _showHint,
+              tooltip: _hintLabel(),
+              icon: _hintLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.lightbulb_outline_rounded),
+            ),
+            const SizedBox(width: 4),
             Expanded(
               child: TextField(
                 controller: _messageController,
@@ -655,18 +697,13 @@ class _LessonPageState extends State<LessonPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             IconButton.filled(
-              onPressed: _sending || _submitting
-                  ? null
-                  : _sendCurrentMessage,
+              onPressed: _sending || _submitting ? null : _sendCurrentMessage,
               tooltip: _sendLabel(),
               icon: const Icon(Icons.send_rounded),
             ),
@@ -800,9 +837,7 @@ class _LessonPageState extends State<LessonPage> {
                                   const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   ),
                                   const SizedBox(width: 10),
                                   Text(_startingLabel()),
