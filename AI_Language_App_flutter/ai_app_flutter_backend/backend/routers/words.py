@@ -7,6 +7,7 @@ from schemas import (
     WordFromVocabularyCreate,
     WordResponse,
 )
+from schemas.learning_bank import SentenceCreate, SentenceResponse
 from models import (
     Word,
     User,
@@ -57,14 +58,12 @@ def create_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    profile = get_current_profile(
-        db,
-        current_user
-    )
+    profile = get_current_profile(db, current_user)
 
     new_word = Word(
         word=word_data.word,
         translation=word_data.translation,
+        item_type="word",
         learned=False,
         user_id=current_user.id,
         learning_profile_id=profile.id,
@@ -82,20 +81,6 @@ def create_word(
 # =========================
 # Save word from global vocabulary
 # =========================
-#
-# Example:
-#
-# vocabulary_form_id -> mangeons
-#
-# The backend finds:
-#
-# mangeons
-#     ↓
-# vocabulary entry = manger
-#
-# Then finds the translation matching the user's
-# native language.
-# =========================
 
 @router.post(
     "/from-vocabulary",
@@ -106,62 +91,33 @@ def save_word_from_vocabulary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    profile = get_current_profile(
-        db,
-        current_user
-    )
+    profile = get_current_profile(db, current_user)
 
-    form = db.query(
-        VocabularyForm
-    ).filter(
+    form = db.query(VocabularyForm).filter(
         VocabularyForm.id == word_data.vocabulary_form_id,
         VocabularyForm.is_active.is_(True)
     ).first()
 
     if form is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vocabulary form not found"
-        )
+        raise HTTPException(status_code=404, detail="Vocabulary form not found")
 
-    entry = db.query(
-        VocabularyEntry
-    ).filter(
+    entry = db.query(VocabularyEntry).filter(
         VocabularyEntry.id == form.vocabulary_entry_id,
         VocabularyEntry.is_active.is_(True)
     ).first()
 
     if entry is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vocabulary entry not found"
-        )
+        raise HTTPException(status_code=404, detail="Vocabulary entry not found")
 
-    # -----------------------------------------
-    # Find the user's preferred translation
-    # -----------------------------------------
-
-    native_language = (
-        current_user.native_language
-        .strip()
-        .lower()
-    )
+    native_language = current_user.native_language.strip().lower()
 
     translation_result = (
-        db.query(
-            VocabularyTranslation
-        )
-        .join(
-            VocabularySense,
-            VocabularySense.id
-            == VocabularyTranslation.vocabulary_sense_id
-        )
+        db.query(VocabularyTranslation)
+        .join(VocabularySense, VocabularySense.id == VocabularyTranslation.vocabulary_sense_id)
         .filter(
-            VocabularySense.vocabulary_entry_id
-            == entry.id,
+            VocabularySense.vocabulary_entry_id == entry.id,
             VocabularySense.is_active.is_(True),
-            VocabularyTranslation.language
-            == native_language
+            VocabularyTranslation.language == native_language
         )
         .order_by(
             VocabularyTranslation.is_primary.desc(),
@@ -173,34 +129,23 @@ def save_word_from_vocabulary(
     if translation_result is None:
         raise HTTPException(
             status_code=404,
-            detail=(
-                "Translation for the user's native "
-                "language was not found"
-            )
+            detail="Translation for the user's native language was not found"
         )
 
-    # -----------------------------------------
-    # Prevent duplicate saved form
-    # -----------------------------------------
-
-    existing = db.query(
-        Word
-    ).filter(
+    existing = db.query(Word).filter(
         Word.user_id == current_user.id,
         Word.learning_profile_id == profile.id,
-        Word.vocabulary_form_id == form.id
+        Word.vocabulary_form_id == form.id,
+        Word.item_type == "word"
     ).first()
 
     if existing is not None:
         return existing
 
-    # -----------------------------------------
-    # Create personal vocabulary item
-    # -----------------------------------------
-
     new_word = Word(
         word=form.form,
         translation=translation_result.translation,
+        item_type="word",
         learned=False,
         user_id=current_user.id,
         learning_profile_id=profile.id,
@@ -216,7 +161,7 @@ def save_word_from_vocabulary(
 
 
 # =========================
-# Get words
+# Get words only
 # =========================
 
 @router.get(
@@ -227,21 +172,161 @@ def get_words(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    profile = get_current_profile(
-        db,
-        current_user
-    )
+    profile = get_current_profile(db, current_user)
 
-    words = db.query(
-        Word
-    ).filter(
+    words = db.query(Word).filter(
         Word.user_id == current_user.id,
-        Word.learning_profile_id == profile.id
-    ).order_by(
-        Word.id.desc()
-    ).all()
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "word"
+    ).order_by(Word.id.desc()).all()
 
     return words
+
+
+# =========================
+# Sentences in the same bank
+# =========================
+
+@router.post(
+    "/sentences",
+    response_model=SentenceResponse
+)
+def create_sentence(
+    sentence_data: SentenceCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    profile = get_current_profile(db, current_user)
+    sentence_text = sentence_data.sentence.strip()
+    translation = sentence_data.translation.strip()
+
+    existing = db.query(Word).filter(
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "sentence",
+        Word.word == sentence_text,
+        Word.translation == translation,
+    ).first()
+
+    if existing is not None:
+        return {
+            "id": existing.id,
+            "sentence": existing.word,
+            "translation": existing.translation,
+            "learned": existing.learned,
+            "user_id": existing.user_id,
+            "learning_profile_id": existing.learning_profile_id,
+        }
+
+    new_sentence = Word(
+        word=sentence_text,
+        translation=translation,
+        item_type="sentence",
+        learned=False,
+        user_id=current_user.id,
+        learning_profile_id=profile.id,
+        vocabulary_entry_id=None,
+        vocabulary_form_id=None,
+    )
+
+    db.add(new_sentence)
+    db.commit()
+    db.refresh(new_sentence)
+
+    return {
+        "id": new_sentence.id,
+        "sentence": new_sentence.word,
+        "translation": new_sentence.translation,
+        "learned": new_sentence.learned,
+        "user_id": new_sentence.user_id,
+        "learning_profile_id": new_sentence.learning_profile_id,
+    }
+
+
+@router.get(
+    "/sentences",
+    response_model=list[SentenceResponse]
+)
+def get_sentences(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    profile = get_current_profile(db, current_user)
+    rows = db.query(Word).filter(
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "sentence"
+    ).order_by(Word.id.desc()).all()
+
+    return [
+        {
+            "id": row.id,
+            "sentence": row.word,
+            "translation": row.translation,
+            "learned": row.learned,
+            "user_id": row.user_id,
+            "learning_profile_id": row.learning_profile_id,
+        }
+        for row in rows
+    ]
+
+
+@router.patch(
+    "/sentences/{sentence_id}",
+    response_model=SentenceResponse
+)
+def update_sentence_status(
+    sentence_id: int,
+    status_data: WordStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    profile = get_current_profile(db, current_user)
+    sentence = db.query(Word).filter(
+        Word.id == sentence_id,
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "sentence"
+    ).first()
+
+    if sentence is None:
+        raise HTTPException(status_code=404, detail="Sentence not found")
+
+    sentence.learned = status_data.learned
+    db.commit()
+    db.refresh(sentence)
+
+    return {
+        "id": sentence.id,
+        "sentence": sentence.word,
+        "translation": sentence.translation,
+        "learned": sentence.learned,
+        "user_id": sentence.user_id,
+        "learning_profile_id": sentence.learning_profile_id,
+    }
+
+
+@router.delete("/sentences/{sentence_id}")
+def delete_sentence(
+    sentence_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    profile = get_current_profile(db, current_user)
+    sentence = db.query(Word).filter(
+        Word.id == sentence_id,
+        Word.user_id == current_user.id,
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "sentence"
+    ).first()
+
+    if sentence is None:
+        raise HTTPException(status_code=404, detail="Sentence not found")
+
+    db.delete(sentence)
+    db.commit()
+
+    return {"message": "Sentence deleted successfully"}
 
 
 # =========================
@@ -258,24 +343,17 @@ def update_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    profile = get_current_profile(
-        db,
-        current_user
-    )
+    profile = get_current_profile(db, current_user)
 
-    word = db.query(
-        Word
-    ).filter(
+    word = db.query(Word).filter(
         Word.id == word_id,
         Word.user_id == current_user.id,
-        Word.learning_profile_id == profile.id
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "word"
     ).first()
 
     if word is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Word not found"
-        )
+        raise HTTPException(status_code=404, detail="Word not found")
 
     word.word = word_data.word
     word.translation = word_data.translation
@@ -287,7 +365,7 @@ def update_word(
 
 
 # =========================
-# Update learned status
+# Update word learned status
 # =========================
 
 @router.patch(
@@ -300,27 +378,19 @@ def update_word_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    profile = get_current_profile(
-        db,
-        current_user
-    )
+    profile = get_current_profile(db, current_user)
 
-    word = db.query(
-        Word
-    ).filter(
+    word = db.query(Word).filter(
         Word.id == word_id,
         Word.user_id == current_user.id,
-        Word.learning_profile_id == profile.id
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "word"
     ).first()
 
     if word is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Word not found"
-        )
+        raise HTTPException(status_code=404, detail="Word not found")
 
     word.learned = status_data.learned
-
     db.commit()
     db.refresh(word)
 
@@ -331,36 +401,25 @@ def update_word_status(
 # Delete word
 # =========================
 
-@router.delete(
-    "/{word_id}"
-)
+@router.delete("/{word_id}")
 def delete_word(
     word_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    profile = get_current_profile(
-        db,
-        current_user
-    )
+    profile = get_current_profile(db, current_user)
 
-    word = db.query(
-        Word
-    ).filter(
+    word = db.query(Word).filter(
         Word.id == word_id,
         Word.user_id == current_user.id,
-        Word.learning_profile_id == profile.id
+        Word.learning_profile_id == profile.id,
+        Word.item_type == "word"
     ).first()
 
     if word is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Word not found"
-        )
+        raise HTTPException(status_code=404, detail="Word not found")
 
     db.delete(word)
     db.commit()
 
-    return {
-        "message": "Word deleted successfully"
-    }
+    return {"message": "Word deleted successfully"}
