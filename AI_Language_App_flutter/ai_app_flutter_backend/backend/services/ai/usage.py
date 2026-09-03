@@ -12,7 +12,17 @@ DAILY_AI_LIMIT = 200
 
 
 def extract_token_usage(response) -> tuple[int, int, int]:
-    """Read Gemini usage metadata without coupling callers to its response type."""
+    """Read token usage from OpenRouter dicts or compatible response objects."""
+    if isinstance(response, dict):
+        prompt_tokens = response.get("prompt_tokens", 0) or 0
+        completion_tokens = response.get("completion_tokens", 0) or 0
+        total_tokens = response.get("total_tokens", 0) or 0
+        return (
+            int(prompt_tokens),
+            int(completion_tokens),
+            int(total_tokens),
+        )
+
     usage_metadata = getattr(response, "usage_metadata", None)
     if usage_metadata is None:
         return 0, 0, 0
@@ -117,5 +127,3 @@ def record_api_usage(
     usage.completion_tokens += max(0, completion_tokens)
     usage.total_tokens += max(0, total_tokens)
     db.commit()
-
-
