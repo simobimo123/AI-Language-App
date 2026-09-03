@@ -4,6 +4,7 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
+import '../widgets/words/save_sentence_dialog.dart';
 import 'lesson_assessment_page.dart';
 
 class LessonPage extends StatefulWidget {
@@ -38,16 +39,12 @@ class _LessonPageState extends State<LessonPage> {
   late final LearningRepository _repository;
   late final ApiService _apiService;
 
-  final TextEditingController _messageController =
-      TextEditingController();
-
+  final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
   final List<_TutorMessage> _messages = [];
 
   String? _conversationId;
   String? _error;
-
   int? _dailyLimit;
   int? _dailyRemaining;
 
@@ -59,13 +56,9 @@ class _LessonPageState extends State<LessonPage> {
   @override
   void initState() {
     super.initState();
-
     _repository = widget.repository ?? LearningRepository();
     _apiService = ApiService();
-
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _startTutor(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startTutor());
   }
 
   @override
@@ -75,9 +68,7 @@ class _LessonPageState extends State<LessonPage> {
     super.dispose();
   }
 
-  String _locale() {
-    return widget.languageController.locale.languageCode;
-  }
+  String _locale() => widget.languageController.locale.languageCode;
 
   String _text({
     required String ar,
@@ -85,246 +76,171 @@ class _LessonPageState extends State<LessonPage> {
     String? fr,
     String? es,
     String? de,
-    String? id,
     String? it,
     String? ja,
     String? ko,
-    String? nl,
-    String? pl,
-    String? pt,
-    String? ru,
-    String? th,
-    String? tr,
-    String? uk,
-    String? vi,
     String? zh,
   }) {
     switch (_locale()) {
-      case 'fr':
-        return fr ?? en;
-      case 'es':
-        return es ?? en;
-      case 'de':
-        return de ?? en;
-      case 'id':
-        return id ?? en;
-      case 'it':
-        return it ?? en;
-      case 'ja':
-        return ja ?? en;
-      case 'ko':
-        return ko ?? en;
-      case 'nl':
-        return nl ?? en;
-      case 'pl':
-        return pl ?? en;
-      case 'pt':
-        return pt ?? en;
-      case 'ru':
-        return ru ?? en;
-      case 'th':
-        return th ?? en;
-      case 'tr':
-        return tr ?? en;
-      case 'uk':
-        return uk ?? en;
-      case 'vi':
-        return vi ?? en;
-      case 'zh':
-        return zh ?? en;
+      case 'fr': return fr ?? en;
+      case 'es': return es ?? en;
+      case 'de': return de ?? en;
+      case 'it': return it ?? en;
+      case 'ja': return ja ?? en;
+      case 'ko': return ko ?? en;
+      case 'zh': return zh ?? en;
       case 'ar':
-      default:
-        return ar;
+      default: return ar;
     }
   }
 
-  String _pageTitle() {
-    return _text(
-      ar: 'الدرس ${widget.lesson.lessonOrder}',
-      en: 'Lesson ${widget.lesson.lessonOrder}',
-      fr: 'Leçon ${widget.lesson.lessonOrder}',
-      es: 'Lección ${widget.lesson.lessonOrder}',
-      de: 'Lektion ${widget.lesson.lessonOrder}',
-      it: 'Lezione ${widget.lesson.lessonOrder}',
-      ja: 'レッスン ${widget.lesson.lessonOrder}',
-      ko: '레슨 ${widget.lesson.lessonOrder}',
-      zh: '课程 ${widget.lesson.lessonOrder}',
-    );
-  }
+  String _pageTitle() => _text(
+        ar: 'الدرس ${widget.lesson.lessonOrder}',
+        en: 'Lesson ${widget.lesson.lessonOrder}',
+        fr: 'Leçon ${widget.lesson.lessonOrder}',
+        es: 'Lección ${widget.lesson.lessonOrder}',
+        de: 'Lektion ${widget.lesson.lessonOrder}',
+        it: 'Lezione ${widget.lesson.lessonOrder}',
+        ja: 'レッスン ${widget.lesson.lessonOrder}',
+        ko: '레슨 ${widget.lesson.lessonOrder}',
+        zh: '课程 ${widget.lesson.lessonOrder}',
+      );
 
-  String _inputHint() {
-    return _text(
-      ar: 'اكتب إجابتك...',
-      en: 'Write your answer...',
-      fr: 'Écrivez votre réponse...',
-      es: 'Escribe tu respuesta...',
-      de: 'Schreibe deine Antwort...',
-      it: 'Scrivi la tua risposta...',
-      ja: '答えを入力...',
-      ko: '답변을 입력하세요...',
-      zh: '输入你的回答...',
-    );
-  }
+  String _inputHint() => _text(
+        ar: 'اكتب إجابتك...',
+        en: 'Write your answer...',
+        fr: 'Écrivez votre réponse...',
+        es: 'Escribe tu respuesta...',
+        de: 'Schreibe deine Antwort...',
+        it: 'Scrivi la tua risposta...',
+        ja: '答えを入力...',
+        ko: '답변을 입력하세요...',
+        zh: '输入你的回答...',
+      );
 
-  String _sendLabel() {
-    return _text(
-      ar: 'إرسال',
-      en: 'Send',
-      fr: 'Envoyer',
-      es: 'Enviar',
-      de: 'Senden',
-      it: 'Invia',
-      ja: '送信',
-      ko: '보내기',
-      zh: '发送',
-    );
-  }
+  String _sendLabel() => _text(
+        ar: 'إرسال',
+        en: 'Send',
+        fr: 'Envoyer',
+        es: 'Enviar',
+        de: 'Senden',
+        it: 'Invia',
+        ja: '送信',
+        ko: '보내기',
+        zh: '发送',
+      );
 
-  String _finishLabel() {
-    return _text(
-      ar: 'إنهاء الدرس',
-      en: 'Finish lesson',
-      fr: 'Terminer la leçon',
-      es: 'Terminar lección',
-      de: 'Lektion beenden',
-      it: 'Termina lezione',
-      ja: 'レッスンを終了',
-      ko: '레슨 완료',
-      zh: '完成课程',
-    );
-  }
+  String _saveSentenceLabel() => _text(
+        ar: 'حفظ الجملة',
+        en: 'Save sentence',
+        fr: 'Enregistrer la phrase',
+        es: 'Guardar frase',
+        de: 'Satz speichern',
+        it: 'Salva frase',
+        ja: '文を保存',
+        ko: '문장 저장',
+        zh: '保存句子',
+      );
 
-  String _finishQuestion() {
-    return _text(
-      ar:
-          'هل أنهيت التعلم؟ سيبدأ اختبار الدرس بعد ذلك، ولن يُسجّل الدرس كمكتمل إلا بعد النجاح.',
-      en:
-          'Ready to finish learning? The lesson assessment will start next, and the lesson is completed only after you pass it.',
-      fr:
-          'Prêt à terminer ? L’évaluation commencera ensuite et la leçon ne sera validée qu’après réussite.',
-      es:
-          '¿Listo para terminar? Después comenzará la evaluación y la lección se completará al aprobarla.',
-      de:
-          'Möchtest du die Lektion beenden? Danach startet der Test und die Lektion wird erst nach Bestehen abgeschlossen.',
-      it:
-          'Vuoi terminare? Dopo inizierà la verifica e la lezione sarà completata solo dopo il superamento.',
-      ja:
-          '学習を終了しますか？次にテストが始まり、合格するとレッスンが完了します。',
-      ko:
-          '학습을 끝낼까요? 다음에 평가가 시작되며 통과해야 레슨이 완료됩니다.',
-      zh:
-          '要结束学习吗？接下来会开始测试，只有通过后课程才会完成。',
-    );
-  }
+  String _savedSentenceLabel() => _text(
+        ar: 'تم حفظ الجملة',
+        en: 'Sentence saved',
+        fr: 'Phrase enregistrée',
+        es: 'Frase guardada',
+        de: 'Satz gespeichert',
+        it: 'Frase salvata',
+        ja: '文を保存しました',
+        ko: '문장이 저장되었습니다',
+        zh: '句子已保存',
+      );
 
-  String _cancelLabel() {
-    return _text(
-      ar: 'إلغاء',
-      en: 'Cancel',
-      fr: 'Annuler',
-      es: 'Cancelar',
-      de: 'Abbrechen',
-      it: 'Annulla',
-      ja: 'キャンセル',
-      ko: '취소',
-      zh: '取消',
-    );
-  }
+  String _finishLabel() => _text(
+        ar: 'إنهاء الدرس',
+        en: 'Finish lesson',
+        fr: 'Terminer la leçon',
+        es: 'Terminar lección',
+        de: 'Lektion beenden',
+        it: 'Termina lezione',
+        ja: 'レッスンを終了',
+        ko: '레슨 완료',
+        zh: '完成课程',
+      );
 
-  String _confirmLabel() {
-    return _text(
-      ar: 'بدء الاختبار',
-      en: 'Start assessment',
-      fr: 'Commencer l’évaluation',
-      es: 'Iniciar evaluación',
-      de: 'Test starten',
-      it: 'Inizia verifica',
-      ja: 'テスト開始',
-      ko: '평가 시작',
-      zh: '开始测试',
-    );
-  }
+  String _finishQuestion() => _text(
+        ar: 'هل أنهيت التعلم؟ سيبدأ اختبار الدرس بعد ذلك، ولن يُسجّل الدرس كمكتمل إلا بعد النجاح.',
+        en: 'Ready to finish learning? The lesson assessment will start next, and the lesson is completed only after you pass it.',
+        fr: 'Prêt à terminer ? L’évaluation commencera ensuite et la leçon ne sera validée qu’après réussite.',
+        es: '¿Listo para terminar? Después comenzará la evaluación y la lección se completará al aprobarla.',
+        de: 'Möchtest du die Lektion beenden? Danach startet der Test und die Lektion wird erst nach Bestehen abgeschlossen.',
+        it: 'Vuoi terminare? Dopo inizierà la verifica e la lezione sarà completata solo dopo il superamento.',
+        ja: '学習を終了しますか？次にテストが始まり、合格するとレッスンが完了します。',
+        ko: '학습을 끝낼까요? 다음에 평가가 시작되며 통과해야 레슨이 완료됩니다.',
+        zh: '要结束学习吗？接下来会开始测试，只有通过后课程才会完成。',
+      );
 
-  String _startingLabel() {
-    return _text(
-      ar: 'يبدأ المدرّس الذكي الدرس...',
-      en: 'Your AI tutor is starting the lesson...',
-      fr: 'Votre tuteur IA démarre la leçon...',
-      es: 'Tu tutor de IA está iniciando la lección...',
-      de: 'Dein KI-Tutor startet die Lektion...',
-      it: 'Il tuo tutor IA sta iniziando la lezione...',
-      ja: 'AIチューターがレッスンを開始しています...',
-      ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
-      zh: 'AI 导师正在开始课程...',
-    );
-  }
+  String _cancelLabel() => _text(
+        ar: 'إلغاء', en: 'Cancel', fr: 'Annuler', es: 'Cancelar',
+        de: 'Abbrechen', it: 'Annulla', ja: 'キャンセル', ko: '취소', zh: '取消',
+      );
 
-  String _errorLabel() {
-    return _text(
-      ar: 'حدث خطأ أثناء الاتصال بالمدرّس الذكي.',
-      en: 'Something went wrong while connecting to the AI tutor.',
-      fr: 'Une erreur est survenue avec le tuteur IA.',
-      es: 'Ocurrió un error al conectar con el tutor de IA.',
-      de: 'Beim Verbinden mit dem KI-Tutor ist ein Fehler aufgetreten.',
-      it: 'Si è verificato un errore con il tutor IA.',
-      ja: 'AIチューターへの接続中にエラーが発生しました。',
-      ko: 'AI 튜터 연결 중 오류가 발생했습니다.',
-      zh: '连接 AI 导师时发生错误。',
-    );
-  }
+  String _confirmLabel() => _text(
+        ar: 'بدء الاختبار', en: 'Start assessment', fr: 'Commencer l’évaluation',
+        es: 'Iniciar evaluación', de: 'Test starten', it: 'Inizia verifica',
+        ja: 'テスト開始', ko: '평가 시작', zh: '开始测试',
+      );
+
+  String _startingLabel() => _text(
+        ar: 'يبدأ المدرّس الذكي الدرس...',
+        en: 'Your AI tutor is starting the lesson...',
+        fr: 'Votre tuteur IA démarre la leçon...',
+        es: 'Tu tutor de IA está iniciando la lección...',
+        de: 'Dein KI-Tutor startet die Lektion...',
+        it: 'Il tuo tutor IA sta iniziando la lezione...',
+        ja: 'AIチューターがレッスンを開始しています...',
+        ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
+        zh: 'AI 导师正在开始课程...',
+      );
+
+  String _errorLabel() => _text(
+        ar: 'حدث خطأ أثناء الاتصال بالمدرّس الذكي.',
+        en: 'Something went wrong while connecting to the AI tutor.',
+        fr: 'Une erreur est survenue avec le tuteur IA.',
+        es: 'Ocurrió un error al conectar con el tutor de IA.',
+        de: 'Beim Verbinden mit dem KI-Tutor ist ein Fehler aufgetreten.',
+        it: 'Si è verificato un errore con il tutor IA.',
+        ja: 'AIチューターへの接続中にエラーが発生しました。',
+        ko: 'AI 튜터 연결 중 오류가 발생했습니다.',
+        zh: '连接 AI 导师时发生错误。',
+      );
 
   Future<void> _startTutor() async {
-    if (_lessonStarted || _sending) {
-      return;
-    }
-
+    if (_lessonStarted || _sending) return;
     setState(() {
       _lessonStarted = true;
       _loading = true;
       _error = null;
     });
-
-    await _sendMessage(
-      'START_LESSON',
-      showUserMessage: false,
-    );
+    await _sendMessage('START_LESSON', showUserMessage: false);
   }
 
   Future<void> _sendCurrentMessage() async {
     final message = _messageController.text.trim();
-
-    if (message.isEmpty || _sending || _submitting) {
-      return;
-    }
-
+    if (message.isEmpty || _sending || _submitting) return;
     _messageController.clear();
-
-    await _sendMessage(
-      message,
-      showUserMessage: true,
-    );
+    await _sendMessage(message, showUserMessage: true);
   }
 
   Future<void> _sendMessage(
     String message, {
     required bool showUserMessage,
   }) async {
-    if (_sending || _submitting) {
-      return;
-    }
+    if (_sending || _submitting) return;
 
     if (showUserMessage) {
       setState(() {
-        _messages.add(
-          _TutorMessage(
-            role: 'user',
-            text: message,
-          ),
-        );
-
+        _messages.add(_TutorMessage(role: 'user', text: message));
         _error = null;
       });
-
       _scrollToBottom();
     }
 
@@ -342,197 +258,97 @@ class _LessonPageState extends State<LessonPage> {
         message: message,
         conversationId: _conversationId,
       )) {
-        if (!mounted) {
-          break;
-        }
+        if (!mounted) break;
 
         if (chunk.type == 'conversation') {
-          final conversationId = chunk.conversationId;
-
-          if (conversationId != null &&
-              conversationId.isNotEmpty) {
-            _conversationId = conversationId;
-          }
+          final id = chunk.conversationId;
+          if (id != null && id.isNotEmpty) _conversationId = id;
         }
 
-        // Restore the complete visible conversation when the page is opened
-        // again during the same app session.
         if (chunk.type == 'history' && chunk.history != null) {
           _messages.clear();
-
           for (final item in chunk.history!) {
-            final role =
-                item['role'] == 'user' ? 'user' : 'assistant';
+            final role = item['role'] == 'user' ? 'user' : 'assistant';
             final text = item['text'] ?? '';
-
             if (text.isNotEmpty) {
-              _messages.add(
-                _TutorMessage(
-                  role: role,
-                  text: text,
-                ),
-              );
+              _messages.add(_TutorMessage(role: role, text: text));
             }
           }
-
           setState(() {
             _loading = false;
             _error = null;
           });
-
           _scrollToBottom();
           continue;
         }
 
         if (chunk.type == 'chunk') {
           final text = chunk.text ?? '';
-
           if (text.isNotEmpty) {
             if (assistantIndex == -1) {
-              _messages.add(
-                _TutorMessage(
-                  role: 'assistant',
-                  text: text,
-                ),
-              );
-
+              _messages.add(_TutorMessage(role: 'assistant', text: text));
               assistantIndex = _messages.length - 1;
             } else {
               _messages[assistantIndex].text += text;
             }
-
             setState(() {});
             _scrollToBottom();
           }
         }
 
         if (chunk.type == 'done') {
-          final conversationId = chunk.conversationId;
-
-          if (conversationId != null &&
-              conversationId.isNotEmpty) {
-            _conversationId = conversationId;
-          }
-
+          final id = chunk.conversationId;
+          if (id != null && id.isNotEmpty) _conversationId = id;
           _dailyLimit = chunk.dailyLimit;
           _dailyRemaining = chunk.dailyRemaining;
         }
 
         if (chunk.type == 'error') {
-          throw Exception(
-            chunk.message ?? _errorLabel(),
-          );
+          throw Exception(chunk.message ?? _errorLabel());
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = e.toString();
-        });
-
+        setState(() => _error = e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorLabel()),
-          ),
+          SnackBar(content: Text(_errorLabel())),
         );
       }
     }
 
-    // Do not return from a finally block. The cleanup is performed after
-    // the request finishes or fails, while still checking whether the
-    // widget is mounted before touching its state.
     if (mounted) {
       setState(() {
         _sending = false;
         _loading = false;
       });
-
       _scrollToBottom();
     }
   }
 
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) {
-        return;
-      }
+  String _firstSentence(String text) {
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) return cleaned;
+    final match = RegExp(r'^(.+?[.!?。！？])(?:\s|$)').firstMatch(cleaned);
+    return match?.group(1)?.trim() ?? cleaned;
+  }
 
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
+  Future<void> _saveAssistantSentence(String text) async {
+    final sentence = _firstSentence(text);
+    if (sentence.isEmpty) return;
+
+    final saved = await showSaveSentenceDialog(
+      context,
+      sentence: sentence,
+    );
+
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_savedSentenceLabel())),
       );
-    });
-  }
-
-  Future<void> _finishLesson() async {
-    if (_submitting || _sending) {
-      return;
-    }
-
-    final shouldStart = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(_finishLabel()),
-          content: Text(_finishQuestion()),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: Text(_cancelLabel()),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: Text(_confirmLabel()),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldStart != true || !mounted) {
-      return;
-    }
-
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-
-    final passed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) {
-          return LessonAssessmentPage(
-            lesson: widget.lesson,
-            languageController: widget.languageController,
-            repository: _repository,
-            conversationId: _conversationId,
-          );
-        },
-      ),
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _submitting = false;
-    });
-
-    if (passed == true) {
-      Navigator.of(context).pop(true);
     }
   }
 
-  Widget _buildMessage(
-    _TutorMessage message,
-    ThemeData theme,
-  ) {
+  Widget _buildMessage(_TutorMessage message, ThemeData theme) {
     final isUser = message.isUser;
 
     return Align(
@@ -540,37 +356,44 @@ class _LessonPageState extends State<LessonPage> {
           ? AlignmentDirectional.centerEnd
           : AlignmentDirectional.centerStart,
       child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 620,
-        ),
+        constraints: const BoxConstraints(maxWidth: 620),
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
         decoration: BoxDecoration(
           color: isUser
               ? theme.colorScheme.primaryContainer
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Text(
-          message.text,
-          textDirection: _textDirection(message.text),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            height: 1.45,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message.text,
+              textDirection: _textDirection(message.text),
+              style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+            ),
+            if (!isUser) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton.icon(
+                  onPressed: _sending
+                      ? null
+                      : () => _saveAssistantSentence(message.text),
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                  label: Text(_saveSentenceLabel()),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
   TextDirection _textDirection(String text) {
-    final arabic = RegExp(
-      r'[\u0600-\u06FF]',
-    ).hasMatch(text);
-
-    return arabic
+    return RegExp(r'[\u0600-\u06FF]').hasMatch(text)
         ? TextDirection.rtl
         : TextDirection.ltr;
   }
@@ -579,12 +402,7 @@ class _LessonPageState extends State<LessonPage> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          12,
-          8,
-          12,
-          12,
-        ),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -614,9 +432,7 @@ class _LessonPageState extends State<LessonPage> {
                   ? null
                   : _sendCurrentMessage,
               tooltip: _sendLabel(),
-              icon: const Icon(
-                Icons.send_rounded,
-              ),
+              icon: const Icon(Icons.send_rounded),
             ),
           ],
         ),
@@ -631,10 +447,7 @@ class _LessonPageState extends State<LessonPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.smart_toy_outlined,
-              size: 56,
-            ),
+            const Icon(Icons.smart_toy_outlined, size: 56),
             const SizedBox(height: 16),
             Text(
               _startingLabel(),
@@ -649,6 +462,54 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
+  Future<void> _finishLesson() async {
+    if (_submitting || _sending) return;
+
+    final shouldStart = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_finishLabel()),
+        content: Text(_finishQuestion()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(_cancelLabel()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(_confirmLabel()),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldStart != true || !mounted) return;
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    final passed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => LessonAssessmentPage(
+          lesson: widget.lesson,
+          languageController: widget.languageController,
+          repository: _repository,
+          conversationId: _conversationId,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    setState(() => _submitting = false);
+
+    if (passed == true) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -659,16 +520,12 @@ class _LessonPageState extends State<LessonPage> {
         titleSpacing: 16,
         title: Text(
           _pageTitle(),
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
           if (_dailyRemaining != null)
             Padding(
-              padding: const EdgeInsetsDirectional.only(
-                end: 4,
-              ),
+              padding: const EdgeInsetsDirectional.only(end: 4),
               child: Center(
                 child: Text(
                   '$_dailyRemaining/${_dailyLimit ?? ''}',
@@ -677,20 +534,15 @@ class _LessonPageState extends State<LessonPage> {
               ),
             ),
           IconButton(
-            onPressed: _sending || _submitting
-                ? null
-                : _finishLesson,
+            onPressed: _sending || _submitting ? null : _finishLesson,
             tooltip: _finishLabel(),
-            icon: const Icon(
-              Icons.check_circle_outline_rounded,
-            ),
+            icon: const Icon(Icons.check_circle_outline_rounded),
           ),
           const SizedBox(width: 4),
         ],
       ),
       body: Directionality(
-        textDirection:
-            isRtl ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
         child: Column(
           children: [
             Expanded(
@@ -698,64 +550,43 @@ class _LessonPageState extends State<LessonPage> {
                   ? _buildEmptyState(theme)
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(
-                        16,
-                        20,
-                        16,
-                        12,
-                      ),
-                      itemCount:
-                          _messages.length +
-                          (_sending ? 1 : 0),
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                      itemCount: _messages.length + (_sending ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index >= _messages.length) {
                           return Align(
-                            alignment:
-                                AlignmentDirectional.centerStart,
+                            alignment: AlignmentDirectional.centerStart,
                             child: Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: 12,
-                              ),
+                              padding: const EdgeInsets.only(bottom: 12),
                               child: Row(
-                                mainAxisSize:
-                                    MainAxisSize.min,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child:
-                                        CircularProgressIndicator(
+                                    child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  Text(
-                                    _startingLabel(),
-                                  ),
+                                  Text(_startingLabel()),
                                 ],
                               ),
                             ),
                           );
                         }
 
-                        return _buildMessage(
-                          _messages[index],
-                          theme,
-                        );
+                        return _buildMessage(_messages[index], theme);
                       },
                     ),
             ),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   _errorLabel(),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: theme.colorScheme.error,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
             _buildComposer(theme),
