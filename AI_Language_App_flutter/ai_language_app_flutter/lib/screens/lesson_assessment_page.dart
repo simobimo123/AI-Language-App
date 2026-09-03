@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
+import '../services/api/api_service.dart';
+import '../services/api/learning_bank_api.dart';
 
 class LessonAssessmentPage extends StatefulWidget {
   final LearningLessonModel lesson;
@@ -24,10 +26,12 @@ class LessonAssessmentPage extends StatefulWidget {
 
 class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
   late final LearningRepository _repository;
+  late final ApiService _apiService;
 
   final Map<String, String> _answers = {};
 
   List<Map<String, dynamic>> _questions = [];
+  List<Map<String, String>> _keySentences = [];
 
   bool _loading = true;
   bool _submitting = false;
@@ -43,6 +47,7 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
     super.initState();
 
     _repository = widget.repository ?? LearningRepository();
+    _apiService = ApiService();
 
     _loadAssessment();
   }
@@ -199,7 +204,6 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
       );
 
       final raw = data['questions'];
-
       final questions = raw is List
           ? raw
               .whereType<Map>()
@@ -207,10 +211,21 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
               .toList()
           : <Map<String, dynamic>>[];
 
+      final rawKeySentences = data['key_sentences'];
+      final keySentences = rawKeySentences is List
+          ? rawKeySentences.whereType<Map>().map((item) {
+              return <String, String>{
+                'sentence': item['sentence']?.toString().trim() ?? '',
+                'translation': item['translation']?.toString().trim() ?? '',
+              };
+            }).where((item) => item['sentence']!.isNotEmpty).toList()
+          : <Map<String, String>>[];
+
       if (!mounted) return;
 
       setState(() {
         _questions = questions;
+        _keySentences = keySentences;
         _passingScore = _toDouble(data['passing_score'], 80);
         _loading = false;
       });
@@ -228,6 +243,26 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
     return value is num
         ? value.toDouble()
         : double.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  Future<void> _saveKeySentences() async {
+    if (_keySentences.isEmpty) return;
+
+    for (final item in _keySentences) {
+      final sentence = item['sentence']?.trim() ?? '';
+      final translation = item['translation']?.trim() ?? '';
+      if (sentence.isEmpty || translation.isEmpty) continue;
+
+      try {
+        await _apiService.saveSentence(
+          sentence: sentence,
+          translation: translation,
+        );
+      } catch (_) {
+        // Saving the learning bank must never prevent a passed lesson
+        // from completing. The server has already recorded the result.
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -258,8 +293,16 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
 
       if (!mounted) return;
 
+      final passed = result['passed'] == true;
+
+      if (passed) {
+        await _saveKeySentences();
+      }
+
+      if (!mounted) return;
+
       await _showResult(
-        passed: result['passed'] == true,
+        passed: passed,
         score: _toDouble(result['score'], 0),
         bestScore: _toDouble(result['best_score'], 0),
         levelUpgraded: result['level_upgraded'] == true,
@@ -423,19 +466,13 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
     }
 
     final question = _questions[_currentIndex];
-
     final id = question['id']?.toString() ?? '';
-
     final text = question['question']?.toString() ?? '';
-
     final options = question['options'] is List
         ? (question['options'] as List).whereType<Map>().toList()
         : <Map>[];
-
     final selected = _answers[id];
-
     final isLast = _currentIndex == _questions.length - 1;
-
     final canContinue = selected != null &&
         !_submitting &&
         (!isLast || _answers.length == _questions.length);
@@ -473,27 +510,21 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // RadioGroup replaces the deprecated
-                  // Radio.groupValue / Radio.onChanged API.
                   RadioGroup<String>(
                     groupValue: selected,
-                   onChanged: (value) {
-  if (_submitting || value == null) {
-    return;
-  }
+                    onChanged: (value) {
+                      if (_submitting || value == null) {
+                        return;
+                      }
 
-  setState(() {
-    _answers[id] = value;
-  });
-},
+                      setState(() {
+                        _answers[id] = value;
+                      });
+                    },
                     child: Column(
                       children: options.map((option) {
-                        final optionId =
-                            option['id']?.toString() ?? '';
-
-                        final optionText =
-                            option['text']?.toString() ?? '';
+                        final optionId = option['id']?.toString() ?? '';
+                        final optionText = option['text']?.toString() ?? '';
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -501,18 +532,14 @@ class _LessonAssessmentPageState extends State<LessonAssessmentPage> {
                             value: optionId,
                             title: Text(
                               optionText,
-                              textDirection:
-                                  _textDirection(optionText),
+                              textDirection: _textDirection(optionText),
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(16),
                               side: BorderSide(
                                 color: selected == optionId
                                     ? theme.colorScheme.primary
-                                    : theme
-                                        .colorScheme
-                                        .outlineVariant,
+                                    : theme.colorScheme.outlineVariant,
                               ),
                             ),
                           ),
