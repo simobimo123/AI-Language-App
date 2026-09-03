@@ -7,7 +7,6 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from google.genai import types
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -39,10 +38,11 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-LESSON_TUTOR_MODEL = os.getenv(
-    "LESSON_TUTOR_MODEL",
-    "gemini-3.6-flash",
-)
+LESSON_TUTOR_MODEL = os.getenv("OPENROUTER_MAIN_MODEL")
+if not LESSON_TUTOR_MODEL:
+    raise RuntimeError(
+        "OPENROUTER_MAIN_MODEL is not configured in the .env file"
+    )
 
 MAX_HISTORY_MESSAGES = 8
 MAX_LESSON_CONTEXT_CHARS = 10000
@@ -112,11 +112,7 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
 
 
 def _lesson_context(data: dict) -> str:
-    """Build a compact context centered on one lesson focus.
-
-    The JSON remains the source of truth, but the tutor receives a compact
-    slice so it does not try to teach the whole lesson at once.
-    """
+    """Build a compact context centered on one lesson focus."""
     metadata = data.get("metadata", {})
 
     if not isinstance(metadata, dict):
@@ -236,31 +232,23 @@ OUTPUT
 def _build_contents(
     history,
     message: str,
-) -> list[types.Content]:
-    contents: list[types.Content] = []
+) -> list[dict[str, str]]:
+    contents: list[dict[str, str]] = []
 
     for item in history:
-        contents.append(
-            types.Content(
-                role=item.role,
-                parts=[
-                    types.Part(
-                        text=item.content,
-                    )
-                ],
-            )
-        )
+        role = "assistant" if item.role == "model" else item.role
+        if role not in {"user", "assistant", "system"}:
+            role = "user"
 
-    contents.append(
-        types.Content(
-            role="user",
-            parts=[
-                types.Part(
-                    text=message,
-                )
-            ],
-        )
-    )
+        contents.append({
+            "role": role,
+            "content": item.content,
+        })
+
+    contents.append({
+        "role": "user",
+        "content": message,
+    })
 
     return contents
 
@@ -275,12 +263,6 @@ def _stream_lesson_response(
     curriculum: dict,
     conversation_id: str,
 ) -> Generator[str, None, None]:
-    """Stream the lesson response without using detached ORM objects.
-
-    Streaming continues after the original endpoint has returned, so this
-    generator receives primitive values instead of ORM User/Profile objects.
-    """
-
     history = get_conversation_history(
         user_id=user_id,
         conversation_id=conversation_id,
@@ -425,12 +407,7 @@ def _find_saved_lesson_conversation(
     lesson_id: int,
     db: Session,
 ) -> str | None:
-    """Find the newest saved conversation belonging to this lesson.
-
-    Conversation IDs created by this router are namespaced with the lesson
-    ID, so no database schema migration is required to persist/resume lesson
-    sessions.
-    """
+    """Find the newest saved conversation belonging to this lesson."""
     prefix = f"{LESSON_CONVERSATION_PREFIX}{lesson_id}_"
 
     return db.execute(
@@ -456,10 +433,6 @@ def lesson_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Validate the requested lesson completely before reserving an AI request.
-    # Invalid lesson/language/level requests therefore do not consume the
-    # user's daily AI quota.
-
     lesson = db.get(
         CourseLesson,
         request.lesson_id,
@@ -470,10 +443,6 @@ def lesson_chat(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lesson not found.",
         )
-
-    # Capture primitive user information while the SQLAlchemy session is
-    # definitely active. These values are passed into the streaming generator
-    # instead of the ORM User object.
 
     user_id = current_user.id
 
@@ -527,9 +496,6 @@ def lesson_chat(
     curriculum = _load_lesson_curriculum(
         lesson
     )
-
-    # Only after all lesson validation succeeds do we enforce the AI rate
-    # limit and reserve a daily AI request.
 
     check_rate_limit(user_id)
 
