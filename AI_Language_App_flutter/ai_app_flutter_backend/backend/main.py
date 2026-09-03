@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal
+import migrations_learning_bank  # noqa: F401
 
 from routers.auth import router as auth_router
 from routers.users import router as users_router
@@ -85,27 +86,16 @@ def home():
 # =========================================================
 
 app.include_router(users_router)
-
 app.include_router(auth_router)
-
 app.include_router(words_router)
-
 app.include_router(learning_router)
-
 app.include_router(learning_path_router)
-
 app.include_router(ai_router)
-
 app.include_router(lesson_ai_router)
-
 app.include_router(lesson_assessment_router)
-
 app.include_router(placement_router)
-
 app.include_router(vocabulary_router)
-
 app.include_router(stats_router)
-
 app.include_router(lesson_content_router)
 
 # python -m uvicorn main:app --reload --host 0.0.0.0
