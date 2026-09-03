@@ -1,26 +1,141 @@
 import os
 
 from dotenv import load_dotenv
-from google import genai
 
 
 load_dotenv()
 
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-if not GEMINI_API_KEY:
+if not OPENROUTER_API_KEY:
     raise RuntimeError(
-        "GEMINI_API_KEY is not configured in the .env file"
+        "OPENROUTER_API_KEY is not configured in the .env file"
     )
 
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+OPENROUTER_BASE_URL = os.getenv(
+    "OPENROUTER_BASE_URL",
+    "https://openrouter.ai/api/v1",
+).rstrip("/")
 
-AI_MODEL = os.getenv("GEMINI_MAIN_MODEL", "gemini-3.6-flash")
+AI_MODEL = os.getenv(
+    "OPENROUTER_MAIN_MODEL",
+    "openai/gpt-5-mini",
+)
+
 AI_CLASSIFIER_MODEL = os.getenv(
-    "GEMINI_CLASSIFIER_MODEL",
-    "gemini-3.5-flash-lite",
+    "OPENROUTER_CLASSIFIER_MODEL",
+    "openai/gpt-5-mini",
 )
 
 
+# OpenRouter exposes an OpenAI-compatible Chat Completions API.
+# Keeping the HTTP layer here makes the rest of the AI service independent
+# from a specific model vendor and lets the model be changed through .env.
+def _headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": os.getenv(
+            "OPENROUTER_HTTP_REFERER",
+            "http://localhost",
+        ),
+        "X-Title": os.getenv(
+            "OPENROUTER_APP_TITLE",
+            "AI Language App",
+        ),
+    }
+
+
+def chat_completion(
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    max_tokens: int,
+    response_format: dict | None = None,
+) -> dict:
+    """Send one non-streaming request to OpenRouter."""
+    import httpx
+
+    payload = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+    }
+
+    if response_format is not None:
+        payload["response_format"] = response_format
+
+    with httpx.Client(timeout=120.0) as http:
+        response = http.post(
+            f"{OPENROUTER_BASE_URL}/chat/completions",
+            headers=_headers(),
+            json=payload,
+        )
+
+    if response.status_code < 200 or response.status_code >= 300:
+        try:
+            detail = response.json()
+        except ValueError:
+            detail = response.text
+        raise RuntimeError(
+            f"OpenRouter request failed ({response.status_code}): {detail}"
+        )
+
+    return response.json()
+
+
+def stream_chat_completion(
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    max_tokens: int,
+):
+    """Yield decoded OpenRouter SSE payloads for a streaming request."""
+    import json
+    import httpx
+
+    payload = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "stream": True,
+        "stream_options": {
+            "include_usage": True,
+        },
+    }
+
+    with httpx.Client(timeout=120.0) as http:
+        with http.stream(
+            "POST",
+            f"{OPENROUTER_BASE_URL}/chat/completions",
+            headers=_headers(),
+            json=payload,
+        ) as response:
+            if response.status_code < 200 or response.status_code >= 300:
+                body = response.read()
+                try:
+                    detail = json.loads(body.decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    detail = body.decode("utf-8", errors="replace")
+                raise RuntimeError(
+                    f"OpenRouter request failed ({response.status_code}): {detail}"
+                )
+
+            for line in response.iter_lines():
+                if not line:
+                    continue
+
+                if not line.startswith("data:"):
+                    continue
+
+                data = line[5:].strip()
+
+                if data == "[DONE]":
+                    return
+
+                try:
+                    yield json.loads(data)
+                except json.JSONDecodeError:
+                    continue
