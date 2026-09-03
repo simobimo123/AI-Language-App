@@ -146,7 +146,7 @@ class _LessonPageState extends State<LessonPage> {
   String _savedSentenceLabel() => _text(
         ar: 'تم حفظ الجملة',
         en: 'Sentence saved',
-        fr: 'Phrase enregistrée',
+        fr: 'Sentence saved',
         es: 'Frase guardada',
         de: 'Satz gespeichert',
         it: 'Frase salvata',
@@ -364,13 +364,81 @@ class _LessonPageState extends State<LessonPage> {
 
   String _cleanWordToken(String token) {
     return token.replaceAll(
-      RegExp(r'^[\.,!?;:()\[\]{}"“”„«»…*_~`]+|[\.,!?;:()\[\]{}"“”„«»…*_~`]+$'),
+      RegExp(
+        r'^[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]+|[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]+$',
+      ),
       '',
     );
   }
 
+  bool _isWhitespaceRune(int rune) {
+    return RegExp(r'\s').hasMatch(String.fromCharCode(rune));
+  }
+
+  bool _isCjkPunctuationRune(int rune) {
+    return RegExp(r'[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]').hasMatch(
+      String.fromCharCode(rune),
+    );
+  }
+
+  bool _isCjkIdeographRune(int rune) {
+    return (rune >= 0x3400 && rune <= 0x4DBF) ||
+        (rune >= 0x4E00 && rune <= 0x9FFF) ||
+        (rune >= 0xF900 && rune <= 0xFAFF) ||
+        (rune >= 0x20000 && rune <= 0x2FA1F);
+  }
+
+  bool _isJapaneseKanaRune(int rune) {
+    return (rune >= 0x3040 && rune <= 0x309F) ||
+        (rune >= 0x30A0 && rune <= 0x30FF) ||
+        (rune >= 0x31F0 && rune <= 0x31FF);
+  }
+
   List<String> _messageTokens(String text) {
-    return text.split(RegExp(r'(\s+)'));
+    final locale = _locale();
+    if (locale != 'ja' && locale != 'zh') {
+      return text.split(RegExp(r'(\s+)'));
+    }
+
+    // CJK languages do not reliably separate words with spaces. We therefore
+    // keep Latin/digit runs together, while exposing each CJK character as a
+    // tappable lookup unit. This avoids treating an entire sentence as one
+    // lookup request and requires no extra tokenizer dependency.
+    final result = <String>[];
+    var buffer = StringBuffer();
+
+    void flushBuffer() {
+      if (buffer.isNotEmpty) {
+        result.add(buffer.toString());
+        buffer = StringBuffer();
+      }
+    }
+
+    for (final rune in text.runes) {
+      final char = String.fromCharCode(rune);
+      if (_isWhitespaceRune(rune)) {
+        flushBuffer();
+        result.add(char);
+        continue;
+      }
+
+      if (_isCjkPunctuationRune(rune)) {
+        flushBuffer();
+        result.add(char);
+        continue;
+      }
+
+      if (_isCjkIdeographRune(rune) || _isJapaneseKanaRune(rune)) {
+        flushBuffer();
+        result.add(char);
+        continue;
+      }
+
+      buffer.write(char);
+    }
+
+    flushBuffer();
+    return result;
   }
 
   Future<void> _openWord(String token) async {
