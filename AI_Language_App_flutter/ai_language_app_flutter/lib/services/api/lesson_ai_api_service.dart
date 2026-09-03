@@ -13,6 +13,7 @@ class LessonAiChunk {
   final int? dailyUsed;
   final int? dailyRemaining;
   final String? message;
+  final List<Map<String, String>>? history;
 
   const LessonAiChunk({
     required this.type,
@@ -22,9 +23,26 @@ class LessonAiChunk {
     this.dailyUsed,
     this.dailyRemaining,
     this.message,
+    this.history,
   });
 
   factory LessonAiChunk.fromJson(Map<String, dynamic> json) {
+    List<Map<String, String>>? parsedHistory;
+    final rawHistory = json['history'];
+
+    if (rawHistory is List) {
+      parsedHistory = rawHistory
+          .whereType<Map>()
+          .map(
+            (item) => {
+              'role': item['role']?.toString() ?? 'assistant',
+              'text': item['text']?.toString() ?? '',
+            },
+          )
+          .where((item) => item['text']!.isNotEmpty)
+          .toList();
+    }
+
     return LessonAiChunk(
       type: json['type']?.toString() ?? 'unknown',
       text: json['text']?.toString(),
@@ -33,6 +51,7 @@ class LessonAiChunk {
       dailyUsed: _toInt(json['daily_used']),
       dailyRemaining: _toInt(json['daily_remaining']),
       message: json['message']?.toString(),
+      history: parsedHistory,
     );
   }
 
@@ -42,9 +61,25 @@ class LessonAiChunk {
   }
 }
 
+class _CachedLessonConversation {
+  String? conversationId;
+  final List<Map<String, String>> messages;
+
+  _CachedLessonConversation({
+    this.conversationId,
+    List<Map<String, String>>? messages,
+  }) : messages = messages ?? [];
+}
+
 class LessonAiApiService {
   final ApiClient _client;
   final http.Client _httpClient;
+
+  // Keeps the visible lesson conversation alive while the Flutter app
+  // process is running. Navigating away from LessonPage therefore does not
+  // erase the messages from the UI. The backend remains the source of truth
+  // for AI context and persistence.
+  static final Map<int, _CachedLessonConversation> _sessionCache = {};
 
   LessonAiApiService(this._client, {http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
@@ -54,7 +89,32 @@ class LessonAiApiService {
     required String message,
     String? conversationId,
   }) async* {
+    final cached = _sessionCache[lessonId];
+
+    // If the page is recreated during the same app session, restore the
+    // previous visible conversation instead of sending START_LESSON again.
+    // The next real user message will continue through the backend using the
+    // same conversation_id.
+    if (message == 'START_LESSON' &&
+        cached != null &&
+        cached.messages.isNotEmpty) {
+      yield LessonAiChunk(
+        type: 'conversation',
+        conversationId: cached.conversationId,
+      );
+
+      yield LessonAiChunk(
+        type: 'history',
+        conversationId: cached.conversationId,
+        history: List<Map<String, String>>.from(cached.messages),
+      );
+
+      return;
+    }
+
     final token = await _client.getToken();
+    final effectiveConversationId =
+        conversationId ?? cached?.conversationId;
 
     final request = http.Request(
       'POST',
@@ -70,8 +130,9 @@ class LessonAiApiService {
     request.body = jsonEncode({
       'lesson_id': lessonId,
       'message': message,
-      if (conversationId != null && conversationId.isNotEmpty)
-        'conversation_id': conversationId,
+      if (effectiveConversationId != null &&
+          effectiveConversationId.isNotEmpty)
+        'conversation_id': effectiveConversationId,
     });
 
     late final http.StreamedResponse response;
@@ -106,6 +167,8 @@ class LessonAiApiService {
 
     String? pendingEvent;
     final dataLines = <String>[];
+    String? streamedConversationId = effectiveConversationId;
+    final streamedAssistantText = StringBuffer();
 
     await for (final line in response.stream
         .transform(utf8.decoder)
@@ -127,7 +190,28 @@ class LessonAiApiService {
         );
         dataLines.clear();
         pendingEvent = null;
-        if (chunk != null) yield chunk;
+
+        if (chunk != null) {
+          if (chunk.conversationId != null &&
+              chunk.conversationId!.isNotEmpty) {
+            streamedConversationId = chunk.conversationId;
+          }
+
+          if (chunk.type == 'chunk' && chunk.text != null) {
+            streamedAssistantText.write(chunk.text);
+          }
+
+          if (chunk.type == 'done') {
+            _storeCompletedTurn(
+              lessonId: lessonId,
+              conversationId: streamedConversationId,
+              userMessage: message,
+              assistantMessage: streamedAssistantText.toString(),
+            );
+          }
+
+          yield chunk;
+        }
       }
     }
 
@@ -136,8 +220,62 @@ class LessonAiApiService {
         dataLines.join('\n'),
         fallbackType: pendingEvent,
       );
-      if (chunk != null) yield chunk;
+
+      if (chunk != null) {
+        if (chunk.conversationId != null &&
+            chunk.conversationId!.isNotEmpty) {
+          streamedConversationId = chunk.conversationId;
+        }
+
+        if (chunk.type == 'chunk' && chunk.text != null) {
+          streamedAssistantText.write(chunk.text);
+        }
+
+        if (chunk.type == 'done') {
+          _storeCompletedTurn(
+            lessonId: lessonId,
+            conversationId: streamedConversationId,
+            userMessage: message,
+            assistantMessage: streamedAssistantText.toString(),
+          );
+        }
+
+        yield chunk;
+      }
     }
+  }
+
+  void _storeCompletedTurn({
+    required int lessonId,
+    required String? conversationId,
+    required String userMessage,
+    required String assistantMessage,
+  }) {
+    if (assistantMessage.trim().isEmpty) {
+      return;
+    }
+
+    final cached = _sessionCache.putIfAbsent(
+      lessonId,
+      () => _CachedLessonConversation(),
+    );
+
+    if (conversationId != null && conversationId.isNotEmpty) {
+      cached.conversationId = conversationId;
+    }
+
+    // START_LESSON is an internal trigger, not a visible user message.
+    if (userMessage != 'START_LESSON') {
+      cached.messages.add({
+        'role': 'user',
+        'text': userMessage,
+      });
+    }
+
+    cached.messages.add({
+      'role': 'assistant',
+      'text': assistantMessage,
+    });
   }
 
   LessonAiChunk? _parseEvent(String payload, {String? fallbackType}) {
