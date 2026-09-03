@@ -136,4 +136,23 @@ class WordApiService {
     final data = client.decodeResponse(response);
     throw client.apiException(data, 'Failed to delete sentence', statusCode: response.statusCode);
   }
+
+  Future<Map<String, dynamic>> lookupWord({
+    required String word,
+  }) async {
+    final response = await client.post(
+      '/word-lookup/',
+      authenticated: true,
+      headers: client.jsonHeaders,
+      body: jsonEncode({'word': word}),
+    );
+
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(data, 'Failed to look up word', statusCode: response.statusCode);
+  }
 }
