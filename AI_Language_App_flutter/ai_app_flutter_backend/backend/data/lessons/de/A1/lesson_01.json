@@ -9,21 +9,21 @@
   "passing_score": 80,
   "metadata": {
     "title": "Ich und du",
-    "objective": "القدرة على استخدام الضمائر الشخصية الأساسية والتعريف بالنفس وسؤال شخص آخر عن اسمه ومكان سكنه.",
-    "description": "درس تفاعلي قصير لتعلم ich, du, er, sie, wir, ihr, sie من خلال حوار طبيعي.",
+    "objective": "القدرة على التحدث بجمل ألمانية بسيطة للتعريف بالنفس والسؤال عن الاسم ومكان السكن والحديث عن أشخاص آخرين.",
+    "description": "محادثة تفاعلية قصيرة يكتسب فيها المتعلم الجمل من خلال التحدث، دون شرح نظري أو محاضرة.",
     "estimated_minutes": 12,
     "skills": [
       "speaking",
       "listening",
-      "basic_grammar",
+      "conversation",
       "introducing_yourself"
     ]
   },
   "preview": {
     "what_you_will_learn": [
-      "الضمائر الشخصية الأساسية بالألمانية",
-      "التعريف بالنفس باستخدام heißen و wohnen",
-      "سؤال شخص آخر عن اسمه ومكان سكنه"
+      "التعريف بالنفس بجمل بسيطة",
+      "السؤال عن اسم شخص ومكان سكنه",
+      "الحديث عن شخص آخر ومجموعة من الأشخاص"
     ],
     "new_items": [
       "ich",
@@ -32,153 +32,74 @@
       "sie",
       "wir",
       "ihr",
-      "sie"
+      "heißen",
+      "wohnen"
     ],
     "new_vocabulary": [
-      {
-        "word": "ich",
-        "meaning": "أنا"
-      },
-      {
-        "word": "du",
-        "meaning": "أنت"
-      },
-      {
-        "word": "er",
-        "meaning": "هو"
-      },
-      {
-        "word": "sie",
-        "meaning": "هي / هم"
-      },
-      {
-        "word": "wir",
-        "meaning": "نحن"
-      },
-      {
-        "word": "ihr",
-        "meaning": "أنتم"
-      },
-      {
-        "word": "heißen",
-        "meaning": "يُدعى / اسمه"
-      },
-      {
-        "word": "wohnen",
-        "meaning": "يسكن"
-      }
+      { "word": "ich", "meaning": "أنا" },
+      { "word": "du", "meaning": "أنت" },
+      { "word": "er", "meaning": "هو" },
+      { "word": "sie", "meaning": "هي / هم" },
+      { "word": "wir", "meaning": "نحن" },
+      { "word": "ihr", "meaning": "أنتم" },
+      { "word": "heißen", "meaning": "يُدعى / اسمه" },
+      { "word": "wohnen", "meaning": "يسكن" }
     ],
-    "new_grammar": [
-      "استخدام ich و du في التعريف بالنفس والسؤال عن الاسم.",
-      "استخدام er و sie للحديث عن شخص آخر.",
-      "استخدام wir و ihr و sie للحديث عن المجموعات."
-    ],
-    "goal": "في نهاية الدرس يستطيع المتعلم تقديم نفسه بجمل بسيطة وفهم واستخدام الضمائر الأساسية."
+    "goal": "في نهاية المحادثة يستطيع المتعلم استخدام جمل أساسية عن نفسه وعن أشخاص آخرين."
   },
   "prerequisites": [],
   "sections": [
     {
-      "id": "section_01",
-      "type": "teaching",
-      "title": "Ich und du",
-      "objective": "استخدام ich و du في حوار تعارف بسيط.",
-      "focus": [
-        "ich",
-        "du"
+      "id": "conversation_01",
+      "type": "conversation",
+      "title": "Erstes Kennenlernen",
+      "objective": "التعارف باستخدام ich و du.",
+      "focus": ["ich", "du"],
+      "scenario": "يلتقي المتعلم بشخص لأول مرة.",
+      "target_sentences": [
+        "Hallo! Ich heiße Anna.",
+        "Wie heißt du?",
+        "Ich heiße Ali.",
+        "Wo wohnst du?",
+        "Ich wohne in Fès."
       ],
-      "teaching_points": [
-        "ich = أنا",
-        "du = أنت",
-        "Ich heiße ... = اسمي ...",
-        "Wie heißt du? = ما اسمك؟"
-      ],
-      "examples": [
-        {
-          "de": "Hallo! Ich heiße Anna.",
-          "translation": "مرحبًا! اسمي آنا."
-        },
-        {
-          "de": "Wie heißt du?",
-          "translation": "ما اسمك؟"
-        },
-        {
-          "de": "Ich heiße Ali.",
-          "translation": "اسمي علي."
-        }
-      ],
-      "scenario": "يلتقي المعلم والمتعلم لأول مرة ويتعارفان.",
       "expected_learner_responses": [
         "Ich heiße ...",
-        "Ich bin ..."
+        "Ich wohne in ..."
       ]
     },
     {
-      "id": "section_02",
-      "type": "teaching",
-      "title": "Er und sie",
-      "objective": "استخدام er و sie للحديث عن شخص آخر.",
-      "focus": [
-        "er",
-        "sie"
+      "id": "conversation_02",
+      "type": "conversation",
+      "title": "Über andere sprechen",
+      "objective": "الحديث عن شخص آخر باستخدام er و sie.",
+      "focus": ["er", "sie"],
+      "scenario": "يتحدث المتعلم مع شريكه عن أشخاص يعرفهم.",
+      "target_sentences": [
+        "Er heißt Tom.",
+        "Sie heißt Anna."
       ],
-      "teaching_points": [
-        "er = هو",
-        "sie = هي",
-        "Er heißt ... = اسمه ...",
-        "Sie heißt ... = اسمها ..."
-      ],
-      "examples": [
-        {
-          "de": "Er heißt Tom.",
-          "translation": "اسمه توم."
-        },
-        {
-          "de": "Sie heißt Anna.",
-          "translation": "اسمها آنا."
-        }
-      ],
-      "scenario": "يتحدث المتعلم عن شخصين يعرفهما.",
       "expected_learner_responses": [
         "Er heißt ...",
         "Sie heißt ..."
       ]
     },
     {
-      "id": "section_03",
-      "type": "teaching",
-      "title": "Wir, ihr und sie",
-      "objective": "التعرف على الضمائر الأساسية للجمع واستخدامها في جمل قصيرة.",
-      "focus": [
-        "wir",
-        "ihr",
-        "sie"
+      "id": "conversation_03",
+      "type": "conversation",
+      "title": "Wir und ihr",
+      "objective": "استخدام wir و ihr و sie في سياق جماعي.",
+      "focus": ["wir", "ihr", "sie"],
+      "scenario": "يتحدث المتعلم مع مجموعة من الأشخاص عن السكن والتعارف.",
+      "target_sentences": [
+        "Wir wohnen in Fès.",
+        "Wo wohnt ihr?",
+        "Sie wohnen in Berlin."
       ],
-      "teaching_points": [
-        "wir = نحن",
-        "ihr = أنتم",
-        "sie = هم / هن",
-        "Wir wohnen in Fès. = نحن نسكن في فاس.",
-        "Wo wohnt ihr? = أين تسكنون؟"
-      ],
-      "examples": [
-        {
-          "de": "Wir wohnen in Fès.",
-          "translation": "نحن نسكن في فاس."
-        },
-        {
-          "de": "Wo wohnt ihr?",
-          "translation": "أين تسكنون؟"
-        },
-        {
-          "de": "Sie wohnen in Berlin.",
-          "translation": "هم يسكنون في برلين."
-        }
-      ],
-      "scenario": "ينتقل الحوار من شخص واحد إلى مجموعة من الأشخاص.",
       "expected_learner_responses": [
-        "Wir ...",
-        "Ihr ...",
-        "Sie ..."
+        "Wir wohnen ...",
+        "Ihr wohnt ...",
+        "Sie wohnen ..."
       ]
     }
   ],
@@ -187,76 +108,70 @@
     "minimum_turns": 6,
     "activities": [
       "التعريف بالنفس",
-      "السؤال عن اسم شخص آخر",
-      "الحديث عن شخص ثالث",
-      "استخدام الضمائر مع مجموعة"
+      "السؤال والجواب عن الاسم",
+      "السؤال والجواب عن مكان السكن",
+      "الحديث عن شخص آخر",
+      "الحديث مع مجموعة"
     ]
   },
+  "key_sentences": [
+    { "sentence": "Hallo! Ich heiße Anna.", "translation": "مرحبًا! اسمي آنا." },
+    { "sentence": "Wie heißt du?", "translation": "ما اسمك؟" },
+    { "sentence": "Ich heiße Ali.", "translation": "اسمي علي." },
+    { "sentence": "Wo wohnst du?", "translation": "أين تسكن؟" },
+    { "sentence": "Ich wohne in Fès.", "translation": "أنا أسكن في فاس." },
+    { "sentence": "Er heißt Tom.", "translation": "اسمه توم." },
+    { "sentence": "Sie heißt Anna.", "translation": "اسمها آنا." },
+    { "sentence": "Wir wohnen in Fès.", "translation": "نحن نسكن في فاس." },
+    { "sentence": "Wo wohnt ihr?", "translation": "أين تسكنون؟" },
+    { "sentence": "Sie wohnen in Berlin.", "translation": "هم يسكنون في برلين." }
+  ],
   "assessment": {
     "enabled": true,
-    "type": "multiple_choice_and_short_answer",
+    "type": "multiple_choice",
     "questions_count": 5,
     "passing_score": 80,
     "retry_allowed": true,
     "questions": [
       {
         "id": 1,
+        "order": 1,
         "type": "multiple_choice",
         "question": "ما الضمير الألماني الذي يعني «أنا»؟",
-        "options": [
-          "ich",
-          "du",
-          "er",
-          "wir"
-        ],
+        "options": ["ich", "du", "er", "wir"],
         "correct_answer": "ich"
       },
       {
         "id": 2,
+        "order": 2,
         "type": "multiple_choice",
-        "question": "اختر الجملة الصحيحة لمعنى «اسمي علي». ",
-        "options": [
-          "Ich heiße Ali.",
-          "Du heißt Ali.",
-          "Er heißt Ali.",
-          "Wir heißen Ali."
-        ],
+        "question": "اختر الجملة الصحيحة لمعنى «اسمي علي».",
+        "options": ["Ich heiße Ali.", "Du heißt Ali.", "Er heißt Ali.", "Wir heißen Ali."],
         "correct_answer": "Ich heiße Ali."
       },
       {
         "id": 3,
+        "order": 3,
         "type": "multiple_choice",
-        "question": "ماذا يعني «Sie heißt Anna.» في هذا السياق؟",
-        "options": [
-          "اسمها آنا.",
-          "اسمه آنا.",
-          "اسمي آنا.",
-          "اسمهم آنا."
-        ],
+        "question": "ماذا يعني «Sie heißt Anna.»؟",
+        "options": ["اسمها آنا.", "اسمه آنا.", "اسمي آنا.", "اسمهم آنا."],
         "correct_answer": "اسمها آنا."
       },
       {
         "id": 4,
+        "order": 4,
         "type": "multiple_choice",
         "question": "أي ضمير يعني «نحن»؟",
-        "options": [
-          "ihr",
-          "wir",
-          "sie",
-          "er"
-        ],
+        "options": ["ihr", "wir", "sie", "er"],
         "correct_answer": "wir"
       },
       {
         "id": 5,
-        "type": "short_answer",
-        "question": "اكتب بالألمانية: «أنا أسكن في فاس.»",
-        "accepted_answers": [
-          "Ich wohne in Fès.",
-          "Ich wohne in Fes.",
-          "ich wohne in Fès.",
-          "ich wohne in Fes."
-        ]
+        "order": 5,
+        "type": "multiple_choice",
+        "question": "أي جملة تعني «أنا أسكن في فاس»؟",
+        "options": ["Ich wohne in Fès.", "Ich heiße Fès.", "Wir wohnen Berlin.", "Sie wohnt in Fès."],
+        "correct_answer": "Ich wohne in Fès."
       }
     ]
   },
@@ -267,22 +182,31 @@
     "mark_completed_after": "assessment_passed"
   },
   "teacher_instructions": {
-    "start_message": "ابدأ بتحية قصيرة بالألمانية ثم اسأل المتعلم عن اسمه. لا تعرض جميع الضمائر دفعة واحدة.",
-    "progression": [
-      "ابدأ بـ ich و du.",
-      "اجعل المتعلم يجيب قبل الانتقال.",
-      "بعد فهم ich و du انتقل إلى er و sie.",
-      "ثم قدم wir و ihr و sie من خلال سياق جماعي.",
-      "استخدم أمثلة قصيرة مرتبطة بالتعارف والسكن.",
-      "لا تنتقل إلى موضوع نحوي جديد خارج هذا الدرس."
+    "mode": "conversation_only",
+    "start_message": "ابدأ مباشرة بحوار طبيعي بالألمانية: Hallo! Ich heiße Anna. Wie heißt du?",
+    "rules": [
+      "لا تقدم شرحًا نظريًا أو محاضرة.",
+      "لا تعرض قائمة كلمات أو قواعد للمستخدم أثناء الحوار.",
+      "اجعل المستخدم يتحدث ويجيب في معظم الأدوار.",
+      "اسأل سؤالًا واحدًا أو اطلب جملة واحدة في كل مرة.",
+      "استخدم الجمل المستهدفة داخل الحوار بشكل طبيعي.",
+      "إذا أخطأ المستخدم، صحح الخطأ باختصار ثم اطلب منه إعادة الجملة.",
+      "استخدم الألمانية في الحوار، والعربية فقط عند الحاجة إلى مساعدة قصيرة جدًا.",
+      "لا تستخدم الصينية أو اليابانية أو أي لغة أخرى غير اللغة المستهدفة.",
+      "لا تنتقل إلى موضوع خارج أهداف هذا الدرس."
     ],
-    "correction": "صحح الأخطاء المهمة باختصار، ثم اطلب من المتعلم إعادة الجملة.",
-    "translation_policy": "استخدم العربية فقط عند الحاجة إلى توضيح سريع؛ الحوار الأساسي بالألمانية.",
+    "progression": [
+      "ابدأ بالتعارف باستخدام ich و du.",
+      "دع المتعلم يجيب ثم اسأله عن مكان السكن.",
+      "بعد عدة أدوار، أدخل er و sie من خلال الحديث عن أشخاص آخرين.",
+      "في النهاية أدخل wir و ihr و sie من خلال موقف جماعي.",
+      "حافظ على الحوار قصيرًا وطبيعيًا وركز على إنتاج المتعلم للجمل."
+    ],
     "hint_policy": [
       "💡 الرد المقترح",
       "🔊 استمع إلى الرد",
       "🎤 قل الجملة"
     ]
   },
-  "metadata_version": 1
+  "metadata_version": 2
 }
