@@ -26,7 +26,10 @@ if not TRANSLATION_MODEL:
         "OPENROUTER_TRANSLATION_MODEL or OPENROUTER_MAIN_MODEL must be configured in the .env file"
     )
 
-TRANSLATION_MAX_OUTPUT_TOKENS = 1200
+# Translation should be a short-answer operation. Keep the completion budget
+# small so a one-sentence translation does not reserve an unnecessarily large
+# output budget.
+TRANSLATION_MAX_OUTPUT_TOKENS = 256
 
 
 class TranslationRequest(BaseModel):
@@ -34,24 +37,12 @@ class TranslationRequest(BaseModel):
 
 
 def _translation_prompt(text: str, source_language: str, target_language: str) -> str:
-    return f"""
-You are a translation engine for a language-learning app.
-
-Translate the text below accurately from {source_language} to {target_language}.
-
-STRICT RULES:
-- Return ONLY the translated text.
-- Do not explain anything.
-- Do not answer the message.
-- Do not add labels such as Translation:.
-- Do not add quotation marks, emojis, or notes.
-- Preserve the meaning, tone, punctuation, names, numbers, and sentence breaks.
-- Keep the translation concise. Do not repeat the source text.
-- The final response must contain the translation itself, even for a very short input.
-
-TEXT TO TRANSLATE:
-{text}
-""".strip()
+    """Build the smallest useful prompt for a direct translation request."""
+    return (
+        f"Translate from {source_language} to {target_language}. "
+        "Return only the translation, with no explanation or extra text.\n\n"
+        f"{text}"
+    )
 
 
 @router.post("/")
