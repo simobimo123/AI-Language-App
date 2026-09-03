@@ -7,10 +7,7 @@ LEVELS = [
     "C2",
 ]
 
-ALL_LEVELS = [
-    "PRE_A1",
-    *LEVELS,
-]
+ALL_LEVELS = LEVELS.copy()
 
 # The learner must know at least half of the sampled words
 # to pass vocabulary screening for a level.
