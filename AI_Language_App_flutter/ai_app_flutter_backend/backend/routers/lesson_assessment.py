@@ -242,10 +242,26 @@ def submit_lesson_assessment(
         if submitted is None:
             continue
 
-        correct_answer = question.get("correct_answer")
-        if correct_answer is not None and submitted == str(correct_answer).strip():
+        correct_answer = str(question.get("correct_answer", "")).strip()
+        if submitted == correct_answer:
             correct_count += 1
             continue
+
+        # The Flutter assessment submits the public option id. For lesson JSON
+        # that stores options as plain strings, compare that id with the text
+        # at the same option position.
+        raw_options = question.get("options", [])
+        if correct_answer and isinstance(raw_options, list):
+            try:
+                option_index = int(submitted) - 1
+            except ValueError:
+                option_index = -1
+            if 0 <= option_index < len(raw_options):
+                option = raw_options[option_index]
+                option_text = option.get("text") if isinstance(option, dict) else option
+                if str(option_text).strip() == correct_answer:
+                    correct_count += 1
+                    continue
 
         accepted_answers = question.get("accepted_answers")
         if isinstance(accepted_answers, list):
