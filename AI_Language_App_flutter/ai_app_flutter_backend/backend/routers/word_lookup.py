@@ -33,7 +33,7 @@ def _example_translation(
     language: str,
     db: Session,
 ) -> str | None:
-    row = db.execute(
+    statement = (
         select(VocabularyExampleTranslation)
         .where(
             VocabularyExampleTranslation.vocabulary_example_id == example_id,
@@ -43,8 +43,8 @@ def _example_translation(
             VocabularyExampleTranslation.is_primary.desc(),
             VocabularyExampleTranslation.id.asc(),
         )
-        .first()
     )
+    row = db.execute(statement).first()
     return row[0].translation if row else None
 
 
