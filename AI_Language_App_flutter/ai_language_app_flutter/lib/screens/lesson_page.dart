@@ -4,6 +4,7 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
+import '../services/api/lesson_hint_api_service.dart';
 import '../widgets/learning_path/lesson_hint_dialog.dart';
 import '../widgets/words/word_detail_dialog.dart';
 import 'lesson_assessment_page.dart';
@@ -52,6 +53,7 @@ class _LessonPageState extends State<LessonPage> {
   String? _error;
   int? _dailyLimit;
   int? _dailyRemaining;
+  LessonHint? _currentHint;
 
   bool _loading = true;
   bool _sending = false;
@@ -146,6 +148,42 @@ class _LessonPageState extends State<LessonPage> {
         ja: '回答ヒント',
         ko: '답변 힌트',
         zh: '回答提示',
+      );
+
+  String _hintSuggestionLabel() => _text(
+        ar: 'الكلام المقترح',
+        en: 'Suggested answer',
+        fr: 'Réponse suggérée',
+        es: 'Respuesta sugerida',
+        de: 'Vorgeschlagene Antwort',
+        it: 'Risposta suggerita',
+        ja: 'おすすめの回答',
+        ko: '추천 답변',
+        zh: '建议回答',
+      );
+
+  String _hintTranslationLabel() => _text(
+        ar: 'المعنى',
+        en: 'Meaning',
+        fr: 'Signification',
+        es: 'Significado',
+        de: 'Bedeutung',
+        it: 'Significato',
+        ja: '意味',
+        ko: '의미',
+        zh: '含义',
+      );
+
+  String _hideHintLabel() => _text(
+        ar: 'إخفاء الاقتراح',
+        en: 'Hide suggestion',
+        fr: 'Masquer la suggestion',
+        es: 'Ocultar sugerencia',
+        de: 'Vorschlag ausblenden',
+        it: 'Nascondi suggerimento',
+        ja: '提案を非表示',
+        ko: '추천 숨기기',
+        zh: '隐藏建议',
       );
 
   String _hintErrorLabel() => _text(
@@ -319,6 +357,8 @@ class _LessonPageState extends State<LessonPage> {
 
       if (!mounted) return;
 
+      setState(() => _currentHint = hint);
+
       await showLessonHintDialog(
         context,
         hint: hint,
@@ -348,6 +388,7 @@ class _LessonPageState extends State<LessonPage> {
     final message = _messageController.text.trim();
     if (message.isEmpty || _sending || _submitting) return;
     _messageController.clear();
+    setState(() => _currentHint = null);
     await _sendMessage(message, showUserMessage: true);
   }
 
@@ -662,53 +703,129 @@ class _LessonPageState extends State<LessonPage> {
         : TextDirection.ltr;
   }
 
-  Widget _buildComposer(ThemeData theme) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+  Widget _buildHintSuggestion(ThemeData theme) {
+    final hint = _currentHint;
+    if (hint == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant,
+          ),
+        ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconButton(
-              onPressed: _hintLoading || _sending || _submitting || _messages.isEmpty
-                  ? null
-                  : _showHint,
-              tooltip: _hintLabel(),
-              icon: _hintLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lightbulb_outline_rounded),
+            Icon(
+              Icons.lightbulb_rounded,
+              size: 20,
+              color: theme.colorScheme.onSecondaryContainer,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 10),
             Expanded(
-              child: TextField(
-                controller: _messageController,
-                enabled: !_sending && !_submitting,
-                minLines: 1,
-                maxLines: 5,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendCurrentMessage(),
-                decoration: InputDecoration(
-                  hintText: _inputHint(),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _hintSuggestionLabel(),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    hint.suggestion,
+                    textDirection: _textDirection(hint.suggestion),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_hintTranslationLabel()}: ${hint.translation}',
+                    textDirection: _textDirection(hint.translation),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      height: 1.35,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              onPressed: _sending || _submitting ? null : _sendCurrentMessage,
-              tooltip: _sendLabel(),
-              icon: const Icon(Icons.send_rounded),
+            IconButton(
+              onPressed: () => setState(() => _currentHint = null),
+              tooltip: _hideHintLabel(),
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.close_rounded),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildComposer(ThemeData theme) {
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHintSuggestion(theme),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: _hintLoading || _sending || _submitting || _messages.isEmpty
+                      ? null
+                      : _showHint,
+                  tooltip: _hintLabel(),
+                  icon: _hintLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.lightbulb_outline_rounded),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    enabled: !_sending && !_submitting,
+                    minLines: 1,
+                    maxLines: 5,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendCurrentMessage(),
+                    decoration: InputDecoration(
+                      hintText: _inputHint(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: _sending || _submitting ? null : _sendCurrentMessage,
+                  tooltip: _sendLabel(),
+                  icon: const Icon(Icons.send_rounded),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
