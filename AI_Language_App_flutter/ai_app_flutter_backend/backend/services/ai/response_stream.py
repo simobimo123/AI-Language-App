@@ -163,7 +163,3 @@ def stream_openrouter_response(
                 "message": "AI service is temporarily unavailable.",
             }
         )
-
-
-# Backward-compatible name used by the existing router.
-stream_gemini_response = stream_openrouter_response
