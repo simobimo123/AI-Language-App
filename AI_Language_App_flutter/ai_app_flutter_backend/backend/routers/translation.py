@@ -22,21 +22,23 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-# Translation uses its own model so the main AI teacher model is not affected.
-# The environment variable remains the preferred configuration. The default
-# is a free OpenRouter model suitable for short multilingual translations.
+# Translation has a preferred dedicated model, but can fall back to the
+# application's main AI model if the dedicated translation models are
+# temporarily unavailable. Fallbacks are attempted sequentially, never in
+# parallel, so a normal successful request uses only one model.
 TRANSLATION_MODEL = (
     os.getenv("OPENROUTER_TRANSLATION_MODEL")
     or "google/gemma-4-31b-it:free"
 )
 
-# The fallback must be a different model from the primary one. OpenRouter's
-# current free catalog lists Gemma 4 26B A4B as a free text model, so use it
-# as the built-in fallback rather than relying on an old free Llama slug.
 TRANSLATION_FALLBACK_MODEL = (
     os.getenv("OPENROUTER_TRANSLATION_FALLBACK_MODEL")
     or "google/gemma-4-26b-a4b-it:free"
 )
+
+# Reuse the same main model already configured for the rest of the AI system.
+# This avoids introducing a fourth model just for translation fallback.
+TRANSLATION_MAIN_MODEL = os.getenv("OPENROUTER_MAIN_MODEL") or "minimax/minimax-m2.7:free"
 
 TRANSLATION_MAX_OUTPUT_TOKENS = 256
 
@@ -91,6 +93,12 @@ def _generate_translation(
     return response, translation
 
 
+def _should_try_fallback(exc: Exception) -> bool:
+    if isinstance(exc, OpenRouterRequestError):
+        return exc.status_code in _TRANSLATION_FALLBACK_STATUS_CODES
+    return isinstance(exc, RuntimeError)
+
+
 @router.post("/")
 def translate_text(
     request: TranslationRequest,
@@ -118,46 +126,47 @@ def translate_text(
     reserve_ai_request(user_id=current_user.id, db=db)
 
     try:
-        try:
-            response, translation = _generate_translation(
-                model=TRANSLATION_MODEL,
-                text=text,
-                source_language=source_language,
-                target_language=target_language,
-            )
-        except OpenRouterRequestError as exc:
-            if exc.status_code not in _TRANSLATION_FALLBACK_STATUS_CODES:
-                raise
+        response = None
+        translation = None
+        last_error = None
 
-            logger.warning(
-                "Primary translation model failed with HTTP %s; "
-                "trying fallback model=%s for user_id=%s",
-                exc.status_code,
-                TRANSLATION_FALLBACK_MODEL,
-                current_user.id,
-            )
+        # Keep the three attempts sequential. The next model is called only
+        # when the previous one fails with a retryable error.
+        models_to_try = []
+        for model in (
+            TRANSLATION_MODEL,
+            TRANSLATION_FALLBACK_MODEL,
+            TRANSLATION_MAIN_MODEL,
+        ):
+            if model and model not in models_to_try:
+                models_to_try.append(model)
 
-            response, translation = _generate_translation(
-                model=TRANSLATION_FALLBACK_MODEL,
-                text=text,
-                source_language=source_language,
-                target_language=target_language,
-            )
-        except RuntimeError as exc:
-            logger.warning(
-                "Primary translation model failed (%s); trying fallback "
-                "model=%s for user_id=%s",
-                exc,
-                TRANSLATION_FALLBACK_MODEL,
-                current_user.id,
-            )
+        for index, model in enumerate(models_to_try):
+            try:
+                response, translation = _generate_translation(
+                    model=model,
+                    text=text,
+                    source_language=source_language,
+                    target_language=target_language,
+                )
+                break
+            except Exception as exc:
+                last_error = exc
 
-            response, translation = _generate_translation(
-                model=TRANSLATION_FALLBACK_MODEL,
-                text=text,
-                source_language=source_language,
-                target_language=target_language,
-            )
+                if index >= len(models_to_try) - 1 or not _should_try_fallback(exc):
+                    raise
+
+                next_model = models_to_try[index + 1]
+                logger.warning(
+                    "Translation model failed (%s); trying next model=%s "
+                    "for user_id=%s",
+                    exc,
+                    next_model,
+                    current_user.id,
+                )
+
+        if response is None or translation is None:
+            raise RuntimeError("All configured translation models failed.") from last_error
 
         record_api_usage(
             user_id=current_user.id,
