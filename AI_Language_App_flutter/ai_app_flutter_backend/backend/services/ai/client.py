@@ -19,20 +19,11 @@ OPENROUTER_BASE_URL = os.getenv(
     "https://openrouter.ai/api/v1",
 ).rstrip("/")
 
-# The model is intentionally configured only through .env.
-# Do not hard-code a model here.
-AI_MODEL = os.getenv("OPENROUTER_MAIN_MODEL")
-AI_CLASSIFIER_MODEL = os.getenv("OPENROUTER_CLASSIFIER_MODEL")
-
-if not AI_MODEL:
-    raise RuntimeError(
-        "OPENROUTER_MAIN_MODEL is not configured in the .env file"
-    )
-
-if not AI_CLASSIFIER_MODEL:
-    raise RuntimeError(
-        "OPENROUTER_CLASSIFIER_MODEL is not configured in the .env file"
-    )
+# Single AI model for the entire application.
+# Keep this centralized so chat, classification, vocabulary enrichment,
+# translation, lesson tutoring, hints, and lesson generation all use MiniMax.
+AI_MODEL = "minimax/minimax-m2.7:free"
+AI_CLASSIFIER_MODEL = AI_MODEL
 
 
 class OpenRouterRequestError(RuntimeError):
@@ -48,7 +39,8 @@ class OpenRouterRequestError(RuntimeError):
 
 # OpenRouter exposes an OpenAI-compatible Chat Completions API.
 # Keeping the HTTP layer here makes the rest of the AI service independent
-# from a specific model vendor and lets the model be changed through .env.
+# from the model vendor while ensuring the application uses the single
+# centrally selected MiniMax model above.
 def _headers() -> dict[str, str]:
     return {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
