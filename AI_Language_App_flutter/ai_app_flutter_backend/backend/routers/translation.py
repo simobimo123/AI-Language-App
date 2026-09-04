@@ -23,34 +23,29 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 # Translation uses its own model so the main AI teacher model is not affected.
-# The environment variable remains the preferred configuration, while the
-# free Gemma model is the safe default for this short, direct task.
+# The environment variable remains the preferred configuration. The default
+# is a free OpenRouter model suitable for short multilingual translations.
 TRANSLATION_MODEL = (
     os.getenv("OPENROUTER_TRANSLATION_MODEL")
     or "google/gemma-4-31b-it:free"
 )
 
-# If the primary translation model is unavailable or temporarily rate-limited,
-# retry the same request with a separate free model. This fallback is used only
-# by the translation endpoint and never changes the main AI teacher model.
+# The fallback must be a different model from the primary one. OpenRouter's
+# current free catalog lists Gemma 4 26B A4B as a free text model, so use it
+# as the built-in fallback rather than relying on an old free Llama slug.
 TRANSLATION_FALLBACK_MODEL = (
     os.getenv("OPENROUTER_TRANSLATION_FALLBACK_MODEL")
-    or "meta-llama/llama-3.1-8b-instruct:free"
+    or "google/gemma-4-26b-a4b-it:free"
 )
 
-# Translation should be a short-answer operation. Keep the completion budget
-# small so a one-sentence translation does not reserve an unnecessarily large
-# output budget.
 TRANSLATION_MAX_OUTPUT_TOKENS = 256
 
-# These failures can reasonably be recovered by trying the configured fallback
-# model. Client/authentication errors such as 400/401/403 are not retried.
 _TRANSLATION_FALLBACK_STATUS_CODES = {
-    402,  # provider/model requires unavailable credits
-    404,  # model/provider route unavailable
-    408,  # request timeout
-    409,  # transient provider conflict
-    429,  # rate limit / quota
+    402,
+    404,
+    408,
+    409,
+    429,
     500,
     502,
     503,
@@ -63,7 +58,6 @@ class TranslationRequest(BaseModel):
 
 
 def _translation_prompt(text: str, source_language: str, target_language: str) -> str:
-    """Build the smallest useful prompt for a direct translation request."""
     return (
         f"Translate from {source_language} to {target_language}. "
         "Return only the translation, with no explanation or extra text.\n\n"
@@ -78,7 +72,6 @@ def _generate_translation(
     source_language: str,
     target_language: str,
 ):
-    """Generate one translation without changing request/quota accounting."""
     response = provider.generate_text(
         model=model,
         prompt=_translation_prompt(
@@ -151,8 +144,6 @@ def translate_text(
                 target_language=target_language,
             )
         except RuntimeError as exc:
-            # Network errors and empty model responses do not expose an HTTP
-            # status code, so give the translation fallback a chance as well.
             logger.warning(
                 "Primary translation model failed (%s); trying fallback "
                 "model=%s for user_id=%s",
