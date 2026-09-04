@@ -7,15 +7,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AIConversationMessage, CourseLesson, LearningProfile, User, UserLessonProgress
+from models import CourseLesson, LearningProfile, User, UserLessonProgress
 from routers.auth import get_current_user
 from routers.learning_path import calculate_normal_progress, get_current_lesson, get_next_level, get_progress_map, get_or_create_lesson_progress, sync_learning_content
+from routers.lesson_ai import _lesson_target_sentences, _load_lesson_curriculum
 from schemas import LessonAssessmentQuestion, LessonAssessmentResponse, LessonAssessmentResult, LessonAssessmentSubmitRequest
 from services.ai.normalization import normalize_language
 
 router = APIRouter(prefix="/learning", tags=["Lesson Assessment"])
 LESSONS_ROOT = Path(__file__).resolve().parents[1] / "data" / "lessons"
-MIN_AI_LEARNER_TURNS = 2
 
 
 def _get_current_profile(current_user: User, db: Session) -> LearningProfile:
@@ -87,50 +87,53 @@ def _instruction_language(current_user: User) -> str:
     return normalize_language(current_user.native_language)
 
 
-def _find_latest_ready_conversation(current_user: User, db: Session) -> str | None:
-    rows = db.execute(
-        select(AIConversationMessage.conversation_id, AIConversationMessage.role, AIConversationMessage.content)
-        .where(
-            AIConversationMessage.user_id == current_user.id,
-            AIConversationMessage.conversation_id.is_not(None),
+def _resolve_conversation(
+    current_user: User,
+    conversation_id: str | None,
+    lesson_id: int,
+    profile: LearningProfile,
+    curriculum: dict,
+    db: Session,
+) -> str:
+    if not conversation_id or not conversation_id.strip():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Complete the translation check before starting the assessment.",
         )
-        .order_by(AIConversationMessage.created_at.desc(), AIConversationMessage.id.desc())
-    ).all()
 
-    grouped: dict[str, dict[str, int]] = {}
-    for conversation_id, role, content in rows:
-        if not conversation_id:
-            continue
-        bucket = grouped.setdefault(conversation_id, {"learner": 0, "tutor": 0})
-        if role == "user" and content.strip() != "START_LESSON":
-            bucket["learner"] += 1
-        elif role == "model":
-            bucket["tutor"] += 1
-        if bucket["learner"] >= MIN_AI_LEARNER_TURNS and bucket["tutor"] >= MIN_AI_LEARNER_TURNS:
-            return conversation_id
-    return None
+    candidate = conversation_id.strip()
+    if not candidate.startswith(f"lesson_{lesson_id}_"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid lesson conversation.")
 
+    progress = db.execute(
+        select(UserLessonProgress).where(
+            UserLessonProgress.user_id == current_user.id,
+            UserLessonProgress.lesson_id == lesson_id,
+        )
+    ).scalar_one_or_none()
+    if progress is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Complete the lesson practice and translation check before starting the assessment.",
+        )
 
-def _resolve_conversation(current_user: User, conversation_id: str | None, db: Session) -> str:
-    if conversation_id and conversation_id.strip():
-        candidate = conversation_id.strip()
-        messages = db.execute(
-            select(AIConversationMessage.role, AIConversationMessage.content)
-            .where(
-                AIConversationMessage.user_id == current_user.id,
-                AIConversationMessage.conversation_id == candidate,
-            )
-        ).all()
-        learner_turns = sum(1 for role, content in messages if role == "user" and content.strip() != "START_LESSON")
-        tutor_turns = sum(1 for role, _ in messages if role == "model")
-        if learner_turns >= MIN_AI_LEARNER_TURNS and tutor_turns >= MIN_AI_LEARNER_TURNS:
-            return candidate
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Continue the AI lesson and answer at least two tutor prompts before starting the assessment.")
+    state = progress.practice_state if isinstance(progress.practice_state, dict) else {}
+    if state.get("conversation_id") != candidate:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This lesson conversation is no longer active.")
 
-    resolved = _find_latest_ready_conversation(current_user, db)
-    if resolved is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Continue the AI lesson and answer at least two tutor prompts before starting the assessment.")
-    return resolved
+    target_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
+    practiced_raw = state.get("practiced_sentence_ids", [])
+    practiced_ids = {str(value).strip() for value in practiced_raw if str(value).strip()} if isinstance(practiced_raw, list) else set()
+    if not target_ids or not target_ids.issubset(practiced_ids):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Complete all target sentences before the assessment.")
+
+    if state.get("translation_check_passed") is not True:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Pass the translation check before starting the assessment.",
+        )
+
+    return candidate
 
 
 def _translation(question: dict, language: str) -> dict:
@@ -201,9 +204,16 @@ def get_lesson_assessment(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    lesson, _, _ = _get_lesson(lesson_id, current_user, db)
-    resolved_conversation = _resolve_conversation(current_user, conversation_id, db)
+    lesson, profile, _ = _get_lesson(lesson_id, current_user, db)
     assessment = _load_assessment(lesson)
+    resolved_conversation = _resolve_conversation(
+        current_user,
+        conversation_id,
+        lesson_id,
+        profile,
+        _load_lesson_curriculum(lesson),
+        db,
+    )
     questions = _public_questions(assessment, _instruction_language(current_user))
     return LessonAssessmentResponse(
         lesson_id=lesson.id,
@@ -223,7 +233,8 @@ def submit_lesson_assessment(
     db: Session = Depends(get_db),
 ):
     lesson, profile, lessons = _get_lesson(lesson_id, current_user, db)
-    _resolve_conversation(current_user, data.conversation_id, db)
+    curriculum = _load_lesson_curriculum(lesson)
+    _resolve_conversation(current_user, data.conversation_id, lesson_id, profile, curriculum, db)
     assessment = _load_assessment(lesson)
     questions = assessment["questions"]
 
@@ -247,9 +258,6 @@ def submit_lesson_assessment(
             correct_count += 1
             continue
 
-        # The Flutter assessment submits the public option id. For lesson JSON
-        # that stores options as plain strings, compare that id with the text
-        # at the same option position.
         raw_options = question.get("options", [])
         if correct_answer and isinstance(raw_options, list):
             try:
