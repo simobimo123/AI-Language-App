@@ -1,5 +1,4 @@
 import logging
-import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -8,7 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User
 from routers.auth import get_current_user
-from services.ai.client import OpenRouterRequestError
+from services.ai.client import AI_MODEL, OpenRouterRequestError
 from services.ai.normalization import normalize_language
 from services.ai.provider import provider
 from services.ai.rate_limit import check_rate_limit
@@ -22,41 +21,23 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-# Translation has a preferred dedicated model, but can fall back to the
-# application's main AI model if the dedicated translation models are
-# temporarily unavailable. Fallbacks are attempted sequentially, never in
-# parallel, so a normal successful request uses only one model.
-TRANSLATION_MODEL = (
-    os.getenv("OPENROUTER_TRANSLATION_MODEL")
-    or "google/gemma-4-31b-it:free"
-)
-
-TRANSLATION_FALLBACK_MODEL = (
-    os.getenv("OPENROUTER_TRANSLATION_FALLBACK_MODEL")
-    or "google/gemma-4-26b-a4b-it:free"
-)
-
-# Reuse the same main model already configured for the rest of the AI system.
-# This avoids introducing a fourth model just for translation fallback.
-TRANSLATION_MAIN_MODEL = os.getenv("OPENROUTER_MAIN_MODEL") or "minimax/minimax-m2.7:free"
-
-# MiniMax M2.7 is a reasoning-capable model. A small 256-token ceiling can be
-# consumed by its internal reasoning before it reaches the final translation,
-# which causes OpenRouter to return finish_reason="length" with no final text.
-# Keep enough output budget for both reasoning and the actual translation.
+# Translation uses the exact same centralized MiniMax model as chat,
+# classification, vocabulary enrichment, lesson tutoring, hints, and lesson
+# generation. No Google/Gemma translation fallback is allowed.
+TRANSLATION_MODEL = AI_MODEL
 TRANSLATION_MAX_OUTPUT_TOKENS = 2048
 
-_TRANSLATION_FALLBACK_STATUS_CODES = {
-    402,
-    404,
+# A temporary upstream failure can be retried on the SAME MiniMax model.
+# We never switch to another provider/model.
+_TRANSLATION_RETRY_STATUS_CODES = {
     408,
-    409,
     429,
     500,
     502,
     503,
     504,
 }
+TRANSLATION_MAX_RETRIES = 2
 
 
 class TranslationRequest(BaseModel):
@@ -97,10 +78,10 @@ def _generate_translation(
     return response, translation
 
 
-def _should_try_fallback(exc: Exception) -> bool:
+def _should_retry(exc: Exception) -> bool:
     if isinstance(exc, OpenRouterRequestError):
-        return exc.status_code in _TRANSLATION_FALLBACK_STATUS_CODES
-    return isinstance(exc, RuntimeError)
+        return exc.status_code in _TRANSLATION_RETRY_STATUS_CODES
+    return False
 
 
 @router.post("/")
@@ -134,21 +115,12 @@ def translate_text(
         translation = None
         last_error = None
 
-        # Keep the three attempts sequential. The next model is called only
-        # when the previous one fails with a retryable error.
-        models_to_try = []
-        for model in (
-            TRANSLATION_MODEL,
-            TRANSLATION_FALLBACK_MODEL,
-            TRANSLATION_MAIN_MODEL,
-        ):
-            if model and model not in models_to_try:
-                models_to_try.append(model)
-
-        for index, model in enumerate(models_to_try):
+        # Retry only the same MiniMax model. This prevents the previous
+        # Google/Gemma fallback chain from ever being used again.
+        for attempt in range(TRANSLATION_MAX_RETRIES + 1):
             try:
                 response, translation = _generate_translation(
-                    model=model,
+                    model=TRANSLATION_MODEL,
                     text=text,
                     source_language=source_language,
                     target_language=target_language,
@@ -157,20 +129,22 @@ def translate_text(
             except Exception as exc:
                 last_error = exc
 
-                if index >= len(models_to_try) - 1 or not _should_try_fallback(exc):
+                if attempt >= TRANSLATION_MAX_RETRIES or not _should_retry(exc):
                     raise
 
-                next_model = models_to_try[index + 1]
                 logger.warning(
-                    "Translation model failed (%s); trying next model=%s "
+                    "MiniMax translation attempt failed (%s); retry=%s/%s "
                     "for user_id=%s",
                     exc,
-                    next_model,
+                    attempt + 1,
+                    TRANSLATION_MAX_RETRIES,
                     current_user.id,
                 )
 
         if response is None or translation is None:
-            raise RuntimeError("All configured translation models failed.") from last_error
+            raise RuntimeError(
+                "MiniMax translation failed after all retry attempts."
+            ) from last_error
 
         record_api_usage(
             user_id=current_user.id,
@@ -192,8 +166,9 @@ def translate_text(
     except Exception as exc:
         db.rollback()
         logger.exception(
-            "AI translation failed for user_id=%s: %s",
+            "AI translation failed for user_id=%s model=%s: %s",
             current_user.id,
+            TRANSLATION_MODEL,
             exc,
         )
         raise HTTPException(
