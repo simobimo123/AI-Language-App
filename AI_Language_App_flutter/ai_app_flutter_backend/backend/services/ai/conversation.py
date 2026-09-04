@@ -74,10 +74,6 @@ def build_chat_messages(
     return messages
 
 
-# Backward-compatible name used by the existing router.
-build_gemini_contents = build_chat_messages
-
-
 def save_conversation_message(
     user_id: int,
     conversation_id: str | None,
