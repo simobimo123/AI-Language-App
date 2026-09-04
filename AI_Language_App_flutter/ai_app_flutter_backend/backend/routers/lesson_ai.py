@@ -155,6 +155,37 @@ def _lesson_context(data: dict) -> str:
     return text[:MAX_LESSON_CONTEXT_CHARS]
 
 
+def _lesson_minimum_practice(curriculum: dict) -> int:
+    completion = curriculum.get("completion", {})
+    practice = curriculum.get("practice", {})
+
+    for source in (completion, practice):
+        if isinstance(source, dict):
+            value = source.get("minimum_practice", source.get("minimum_turns"))
+            try:
+                parsed = int(value)
+                if parsed > 0:
+                    return parsed
+            except (TypeError, ValueError):
+                pass
+
+    return 6
+
+
+def _learner_turn_count(user_id: int, conversation_id: str, db: Session) -> int:
+    rows = db.execute(
+        select(AIConversationMessage.role, AIConversationMessage.content).where(
+            AIConversationMessage.user_id == user_id,
+            AIConversationMessage.conversation_id == conversation_id,
+        )
+    ).all()
+    return sum(
+        1
+        for role, content in rows
+        if role == "user" and content.strip() != "START_LESSON"
+    )
+
+
 def _build_system_instruction(
     native_language: str,
     target_language: str,
@@ -162,6 +193,7 @@ def _build_system_instruction(
     curriculum: dict,
 ) -> str:
     context = _lesson_context(curriculum)
+    minimum_practice = _lesson_minimum_practice(curriculum)
 
     return f"""
 You are the AI conversation partner for ONE lesson in a language-learning app.
@@ -177,6 +209,7 @@ LESSON
 - Lesson level: {curriculum.get('level')}
 - Topic: {curriculum.get('metadata', {}).get('title', '')}
 - Objective: {curriculum.get('metadata', {}).get('objective', '')}
+- Minimum learner practice turns before the final translation check: {minimum_practice}
 
 CURRICULUM SOURCE OF TRUTH
 The JSON below is the canonical curriculum for this lesson.
@@ -219,7 +252,8 @@ SESSION CONTINUITY
 - If previous conversation history exists, continue naturally from it.
 - Do not restart the lesson or repeat a lecture when the learner returns.
 - Leaving the screen does not mean the lesson is completed.
-- Continue helping the learner speak until they choose to finish the lesson.
+- Continue helping the learner speak until the minimum practice requirement is met.
+- The app will perform a separate translation check after the minimum practice requirement.
 
 OUTPUT
 - Respond only as the conversation partner.
@@ -371,10 +405,19 @@ def _stream_lesson_response(
             db=db,
         )
 
+        learner_turns = _learner_turn_count(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            db=db,
+        )
+        minimum_practice = _lesson_minimum_practice(curriculum)
+        lesson_ready = learner_turns >= minimum_practice
+
         yield sse_event(
             {
                 "type": "done",
                 "conversation_id": conversation_id,
+                "lesson_ready": lesson_ready,
                 "daily_limit": DAILY_AI_LIMIT,
                 "daily_used": usage.request_count,
                 "daily_remaining": max(
