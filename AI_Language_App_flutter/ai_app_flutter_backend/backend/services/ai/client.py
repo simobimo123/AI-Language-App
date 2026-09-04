@@ -35,6 +35,17 @@ if not AI_CLASSIFIER_MODEL:
     )
 
 
+class OpenRouterRequestError(RuntimeError):
+    """An OpenRouter HTTP request failed with a known status code."""
+
+    def __init__(self, status_code: int, detail: object):
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(
+            f"OpenRouter request failed ({status_code}): {detail}"
+        )
+
+
 # OpenRouter exposes an OpenAI-compatible Chat Completions API.
 # Keeping the HTTP layer here makes the rest of the AI service independent
 # from a specific model vendor and lets the model be changed through .env.
@@ -72,21 +83,22 @@ def chat_completion(
     if response_format is not None:
         payload["response_format"] = response_format
 
-    with httpx.Client(timeout=120.0) as http:
-        response = http.post(
-            f"{OPENROUTER_BASE_URL}/chat/completions",
-            headers=_headers(),
-            json=payload,
-        )
+    try:
+        with httpx.Client(timeout=120.0) as http:
+            response = http.post(
+                f"{OPENROUTER_BASE_URL}/chat/completions",
+                headers=_headers(),
+                json=payload,
+            )
+    except httpx.HTTPError as exc:
+        raise RuntimeError(f"OpenRouter network request failed: {exc}") from exc
 
     if response.status_code < 200 or response.status_code >= 300:
         try:
             detail = response.json()
         except ValueError:
             detail = response.text
-        raise RuntimeError(
-            f"OpenRouter request failed ({response.status_code}): {detail}"
-        )
+        raise OpenRouterRequestError(response.status_code, detail)
 
     return response.json()
 
@@ -111,36 +123,37 @@ def stream_chat_completion(
         },
     }
 
-    with httpx.Client(timeout=120.0) as http:
-        with http.stream(
-            "POST",
-            f"{OPENROUTER_BASE_URL}/chat/completions",
-            headers=_headers(),
-            json=payload,
-        ) as response:
-            if response.status_code < 200 or response.status_code >= 300:
-                body = response.read()
-                try:
-                    detail = json.loads(body.decode("utf-8"))
-                except (ValueError, UnicodeDecodeError):
-                    detail = body.decode("utf-8", errors="replace")
-                raise RuntimeError(
-                    f"OpenRouter request failed ({response.status_code}): {detail}"
-                )
+    try:
+        with httpx.Client(timeout=120.0) as http:
+            with http.stream(
+                "POST",
+                f"{OPENROUTER_BASE_URL}/chat/completions",
+                headers=_headers(),
+                json=payload,
+            ) as response:
+                if response.status_code < 200 or response.status_code >= 300:
+                    body = response.read()
+                    try:
+                        detail = json.loads(body.decode("utf-8"))
+                    except (ValueError, UnicodeDecodeError):
+                        detail = body.decode("utf-8", errors="replace")
+                    raise OpenRouterRequestError(response.status_code, detail)
 
-            for line in response.iter_lines():
-                if not line:
-                    continue
+                for line in response.iter_lines():
+                    if not line:
+                        continue
 
-                if not line.startswith("data:"):
-                    continue
+                    if not line.startswith("data:"):
+                        continue
 
-                data = line[5:].strip()
+                    data = line[5:].strip()
 
-                if data == "[DONE]":
-                    return
+                    if data == "[DONE]":
+                        return
 
-                try:
-                    yield json.loads(data)
-                except json.JSONDecodeError:
-                    continue
+                    try:
+                        yield json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+    except httpx.HTTPError as exc:
+        raise RuntimeError(f"OpenRouter network request failed: {exc}") from exc
