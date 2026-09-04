@@ -37,6 +37,10 @@ from routers.lesson_assessment import (
     router as lesson_assessment_router,
 )
 
+from routers.lesson_translation_check import (
+    router as lesson_translation_check_router,
+)
+
 from routers.placement_test import (
     router as placement_router,
 )
@@ -106,6 +110,7 @@ app.include_router(ai_router)
 app.include_router(lesson_ai_router)
 app.include_router(lesson_hint_router)
 app.include_router(lesson_assessment_router)
+app.include_router(lesson_translation_check_router)
 app.include_router(placement_router)
 app.include_router(vocabulary_router)
 app.include_router(stats_router)
