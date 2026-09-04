@@ -46,7 +46,7 @@ LESSON_TUTOR_MODEL = AI_MODEL
 MAX_HISTORY_MESSAGES = 2
 MAX_LESSON_CONTEXT_CHARS = 10000
 LESSON_CONVERSATION_PREFIX = "lesson_"
-PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([0-9,\s]*)\]\]\s*$")
+PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]\s*$")
 STREAM_HOLD_CHARS = 80
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -474,11 +474,6 @@ def _stream_lesson_response(
             valid_ids=valid_ids,
         )
 
-        # The held tail is now safe to send after the internal marker has been removed.
-        held_clean, _ = _extract_progress_marker(pending_stream_text)
-        if held_clean:
-            yield sse_event({"type": "chunk", "text": held_clean})
-
         save_conversation_message(
             user_id=user_id,
             conversation_id=conversation_id,
@@ -494,29 +489,31 @@ def _stream_lesson_response(
             db=db,
         )
 
-        cleanup_old_conversation_messages(
-            user_id=user_id,
-            conversation_id=conversation_id,
-            max_messages=MAX_HISTORY_MESSAGES,
-            db=db,
-        )
+        db.commit()
+
+        while pending_stream_text:
+            emit_length = min(len(pending_stream_text), STREAM_HOLD_CHARS)
+            emit_text = pending_stream_text[:emit_length]
+            pending_stream_text = pending_stream_text[emit_length:]
+            if emit_text:
+                yield sse_event({"type": "chunk", "text": emit_text})
 
         lesson_ready, practiced_count, total_target_count = _lesson_completion(
             curriculum,
             progress,
         )
 
-        db.commit()
-
-        record_api_usage(
+        usage = record_api_usage(
             user_id=user_id,
+            model=LESSON_TUTOR_MODEL,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
             db=db,
         )
+        db.commit()
 
-        usage = get_current_usage(user_id=user_id, db=db)
+        current_usage = get_current_usage(user_id=user_id, db=db)
 
         yield sse_event(
             {
@@ -526,43 +523,21 @@ def _stream_lesson_response(
                 "practiced_sentence_count": practiced_count,
                 "total_target_sentence_count": total_target_count,
                 "daily_limit": DAILY_AI_LIMIT,
-                "daily_used": usage.request_count,
-                "daily_remaining": max(0, DAILY_AI_LIMIT - usage.request_count),
+                "daily_usage": current_usage,
+                "daily_remaining": max(0, DAILY_AI_LIMIT - current_usage),
+                "request_usage": usage,
             }
         )
 
     except Exception as exc:
         db.rollback()
-        logger.exception(
-            "Lesson AI streaming failed user_id=%s lesson_id=%s: %s",
-            user_id,
-            request.lesson_id,
-            exc,
-        )
+        logger.exception("Lesson AI streaming failed: %s", exc)
         yield sse_event(
             {
                 "type": "error",
-                "message": "AI tutor is temporarily unavailable.",
+                "detail": "The AI lesson conversation could not be completed.",
             }
         )
-
-
-def _find_saved_lesson_conversation(
-    user_id: int,
-    lesson_id: int,
-    db: Session,
-) -> str | None:
-    """Find the newest saved conversation belonging to this lesson."""
-    prefix = f"{LESSON_CONVERSATION_PREFIX}{lesson_id}_"
-    return db.execute(
-        select(AIConversationMessage.conversation_id)
-        .where(
-            AIConversationMessage.user_id == user_id,
-            AIConversationMessage.conversation_id.like(f"{prefix}%"),
-        )
-        .order_by(AIConversationMessage.created_at.desc())
-        .limit(1)
-    ).scalar_one_or_none()
 
 
 @router.post("/chat")
@@ -571,74 +546,71 @@ def lesson_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    lesson = db.get(CourseLesson, request.lesson_id)
+    user_id = current_user.id
+
+    if not check_rate_limit(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Please try again later.",
+        )
+
+    if get_current_usage(user_id=user_id, db=db) >= DAILY_AI_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Daily AI usage limit reached.",
+        )
+
+    lesson = db.execute(
+        select(CourseLesson).where(CourseLesson.id == request.lesson_id)
+    ).scalar_one_or_none()
+
     if lesson is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lesson not found.",
         )
 
-    user_id = current_user.id
-    target_language = normalize_language(current_user.learning_language)
-    native_language = normalize_language(current_user.native_language)
-    lesson_language = normalize_language(lesson.language)
-
-    if lesson_language != target_language:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This lesson does not belong to your learning language.",
-        )
-
     profile = db.execute(
         select(LearningProfile).where(
             LearningProfile.user_id == user_id,
-            LearningProfile.language == target_language,
+            LearningProfile.language == lesson.language,
         )
     ).scalar_one_or_none()
 
     if profile is None:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This lesson is not part of your current learning level.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Learning profile not found for this lesson language.",
         )
 
-    profile_level = normalize_level(profile.level)
-    lesson_level = normalize_level(lesson.level)
-
-    if profile_level != lesson_level:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This lesson is not part of your current learning level.",
-        )
-
-    level = profile_level or "A1"
     curriculum = _load_lesson_curriculum(lesson)
 
-    if not _lesson_target_sentences(curriculum):
+    conversation_id = request.conversation_id or f"lesson_{request.lesson_id}_{uuid4().hex}"
+    if not conversation_id.startswith(f"lesson_{request.lesson_id}_"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid lesson conversation.",
+        )
+
+    try:
+        reservation = reserve_ai_request(user_id=user_id, db=db)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        logger.exception("AI request reservation failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="This lesson has no target practice sentences.",
-        )
+            detail="AI request could not be reserved.",
+        ) from exc
 
-    check_rate_limit(user_id)
-    reserve_ai_request(user_id=user_id, db=db)
+    db.commit()
 
-    conversation_id = request.conversation_id
-    if not conversation_id:
-        conversation_id = _find_saved_lesson_conversation(
-            user_id=user_id,
-            lesson_id=request.lesson_id,
-            db=db,
-        )
+    native_language = normalize_language(current_user.native_language or "ar") or "ar"
+    target_language = normalize_language(lesson.language) or lesson.language
+    level = normalize_level(lesson.level) or lesson.level
 
-    if not conversation_id:
-        conversation_id = (
-            f"{LESSON_CONVERSATION_PREFIX}"
-            f"{request.lesson_id}_"
-            f"{uuid4().hex}"
-        )
-
-    return StreamingResponse(
+    response = StreamingResponse(
         _stream_lesson_response(
             request=request,
             user_id=user_id,
@@ -651,9 +623,7 @@ def lesson_chat(
             profile_id=profile.id,
         ),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
     )
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Connection"] = "keep-alive"
+    return response
