@@ -40,7 +40,11 @@ TRANSLATION_FALLBACK_MODEL = (
 # This avoids introducing a fourth model just for translation fallback.
 TRANSLATION_MAIN_MODEL = os.getenv("OPENROUTER_MAIN_MODEL") or "minimax/minimax-m2.7:free"
 
-TRANSLATION_MAX_OUTPUT_TOKENS = 256
+# MiniMax M2.7 is a reasoning-capable model. A small 256-token ceiling can be
+# consumed by its internal reasoning before it reaches the final translation,
+# which causes OpenRouter to return finish_reason="length" with no final text.
+# Keep enough output budget for both reasoning and the actual translation.
+TRANSLATION_MAX_OUTPUT_TOKENS = 2048
 
 _TRANSLATION_FALLBACK_STATUS_CODES = {
     402,
