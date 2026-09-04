@@ -16,6 +16,8 @@ Future<bool> showLessonReviewChoice({
     String? zh,
   }) text,
 }) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+
   final result = await showGeneralDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -24,12 +26,13 @@ Future<bool> showLessonReviewChoice({
     transitionDuration: const Duration(milliseconds: 180),
     pageBuilder: (dialogContext, _, __) {
       final theme = Theme.of(dialogContext);
+      final keyboardInset = MediaQuery.viewInsetsOf(dialogContext).bottom;
 
       return SafeArea(
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 92),
+            padding: EdgeInsets.fromLTRB(12, 12, 12, 145 + keyboardInset),
             child: Material(
               color: theme.colorScheme.surface,
               elevation: 12,
