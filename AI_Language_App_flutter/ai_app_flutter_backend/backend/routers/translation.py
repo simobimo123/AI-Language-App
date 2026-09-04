@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User
 from routers.auth import get_current_user
+from services.ai.client import OpenRouterRequestError
 from services.ai.normalization import normalize_language
 from services.ai.provider import provider
 from services.ai.rate_limit import check_rate_limit
@@ -29,10 +30,32 @@ TRANSLATION_MODEL = (
     or "google/gemma-4-31b-it:free"
 )
 
+# If the primary translation model is unavailable or temporarily rate-limited,
+# retry the same request with a separate free model. This fallback is used only
+# by the translation endpoint and never changes the main AI teacher model.
+TRANSLATION_FALLBACK_MODEL = (
+    os.getenv("OPENROUTER_TRANSLATION_FALLBACK_MODEL")
+    or "meta-llama/llama-3.1-8b-instruct:free"
+)
+
 # Translation should be a short-answer operation. Keep the completion budget
 # small so a one-sentence translation does not reserve an unnecessarily large
 # output budget.
 TRANSLATION_MAX_OUTPUT_TOKENS = 256
+
+# These failures can reasonably be recovered by trying the configured fallback
+# model. Client/authentication errors such as 400/401/403 are not retried.
+_TRANSLATION_FALLBACK_STATUS_CODES = {
+    402,  # provider/model requires unavailable credits
+    404,  # model/provider route unavailable
+    408,  # request timeout
+    409,  # transient provider conflict
+    429,  # rate limit / quota
+    500,
+    502,
+    503,
+    504,
+}
 
 
 class TranslationRequest(BaseModel):
@@ -46,6 +69,33 @@ def _translation_prompt(text: str, source_language: str, target_language: str) -
         "Return only the translation, with no explanation or extra text.\n\n"
         f"{text}"
     )
+
+
+def _generate_translation(
+    *,
+    model: str,
+    text: str,
+    source_language: str,
+    target_language: str,
+):
+    """Generate one translation without changing request/quota accounting."""
+    response = provider.generate_text(
+        model=model,
+        prompt=_translation_prompt(
+            text=text,
+            source_language=source_language,
+            target_language=target_language,
+        ),
+        max_output_tokens=TRANSLATION_MAX_OUTPUT_TOKENS,
+    )
+
+    translation = response.text.strip()
+    if not translation:
+        raise RuntimeError(
+            f"Translation model returned an empty response (model={model!r})."
+        )
+
+    return response, translation
 
 
 @router.post("/")
@@ -75,19 +125,48 @@ def translate_text(
     reserve_ai_request(user_id=current_user.id, db=db)
 
     try:
-        response = provider.generate_text(
-            model=TRANSLATION_MODEL,
-            prompt=_translation_prompt(
+        try:
+            response, translation = _generate_translation(
+                model=TRANSLATION_MODEL,
                 text=text,
                 source_language=source_language,
                 target_language=target_language,
-            ),
-            max_output_tokens=TRANSLATION_MAX_OUTPUT_TOKENS,
-        )
+            )
+        except OpenRouterRequestError as exc:
+            if exc.status_code not in _TRANSLATION_FALLBACK_STATUS_CODES:
+                raise
 
-        translation = response.text.strip()
-        if not translation:
-            raise RuntimeError("Translation model returned an empty response.")
+            logger.warning(
+                "Primary translation model failed with HTTP %s; "
+                "trying fallback model=%s for user_id=%s",
+                exc.status_code,
+                TRANSLATION_FALLBACK_MODEL,
+                current_user.id,
+            )
+
+            response, translation = _generate_translation(
+                model=TRANSLATION_FALLBACK_MODEL,
+                text=text,
+                source_language=source_language,
+                target_language=target_language,
+            )
+        except RuntimeError as exc:
+            # Network errors and empty model responses do not expose an HTTP
+            # status code, so give the translation fallback a chance as well.
+            logger.warning(
+                "Primary translation model failed (%s); trying fallback "
+                "model=%s for user_id=%s",
+                exc,
+                TRANSLATION_FALLBACK_MODEL,
+                current_user.id,
+            )
+
+            response, translation = _generate_translation(
+                model=TRANSLATION_FALLBACK_MODEL,
+                text=text,
+                source_language=source_language,
+                target_language=target_language,
+            )
 
         record_api_usage(
             user_id=current_user.id,
