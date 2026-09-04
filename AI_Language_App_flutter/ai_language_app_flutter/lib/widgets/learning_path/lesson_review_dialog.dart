@@ -24,7 +24,7 @@ Future<bool> showLessonReviewChoice({
     barrierLabel: 'lesson-review-choice',
     barrierColor: Colors.transparent,
     transitionDuration: const Duration(milliseconds: 180),
-    pageBuilder: (dialogContext, _, __) {
+    pageBuilder: (dialogContext, _, _) {
       final theme = Theme.of(dialogContext);
       final keyboardInset = MediaQuery.viewInsetsOf(dialogContext).bottom;
 
@@ -74,7 +74,8 @@ Future<bool> showLessonReviewChoice({
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.of(dialogContext).pop(false),
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
                             child: Text(
                               text(
                                 ar: 'لا',
@@ -93,7 +94,8 @@ Future<bool> showLessonReviewChoice({
                         const SizedBox(width: 10),
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => Navigator.of(dialogContext).pop(true),
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
                             child: Text(
                               text(
                                 ar: 'نعم',
@@ -146,6 +148,7 @@ Future<void> showLessonQuickReview({
       lessonId: lessonId,
       conversationId: conversationId,
     );
+
     final raw = data['questions'];
     final questions = raw is List
         ? raw
@@ -178,6 +181,7 @@ Future<void> showLessonQuickReview({
       context: context,
       builder: (dialogContext) {
         final theme = Theme.of(dialogContext);
+
         return AlertDialog(
           title: Text(
             text(
@@ -257,6 +261,7 @@ Future<void> showLessonQuickReview({
     );
   } catch (_) {
     if (!context.mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

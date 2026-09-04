@@ -25,6 +25,8 @@ Future<bool> showLessonTranslationCheckDialog({
     text: text,
   );
 
+  if (!context.mounted) return false;
+
   if (wantsReview) {
     await showLessonQuickReview(
       context: context,
@@ -33,9 +35,9 @@ Future<bool> showLessonTranslationCheckDialog({
       conversationId: conversationId,
       text: text,
     );
-  }
 
-  if (!context.mounted) return false;
+    if (!context.mounted) return false;
+  }
 
   return await showDialog<bool>(
         context: context,
@@ -81,6 +83,7 @@ class _LessonTranslationCheckDialog extends StatefulWidget {
 class _LessonTranslationCheckDialogState
     extends State<_LessonTranslationCheckDialog> {
   final TextEditingController _controller = TextEditingController();
+
   List<Map<String, dynamic>> _questions = [];
   int _index = 0;
   bool _loading = true;
@@ -88,7 +91,10 @@ class _LessonTranslationCheckDialogState
   String? _error;
   final Map<String, String> _answers = {};
 
-  String _label(String ar, String en) => widget.text(ar: ar, en: en);
+  String _label(String ar, String en) => widget.text(
+        ar: ar,
+        en: en,
+      );
 
   @override
   void initState() {
@@ -108,9 +114,17 @@ class _LessonTranslationCheckDialogState
         lessonId: widget.lessonId,
         conversationId: widget.conversationId,
       );
+
       final raw = data['questions'];
       final questions = raw is List
-          ? raw.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).where((item) => item['sentence']?.toString().trim().isNotEmpty == true).toList()
+          ? raw
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .where(
+                (item) =>
+                    item['sentence']?.toString().trim().isNotEmpty == true,
+              )
+              .toList()
           : <Map<String, dynamic>>[];
 
       if (questions.isEmpty) {
@@ -118,12 +132,14 @@ class _LessonTranslationCheckDialogState
       }
 
       if (!mounted) return;
+
       setState(() {
         _questions = questions;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
         _loading = false;
         _error = _label(
@@ -136,6 +152,7 @@ class _LessonTranslationCheckDialogState
 
   void _next() {
     final answer = _controller.text.trim();
+
     if (answer.isEmpty || _submitting || _questions.isEmpty) return;
 
     final id = _questions[_index]['id'].toString();
@@ -144,9 +161,11 @@ class _LessonTranslationCheckDialogState
     if (_index < _questions.length - 1) {
       setState(() {
         _index++;
-        _controller.text = _answers[_questions[_index]['id'].toString()] ?? '';
+        _controller.text =
+            _answers[_questions[_index]['id'].toString()] ?? '';
         _error = null;
       });
+
       return;
     }
 
@@ -160,7 +179,8 @@ class _LessonTranslationCheckDialogState
     });
 
     try {
-      final result = await widget.apiService.submitLessonTranslationCheck(
+      final result =
+          await widget.apiService.submitLessonTranslationCheck(
         lessonId: widget.lessonId,
         conversationId: widget.conversationId,
         answers: _questions
@@ -189,6 +209,7 @@ class _LessonTranslationCheckDialogState
       });
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
         _submitting = false;
         _error = _label(
@@ -205,19 +226,27 @@ class _LessonTranslationCheckDialogState
 
     return AlertDialog(
       title: Text(
-        _label('التحقق من التعلم', 'Learning check'),
+        _label(
+          'التحقق من التعلم',
+          'Learning check',
+        ),
       ),
       content: SizedBox(
         width: 560,
         child: _loading
             ? const Padding(
                 padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
               )
             : _error != null && _questions.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(_error!, textAlign: TextAlign.center),
+                    child: Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                    ),
                   )
                 : Column(
                     mainAxisSize: MainAxisSize.min,
@@ -269,7 +298,9 @@ class _LessonTranslationCheckDialogState
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: theme.colorScheme.error),
+                          style: TextStyle(
+                            color: theme.colorScheme.error,
+                          ),
                         ),
                       ],
                     ],
@@ -283,6 +314,7 @@ class _LessonTranslationCheckDialogState
                 : () {
                     final id = _questions[_index]['id'].toString();
                     _answers[id] = _controller.text.trim();
+
                     setState(() {
                       _index--;
                       _controller.text =
@@ -290,7 +322,12 @@ class _LessonTranslationCheckDialogState
                       _error = null;
                     });
                   },
-            child: Text(_label('السابق', 'Back')),
+            child: Text(
+              _label(
+                'السابق',
+                'Back',
+              ),
+            ),
           ),
         if (!_loading && _questions.isNotEmpty)
           FilledButton(
@@ -299,12 +336,20 @@ class _LessonTranslationCheckDialogState
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
                   )
                 : Text(
                     _index == _questions.length - 1
-                        ? _label('تقييم الإجابات', 'Check answers')
-                        : _label('التالي', 'Next'),
+                        ? _label(
+                            'تقييم الإجابات',
+                            'Check answers',
+                          )
+                        : _label(
+                            'التالي',
+                            'Next',
+                          ),
                   ),
           ),
       ],
