@@ -90,15 +90,23 @@ class _LessonPageState extends State<LessonPage> {
     String? zh,
   }) {
     switch (_locale()) {
-      case 'fr': return fr ?? en;
-      case 'es': return es ?? en;
-      case 'de': return de ?? en;
-      case 'it': return it ?? en;
-      case 'ja': return ja ?? en;
-      case 'ko': return ko ?? en;
-      case 'zh': return zh ?? en;
+      case 'fr':
+        return fr ?? en;
+      case 'es':
+        return es ?? en;
+      case 'de':
+        return de ?? en;
+      case 'it':
+        return it ?? en;
+      case 'ja':
+        return ja ?? en;
+      case 'ko':
+        return ko ?? en;
+      case 'zh':
+        return zh ?? en;
       case 'ar':
-      default: return ar;
+      default:
+        return ar;
     }
   }
 
@@ -330,6 +338,7 @@ class _LessonPageState extends State<LessonPage> {
     try {
       final translation = await _apiService.translateText(text: message.text);
       if (!mounted) return;
+
       setState(() {
         _translationCache[key] = translation;
         _visibleTranslations.add(key);
@@ -337,9 +346,13 @@ class _LessonPageState extends State<LessonPage> {
       });
     } catch (_) {
       if (!mounted) return;
+
       setState(() => _translationLoading.remove(key));
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_translationErrorLabel())),
+        SnackBar(
+          content: Text(_translationErrorLabel()),
+        ),
       );
     }
   }
@@ -366,30 +379,47 @@ class _LessonPageState extends State<LessonPage> {
       );
     } catch (_) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_hintErrorLabel())),
+        SnackBar(
+          content: Text(_hintErrorLabel()),
+        ),
       );
     } finally {
-      if (mounted) setState(() => _hintLoading = false);
+      if (mounted) {
+        setState(() => _hintLoading = false);
+      }
     }
   }
 
   Future<void> _startTutor() async {
     if (_lessonStarted || _sending) return;
+
     setState(() {
       _lessonStarted = true;
       _loading = true;
       _error = null;
     });
-    await _sendMessage('START_LESSON', showUserMessage: false);
+
+    await _sendMessage(
+      'START_LESSON',
+      showUserMessage: false,
+    );
   }
 
   Future<void> _sendCurrentMessage() async {
     final message = _messageController.text.trim();
+
     if (message.isEmpty || _sending || _submitting) return;
+
     _messageController.clear();
+
     setState(() => _currentHint = null);
-    await _sendMessage(message, showUserMessage: true);
+
+    await _sendMessage(
+      message,
+      showUserMessage: true,
+    );
   }
 
   Future<void> _sendMessage(
@@ -400,9 +430,15 @@ class _LessonPageState extends State<LessonPage> {
 
     if (showUserMessage) {
       setState(() {
-        _messages.add(_TutorMessage(role: 'user', text: message));
+        _messages.add(
+          _TutorMessage(
+            role: 'user',
+            text: message,
+          ),
+        );
         _error = null;
       });
+
       _scrollToBottom();
     }
 
@@ -424,35 +460,58 @@ class _LessonPageState extends State<LessonPage> {
 
         if (chunk.type == 'conversation') {
           final id = chunk.conversationId;
-          if (id != null && id.isNotEmpty) _conversationId = id;
+
+          if (id != null && id.isNotEmpty) {
+            _conversationId = id;
+          }
         }
 
         if (chunk.type == 'history' && chunk.history != null) {
           _messages.clear();
+
           for (final item in chunk.history!) {
-            final role = item['role'] == 'user' ? 'user' : 'assistant';
+            final role = item['role'] == 'user'
+                ? 'user'
+                : 'assistant';
+
             final text = item['text'] ?? '';
+
             if (text.isNotEmpty) {
-              _messages.add(_TutorMessage(role: role, text: text));
+              _messages.add(
+                _TutorMessage(
+                  role: role,
+                  text: text,
+                ),
+              );
             }
           }
+
           setState(() {
             _loading = false;
             _error = null;
           });
+
           _scrollToBottom();
           continue;
         }
 
         if (chunk.type == 'chunk') {
           final text = chunk.text ?? '';
+
           if (text.isNotEmpty) {
             if (assistantIndex == -1) {
-              _messages.add(_TutorMessage(role: 'assistant', text: text));
+              _messages.add(
+                _TutorMessage(
+                  role: 'assistant',
+                  text: text,
+                ),
+              );
+
               assistantIndex = _messages.length - 1;
             } else {
               _messages[assistantIndex].text += text;
             }
+
             setState(() {});
             _scrollToBottom();
           }
@@ -460,20 +519,29 @@ class _LessonPageState extends State<LessonPage> {
 
         if (chunk.type == 'done') {
           final id = chunk.conversationId;
-          if (id != null && id.isNotEmpty) _conversationId = id;
+
+          if (id != null && id.isNotEmpty) {
+            _conversationId = id;
+          }
+
           _dailyLimit = chunk.dailyLimit;
           _dailyRemaining = chunk.dailyRemaining;
         }
 
         if (chunk.type == 'error') {
-          throw Exception(chunk.message ?? _errorLabel());
+          throw Exception(
+            chunk.message ?? _errorLabel(),
+          );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _error = e.toString());
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorLabel())),
+          SnackBar(
+            content: Text(_errorLabel()),
+          ),
         );
       }
     }
@@ -483,14 +551,17 @@ class _LessonPageState extends State<LessonPage> {
         _sending = false;
         _loading = false;
       });
+
       _scrollToBottom();
     }
   }
 
   void _scrollToBottom() {
     if (!_scrollController.hasClients) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
+
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 250),
@@ -509,10 +580,14 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   bool _isWhitespaceRune(int rune) =>
-      RegExp(r'\s').hasMatch(String.fromCharCode(rune));
+      RegExp(r'\s').hasMatch(
+        String.fromCharCode(rune),
+      );
 
   bool _isCjkPunctuationRune(int rune) =>
-      RegExp(r'[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]').hasMatch(
+      RegExp(
+        r'[\.,!?;:()\[\]{}"“”„«»…*_~`、。！？；：（）［］｛｝「」『』【】《》〈〉]',
+      ).hasMatch(
         String.fromCharCode(rune),
       );
 
@@ -530,8 +605,13 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   List<String> _messageTokens(String text) {
-    final locale = _locale();
-    if (locale != 'ja' && locale != 'zh') {
+    final hasCjk = text.runes.any(
+      (rune) =>
+          _isCjkIdeographRune(rune) ||
+          _isJapaneseKanaRune(rune),
+    );
+
+    if (!hasCjk) {
       return text.split(RegExp(r'(\s+)'));
     }
 
@@ -547,6 +627,7 @@ class _LessonPageState extends State<LessonPage> {
 
     for (final rune in text.runes) {
       final char = String.fromCharCode(rune);
+
       if (_isWhitespaceRune(rune)) {
         flushBuffer();
         result.add(char);
@@ -559,7 +640,8 @@ class _LessonPageState extends State<LessonPage> {
         continue;
       }
 
-      if (_isCjkIdeographRune(rune) || _isJapaneseKanaRune(rune)) {
+      if (_isCjkIdeographRune(rune) ||
+          _isJapaneseKanaRune(rune)) {
         flushBuffer();
         result.add(char);
         continue;
@@ -569,11 +651,13 @@ class _LessonPageState extends State<LessonPage> {
     }
 
     flushBuffer();
+
     return result;
   }
 
   Future<void> _openWord(String token) async {
     final word = _cleanWordToken(token).trim();
+
     if (word.isEmpty) return;
 
     await showWordDetailDialog(
@@ -583,34 +667,65 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
-  Widget _buildClickableMessage(String text, ThemeData theme) {
-    final tokens = _messageTokens(text);
-    final baseStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.45);
+  TextDirection _textDirection(String text) {
+    final hasRtl = RegExp(
+      r'[\u0590-\u08FF]',
+    ).hasMatch(text);
 
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.end,
-      children: [
-        for (final token in tokens)
-          if (token.trim().isEmpty)
-            Text(token, style: baseStyle)
-          else
-            InkWell(
-              borderRadius: BorderRadius.circular(5),
-              onTap: () => _openWord(token),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
-                child: Text(
-                  token,
-                  textDirection: _textDirection(token),
-                  style: baseStyle,
+    return hasRtl
+        ? TextDirection.rtl
+        : TextDirection.ltr;
+  }
+
+  Widget _buildClickableMessage(
+    String text,
+    ThemeData theme,
+  ) {
+    final tokens = _messageTokens(text);
+    final baseStyle = theme.textTheme.bodyLarge?.copyWith(
+      height: 1.45,
+    );
+
+    final direction = _textDirection(text);
+
+    return Directionality(
+      textDirection: direction,
+      child: Wrap(
+        textDirection: direction,
+        crossAxisAlignment: WrapCrossAlignment.end,
+        children: [
+          for (final token in tokens)
+            if (token.trim().isEmpty)
+              Text(
+                token,
+                textDirection: direction,
+                style: baseStyle,
+              )
+            else
+              InkWell(
+                borderRadius: BorderRadius.circular(5),
+                onTap: () => _openWord(token),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 1,
+                    vertical: 1,
+                  ),
+                  child: Text(
+                    token,
+                    textDirection: direction,
+                    style: baseStyle,
+                  ),
                 ),
               ),
-            ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildTranslationButton(_TutorMessage message, ThemeData theme) {
+  Widget _buildTranslationButton(
+    _TutorMessage message,
+    ThemeData theme,
+  ) {
     final key = _translationKey(message);
     final cached = _translationCache.containsKey(key);
     final visible = _visibleTranslations.contains(key);
@@ -621,14 +736,20 @@ class _LessonPageState extends State<LessonPage> {
           ? AlignmentDirectional.centerEnd
           : AlignmentDirectional.centerStart,
       child: Padding(
-        padding: const EdgeInsetsDirectional.only(top: 2),
+        padding: const EdgeInsetsDirectional.only(
+          top: 2,
+        ),
         child: TextButton.icon(
-          onPressed: loading ? null : () => _toggleTranslation(message),
+          onPressed: loading
+              ? null
+              : () => _toggleTranslation(message),
           icon: loading
               ? const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
                 )
               : Icon(
                   cached && visible
@@ -636,9 +757,16 @@ class _LessonPageState extends State<LessonPage> {
                       : Icons.translate_rounded,
                   size: 18,
                 ),
-          label: Text(cached && visible ? _hideTranslationLabel() : _translateLabel()),
+          label: Text(
+            cached && visible
+                ? _hideTranslationLabel()
+                : _translateLabel(),
+          ),
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 2,
+            ),
             minimumSize: const Size(0, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -647,7 +775,10 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
-  Widget _buildMessage(_TutorMessage message, ThemeData theme) {
+  Widget _buildMessage(
+    _TutorMessage message,
+    ThemeData theme,
+  ) {
     final isUser = message.isUser;
     final key = _translationKey(message);
     final translation = _translationCache[key];
@@ -658,9 +789,18 @@ class _LessonPageState extends State<LessonPage> {
           ? AlignmentDirectional.centerEnd
           : AlignmentDirectional.centerStart,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 620),
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+        constraints: const BoxConstraints(
+          maxWidth: 620,
+        ),
+        margin: const EdgeInsets.only(
+          bottom: 12,
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          12,
+          12,
+          8,
+        ),
         decoration: BoxDecoration(
           color: isUser
               ? theme.colorScheme.primaryContainer
@@ -672,46 +812,73 @@ class _LessonPageState extends State<LessonPage> {
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
-            _buildClickableMessage(message.text, theme),
+            _buildClickableMessage(
+              message.text,
+              theme,
+            ),
             if (visible && translation != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(
+                  top: 8,
+                ),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withValues(alpha: 0.55),
+                    color: theme.colorScheme.surface.withValues(
+                      alpha: 0.55,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(
-                    translation,
+                  child: Directionality(
                     textDirection: _textDirection(translation),
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                    child: Text(
+                      translation,
+                      textDirection: _textDirection(
+                        translation,
+                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            _buildTranslationButton(message, theme),
+            _buildTranslationButton(
+              message,
+              theme,
+            ),
           ],
         ),
       ),
     );
   }
 
-  TextDirection _textDirection(String text) {
-    return RegExp(r'[\u0600-\u06FF]').hasMatch(text)
-        ? TextDirection.rtl
-        : TextDirection.ltr;
-  }
-
   Widget _buildHintSuggestion(ThemeData theme) {
     final hint = _currentHint;
-    if (hint == null) return const SizedBox.shrink();
+
+    if (hint == null) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+      padding: const EdgeInsets.fromLTRB(
+        12,
+        4,
+        12,
+        0,
+      ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        padding: const EdgeInsets.fromLTRB(
+          14,
+          10,
+          8,
+          10,
+        ),
         decoration: BoxDecoration(
           color: theme.colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(16),
@@ -742,7 +909,9 @@ class _LessonPageState extends State<LessonPage> {
                   const SizedBox(height: 4),
                   Text(
                     hint.suggestion,
-                    textDirection: _textDirection(hint.suggestion),
+                    textDirection: _textDirection(
+                      hint.suggestion,
+                    ),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.35,
@@ -752,7 +921,9 @@ class _LessonPageState extends State<LessonPage> {
                   const SizedBox(height: 4),
                   Text(
                     '${_hintTranslationLabel()}: ${hint.translation}',
-                    textDirection: _textDirection(hint.translation),
+                    textDirection: _textDirection(
+                      hint.translation,
+                    ),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       height: 1.35,
                       color: theme.colorScheme.onSecondaryContainer,
@@ -762,10 +933,14 @@ class _LessonPageState extends State<LessonPage> {
               ),
             ),
             IconButton(
-              onPressed: () => setState(() => _currentHint = null),
+              onPressed: () {
+                setState(() => _currentHint = null);
+              },
               tooltip: _hideHintLabel(),
               visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.close_rounded),
+              icon: const Icon(
+                Icons.close_rounded,
+              ),
             ),
           ],
         ),
@@ -781,12 +956,20 @@ class _LessonPageState extends State<LessonPage> {
         children: [
           _buildHintSuggestion(theme),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            padding: const EdgeInsets.fromLTRB(
+              12,
+              8,
+              12,
+              12,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 IconButton(
-                  onPressed: _hintLoading || _sending || _submitting || _messages.isEmpty
+                  onPressed: _hintLoading ||
+                          _sending ||
+                          _submitting ||
+                          _messages.isEmpty
                       ? null
                       : _showHint,
                   tooltip: _hintLabel(),
@@ -794,33 +977,64 @@ class _LessonPageState extends State<LessonPage> {
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
                         )
-                      : const Icon(Icons.lightbulb_outline_rounded),
+                      : const Icon(
+                          Icons.lightbulb_outline_rounded,
+                        ),
                 ),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: !_sending && !_submitting,
-                    minLines: 1,
-                    maxLines: 5,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendCurrentMessage(),
-                    decoration: InputDecoration(
-                      hintText: _inputHint(),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
+                  child: ValueListenableBuilder<
+                      TextEditingValue>(
+                    valueListenable: _messageController,
+                    builder: (
+                      context,
+                      value,
+                      child,
+                    ) {
+                      final direction = _textDirection(
+                        value.text,
+                      );
+
+                      return TextField(
+                        controller: _messageController,
+                        enabled: !_sending && !_submitting,
+                        minLines: 1,
+                        maxLines: 5,
+                        textDirection: direction,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) =>
+                            _sendCurrentMessage(),
+                        decoration: InputDecoration(
+                          hintText: _inputHint(),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              18,
+                            ),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  onPressed: _sending || _submitting ? null : _sendCurrentMessage,
+                  onPressed:
+                      _sending || _submitting
+                          ? null
+                          : _sendCurrentMessage,
                   tooltip: _sendLabel(),
-                  icon: const Icon(Icons.send_rounded),
+                  icon: const Icon(
+                    Icons.send_rounded,
+                  ),
                 ),
               ],
             ),
@@ -837,7 +1051,10 @@ class _LessonPageState extends State<LessonPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.smart_toy_outlined, size: 56),
+            const Icon(
+              Icons.smart_toy_outlined,
+              size: 56,
+            ),
             const SizedBox(height: 16),
             Text(
               _startingLabel(),
@@ -858,16 +1075,28 @@ class _LessonPageState extends State<LessonPage> {
     final shouldStart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(_finishLabel()),
-        content: Text(_finishQuestion()),
+        title: Text(
+          _finishLabel(),
+        ),
+        content: Text(
+          _finishQuestion(),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(_cancelLabel()),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+            child: Text(
+              _cancelLabel(),
+            ),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(_confirmLabel()),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text(
+              _confirmLabel(),
+            ),
           ),
         ],
       ),
@@ -910,12 +1139,16 @@ class _LessonPageState extends State<LessonPage> {
         titleSpacing: 16,
         title: Text(
           _pageTitle(),
-          style: const TextStyle(fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         actions: [
           if (_dailyRemaining != null)
             Padding(
-              padding: const EdgeInsetsDirectional.only(end: 4),
+              padding: const EdgeInsetsDirectional.only(
+                end: 4,
+              ),
               child: Center(
                 child: Text(
                   '$_dailyRemaining/${_dailyLimit ?? ''}',
@@ -924,15 +1157,22 @@ class _LessonPageState extends State<LessonPage> {
               ),
             ),
           IconButton(
-            onPressed: _sending || _submitting ? null : _finishLesson,
+            onPressed:
+                _sending || _submitting
+                    ? null
+                    : _finishLesson,
             tooltip: _finishLabel(),
-            icon: const Icon(Icons.check_circle_outline_rounded),
+            icon: const Icon(
+              Icons.check_circle_outline_rounded,
+            ),
           ),
           const SizedBox(width: 4),
         ],
       ),
       body: Directionality(
-        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: isRtl
+            ? TextDirection.rtl
+            : TextDirection.ltr,
         child: Column(
           children: [
             Expanded(
@@ -940,41 +1180,70 @@ class _LessonPageState extends State<LessonPage> {
                   ? _buildEmptyState(theme)
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                      itemCount: _messages.length + (_sending ? 1 : 0),
-                      itemBuilder: (context, index) {
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        20,
+                        16,
+                        12,
+                      ),
+                      itemCount:
+                          _messages.length +
+                              (_sending ? 1 : 0),
+                      itemBuilder: (
+                        context,
+                        index,
+                      ) {
                         if (index >= _messages.length) {
                           return Align(
-                            alignment: AlignmentDirectional.centerStart,
+                            alignment:
+                                AlignmentDirectional
+                                    .centerStart,
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
+                              padding:
+                                  const EdgeInsets.only(
+                                bottom: 12,
+                              ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                                mainAxisSize:
+                                    MainAxisSize.min,
                                 children: [
                                   const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                   const SizedBox(width: 10),
-                                  Text(_startingLabel()),
+                                  Text(
+                                    _startingLabel(),
+                                  ),
                                 ],
                               ),
                             ),
                           );
                         }
 
-                        return _buildMessage(_messages[index], theme);
+                        return _buildMessage(
+                          _messages[index],
+                          theme,
+                        );
                       },
                     ),
             ),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 16,
+                ),
                 child: Text(
                   _errorLabel(),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: theme.colorScheme.error),
+                  style: TextStyle(
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ),
             _buildComposer(theme),
