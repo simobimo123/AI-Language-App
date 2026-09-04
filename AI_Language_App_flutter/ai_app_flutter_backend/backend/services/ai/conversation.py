@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from models import AIConversationMessage
 
+LESSON_CONVERSATION_PREFIX = "lesson_"
+
 
 def get_conversation_history(
     user_id: int,
@@ -10,26 +12,29 @@ def get_conversation_history(
     max_messages: int,
     db: Session,
 ) -> list[AIConversationMessage]:
+    """Return lesson history in full; keep a small window for other chats."""
     query = select(AIConversationMessage).where(
         AIConversationMessage.user_id == user_id,
     )
 
+    is_lesson_conversation = bool(
+        conversation_id and conversation_id.startswith(LESSON_CONVERSATION_PREFIX)
+    )
+
     if conversation_id:
         query = query.where(
-            AIConversationMessage.conversation_id == conversation_id,
+            AIConversationMessage.conversation_id == conversation_id
         )
 
-    messages = (
-        db.execute(
-            query.order_by(
-                AIConversationMessage.created_at.desc(),
-                AIConversationMessage.id.desc(),
-            ).limit(max_messages)
-        )
-        .scalars()
-        .all()
+    query = query.order_by(
+        AIConversationMessage.created_at.asc(),
+        AIConversationMessage.id.asc(),
     )
-    messages.reverse()
+
+    if not is_lesson_conversation:
+        query = query.limit(max_messages)
+
+    messages = db.execute(query).scalars().all()
     return messages
 
 
@@ -97,7 +102,10 @@ def cleanup_old_conversation_messages(
     max_messages: int,
     db: Session,
 ) -> None:
-    """Keep only the compact conversation context needed by the AI."""
+    """Trim non-lesson chats; lesson conversations retain their full history."""
+    if conversation_id and conversation_id.startswith(LESSON_CONVERSATION_PREFIX):
+        return
+
     query = select(AIConversationMessage.id).where(
         AIConversationMessage.user_id == user_id,
     )
