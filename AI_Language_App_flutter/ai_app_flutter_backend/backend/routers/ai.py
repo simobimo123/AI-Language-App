@@ -16,7 +16,7 @@ from services.ai.context import (
     build_vocabulary_context,
 )
 from services.ai.conversation import (
-    build_gemini_contents,
+    build_chat_messages,
     get_conversation_history,
 )
 from services.ai.enrichment.persister import (
@@ -29,7 +29,7 @@ from services.ai.normalization import normalize_language
 from services.ai.rate_limit import check_rate_limit
 from services.ai.response_stream import (
     sse_event,
-    stream_gemini_response,
+    stream_openrouter_response,
 )
 from services.ai.schemas import ChatRequest
 from services.ai.usage import (
@@ -432,10 +432,10 @@ def chat_with_ai(
     )
 
     # -----------------------------------------------------
-    # 10. Gemini contents
+    # 10. OpenAI-compatible chat messages
     # -----------------------------------------------------
 
-    contents = build_gemini_contents(
+    messages = build_chat_messages(
         history=history,
         current_message=request.message,
         vocabulary_context=vocabulary_context,
@@ -446,12 +446,12 @@ def chat_with_ai(
     # -----------------------------------------------------
 
     return StreamingResponse(
-        stream_gemini_response(
+        stream_openrouter_response(
             request=request,
             current_user=current_user,
             db=db,
             learning_context=learning_context,
-            contents=contents,
+            messages=messages,
             max_output_tokens=get_max_output_tokens(classification),
             max_conversation_messages=MAX_CONVERSATION_MESSAGES,
             classification_decision=classification.decision,
