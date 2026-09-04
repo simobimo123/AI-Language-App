@@ -97,13 +97,7 @@ def cleanup_old_conversation_messages(
     max_messages: int,
     db: Session,
 ) -> None:
-    # Lesson conversations need their complete saved turn history because the
-    # lesson completion gate counts learner turns independently of the short
-    # AI context window. The tutor still receives only MAX_HISTORY_MESSAGES,
-    # so retaining these rows does not increase the prompt size.
-    if conversation_id and conversation_id.startswith("lesson_"):
-        return
-
+    """Keep only the compact conversation context needed by the AI."""
     query = select(AIConversationMessage.id).where(
         AIConversationMessage.user_id == user_id,
     )
