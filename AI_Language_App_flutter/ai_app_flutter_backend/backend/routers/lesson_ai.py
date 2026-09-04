@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Generator
 from uuid import uuid4
@@ -14,6 +13,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import AIConversationMessage, CourseLesson, LearningProfile, User
 from routers.auth import get_current_user
+from services.ai.client import AI_MODEL
 from services.ai.conversation import (
     cleanup_old_conversation_messages,
     get_conversation_history,
@@ -38,11 +38,9 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-LESSON_TUTOR_MODEL = os.getenv("OPENROUTER_MAIN_MODEL")
-if not LESSON_TUTOR_MODEL:
-    raise RuntimeError(
-        "OPENROUTER_MAIN_MODEL is not configured in the .env file"
-    )
+# Lesson tutoring must use the same centralized MiniMax model as all other
+# application AI services. Legacy model environment variables are ignored.
+LESSON_TUTOR_MODEL = AI_MODEL
 
 MAX_HISTORY_MESSAGES = 2
 MAX_LESSON_CONTEXT_CHARS = 10000
