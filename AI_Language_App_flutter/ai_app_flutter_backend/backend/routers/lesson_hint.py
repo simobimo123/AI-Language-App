@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import CourseLesson, LearningProfile, User
+from models import AIConversationMessage, CourseLesson, LearningProfile, User
 from routers.auth import get_current_user
 from services.ai.client import AI_MODEL
 from services.ai.conversation import get_conversation_history
@@ -18,7 +18,6 @@ from services.ai.usage import record_api_usage, reserve_ai_request
 
 from routers.lesson_ai import (
     MAX_HISTORY_MESSAGES,
-    _find_saved_lesson_conversation,
     _lesson_context,
     _load_lesson_curriculum,
 )
@@ -34,11 +33,33 @@ logger = logging.getLogger(__name__)
 HINT_MODEL = AI_MODEL
 
 HINT_MAX_OUTPUT_TOKENS = 400
+LESSON_CONVERSATION_PREFIX = "lesson_"
 
 
 class LessonHintRequest(BaseModel):
     lesson_id: int = Field(gt=0)
     conversation_id: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+def _find_saved_lesson_conversation(
+    user_id: int,
+    lesson_id: int,
+    db: Session,
+) -> str | None:
+    """Find the newest saved conversation belonging to this lesson."""
+    prefix = f"{LESSON_CONVERSATION_PREFIX}{lesson_id}_"
+    return db.execute(
+        select(AIConversationMessage.conversation_id)
+        .where(
+            AIConversationMessage.user_id == user_id,
+            AIConversationMessage.conversation_id.like(f"{prefix}%"),
+        )
+        .order_by(
+            AIConversationMessage.created_at.desc(),
+            AIConversationMessage.id.desc(),
+        )
+        .limit(1)
+    ).scalar_one_or_none()
 
 
 def _hint_prompt(
