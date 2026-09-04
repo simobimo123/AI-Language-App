@@ -12,7 +12,7 @@ def get_conversation_history(
     max_messages: int,
     db: Session,
 ) -> list[AIConversationMessage]:
-    """Return lesson history in full; keep a small window for other chats."""
+    """Return only the most recent messages needed for the current AI request."""
     query = select(AIConversationMessage).where(
         AIConversationMessage.user_id == user_id,
     )
@@ -26,16 +26,26 @@ def get_conversation_history(
             AIConversationMessage.conversation_id == conversation_id
         )
 
+    if is_lesson_conversation:
+        # Lesson progress is stored separately in UserLessonProgress, so the
+        # tutor does not need the entire historical transcript on every turn.
+        # Fetch the newest messages and restore chronological order before
+        # sending them to the model.
+        query = query.order_by(
+            AIConversationMessage.created_at.desc(),
+            AIConversationMessage.id.desc(),
+        ).limit(max_messages)
+
+        messages = db.execute(query).scalars().all()
+        messages.reverse()
+        return messages
+
     query = query.order_by(
         AIConversationMessage.created_at.asc(),
         AIConversationMessage.id.asc(),
-    )
+    ).limit(max_messages)
 
-    if not is_lesson_conversation:
-        query = query.limit(max_messages)
-
-    messages = db.execute(query).scalars().all()
-    return messages
+    return db.execute(query).scalars().all()
 
 
 def build_chat_messages(
@@ -102,7 +112,7 @@ def cleanup_old_conversation_messages(
     max_messages: int,
     db: Session,
 ) -> None:
-    """Trim non-lesson chats; lesson conversations retain their full history."""
+    """Trim non-lesson chats; lesson history is capped at request time."""
     if conversation_id and conversation_id.startswith(LESSON_CONVERSATION_PREFIX):
         return
 
