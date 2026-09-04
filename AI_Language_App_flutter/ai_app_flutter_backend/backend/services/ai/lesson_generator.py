@@ -1,21 +1,20 @@
 import json
 import logging
-import os
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from models import CourseLesson
+from services.ai.client import AI_MODEL
 from services.ai.normalization import normalize_language, normalize_level
 from services.ai.provider import provider
 
 
 logger = logging.getLogger(__name__)
 
-
-LESSON_GENERATION_MODEL = os.getenv(
-    "LESSON_GENERATION_MODEL",
-    "gemini-3.6-flash",
-)
+# Lesson generation uses the same centralized MiniMax model as every other
+# application AI operation. This intentionally ignores any legacy
+# LESSON_GENERATION_MODEL setting so Google/Gemini cannot be selected here.
+LESSON_GENERATION_MODEL = AI_MODEL
 
 
 class LessonVocabularyItem(BaseModel):
