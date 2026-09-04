@@ -20,11 +20,14 @@ router = APIRouter(
 )
 
 logger = logging.getLogger(__name__)
-TRANSLATION_MODEL = os.getenv("OPENROUTER_TRANSLATION_MODEL") or os.getenv("OPENROUTER_MAIN_MODEL")
-if not TRANSLATION_MODEL:
-    raise RuntimeError(
-        "OPENROUTER_TRANSLATION_MODEL or OPENROUTER_MAIN_MODEL must be configured in the .env file"
-    )
+
+# Translation uses its own model so the main AI teacher model is not affected.
+# The environment variable remains the preferred configuration, while the
+# free Gemma model is the safe default for this short, direct task.
+TRANSLATION_MODEL = (
+    os.getenv("OPENROUTER_TRANSLATION_MODEL")
+    or "google/gemma-4-31b-it:free"
+)
 
 # Translation should be a short-answer operation. Keep the completion budget
 # small so a one-sentence translation does not reserve an unnecessarily large
