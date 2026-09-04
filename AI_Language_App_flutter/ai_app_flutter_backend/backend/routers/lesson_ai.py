@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Generator
 from uuid import uuid4
@@ -11,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AIConversationMessage, CourseLesson, LearningProfile, User
+from models import AIConversationMessage, CourseLesson, LearningProfile, User, UserLessonProgress
 from routers.auth import get_current_user
 from services.ai.client import AI_MODEL
 from services.ai.conversation import (
@@ -45,6 +46,8 @@ LESSON_TUTOR_MODEL = AI_MODEL
 MAX_HISTORY_MESSAGES = 2
 MAX_LESSON_CONTEXT_CHARS = 10000
 LESSON_CONVERSATION_PREFIX = "lesson_"
+PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([0-9,\s]*)\]\]\s*$")
+STREAM_HOLD_CHARS = 80
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LESSONS_DIR = BASE_DIR / "data" / "lessons"
@@ -70,12 +73,7 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
             detail="Invalid lesson level.",
         )
 
-    path = (
-        LESSONS_DIR
-        / language
-        / level
-        / f"lesson_{lesson.lesson_order:02d}.json"
-    )
+    path = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}.json"
 
     if not path.is_file():
         raise HTTPException(
@@ -84,17 +82,9 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
         )
 
     try:
-        data = json.loads(
-            path.read_text(
-                encoding="utf-8-sig",
-            )
-        )
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
-        logger.exception(
-            "Failed to load lesson curriculum: %s",
-            exc,
-        )
-
+        logger.exception("Failed to load lesson curriculum: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Lesson curriculum could not be loaded.",
@@ -109,31 +99,69 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
     return data
 
 
+def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
+    """Return stable target-sentence ids without exposing stored translations."""
+    raw = curriculum.get("key_sentences", [])
+
+    if not isinstance(raw, list) or not raw:
+        collected: list[str] = []
+        sections = curriculum.get("sections", [])
+        if isinstance(sections, list):
+            for section in sections:
+                if not isinstance(section, dict):
+                    continue
+                values = section.get("target_sentences", [])
+                if not isinstance(values, list):
+                    continue
+                for value in values:
+                    if isinstance(value, str) and value.strip():
+                        collected.append(value.strip())
+        raw = collected
+
+    result: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+    seen_sentences: set[str] = set()
+
+    for index, item in enumerate(raw, start=1):
+        if isinstance(item, str):
+            sentence = item.strip()
+            explicit_id = ""
+        elif isinstance(item, dict):
+            sentence = str(item.get("sentence", item.get("text", ""))).strip()
+            explicit_id = str(item.get("id", "")).strip()
+        else:
+            continue
+
+        if not sentence or sentence in seen_sentences:
+            continue
+
+        sentence_id = explicit_id or str(index)
+        if sentence_id in seen_ids:
+            sentence_id = str(index)
+        if sentence_id in seen_ids:
+            continue
+
+        seen_ids.add(sentence_id)
+        seen_sentences.add(sentence)
+        result.append({"id": sentence_id, "sentence": sentence})
+
+    return result
+
+
 def _lesson_context(data: dict) -> str:
     """Build a compact context centered on one lesson conversation."""
     metadata = data.get("metadata", {})
-
     if not isinstance(metadata, dict):
         metadata = {}
 
     focus_section = None
     sections = data.get("sections", [])
-
     if isinstance(sections, list):
         for section in sections:
             if not isinstance(section, dict):
                 continue
-
-            section_type = str(
-                section.get("type", "")
-            ).lower()
-
-            if section_type not in {
-                "test",
-                "assessment",
-                "review",
-                "end_test",
-            }:
+            section_type = str(section.get("type", "")).lower()
+            if section_type not in {"test", "assessment", "review", "end_test"}:
                 focus_section = section
                 break
 
@@ -146,44 +174,111 @@ def _lesson_context(data: dict) -> str:
         "primary_focus_section": focus_section,
     }
 
-    text = json.dumps(
-        selected,
-        ensure_ascii=False,
-        separators=(",", ":"),
-    )
-
+    text = json.dumps(selected, ensure_ascii=False, separators=(",", ":"))
     return text[:MAX_LESSON_CONTEXT_CHARS]
 
 
-def _lesson_minimum_practice(curriculum: dict) -> int:
-    completion = curriculum.get("completion", {})
-    practice = curriculum.get("practice", {})
-
-    for source in (completion, practice):
-        if isinstance(source, dict):
-            value = source.get("minimum_practice", source.get("minimum_turns"))
-            try:
-                parsed = int(value)
-                if parsed > 0:
-                    return parsed
-            except (TypeError, ValueError):
-                pass
-
-    return 6
-
-
-def _learner_turn_count(user_id: int, conversation_id: str, db: Session) -> int:
-    rows = db.execute(
-        select(AIConversationMessage.role, AIConversationMessage.content).where(
-            AIConversationMessage.user_id == user_id,
-            AIConversationMessage.conversation_id == conversation_id,
+def _get_or_create_practice_progress(
+    user_id: int,
+    profile_id: int,
+    lesson_id: int,
+    conversation_id: str,
+    db: Session,
+) -> UserLessonProgress:
+    progress = db.execute(
+        select(UserLessonProgress).where(
+            UserLessonProgress.user_id == user_id,
+            UserLessonProgress.lesson_id == lesson_id,
         )
-    ).all()
-    return sum(
-        1
-        for role, content in rows
-        if role == "user" and content.strip() != "START_LESSON"
-    )
+    ).scalar_one_or_none()
+
+    if progress is None:
+        progress = UserLessonProgress(
+            user_id=user_id,
+            learning_profile_id=profile_id,
+            lesson_id=lesson_id,
+            practice_state={
+                "conversation_id": conversation_id,
+                "practiced_sentence_ids": [],
+            },
+        )
+        db.add(progress)
+        db.flush()
+        return progress
+
+    state = progress.practice_state if isinstance(progress.practice_state, dict) else {}
+    if state.get("conversation_id") != conversation_id:
+        progress.practice_state = {
+            "conversation_id": conversation_id,
+            "practiced_sentence_ids": [],
+        }
+    return progress
+
+
+def _practiced_sentence_ids(progress: UserLessonProgress) -> set[str]:
+    state = progress.practice_state if isinstance(progress.practice_state, dict) else {}
+    raw = state.get("practiced_sentence_ids", [])
+    if not isinstance(raw, list):
+        return set()
+    return {str(value).strip() for value in raw if str(value).strip()}
+
+
+def _update_practice_progress(
+    *,
+    progress: UserLessonProgress,
+    conversation_id: str,
+    completed_ids: set[str],
+    valid_ids: set[str],
+) -> set[str]:
+    current = _practiced_sentence_ids(progress)
+    current.update(completed_ids & valid_ids)
+    progress.practice_state = {
+        "conversation_id": conversation_id,
+        "practiced_sentence_ids": sorted(current),
+    }
+    return current
+
+
+def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
+    match = PROGRESS_MARKER_RE.search(text.strip())
+    if not match:
+        return text.strip(), set()
+
+    raw_ids = match.group(1)
+    ids = {value.strip() for value in raw_ids.split(",") if value.strip()}
+    cleaned = text[:match.start()].rstrip()
+    return cleaned, ids
+
+
+def _lesson_completion(
+    curriculum: dict,
+    progress: UserLessonProgress,
+) -> tuple[bool, int, int]:
+    target_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
+    practiced_ids = _practiced_sentence_ids(progress) & target_ids
+
+    if not target_ids:
+        return False, len(practiced_ids), 0
+
+    return target_ids.issubset(practiced_ids), len(practiced_ids), len(target_ids)
+
+
+def _build_target_tracking_context(
+    curriculum: dict,
+    progress: UserLessonProgress,
+) -> str:
+    targets = _lesson_target_sentences(curriculum)
+    practiced = _practiced_sentence_ids(progress)
+    remaining = [item for item in targets if item["id"] not in practiced]
+
+    if not remaining:
+        return "No target sentences remain."
+
+    compact = [
+        {"id": item["id"], "sentence": item["sentence"]}
+        for item in remaining
+    ]
+    return json.dumps(compact, ensure_ascii=False, separators=(",", ":"))
 
 
 def _build_system_instruction(
@@ -191,9 +286,10 @@ def _build_system_instruction(
     target_language: str,
     level: str,
     curriculum: dict,
+    progress: UserLessonProgress,
 ) -> str:
     context = _lesson_context(curriculum)
-    minimum_practice = _lesson_minimum_practice(curriculum)
+    targets = _build_target_tracking_context(curriculum, progress)
 
     return f"""
 You are the AI conversation partner for ONE lesson in a language-learning app.
@@ -209,13 +305,36 @@ LESSON
 - Lesson level: {curriculum.get('level')}
 - Topic: {curriculum.get('metadata', {}).get('title', '')}
 - Objective: {curriculum.get('metadata', {}).get('objective', '')}
-- Minimum learner practice turns before the final translation check: {minimum_practice}
 
 CURRICULUM SOURCE OF TRUTH
 The JSON below is the canonical curriculum for this lesson.
 Use it to control the topic and target sentences. Do not invent unrelated material.
 
 {context}
+
+TARGET SENTENCE PRACTICE TRACKING
+The app must know which target sentences the learner has actually practiced.
+Below are ONLY the remaining target sentences. Their stored translations are intentionally not provided.
+
+{targets}
+
+After your normal learner-facing reply, append exactly one internal progress marker:
+[[LESSON_PROGRESS:id1,id2]]
+Use an empty marker when the learner did not successfully practice any remaining target sentence:
+[[LESSON_PROGRESS:]]
+
+IMPORTANT PROGRESS RULES
+- Judge the learner's LATEST message, not your own message.
+- Mark a sentence only when the learner meaningfully produces that sentence's communicative meaning in the learning language.
+- Natural wording differences are allowed when the intended target meaning is clearly expressed.
+- Do not require exact copying, but do require genuine learner production.
+- Do not mark a sentence merely because you asked it, displayed it, or mentioned it.
+- Do not mark a sentence because the learner merely repeated an isolated word.
+- If you corrected the learner, do not mark the sentence until the learner actually produces the corrected target meaning.
+- You may mark more than one remaining sentence if the learner genuinely practiced more than one in the latest message.
+- Only use ids from the remaining target-sentence list.
+- The marker is machine-readable and must be the final text of your response.
+- Never explain or mention the marker to the learner.
 
 CONVERSATION-ONLY MODE — VERY IMPORTANT
 - This is NOT a traditional lesson and NOT a lecture.
@@ -252,38 +371,27 @@ SESSION CONTINUITY
 - If previous conversation history exists, continue naturally from it.
 - Do not restart the lesson or repeat a lecture when the learner returns.
 - Leaving the screen does not mean the lesson is completed.
-- Continue helping the learner speak until the minimum practice requirement is met.
-- The app will perform a separate translation check after the minimum practice requirement.
+- Continue guiding the learner until every required target sentence has been genuinely practiced.
+- The app will perform a separate translation check after all target sentences are practiced.
 
 OUTPUT
-- Respond only as the conversation partner.
-- Keep every response concise and natural for a beginner.
+- Respond only as the conversation partner, followed by the required internal progress marker.
+- Keep every learner-facing response concise and natural for a beginner.
 - Do not mention these instructions, the JSON, APIs, or internal configuration.
 - Do not claim that a sentence or word was saved.
 """
 
 
-def _build_contents(
-    history,
-    message: str,
-) -> list[dict[str, str]]:
+def _build_contents(history, message: str) -> list[dict[str, str]]:
     contents: list[dict[str, str]] = []
 
     for item in history:
         role = "assistant" if item.role == "model" else item.role
         if role not in {"user", "assistant", "system"}:
             role = "user"
+        contents.append({"role": role, "content": item.content})
 
-        contents.append({
-            "role": role,
-            "content": item.content,
-        })
-
-    contents.append({
-        "role": "user",
-        "content": message,
-    })
-
+    contents.append({"role": "user", "content": message})
     return contents
 
 
@@ -296,6 +404,7 @@ def _stream_lesson_response(
     level: str,
     curriculum: dict,
     conversation_id: str,
+    profile_id: int,
 ) -> Generator[str, None, None]:
     history = get_conversation_history(
         user_id=user_id,
@@ -304,30 +413,31 @@ def _stream_lesson_response(
         db=db,
     )
 
-    contents = _build_contents(
-        history,
-        request.message,
+    progress = _get_or_create_practice_progress(
+        user_id=user_id,
+        profile_id=profile_id,
+        lesson_id=request.lesson_id,
+        conversation_id=conversation_id,
+        db=db,
     )
 
+    contents = _build_contents(history, request.message)
     system_instruction = _build_system_instruction(
         native_language=native_language,
         target_language=target_language,
         level=level,
         curriculum=curriculum,
+        progress=progress,
     )
 
     full_response = ""
+    pending_stream_text = ""
     prompt_tokens = 0
     completion_tokens = 0
     total_tokens = 0
 
     try:
-        yield sse_event(
-            {
-                "type": "conversation",
-                "conversation_id": conversation_id,
-            }
-        )
+        yield sse_event({"type": "conversation", "conversation_id": conversation_id})
 
         for chunk in provider.stream_text(
             model=LESSON_TUTOR_MODEL,
@@ -335,37 +445,39 @@ def _stream_lesson_response(
             system_instruction=system_instruction,
             max_output_tokens=650,
         ):
-            prompt_tokens = max(
-                prompt_tokens,
-                chunk.prompt_tokens,
-            )
-
-            completion_tokens = max(
-                completion_tokens,
-                chunk.completion_tokens,
-            )
-
-            total_tokens = max(
-                total_tokens,
-                chunk.total_tokens,
-            )
+            prompt_tokens = max(prompt_tokens, chunk.prompt_tokens)
+            completion_tokens = max(completion_tokens, chunk.completion_tokens)
+            total_tokens = max(total_tokens, chunk.total_tokens)
 
             if not chunk.text:
                 continue
 
             full_response += chunk.text
+            pending_stream_text += chunk.text
 
-            yield sse_event(
-                {
-                    "type": "chunk",
-                    "text": chunk.text,
-                }
-            )
+            if len(pending_stream_text) > STREAM_HOLD_CHARS:
+                emit_length = len(pending_stream_text) - STREAM_HOLD_CHARS
+                emit_text = pending_stream_text[:emit_length]
+                pending_stream_text = pending_stream_text[emit_length:]
+                if emit_text:
+                    yield sse_event({"type": "chunk", "text": emit_text})
 
-        if not full_response.strip():
-            raise RuntimeError(
-                "AI tutor returned an empty response."
-            )
+        cleaned_response, new_completed_ids = _extract_progress_marker(full_response)
+        if not cleaned_response:
+            raise RuntimeError("AI tutor returned an empty response.")
+
+        valid_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
+        practiced_ids = _update_practice_progress(
+            progress=progress,
+            conversation_id=conversation_id,
+            completed_ids=new_completed_ids,
+            valid_ids=valid_ids,
+        )
+
+        # The held tail is now safe to send after the internal marker has been removed.
+        held_clean, _ = _extract_progress_marker(pending_stream_text)
+        if held_clean:
+            yield sse_event({"type": "chunk", "text": held_clean})
 
         save_conversation_message(
             user_id=user_id,
@@ -374,12 +486,11 @@ def _stream_lesson_response(
             content=request.message,
             db=db,
         )
-
         save_conversation_message(
             user_id=user_id,
             conversation_id=conversation_id,
             role="model",
-            content=full_response,
+            content=cleaned_response,
             db=db,
         )
 
@@ -388,6 +499,11 @@ def _stream_lesson_response(
             conversation_id=conversation_id,
             max_messages=MAX_HISTORY_MESSAGES,
             db=db,
+        )
+
+        lesson_ready, practiced_count, total_target_count = _lesson_completion(
+            curriculum,
+            progress,
         )
 
         db.commit()
@@ -400,43 +516,29 @@ def _stream_lesson_response(
             db=db,
         )
 
-        usage = get_current_usage(
-            user_id=user_id,
-            db=db,
-        )
-
-        learner_turns = _learner_turn_count(
-            user_id=user_id,
-            conversation_id=conversation_id,
-            db=db,
-        )
-        minimum_practice = _lesson_minimum_practice(curriculum)
-        lesson_ready = learner_turns >= minimum_practice
+        usage = get_current_usage(user_id=user_id, db=db)
 
         yield sse_event(
             {
                 "type": "done",
                 "conversation_id": conversation_id,
                 "lesson_ready": lesson_ready,
+                "practiced_sentence_count": practiced_count,
+                "total_target_sentence_count": total_target_count,
                 "daily_limit": DAILY_AI_LIMIT,
                 "daily_used": usage.request_count,
-                "daily_remaining": max(
-                    0,
-                    DAILY_AI_LIMIT - usage.request_count,
-                ),
+                "daily_remaining": max(0, DAILY_AI_LIMIT - usage.request_count),
             }
         )
 
     except Exception as exc:
         db.rollback()
-
         logger.exception(
             "Lesson AI streaming failed user_id=%s lesson_id=%s: %s",
             user_id,
             request.lesson_id,
             exc,
         )
-
         yield sse_event(
             {
                 "type": "error",
@@ -452,20 +554,13 @@ def _find_saved_lesson_conversation(
 ) -> str | None:
     """Find the newest saved conversation belonging to this lesson."""
     prefix = f"{LESSON_CONVERSATION_PREFIX}{lesson_id}_"
-
     return db.execute(
-        select(
-            AIConversationMessage.conversation_id
-        )
+        select(AIConversationMessage.conversation_id)
         .where(
             AIConversationMessage.user_id == user_id,
-            AIConversationMessage.conversation_id.like(
-                f"{prefix}%"
-            ),
+            AIConversationMessage.conversation_id.like(f"{prefix}%"),
         )
-        .order_by(
-            AIConversationMessage.created_at.desc()
-        )
+        .order_by(AIConversationMessage.created_at.desc())
         .limit(1)
     ).scalar_one_or_none()
 
@@ -476,11 +571,7 @@ def lesson_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    lesson = db.get(
-        CourseLesson,
-        request.lesson_id,
-    )
-
+    lesson = db.get(CourseLesson, request.lesson_id)
     if lesson is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -488,18 +579,9 @@ def lesson_chat(
         )
 
     user_id = current_user.id
-
-    target_language = normalize_language(
-        current_user.learning_language
-    )
-
-    native_language = normalize_language(
-        current_user.native_language
-    )
-
-    lesson_language = normalize_language(
-        lesson.language
-    )
+    target_language = normalize_language(current_user.learning_language)
+    native_language = normalize_language(current_user.native_language)
+    lesson_language = normalize_language(lesson.language)
 
     if lesson_language != target_language:
         raise HTTPException(
@@ -520,13 +602,8 @@ def lesson_chat(
             detail="This lesson is not part of your current learning level.",
         )
 
-    profile_level = normalize_level(
-        profile.level
-    )
-
-    lesson_level = normalize_level(
-        lesson.level
-    )
+    profile_level = normalize_level(profile.level)
+    lesson_level = normalize_level(lesson.level)
 
     if profile_level != lesson_level:
         raise HTTPException(
@@ -535,20 +612,18 @@ def lesson_chat(
         )
 
     level = profile_level or "A1"
+    curriculum = _load_lesson_curriculum(lesson)
 
-    curriculum = _load_lesson_curriculum(
-        lesson
-    )
+    if not _lesson_target_sentences(curriculum):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="This lesson has no target practice sentences.",
+        )
 
     check_rate_limit(user_id)
-
-    reserve_ai_request(
-        user_id=user_id,
-        db=db,
-    )
+    reserve_ai_request(user_id=user_id, db=db)
 
     conversation_id = request.conversation_id
-
     if not conversation_id:
         conversation_id = _find_saved_lesson_conversation(
             user_id=user_id,
@@ -573,6 +648,7 @@ def lesson_chat(
             level=level,
             curriculum=curriculum,
             conversation_id=conversation_id,
+            profile_id=profile.id,
         ),
         media_type="text/event-stream",
         headers={
