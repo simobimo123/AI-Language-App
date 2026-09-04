@@ -611,10 +611,21 @@ class _LessonPageState extends State<LessonPage> {
           _isJapaneseKanaRune(rune),
     );
 
+    // For languages that use spaces (German, English, French, Arabic, etc.),
+    // keep each word as a separate visual unit. The old implementation kept
+    // whitespace as invisible Wrap children, which made adjacent words look
+    // almost glued together and made the word boundaries hard to see.
     if (!hasCjk) {
-      return text.split(RegExp(r'(\s+)'));
+      return text
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((token) => token.isNotEmpty)
+          .toList();
     }
 
+    // CJK languages do not normally separate words with spaces. Keep their
+    // existing character/punctuation tokenization so we do not introduce
+    // unnatural gaps into Japanese/Chinese/Korean text.
     final result = <String>[];
     var buffer = StringBuffer();
 
@@ -630,7 +641,6 @@ class _LessonPageState extends State<LessonPage> {
 
       if (_isWhitespaceRune(rune)) {
         flushBuffer();
-        result.add(char);
         continue;
       }
 
@@ -682,6 +692,11 @@ class _LessonPageState extends State<LessonPage> {
     ThemeData theme,
   ) {
     final tokens = _messageTokens(text);
+    final hasCjk = text.runes.any(
+      (rune) =>
+          _isCjkIdeographRune(rune) ||
+          _isJapaneseKanaRune(rune),
+    );
     final baseStyle = theme.textTheme.bodyLarge?.copyWith(
       height: 1.45,
     );
@@ -692,31 +707,27 @@ class _LessonPageState extends State<LessonPage> {
       textDirection: direction,
       child: Wrap(
         textDirection: direction,
+        alignment: WrapAlignment.start,
         crossAxisAlignment: WrapCrossAlignment.end,
+        spacing: hasCjk ? 0 : 6,
+        runSpacing: hasCjk ? 0 : 3,
         children: [
           for (final token in tokens)
-            if (token.trim().isEmpty)
-              Text(
-                token,
-                textDirection: direction,
-                style: baseStyle,
-              )
-            else
-              InkWell(
-                borderRadius: BorderRadius.circular(5),
-                onTap: () => _openWord(token),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 1,
-                    vertical: 1,
-                  ),
-                  child: Text(
-                    token,
-                    textDirection: direction,
-                    style: baseStyle,
-                  ),
+            InkWell(
+              borderRadius: BorderRadius.circular(5),
+              onTap: () => _openWord(token),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: hasCjk ? 0 : 1,
+                  vertical: 1,
+                ),
+                child: Text(
+                  token,
+                  textDirection: direction,
+                  style: baseStyle,
                 ),
               ),
+            ),
         ],
       ),
     );
@@ -987,8 +998,7 @@ class _LessonPageState extends State<LessonPage> {
                 ),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: ValueListenableBuilder<
-                      TextEditingValue>(
+                  child: ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _messageController,
                     builder: (
                       context,
