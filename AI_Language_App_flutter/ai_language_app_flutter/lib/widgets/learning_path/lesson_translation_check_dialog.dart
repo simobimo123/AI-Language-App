@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/api/api_service.dart';
+import 'lesson_review_dialog.dart';
 
 Future<bool> showLessonTranslationCheckDialog({
   required BuildContext context,
@@ -19,6 +20,23 @@ Future<bool> showLessonTranslationCheckDialog({
     String? zh,
   }) text,
 }) async {
+  final wantsReview = await showLessonReviewChoice(
+    context: context,
+    text: text,
+  );
+
+  if (wantsReview) {
+    await showLessonQuickReview(
+      context: context,
+      apiService: apiService,
+      lessonId: lessonId,
+      conversationId: conversationId,
+      text: text,
+    );
+  }
+
+  if (!context.mounted) return false;
+
   return await showDialog<bool>(
         context: context,
         barrierDismissible: false,
