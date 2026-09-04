@@ -12,6 +12,7 @@ class LessonAiChunk {
   final int? dailyLimit;
   final int? dailyUsed;
   final int? dailyRemaining;
+  final bool? lessonReady;
   final String? message;
   final List<Map<String, String>>? history;
 
@@ -22,6 +23,7 @@ class LessonAiChunk {
     this.dailyLimit,
     this.dailyUsed,
     this.dailyRemaining,
+    this.lessonReady,
     this.message,
     this.history,
   });
@@ -50,6 +52,7 @@ class LessonAiChunk {
       dailyLimit: _toInt(json['daily_limit']),
       dailyUsed: _toInt(json['daily_used']),
       dailyRemaining: _toInt(json['daily_remaining']),
+      lessonReady: json['lesson_ready'] == true,
       message: json['message']?.toString(),
       history: parsedHistory,
     );
@@ -74,10 +77,6 @@ class LessonAiApiService {
   final ApiClient _client;
   final http.Client _httpClient;
 
-  // Keeps the visible lesson conversation alive while the Flutter app
-  // process is running. Navigating away from LessonPage therefore does not
-  // erase the messages from the UI. The backend remains the source of truth
-  // for AI context and persistence.
   static final Map<int, _CachedLessonConversation> _sessionCache = {};
 
   LessonAiApiService(this._client, {http.Client? httpClient})
@@ -90,10 +89,6 @@ class LessonAiApiService {
   }) async* {
     final cached = _sessionCache[lessonId];
 
-    // If the page is recreated during the same app session, restore the
-    // previous visible conversation instead of sending START_LESSON again.
-    // The next real user message will continue through the backend using the
-    // same conversation_id.
     if (message == 'START_LESSON' &&
         cached != null &&
         cached.messages.isNotEmpty) {
@@ -153,7 +148,6 @@ class LessonAiApiService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
-
       dynamic data;
 
       try {
@@ -171,9 +165,7 @@ class LessonAiApiService {
 
     String? pendingEvent;
     final dataLines = <String>[];
-
     String? streamedConversationId = effectiveConversationId;
-
     final streamedAssistantText = StringBuffer();
 
     await for (final line in response.stream
@@ -222,8 +214,6 @@ class LessonAiApiService {
       }
     }
 
-    // Handle the final SSE event if the stream does not end with
-    // an additional empty line.
     if (dataLines.isNotEmpty) {
       final chunk = _parseEvent(
         dataLines.join('\n'),
@@ -260,9 +250,7 @@ class LessonAiApiService {
     required String userMessage,
     required String assistantMessage,
   }) {
-    if (assistantMessage.trim().isEmpty) {
-      return;
-    }
+    if (assistantMessage.trim().isEmpty) return;
 
     final cached = _sessionCache.putIfAbsent(
       lessonId,
@@ -273,7 +261,6 @@ class LessonAiApiService {
       cached.conversationId = conversationId;
     }
 
-    // START_LESSON is an internal trigger, not a visible user message.
     if (userMessage != 'START_LESSON') {
       cached.messages.add({
         'role': 'user',
@@ -291,9 +278,7 @@ class LessonAiApiService {
     String payload, {
     String? fallbackType,
   }) {
-    if (payload.isEmpty || payload == '[DONE]') {
-      return null;
-    }
+    if (payload.isEmpty || payload == '[DONE]') return null;
 
     try {
       final decoded = jsonDecode(payload);
