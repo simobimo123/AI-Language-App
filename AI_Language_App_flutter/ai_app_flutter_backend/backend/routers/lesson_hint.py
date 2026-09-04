@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -10,6 +9,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import CourseLesson, LearningProfile, User
 from routers.auth import get_current_user
+from services.ai.client import AI_MODEL
 from services.ai.conversation import get_conversation_history
 from services.ai.normalization import normalize_language, normalize_level
 from services.ai.provider import provider
@@ -30,9 +30,8 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-HINT_MODEL = os.getenv("OPENROUTER_MAIN_MODEL")
-if not HINT_MODEL:
-    raise RuntimeError("OPENROUTER_MAIN_MODEL is not configured in the .env file")
+# Hints use the same centralized MiniMax model as the entire application.
+HINT_MODEL = AI_MODEL
 
 HINT_MAX_OUTPUT_TOKENS = 400
 
