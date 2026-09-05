@@ -202,6 +202,7 @@ def _update_practice_progress(*, progress: UserLessonProgress, conversation_id: 
             continue
         if target_id in completed:
             current.add(target_id)
+            continue
         break
 
     progress.practice_state = {
