@@ -26,12 +26,14 @@ router = APIRouter(prefix="/ai/lesson", tags=["AI Lesson Tutor"])
 logger = logging.getLogger(__name__)
 
 LESSON_TUTOR_MODEL = AI_MODEL
-MAX_HISTORY_MESSAGES = 0
+MAX_HISTORY_MESSAGES = 20
 MAX_LESSON_CONTEXT_CHARS = 2500
 MAX_OUTPUT_TOKENS = 220
 PROGRESS_MARKER = "[[LESSON_PROGRESS:"
 PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
-STREAM_HOLD_CHARS = 4096
+# Keep only a small tail buffered so the progress marker is not streamed to Flutter
+# while still allowing short tutor replies to appear progressively.
+STREAM_HOLD_CHARS = 64
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LESSONS_DIR = BASE_DIR / "data" / "lessons"
@@ -195,20 +197,16 @@ def _remove_exact_duplicate_response(text: str) -> str:
     if not cleaned:
         return cleaned
 
-    # First handle the exact case: A A, including punctuation/newlines.
     match = re.fullmatch(r"(.+?)\s+\1", cleaned, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
 
-    # Also handle equivalent copies where whitespace differs slightly.
     normalized = re.sub(r"\s+", " ", cleaned).strip()
     if len(normalized) >= 4 and len(normalized) % 2 == 0:
         half = len(normalized) // 2
         if normalized[:half].rstrip() == normalized[half:].lstrip():
             return normalized[:half].strip()
 
-    # Finally collapse an immediately repeated sentence/phrase when the model
-    # repeats the same complete learner-facing sentence twice.
     sentence_match = re.fullmatch(r"(.+?[.!?。！？])\s+\1", cleaned, flags=re.DOTALL)
     if sentence_match:
         return sentence_match.group(1).strip()
