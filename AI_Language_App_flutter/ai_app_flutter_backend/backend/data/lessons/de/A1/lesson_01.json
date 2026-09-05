@@ -1,109 +1,320 @@
-
 {
   "lesson_id": "de_a1_lesson_01",
   "language": "de",
   "level": "A1",
-  "unit": 1,
-  "order": 1,
+  "unit_number": 1,
+  "lesson_order": 1,
   "title": "Ich und du",
-  "objective": "Introduce yourself, ask about another person's name and place of residence, and talk about other people and groups.",
+  "objective": "Introduce yourself, ask about names and places of residence, introduce other people, and talk about individuals and groups in a natural conversation.",
 
   "vocabulary": [
     ["ich", "I"],
     ["du", "you"],
     ["er", "he"],
-    ["sie", "she/they"],
+    ["sie", "she / they"],
     ["wir", "we"],
     ["ihr", "you plural"],
     ["heißen", "to be called"],
     ["wohnen", "to live"],
-    ["wie", "how/what"],
+    ["wie", "how / what"],
     ["wo", "where"]
   ],
 
   "conversation": {
     "mode": "guided_natural_conversation",
 
-    "path": [
+    "principles": [
+      "The conversation must feel like one continuous real-life interaction.",
+      "Every new person, question, and topic must have a natural reason to appear.",
+      "Never jump abruptly from one topic or person to another.",
+      "Use the current scene and previous conversation to create natural transitions.",
+      "The learner's personal information must come only from what the learner actually says.",
+      "Never invent the learner's name, location, friends, family, or other personal information.",
+      "The tutor may introduce fictional lesson characters when the curriculum requires them.",
+      "Characters introduced by the curriculum must remain consistent throughout the conversation.",
+      "Do not introduce a new character unless the current scene requires that character.",
+      "Do not move to the next scene until the current learning goal has been practiced.",
+      "The tutor should guide the learner naturally instead of announcing curriculum steps.",
+      "The learner should not see internal curriculum instructions, target lists, IDs, or progress information."
+    ],
+
+    "characters": [
       {
-        "id": "p1",
-        "role": "assistant",
-        "target": "Hallo! Ich heiße ...",
-        "context": "The tutor introduces themselves naturally."
+        "id": "tutor",
+        "type": "tutor",
+        "name": null,
+        "description": "The AI tutor and conversation partner. The tutor introduces themselves naturally at the beginning of the lesson."
       },
       {
-        "id": "p2",
-        "role": "assistant",
-        "target": "Wie heißt du?",
-        "context": "Ask the learner for their name."
+        "id": "thomas",
+        "type": "lesson_character",
+        "name": "Thomas",
+        "description": "A male friend of the tutor. Thomas is introduced later in the conversation for practicing third-person masculine forms."
       },
       {
-        "id": "p3",
-        "role": "learner",
-        "target": "Ich heiße ...",
-        "context": "Elicit the learner's own name."
-      },
-      {
-        "id": "p4",
-        "role": "assistant",
-        "target": "Wo wohnst du?",
-        "context": "Ask where the learner lives."
-      },
-      {
-        "id": "p5",
-        "role": "learner",
-        "target": "Ich wohne in ...",
-        "context": "Elicit the learner's place of residence."
-      },
-      {
-        "id": "p6",
-        "role": "assistant",
-        "target": "Er heißt ...",
-        "context": "Introduce a male third person naturally."
-      },
-      {
-        "id": "p7",
-        "role": "learner",
-        "target": "Er heißt ...",
-        "context": "Elicit a sentence about a male third person."
-      },
-      {
-        "id": "p8",
-        "role": "assistant",
-        "target": "Sie heißt ...",
-        "context": "Introduce a female third person naturally."
-      },
-      {
-        "id": "p9",
-        "role": "learner",
-        "target": "Sie heißt ...",
-        "context": "Elicit a sentence about a female third person."
-      },
-      {
-        "id": "p10",
-        "role": "assistant",
-        "target": "Wo wohnt ihr?",
-        "context": "Ask where a group lives."
-      },
-      {
-        "id": "p11",
-        "role": "learner",
-        "target": "Wir wohnen in ...",
-        "context": "Elicit a statement about where the learner and their group live."
-      },
-      {
-        "id": "p12",
-        "role": "learner",
-        "target": "Ihr wohnt ...",
-        "context": "Elicit a statement using ihr about where other people live."
-      },
-      {
-        "id": "p13",
-        "role": "learner",
-        "target": "Sie wohnen in ...",
-        "context": "Elicit a statement about where a group of other people lives."
+        "id": "anna",
+        "type": "lesson_character",
+        "name": "Anna",
+        "description": "A female person known to the tutor. Anna is introduced later for practicing third-person feminine forms."
       }
-    ]
+    ],
+
+    "scenes": [
+      {
+        "id": "scene_01_introduction",
+        "purpose": "Start the conversation and establish the tutor and learner as the two main participants.",
+
+        "context": "The tutor and learner are meeting for the first time.",
+
+        "flow": [
+          {
+            "id": "s1_tutor_introduces",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Introduce the tutor naturally.",
+            "target_pattern": "Hallo! Ich heiße ...",
+            "action": "The tutor introduces themselves using their own tutor identity."
+          },
+          {
+            "id": "s1_ask_learner_name",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Ask the learner's name.",
+            "target_pattern": "Wie heißt du?",
+            "action": "After introducing themselves, the tutor naturally asks the learner's name."
+          },
+          {
+            "id": "s1_learner_name",
+            "speaker": "learner",
+            "role": "learner",
+            "goal": "Allow the learner to introduce their own name.",
+            "target_pattern": "Ich heiße ...",
+            "action": "The tutor waits for the learner to provide their own name. The tutor must never invent the learner's name."
+          }
+        ],
+
+        "transition": {
+          "condition": "The learner has successfully introduced their name.",
+          "next_scene": "scene_02_residence",
+          "style": "natural",
+          "instruction": "Acknowledge the learner's name naturally and continue the same introduction conversation by asking where they live."
+        }
+      },
+
+      {
+        "id": "scene_02_residence",
+        "purpose": "Practice asking and answering about the learner's place of residence.",
+
+        "context": "The tutor and learner have just exchanged names and continue getting to know each other.",
+
+        "flow": [
+          {
+            "id": "s2_ask_residence",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Ask where the learner lives.",
+            "target_pattern": "Wo wohnst du?",
+            "action": "The tutor asks naturally where the learner lives because they are getting to know each other."
+          },
+          {
+            "id": "s2_learner_residence",
+            "speaker": "learner",
+            "role": "learner",
+            "goal": "Allow the learner to say where they live.",
+            "target_pattern": "Ich wohne in ...",
+            "action": "The learner gives their actual place of residence. The tutor must not invent or assume it."
+          }
+        ],
+
+        "transition": {
+          "condition": "The learner has successfully communicated where they live.",
+          "next_scene": "scene_03_thomas",
+          "style": "natural",
+          "instruction": "The tutor should briefly react to the learner's answer and connect it naturally to introducing a friend."
+        }
+      },
+
+      {
+        "id": "scene_03_thomas",
+        "purpose": "Introduce Thomas naturally and create a reason for the learner to interact with him.",
+
+        "context": "The tutor and learner have already introduced themselves and talked about where the learner lives. The tutor now mentions a friend named Thomas as part of the same getting-to-know-you conversation.",
+
+        "character": "thomas",
+
+        "flow": [
+          {
+            "id": "s3_introduce_thomas",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Introduce Thomas as a real participant in the lesson scenario.",
+            "target_pattern": "Das ist mein Freund Thomas.",
+            "action": "The tutor introduces Thomas naturally. Thomas is the tutor's male friend."
+          },
+          {
+            "id": "s3_prepare_question",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Give the learner a natural reason to speak to Thomas.",
+            "target_pattern": "Frag ihn: Wie heißt du?",
+            "action": "The tutor asks the learner to ask Thomas his name. The tutor should make the transition feel natural rather than presenting it as an exercise."
+          },
+          {
+            "id": "s3_learner_asks_thomas",
+            "speaker": "learner",
+            "role": "learner",
+            "goal": "Ask Thomas his name.",
+            "target_pattern": "Wie heißt du?",
+            "action": "The learner speaks directly to Thomas."
+          },
+          {
+            "id": "s3_thomas_answers",
+            "speaker": "thomas",
+            "role": "assistant_character",
+            "goal": "Answer the learner's question.",
+            "target_pattern": "Ich heiße Thomas.",
+            "action": "Thomas answers naturally and identifies himself."
+          }
+        ],
+
+        "transition": {
+          "condition": "The learner has successfully asked Thomas his name and Thomas has answered.",
+          "next_scene": "scene_04_about_thomas",
+          "style": "natural",
+          "instruction": "The tutor should now use the information the learner has just learned about Thomas to practice talking about him in the third person."
+        }
+      },
+
+      {
+        "id": "scene_04_about_thomas",
+        "purpose": "Practice talking about a male person using er.",
+
+        "context": "The learner has just met Thomas and knows that his name is Thomas. The tutor now asks the learner to talk about Thomas.",
+
+        "character": "thomas",
+
+        "flow": [
+          {
+            "id": "s4_talk_about_thomas",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Guide the learner to describe Thomas using the third person.",
+            "target_pattern": "Er heißt Thomas.",
+            "action": "The tutor naturally asks or prompts the learner to say Thomas's name using er."
+          },
+          {
+            "id": "s4_learner_about_thomas",
+            "speaker": "learner",
+            "role": "learner",
+            "goal": "Say Thomas's name using er.",
+            "target_pattern": "Er heißt Thomas.",
+            "action": "The learner talks about Thomas rather than speaking directly to him."
+          }
+        ],
+
+        "transition": {
+          "condition": "The learner has successfully referred to Thomas using er.",
+          "next_scene": "scene_05_anna",
+          "style": "natural",
+          "instruction": "The tutor should connect the next person to the current conversation, for example by mentioning another person known to the tutor."
+        }
+      },
+
+      {
+        "id": "scene_05_anna",
+        "purpose": "Introduce Anna naturally and practice third-person feminine forms.",
+
+        "context": "The conversation is still about people the tutor and learner know. After talking about Thomas, the tutor introduces another person named Anna.",
+
+        "character": "anna",
+
+        "flow": [
+          {
+            "id": "s5_introduce_anna",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Introduce Anna as a female person known to the tutor.",
+            "target_pattern": "Das ist Anna.",
+            "action": "The tutor introduces Anna naturally."
+          },
+          {
+            "id": "s5_about_anna",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Guide the learner to talk about Anna using sie.",
+            "target_pattern": "Sie heißt Anna.",
+            "action": "The tutor naturally asks the learner to say Anna's name using the third-person feminine form."
+          },
+          {
+            "id": "s5_learner_about_anna",
+            "speaker": "learner",
+            "role": "learner",
+            "goal": "Say Anna's name using sie.",
+            "target_pattern": "Sie heißt Anna.",
+            "action": "The learner talks about Anna using sie."
+          }
+        ],
+
+        "transition": {
+          "condition": "The learner has successfully referred to Anna using sie.",
+          "next_scene": "scene_06_group",
+          "style": "natural",
+          "instruction": "Move naturally from talking about individual people to talking about a group of people."
+        }
+      },
+
+      {
+        "id": "scene_06_group",
+        "purpose": "Practice plural forms for groups using ihr, wir, and sie.",
+
+        "context": "The learner has already practiced talking about individual people. The tutor now broadens the conversation to a group of people.",
+
+        "flow": [
+          {
+            "id": "s6_ask_group",
+            "speaker": "tutor",
+            "role": "assistant",
+            "goal": "Ask a group where they live.",
+            "target_pattern": "Wo wohnt ihr?",
+            "action": "The tutor addresses a group and asks where they live."
+          },
+          {
+            "id": "s6_learner_we",
+            "speaker": "learner",
+            "role": "learner",
+            "goal": "Talk about the learner and their group.",
+            "target_pattern": "Wir wohnen in ...",
+            "action": "The learner gives a real or contextually appropriate location for themselves and their group."
+          },
+          {
+            "id": "s6_learner_you_plural",
+            "speaker": "learner",
+            "goal": "Practice the plural form ihr.",
+            "target_pattern": "Ihr wohnt in ...",
+            "action": "The tutor creates a natural context in which the learner can say where another group lives using ihr."
+          },
+          {
+            "id": "s6_learner_they",
+            "speaker": "learner",
+            "goal": "Practice third-person plural sie.",
+            "target_pattern": "Sie wohnen in ...",
+            "action": "The tutor creates a natural context in which the learner can say where another group lives using sie."
+          }
+        ],
+
+        "transition": {
+          "condition": "The learner has practiced the required plural forms.",
+          "next_scene": "end_conversation",
+          "style": "natural",
+          "instruction": "Close the conversation naturally. Do not introduce a new person, topic, or unrelated question."
+        }
+      }
+    ],
+
+    "completion": {
+      "scene": "end_conversation",
+      "instruction": "The conversation ends after all required conversation goals have been practiced. Give a short natural closing in German. Do not start a new topic."
+    }
   },
 
   "assessment": {
