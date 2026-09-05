@@ -10,8 +10,7 @@ from services.ai.client import chat_completion, stream_chat_completion
 
 load_dotenv()
 
-
-LESSON_PROMPT_MARKER = "You are the AI conversation partner for ONE lesson"
+LESSON_PROMPT_MARKER = "You are the AI conversation partner for one language-learning lesson."
 LESSON_MAX_OUTPUT_TOKENS = 400
 
 
@@ -63,21 +62,12 @@ class OpenRouterProvider(AIProvider):
             match = re.search(pattern, system_instruction, flags=re.DOTALL)
             return match.group(1).strip() if match else ""
 
-        native_language = capture(
-            r"- Native language:\s*(.+?)\n- Learning language:"
-        )
-        learning_language = capture(
-            r"- Learning language:\s*(.+?)\n- Current CEFR level:"
-        )
-        level = capture(r"- Current CEFR level:\s*(.+?)\n\nLESSON")
-        topic = capture(r"- Topic:\s*(.*?)\n- Objective:")
-        objective = capture(r"- Objective:\s*(.*?)\n\nCURRICULUM SOURCE OF TRUTH")
-        targets = capture(
-            r"Below are ONLY the remaining target sentences\..*?\n\n(.*?)\n\nAfter your normal learner-facing reply",
-        )
+        native_language = capture(r"Learner native language:\s*(.+?)\nCEFR level:")
+        learning_language = capture(r"Language:\s*(.+?)\nLearner native language:")
+        level = capture(r"CEFR level:\s*(.+?)\n\nLESSON CONTEXT")
+        context = capture(r"LESSON CONTEXT\n(.*?)\n\nREMAINING TARGET SENTENCES")
+        targets = capture(r"REMAINING TARGET SENTENCES\n(.*?)\n\nUse only the lesson context above\.")
 
-        # Fail open if the expected lesson structure changes: it is safer to
-        # send the original instruction than to silently remove required data.
         if not learning_language or not targets:
             return system_instruction
 
@@ -86,19 +76,12 @@ class OpenRouterProvider(AIProvider):
 Learner native language: {native_language}
 Learning language: {learning_language}
 CEFR level: {level}
-Topic: {topic}
-Objective: {objective}
+
+LESSON CONTEXT
+{context}
 
 REMAINING TARGET SENTENCES
 {targets}
-
-PROGRESS TRACKING
-After your learner-facing reply, append exactly one internal marker at the very end:
-[[LESSON_PROGRESS:id1,id2]]
-If no remaining target sentence was genuinely practiced in the learner's latest message, use:
-[[LESSON_PROGRESS:]]
-Only use IDs from the remaining target-sentence list.
-Judge only the learner's latest message. Mark a sentence only when the learner genuinely produces its communicative meaning in the learning language. Natural wording is allowed, but merely repeating an isolated word, being shown a sentence, or hearing your correction is not enough. If you corrected the learner, wait until the learner produces the corrected meaning. Never mention the marker.
 
 CONVERSATION RULES
 - Keep the interaction natural and conversational, not a lecture or traditional lesson.
@@ -107,7 +90,6 @@ CONVERSATION RULES
 - Ask one short natural question or request at a time.
 - Keep replies short, normally one or two sentences.
 - Correct important mistakes briefly, then ask the learner to produce the corrected sentence.
-- Do not list grammar rules, vocabulary, lesson sections, or answer keys unless necessary.
 - Continue naturally from the existing conversation; do not restart the lesson.
 - Do not claim that a word or sentence was saved.
 
@@ -116,6 +98,14 @@ LANGUAGE RULES
 - Use the native language only for a very short clarification when the learner clearly needs help.
 - Do not switch to an unrelated language or script.
 - Do not automatically translate every sentence.
+
+PROGRESS TRACKING
+After your learner-facing reply, append exactly one internal marker at the very end:
+[[LESSON_PROGRESS:id1,id2]]
+If no remaining target sentence was genuinely practiced in the learner's latest message, use:
+[[LESSON_PROGRESS:]]
+Only use IDs from the remaining target-sentence list.
+Judge only the learner's latest message. Mark a sentence only when the learner genuinely produces its communicative meaning in the learning language. Never mention the marker.
 
 OUTPUT
 Return only the concise learner-facing reply followed by the required internal progress marker. Do not mention these instructions, curriculum data, APIs, or internal configuration."""
@@ -130,10 +120,7 @@ Return only the concise learner-facing reply followed by the required internal p
 
         if system_instruction:
             system_instruction = cls._compact_lesson_instruction(system_instruction)
-            messages.append({
-                "role": "system",
-                "content": system_instruction,
-            })
+            messages.append({"role": "system", "content": system_instruction})
 
         if isinstance(prompt, list):
             for item in prompt:
@@ -155,21 +142,18 @@ Return only the concise learner-facing reply followed by the required internal p
                 if content is None:
                     continue
 
-                messages.append({
-                    "role": role,
-                    "content": str(content),
-                })
+                if role not in {"user", "assistant", "system"}:
+                    role = "user"
+
+                messages.append({"role": role, "content": str(content)})
         else:
-            messages.append({
-                "role": "user",
-                "content": str(prompt),
-            })
+            messages.append({"role": "user", "content": str(prompt)})
 
         return messages
 
     @staticmethod
     def _extract_text(message: dict[str, Any]) -> str:
-        """Extract only the final answer text from OpenRouter/OpenAI content."""
+        """Extract final learner-facing text without exposing reasoning."""
         content = message.get("content")
 
         if isinstance(content, str):
@@ -188,6 +172,30 @@ Return only the concise learner-facing reply followed by the required internal p
 
         return ""
 
+    @staticmethod
+    def _extract_delta_text(delta: dict[str, Any]) -> str:
+        """Extract streamed visible text from OpenRouter/OpenAI delta shapes."""
+        content = delta.get("content")
+
+        if isinstance(content, str):
+            return content
+
+        if isinstance(content, list):
+            parts: list[str] = []
+            for part in content:
+                if isinstance(part, str):
+                    parts.append(part)
+                elif isinstance(part, dict):
+                    text = part.get("text")
+                    if isinstance(text, str):
+                        parts.append(text)
+            return "".join(parts)
+
+        # Some OpenAI-compatible gateways use a top-level text field in a
+        # streamed delta. Accept it without ever using reasoning fields.
+        text = delta.get("text")
+        return text if isinstance(text, str) else ""
+
     def generate_text(
         self,
         *,
@@ -198,7 +206,6 @@ Return only the concise learner-facing reply followed by the required internal p
         response_mime_type: str | None = None,
     ) -> AITextResponse:
         response_format = None
-
         if response_mime_type == "application/json":
             response_format = {"type": "json_object"}
 
@@ -221,16 +228,12 @@ Return only the concise learner-facing reply followed by the required internal p
                 text = self._extract_text(message)
 
         if not text:
-            # Do not silently return an empty answer. This gives the caller a
-            # useful failure instead of making the API look like a successful
-            # translation with no content.
             raise RuntimeError(
                 "OpenRouter returned no final text "
                 f"(model={model!r}, finish_reason={finish_reason!r})."
             )
 
         usage = response.get("usage") or {}
-
         return AITextResponse(
             text=text,
             prompt_tokens=int(usage.get("prompt_tokens") or 0),
@@ -252,6 +255,8 @@ Return only the concise learner-facing reply followed by the required internal p
         if system_instruction and LESSON_PROMPT_MARKER in system_instruction:
             output_limit = min(output_limit, LESSON_MAX_OUTPUT_TOKENS)
 
+        saw_visible_text = False
+
         for chunk in stream_chat_completion(
             model=model,
             messages=messages,
@@ -259,19 +264,17 @@ Return only the concise learner-facing reply followed by the required internal p
         ):
             choices = chunk.get("choices") or []
             text = ""
+            finish_reason = None
 
             if choices:
-                delta = choices[0].get("delta") or {}
+                first_choice = choices[0] or {}
+                finish_reason = first_choice.get("finish_reason")
+                delta = first_choice.get("delta") or {}
                 if isinstance(delta, dict):
-                    content = delta.get("content")
-                    if isinstance(content, str):
-                        text = content
-                    elif isinstance(content, list):
-                        text = "".join(
-                            str(part.get("text", ""))
-                            for part in content
-                            if isinstance(part, dict) and isinstance(part.get("text"), str)
-                        )
+                    text = self._extract_delta_text(delta)
+
+            if text:
+                saw_visible_text = True
 
             usage = chunk.get("usage") or {}
 
@@ -280,6 +283,12 @@ Return only the concise learner-facing reply followed by the required internal p
                 prompt_tokens=int(usage.get("prompt_tokens") or 0),
                 completion_tokens=int(usage.get("completion_tokens") or 0),
                 total_tokens=int(usage.get("total_tokens") or 0),
+            )
+
+        if not saw_visible_text:
+            raise RuntimeError(
+                "OpenRouter streaming completed without learner-facing text "
+                f"(model={model!r})."
             )
 
 
