@@ -47,18 +47,6 @@ def _headers() -> dict[str, str]:
     }
 
 
-def _reasoning_config(model: str) -> dict | None:
-    """Disable model reasoning for short app replies, especially MiniMax tutors.
-
-    MiniMax M2.7 is a reasoning model. Reasoning tokens count toward the
-    completion budget, so a small max_tokens value can otherwise be consumed
-    by reasoning before any learner-facing text is generated.
-    """
-    if model.lower().startswith("minimax/"):
-        return {"effort": "none"}
-    return None
-
-
 def chat_completion(
     *,
     model: str,
@@ -66,7 +54,12 @@ def chat_completion(
     max_tokens: int,
     response_format: dict | None = None,
 ) -> dict:
-    """Send one non-streaming request to OpenRouter."""
+    """Send one non-streaming request to OpenRouter.
+
+    Reasoning configuration is intentionally left to the model/endpoint.
+    MiniMax reasoning must not be disabled because some MiniMax endpoints
+    require reasoning to remain enabled.
+    """
     import httpx
 
     payload = {
@@ -74,10 +67,6 @@ def chat_completion(
         "messages": messages,
         "max_tokens": max_tokens,
     }
-
-    reasoning = _reasoning_config(model)
-    if reasoning is not None:
-        payload["reasoning"] = reasoning
 
     if response_format is not None:
         payload["response_format"] = response_format
@@ -121,10 +110,6 @@ def stream_chat_completion(
             "include_usage": True,
         },
     }
-
-    reasoning = _reasoning_config(model)
-    if reasoning is not None:
-        payload["reasoning"] = reasoning
 
     try:
         with httpx.Client(timeout=120.0) as http:
