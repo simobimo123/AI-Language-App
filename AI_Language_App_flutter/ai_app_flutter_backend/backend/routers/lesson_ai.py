@@ -192,12 +192,10 @@ def _practiced_sentence_ids(progress: UserLessonProgress) -> set[str]:
     return {str(value).strip() for value in raw if str(value).strip()}
 
 
-def _update_practice_progress(*, progress: UserLessonProgress, conversation_id: str, completed_ids: set[str], valid_ids: set[str]) -> set[str]:
+def _update_practice_progress(*, progress: UserLessonProgress, conversation_id: str, completed_ids: set[str], ordered_ids: list[str]) -> set[str]:
     """Apply only a contiguous prefix of the curriculum path; later targets cannot be skipped."""
-    current = _practiced_sentence_ids(progress)
-    ordered_ids = [item["id"] for item in _lesson_target_sentences(_update_practice_progress.curriculum_for_progress)]
-    current.update(value for value in current if value in valid_ids)
-    completed = completed_ids & valid_ids
+    current = _practiced_sentence_ids(progress) & set(ordered_ids)
+    completed = completed_ids & set(ordered_ids)
 
     for target_id in ordered_ids:
         if target_id in current:
@@ -206,12 +204,11 @@ def _update_practice_progress(*, progress: UserLessonProgress, conversation_id: 
             current.add(target_id)
         break
 
-    progress.practice_state = {"conversation_id": conversation_id, "practiced_sentence_ids": sorted(current, key=lambda value: ordered_ids.index(value) if value in ordered_ids else len(ordered_ids))}
+    progress.practice_state = {
+        "conversation_id": conversation_id,
+        "practiced_sentence_ids": [target_id for target_id in ordered_ids if target_id in current],
+    }
     return current
-
-
-# The current curriculum is supplied only for the duration of a progress update.
-_update_practice_progress.curriculum_for_progress = {}
 
 
 def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
@@ -430,13 +427,12 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
         save_conversation_message(user_id, conversation_id, "user", request.message, db)
         if cleaned_text:
             save_conversation_message(user_id, conversation_id, "assistant", cleaned_text, db)
-        valid_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
-        _update_practice_progress.curriculum_for_progress = curriculum
+        ordered_ids = [item["id"] for item in _lesson_target_sentences(curriculum)]
         _update_practice_progress(
             progress=progress,
             conversation_id=conversation_id,
             completed_ids=completed_ids,
-            valid_ids=valid_ids,
+            ordered_ids=ordered_ids,
         )
         db.commit()
         try:
