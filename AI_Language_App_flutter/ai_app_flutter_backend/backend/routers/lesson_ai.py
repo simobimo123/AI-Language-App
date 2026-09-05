@@ -31,7 +31,9 @@ MAX_LESSON_CONTEXT_CHARS = 2500
 MAX_OUTPUT_TOKENS = 220
 PROGRESS_MARKER = "[[LESSON_PROGRESS:"
 PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
-STREAM_HOLD_CHARS = max(80, len(PROGRESS_MARKER) - 1)
+# Lesson replies are intentionally very short. Buffer the complete reply so
+# cleanup can happen before any learner-visible text is emitted.
+STREAM_HOLD_CHARS = 4096
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LESSONS_DIR = BASE_DIR / "data" / "lessons"
@@ -185,32 +187,23 @@ def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
     match = matches[-1]
     raw_ids = match.group(1)
     ids = {value.strip() for value in raw_ids.split(",") if value.strip()}
-
     cleaned = PROGRESS_MARKER_RE.sub("", text).strip()
     return cleaned, ids
 
 
 def _remove_exact_duplicate_response(text: str) -> str:
-    """Collapse a response that consists of the exact same text twice."""
+    """Collapse a response that consists of the same complete reply twice."""
     cleaned = text.strip()
-    if len(cleaned) < 2 or len(cleaned) % 2 != 0:
+    if not cleaned:
         return cleaned
 
-    midpoint = len(cleaned) // 2
-    first = cleaned[:midpoint].strip()
-    second = cleaned[midpoint:].strip()
-    if first and first == second:
-        return first
-
-    # Also catch the common case where the model inserted whitespace between
-    # two identical copies of the same complete response.
-    normalized = re.sub(r"\s+", " ", cleaned)
-    midpoint = len(normalized) // 2
-    if len(normalized) % 2 == 0:
-        first = normalized[:midpoint].strip()
-        second = normalized[midpoint:].strip()
-        if first and first == second:
-            return first
+    # Handles: "Sentence. Sentence." where the two copies are separated by
+    # whitespace. The non-greedy capture plus backreference requires the entire
+    # response to be two identical copies, so legitimate repeated wording is
+    # not altered.
+    match = re.fullmatch(r"(.+?)\s+\1", cleaned, flags=re.DOTALL)
+    if match:
+        return match.group(1).strip()
 
     return cleaned
 
@@ -299,15 +292,9 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
             full_response += chunk.text
             pending_stream_text += chunk.text
 
-            marker_start = pending_stream_text.find(PROGRESS_MARKER)
-            if marker_start >= 0:
-                emit_text = pending_stream_text[:marker_start]
-                pending_stream_text = pending_stream_text[marker_start:]
-                if emit_text:
-                    visible_stream_text += emit_text
-                    yield sse_event({"type": "chunk", "text": emit_text})
-                continue
-
+            # The response is short and stays buffered until it can be cleaned
+            # and validated, preventing model-generated duplicates from being
+            # displayed before cleanup.
             if len(pending_stream_text) > STREAM_HOLD_CHARS:
                 emit_length = len(pending_stream_text) - STREAM_HOLD_CHARS
                 emit_text = pending_stream_text[:emit_length]
@@ -331,9 +318,6 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
         if cleaned_response.startswith(visible_stream_text):
             remaining_text = cleaned_response[len(visible_stream_text):]
         else:
-            # If the model duplicated the whole response, the streamed prefix
-            # cannot safely be reconciled with the canonical cleaned value.
-            # Send no second copy; the already streamed prefix is sufficient.
             remaining_text = "" if visible_stream_text else cleaned_response
 
         if remaining_text:
