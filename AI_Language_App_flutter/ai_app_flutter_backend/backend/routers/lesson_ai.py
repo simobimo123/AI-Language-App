@@ -63,9 +63,22 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
 
 def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
     raw = curriculum.get("key_sentences", [])
+    expected_learner_responses: list[str] = []
+    sections = curriculum.get("sections", [])
+    if isinstance(sections, list):
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            values = section.get("expected_learner_responses", [])
+            if isinstance(values, list):
+                expected_learner_responses.extend(
+                    str(value).strip()
+                    for value in values
+                    if isinstance(value, str) and value.strip()
+                )
+
     if not isinstance(raw, list) or not raw:
-        collected: list[str] = []
-        sections = curriculum.get("sections", [])
+        collected: list[dict[str, str]] = []
         if isinstance(sections, list):
             for section in sections:
                 if not isinstance(section, dict):
@@ -75,8 +88,21 @@ def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
                     continue
                 for value in values:
                     if isinstance(value, str) and value.strip():
-                        collected.append(value.strip())
+                        collected.append({"sentence": value.strip()})
         raw = collected
+
+    def looks_like_learner_response(sentence: str) -> bool:
+        normalized_sentence = re.sub(r"\s+", " ", sentence.strip().lower()).rstrip(".!?。！？")
+        for pattern in expected_learner_responses:
+            normalized_pattern = re.sub(r"\s+", " ", pattern.strip().lower()).rstrip(".!?。！？")
+            if "..." in normalized_pattern:
+                prefix, suffix = normalized_pattern.split("...", 1)
+                if normalized_sentence.startswith(prefix.strip()) and normalized_sentence.endswith(suffix.strip()):
+                    return True
+            elif normalized_sentence == normalized_pattern:
+                return True
+        return False
+
     result: list[dict[str, str]] = []
     seen_ids: set[str] = set()
     seen_sentences: set[str] = set()
@@ -84,13 +110,13 @@ def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
         if isinstance(item, str):
             sentence = item.strip()
             explicit_id = ""
-            role = "either"
+            role = "learner" if looks_like_learner_response(sentence) else "assistant"
         elif isinstance(item, dict):
             sentence = str(item.get("sentence", item.get("text", ""))).strip()
             explicit_id = str(item.get("id", "")).strip()
-            role = str(item.get("role", "either")).strip().lower()
+            role = str(item.get("role", "")).strip().lower()
             if role not in {"assistant", "learner", "either"}:
-                role = "either"
+                role = "learner" if looks_like_learner_response(sentence) else "assistant"
         else:
             continue
         if not sentence or sentence in seen_sentences:
@@ -167,10 +193,25 @@ def _practiced_sentence_ids(progress: UserLessonProgress) -> set[str]:
 
 
 def _update_practice_progress(*, progress: UserLessonProgress, conversation_id: str, completed_ids: set[str], valid_ids: set[str]) -> set[str]:
+    """Apply only a contiguous prefix of the curriculum path; later targets cannot be skipped."""
     current = _practiced_sentence_ids(progress)
-    current.update(completed_ids & valid_ids)
-    progress.practice_state = {"conversation_id": conversation_id, "practiced_sentence_ids": sorted(current)}
+    ordered_ids = [item["id"] for item in _lesson_target_sentences(_update_practice_progress.curriculum_for_progress)]
+    current.update(value for value in current if value in valid_ids)
+    completed = completed_ids & valid_ids
+
+    for target_id in ordered_ids:
+        if target_id in current:
+            continue
+        if target_id in completed:
+            current.add(target_id)
+        break
+
+    progress.practice_state = {"conversation_id": conversation_id, "practiced_sentence_ids": sorted(current, key=lambda value: ordered_ids.index(value) if value in ordered_ids else len(ordered_ids))}
     return current
+
+
+# The current curriculum is supplied only for the duration of a progress update.
+_update_practice_progress.curriculum_for_progress = {}
 
 
 def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
@@ -265,10 +306,10 @@ STRICT PATH RULES
 1. Always work on the FIRST unfinished target (`next_target`). Never jump to a later target just because it seems interesting or easier.
 2. Do not introduce a person, topic, question, place, or story that is not needed for the current target or the lesson context.
 3. Do not move to a later target until the current target has genuinely been practiced. Keep the conversation natural, but the order is mandatory.
-4. If the next target has role `assistant`, naturally produce that target in your reply (you may wrap it in a very short natural transition). You may mark that target as completed only because YOU actually produced it.
+4. If the next target has role `assistant`, naturally produce that target in your reply. You may add only a very short natural transition. Mark it only because YOU actually produced it.
 5. If the next target has role `learner`, do NOT pretend the learner already said it. Ask or respond in a way that naturally elicits that target. Mark it only after the USER actually produces its communicative meaning.
 6. If role is `either`, judge from the conversation who should naturally produce it, but still keep the target in order.
-7. If the learner gives a different but correct natural wording with the same communicative meaning, it can count for a learner target. Do not force an exact memorized string unless the curriculum clearly requires the exact wording.
+7. If the learner gives a different but correct natural wording with the same communicative meaning, it can count for a learner target. Do not force an exact memorized string unless the curriculum clearly requires exact wording.
 8. Once a target is completed, continue naturally toward the NEW first unfinished target on the next turn. Never go backward to an already completed target unless a brief correction is genuinely necessary.
 9. The target list is ordered. Do not use `remaining_targets` as permission to choose any item; only `next_target` is actionable.
 10. When all targets are completed, give one short natural closing sentence and do not start a new topic or ask another unrelated question.
@@ -301,7 +342,7 @@ ANTI-DUPLICATION
 Never repeat the same learner-facing sentence or the same complete reply twice in one response. Do not echo your own previous reply. For START_LESSON, produce exactly one natural opening reply.{start_rule}
 
 PROGRESS MARKER
-Judge progress against ONLY the first unfinished target. The marker is internal metadata and must never be shown to the learner.
+Judge progress against ONLY the first unfinished target.
 - For an `assistant` target, mark its id only if you actually produced that target in this response.
 - For a `learner` target, mark its id only if the USER's latest message genuinely produced its communicative meaning.
 - For an `either` target, mark its id only when the corresponding communicative target was genuinely practiced by the appropriate speaker.
@@ -390,6 +431,7 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
         if cleaned_text:
             save_conversation_message(user_id, conversation_id, "assistant", cleaned_text, db)
         valid_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
+        _update_practice_progress.curriculum_for_progress = curriculum
         _update_practice_progress(
             progress=progress,
             conversation_id=conversation_id,
