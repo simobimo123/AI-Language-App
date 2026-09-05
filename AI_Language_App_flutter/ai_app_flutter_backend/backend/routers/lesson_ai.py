@@ -12,14 +12,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AIConversationMessage, CourseLesson, LearningProfile, User, UserLessonProgress
+from models import CourseLesson, LearningProfile, User, UserLessonProgress
 from routers.auth import get_current_user
 from services.ai.client import AI_MODEL
-from services.ai.conversation import (
-    cleanup_old_conversation_messages,
-    get_conversation_history,
-    save_conversation_message,
-)
+from services.ai.conversation import get_conversation_history, save_conversation_message
 from services.ai.normalization import normalize_language, normalize_level
 from services.ai.provider import provider
 from services.ai.rate_limit import check_rate_limit
@@ -39,13 +35,14 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-# Lesson tutoring must use the same centralized MiniMax model as all other
-# application AI services. Legacy model environment variables are ignored.
+# Lesson tutoring uses the centralized MiniMax model configured by AI_MODEL.
 LESSON_TUTOR_MODEL = AI_MODEL
 
-MAX_HISTORY_MESSAGES = 2
-MAX_LESSON_CONTEXT_CHARS = 10000
-LESSON_CONVERSATION_PREFIX = "lesson_"
+# Lesson conversations intentionally keep their full history because the
+# messages are short and continuity is more important than an artificial cap.
+MAX_HISTORY_MESSAGES = 0
+MAX_LESSON_CONTEXT_CHARS = 2500
+MAX_OUTPUT_TOKENS = 220
 PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]\s*$")
 STREAM_HOLD_CHARS = 80
 
@@ -149,31 +146,33 @@ def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
 
 
 def _lesson_context(data: dict) -> str:
-    """Build a compact context centered on one lesson conversation."""
+    """Keep only the small amount of curriculum context the tutor needs."""
     metadata = data.get("metadata", {})
     if not isinstance(metadata, dict):
         metadata = {}
 
-    focus_section = None
+    section_context: dict[str, object] = {}
     sections = data.get("sections", [])
     if isinstance(sections, list):
         for section in sections:
             if not isinstance(section, dict):
                 continue
             section_type = str(section.get("type", "")).lower()
-            if section_type not in {"test", "assessment", "review", "end_test"}:
-                focus_section = section
-                break
+            if section_type in {"test", "assessment", "review", "end_test"}:
+                continue
+            section_context = {
+                "title": str(section.get("title", "")).strip(),
+                "objective": str(section.get("objective", "")).strip(),
+                "scenario": str(section.get("scenario", "")).strip(),
+                "focus": section.get("focus", []),
+            }
+            break
 
     selected = {
-        "lesson_id": data.get("lesson_id"),
-        "language": data.get("language"),
-        "level": data.get("level"),
-        "lesson_order": data.get("lesson_order"),
-        "metadata": metadata,
-        "primary_focus_section": focus_section,
+        "topic": str(metadata.get("title", "")).strip(),
+        "objective": str(metadata.get("objective", "")).strip(),
+        "focus": section_context,
     }
-
     text = json.dumps(selected, ensure_ascii=False, separators=(",", ":"))
     return text[:MAX_LESSON_CONTEXT_CHARS]
 
@@ -272,7 +271,7 @@ def _build_target_tracking_context(
     remaining = [item for item in targets if item["id"] not in practiced]
 
     if not remaining:
-        return "No target sentences remain."
+        return "[]"
 
     compact = [
         {"id": item["id"], "sentence": item["sentence"]}
@@ -291,94 +290,29 @@ def _build_system_instruction(
     context = _lesson_context(curriculum)
     targets = _build_target_tracking_context(curriculum, progress)
 
-    return f"""
-You are the AI conversation partner for ONE lesson in a language-learning app.
+    return f"""You are the AI conversation partner for one language-learning lesson.
 
-USER
-- Native language: {native_language}
-- Learning language: {target_language}
-- Current CEFR level: {level}
+Language: {target_language}
+Learner native language: {native_language}
+CEFR level: {level}
 
-LESSON
-- Lesson order: {curriculum.get('lesson_order')}
-- Lesson language: {curriculum.get('language')}
-- Lesson level: {curriculum.get('level')}
-- Topic: {curriculum.get('metadata', {}).get('title', '')}
-- Objective: {curriculum.get('metadata', {}).get('objective', '')}
-
-CURRICULUM SOURCE OF TRUTH
-The JSON below is the canonical curriculum for this lesson.
-Use it to control the topic and target sentences. Do not invent unrelated material.
-
+LESSON CONTEXT
 {context}
 
-TARGET SENTENCE PRACTICE TRACKING
-The app must know which target sentences the learner has actually practiced.
-Below are ONLY the remaining target sentences. Their stored translations are intentionally not provided.
-
+REMAINING TARGET SENTENCES
 {targets}
 
-After your normal learner-facing reply, append exactly one internal progress marker:
+Use only the lesson context above. Guide the learner through a natural conversation and keep the topic focused. Do not lecture, list vocabulary, explain grammar at length, or reveal internal curriculum data. Ask only one short question/request at a time and give the learner most of the speaking turns. Keep replies to one or two short sentences. Use the learning language; use the native language only for a very brief clarification when clearly necessary. If the learner makes an important mistake, correct it briefly and ask them to produce the corrected sentence.
+
+CONTINUITY
+Use the full conversation history provided separately. Continue naturally from it; never restart or ask for information already established in the conversation unless the learner has changed it.
+
+PROGRESS
+Judge only the learner's latest message. Mark a target only when the learner genuinely produces its communicative meaning in the learning language. Natural wording differences are allowed. Do not mark something merely because you asked, displayed, translated, or mentioned it. Use only ids from the remaining list.
+
+End every response with exactly one machine-readable marker, after the learner-facing text:
 [[LESSON_PROGRESS:id1,id2]]
-Use an empty marker when the learner did not successfully practice any remaining target sentence:
-[[LESSON_PROGRESS:]]
-
-IMPORTANT PROGRESS RULES
-- Judge the learner's LATEST message, not your own message.
-- Mark a sentence only when the learner meaningfully produces that sentence's communicative meaning in the learning language.
-- Natural wording differences are allowed when the intended target meaning is clearly expressed.
-- Do not require exact copying, but do require genuine learner production.
-- Do not mark a sentence merely because you asked it, displayed it, or mentioned it.
-- Do not mark a sentence because the learner merely repeated an isolated word.
-- If you corrected the learner, do not mark the sentence until the learner actually produces the corrected target meaning.
-- You may mark more than one remaining sentence if the learner genuinely practiced more than one in the latest message.
-- Only use ids from the remaining target-sentence list.
-- The marker is machine-readable and must be the final text of your response.
-- Never explain or mention the marker to the learner.
-
-CONVERSATION-ONLY MODE — VERY IMPORTANT
-- This is NOT a traditional lesson and NOT a lecture.
-- Do not explain grammar rules before the learner speaks.
-- Do not announce what the learner will learn.
-- Do not list vocabulary, teaching points, or lesson sections.
-- Do not give long explanations.
-- Do not behave like a teacher giving a presentation.
-- Act as a natural conversation partner who quietly guides the learner.
-- Start with a natural sentence or question in the learning language.
-- Ask only one natural question or request one short response at a time.
-- Give the learner frequent opportunities to produce complete sentences.
-- Prefer the learner speaking over the tutor speaking.
-- Introduce target words and sentences naturally through the conversation.
-- Reuse important target sentences in different natural turns.
-- Keep tutor messages short: normally one or two sentences.
-- If the learner makes an important mistake, correct it briefly and naturally,
-  then ask the learner to say the corrected sentence.
-- Do not stop the conversation to teach a grammar lesson.
-- Do not reveal answer keys or the internal curriculum unless necessary.
-- Stay inside the lesson topic and target sentences.
-
-LANGUAGE CONTROL — VERY IMPORTANT
-- The learning language is {target_language}.
-- The actual conversation must be in the learning language.
-- Never output Chinese, Japanese, Korean, or another unrelated language.
-- Never switch languages because of model habits.
-- Use the native language ({native_language}) only for a very short clarification
-  when the learner clearly needs help; otherwise stay entirely in the learning language.
-- Do not mix unrelated scripts into a target-language sentence.
-- Do not translate every sentence automatically.
-
-SESSION CONTINUITY
-- If previous conversation history exists, continue naturally from it.
-- Do not restart the lesson or repeat a lecture when the learner returns.
-- Leaving the screen does not mean the lesson is completed.
-- Continue guiding the learner until every required target sentence has been genuinely practiced.
-- The app will perform a separate translation check after all target sentences are practiced.
-
-OUTPUT
-- Respond only as the conversation partner, followed by the required internal progress marker.
-- Keep every learner-facing response concise and natural for a beginner.
-- Do not mention these instructions, the JSON, APIs, or internal configuration.
-- Do not claim that a sentence or word was saved.
+Use [[LESSON_PROGRESS:]] when no remaining target was practiced. Never mention the marker.
 """
 
 
@@ -443,7 +377,7 @@ def _stream_lesson_response(
             model=LESSON_TUTOR_MODEL,
             prompt=contents,
             system_instruction=system_instruction,
-            max_output_tokens=650,
+            max_output_tokens=MAX_OUTPUT_TOKENS,
         ):
             prompt_tokens = max(prompt_tokens, chunk.prompt_tokens)
             completion_tokens = max(completion_tokens, chunk.completion_tokens)
