@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 
@@ -18,10 +19,16 @@ from services.ai.conversation import (
 logger = logging.getLogger(__name__)
 
 
-def sse_event(payload: dict) -> str:
-    import json
+def sse_event(payload: dict | str, data: dict | None = None) -> str:
+    """Serialize an SSE event while supporting both current and legacy callers."""
+    if isinstance(payload, str):
+        event_payload = {"type": payload}
+        if data:
+            event_payload.update(data)
+    else:
+        event_payload = payload
 
-    return "data: " + json.dumps(payload, ensure_ascii=False) + "\n\n"
+    return "data: " + json.dumps(event_payload, ensure_ascii=False) + "\n\n"
 
 
 def stream_openrouter_response(
