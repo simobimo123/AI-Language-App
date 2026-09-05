@@ -11,7 +11,7 @@ from services.ai.client import chat_completion, stream_chat_completion
 load_dotenv()
 
 LESSON_PROMPT_MARKER = "You are the AI conversation partner for one language-learning lesson."
-LESSON_MAX_OUTPUT_TOKENS = 400
+LESSON_MAX_OUTPUT_TOKENS = 800
 
 
 @dataclass(frozen=True)
@@ -191,8 +191,6 @@ Return only the concise learner-facing reply followed by the required internal p
                         parts.append(text)
             return "".join(parts)
 
-        # Some OpenAI-compatible gateways use a top-level text field in a
-        # streamed delta. Accept it without ever using reasoning fields.
         text = delta.get("text")
         return text if isinstance(text, str) else ""
 
