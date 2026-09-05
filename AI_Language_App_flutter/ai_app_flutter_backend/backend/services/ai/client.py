@@ -38,22 +38,25 @@ class OpenRouterRequestError(RuntimeError):
 
 
 # OpenRouter exposes an OpenAI-compatible Chat Completions API.
-# Keeping the HTTP layer here makes the rest of the AI service independent
-# from the model vendor while ensuring the application uses the single
-# centrally selected MiniMax model above.
 def _headers() -> dict[str, str]:
     return {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": os.getenv(
-            "OPENROUTER_HTTP_REFERER",
-            "http://localhost",
-        ),
-        "X-Title": os.getenv(
-            "OPENROUTER_APP_TITLE",
-            "AI Language App",
-        ),
+        "HTTP-Referer": os.getenv("OPENROUTER_HTTP_REFERER", "http://localhost"),
+        "X-Title": os.getenv("OPENROUTER_APP_TITLE", "AI Language App"),
     }
+
+
+def _reasoning_config(model: str) -> dict | None:
+    """Disable model reasoning for short app replies, especially MiniMax tutors.
+
+    MiniMax M2.7 is a reasoning model. Reasoning tokens count toward the
+    completion budget, so a small max_tokens value can otherwise be consumed
+    by reasoning before any learner-facing text is generated.
+    """
+    if model.lower().startswith("minimax/"):
+        return {"effort": "none"}
+    return None
 
 
 def chat_completion(
@@ -71,6 +74,10 @@ def chat_completion(
         "messages": messages,
         "max_tokens": max_tokens,
     }
+
+    reasoning = _reasoning_config(model)
+    if reasoning is not None:
+        payload["reasoning"] = reasoning
 
     if response_format is not None:
         payload["response_format"] = response_format
@@ -115,6 +122,10 @@ def stream_chat_completion(
         },
     }
 
+    reasoning = _reasoning_config(model)
+    if reasoning is not None:
+        payload["reasoning"] = reasoning
+
     try:
         with httpx.Client(timeout=120.0) as http:
             with http.stream(
@@ -135,6 +146,7 @@ def stream_chat_completion(
                     if not line:
                         continue
 
+                    # SSE comments/keep-alives are legal and should be ignored.
                     if not line.startswith("data:"):
                         continue
 
@@ -146,6 +158,8 @@ def stream_chat_completion(
                     try:
                         yield json.loads(data)
                     except json.JSONDecodeError:
+                        # Ignore malformed/non-JSON SSE lines rather than
+                        # terminating an otherwise valid stream.
                         continue
     except httpx.HTTPError as exc:
         raise RuntimeError(f"OpenRouter network request failed: {exc}") from exc
