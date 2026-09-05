@@ -25,6 +25,9 @@ class ApiService {
   late final TranslationApiService _translation;
   late final WordApiService _words;
 
+  // Public getter for ApiClient to share instances
+  ApiClient get client => _client;
+
   ApiService() {
     _client = ApiClient();
     _auth = AuthApiService(_client);

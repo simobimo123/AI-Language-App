@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../core/errors/api_exception.dart';
 import 'api_client.dart';
 
+/// Represents a chunk of data received from the AI lesson chat stream.
 class LessonAiChunk {
   final String type;
   final String? text;
@@ -76,7 +77,6 @@ class _CachedLessonConversation {
 
 class LessonAiApiService {
   final ApiClient _client;
-  final http.Client _httpClient;
 
   static final Map<int, _CachedLessonConversation> _sessionCache = {};
 
@@ -85,8 +85,18 @@ class LessonAiApiService {
   // reach the backend; later callers reuse its completed result.
   static final Map<int, Future<void>> _lessonStartInFlight = {};
 
-  LessonAiApiService(this._client, {http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client();
+  LessonAiApiService(this._client);
+
+  /// Clears the cached conversation for a specific lesson.
+  /// Useful when user wants to restart the lesson.
+  static void clearCache(int lessonId) {
+    _sessionCache.remove(lessonId);
+  }
+
+  /// Clears all cached conversations.
+  static void clearAllCache() {
+    _sessionCache.clear();
+  }
 
   Stream<LessonAiChunk> chat({
     required int lessonId,
@@ -194,9 +204,16 @@ class LessonAiApiService {
     });
 
     late final http.StreamedResponse response;
+    final client = http.Client();
 
     try {
-      response = await _httpClient.send(request);
+      response = await client.send(request).timeout(
+            const Duration(seconds: 60),
+          );
+    } on TimeoutException {
+      throw NetworkException(
+        'The connection timed out. Please try again.',
+      );
     } on http.ClientException catch (e) {
       throw NetworkException(
         'Unable to connect to the server. Please check your internet connection.',
@@ -207,6 +224,8 @@ class LessonAiApiService {
         'A network error occurred. Please try again.',
         cause: e,
       );
+    } finally {
+      client.close();
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -361,9 +380,5 @@ class LessonAiApiService {
     }
 
     return null;
-  }
-
-  void dispose() {
-    _httpClient.close();
   }
 }

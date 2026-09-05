@@ -52,6 +52,14 @@ class _SplashPageState extends State<SplashPage> {
       if (!mounted) return;
 
       if (e.isUnauthorized) {
+        await storageService.deleteToken();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Your session has expired. Please login again.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
         _goToLogin();
       } else if (e.isNotFound) {
         _goToOnboarding();

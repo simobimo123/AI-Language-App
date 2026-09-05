@@ -59,10 +59,6 @@ class LearningPathController extends ChangeNotifier {
   bool get hasLessons => lessons.isNotEmpty;
 
   Future<void> load() async {
-    if (_isLoading) {
-      return;
-    }
-
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();

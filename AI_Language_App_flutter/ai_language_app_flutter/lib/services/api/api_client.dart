@@ -82,8 +82,14 @@ class ApiClient {
         const Duration(seconds: 30),
       );
 
-      if (authenticated && response.statusCode == 401) {
-        await storageService.deleteToken();
+      if (authenticated) {
+        if (response.statusCode == 401) {
+          await storageService.deleteToken();
+          throw const ApiException(
+            'Session expired. Please login again.',
+            statusCode: 401,
+          );
+        }
       }
 
       return response;

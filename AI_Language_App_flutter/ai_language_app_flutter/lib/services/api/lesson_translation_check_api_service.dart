@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
 import 'api_client.dart';
 
 class LessonTranslationQuestion {
@@ -60,29 +58,22 @@ class LessonTranslationCheckResult {
 
 class LessonTranslationCheckApiService {
   final ApiClient _client;
-  final http.Client _httpClient;
 
-  LessonTranslationCheckApiService(this._client, {http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client();
+  LessonTranslationCheckApiService(this._client);
 
   Future<Map<String, dynamic>> getQuestions({
     required int lessonId,
     required String conversationId,
   }) async {
-    final token = await _client.getToken();
-    final uri = Uri.parse(
-      '${ApiClient.baseUrl}/learning/lessons/$lessonId/translation-check',
-    ).replace(queryParameters: {'conversation_id': conversationId});
-
-    final response = await _httpClient.get(
-      uri,
+    final response = await _client.get(
+      '/learning/lessons/$lessonId/translation-check',
+      authenticated: true,
       headers: {
-        ..._client.jsonHeaders,
-        'Authorization': 'Bearer $token',
+        'conversation_id': conversationId,
       },
     );
 
-    final data = _decode(response);
+    final data = _client.decodeResponse(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw _client.apiException(
         data,
@@ -98,22 +89,17 @@ class LessonTranslationCheckApiService {
     required String conversationId,
     required List<Map<String, String>> answers,
   }) async {
-    final token = await _client.getToken();
-    final response = await _httpClient.post(
-      Uri.parse(
-        '${ApiClient.baseUrl}/learning/lessons/$lessonId/translation-check',
-      ),
-      headers: {
-        ..._client.jsonHeaders,
-        'Authorization': 'Bearer $token',
-      },
+    final response = await _client.post(
+      '/learning/lessons/$lessonId/translation-check',
+      authenticated: true,
+      headers: _client.jsonHeaders,
       body: jsonEncode({
         'conversation_id': conversationId,
         'answers': answers,
       }),
     );
 
-    final data = _decode(response);
+    final data = _client.decodeResponse(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw _client.apiException(
         data,
@@ -126,14 +112,4 @@ class LessonTranslationCheckApiService {
       Map<String, dynamic>.from(data as Map),
     );
   }
-
-  dynamic _decode(http.Response response) {
-    try {
-      return jsonDecode(response.body);
-    } catch (_) {
-      return response.body;
-    }
-  }
-
-  void dispose() => _httpClient.close();
 }

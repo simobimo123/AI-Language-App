@@ -40,6 +40,7 @@ class HomeStatsController extends ChangeNotifier {
       _stats = await repository.getHomeStats();
     } catch (error) {
       _errorMessage = ErrorMessage.from(error);
+      _stats = null; // Clear stale data on error
     } finally {
       _isLoading = false;
       notifyListeners();

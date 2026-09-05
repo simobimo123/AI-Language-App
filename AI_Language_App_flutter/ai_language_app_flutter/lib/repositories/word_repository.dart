@@ -8,7 +8,8 @@ class WordRepository {
 
   WordRepository({ApiService? apiService, WordApiService? wordApiService})
       : apiService = apiService ?? ApiService(),
-        wordApiService = wordApiService ?? WordApiService(ApiClient());
+        wordApiService = wordApiService ??
+            WordApiService(apiService?.client ?? ApiClient());
 
   Future<List<dynamic>> getWords() => apiService.getWords();
 

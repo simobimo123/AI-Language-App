@@ -4,6 +4,7 @@ import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
 import '../services/api/api_service.dart';
+import '../services/api/lesson_ai_api_service.dart';
 import '../services/api/lesson_hint_api_service.dart';
 import '../widgets/learning_path/lesson_hint_dialog.dart';
 import '../widgets/learning_path/lesson_translation_check_dialog.dart';
@@ -62,6 +63,8 @@ class _LessonPageState extends State<LessonPage> {
   bool _lessonStarted = false;
   bool _hintLoading = false;
   bool _translationCheckShown = false;
+  bool _aiTyping = false;
+  String? _lastFailedMessage;
 
   @override
   void initState() {
@@ -114,6 +117,66 @@ class _LessonPageState extends State<LessonPage> {
         ja: 'レッスン ${widget.lesson.lessonOrder}',
         ko: '레슨 ${widget.lesson.lessonOrder}',
         zh: '课程 ${widget.lesson.lessonOrder}',
+      );
+
+  String _dailyLimitLabel() => _text(
+        ar: 'المحادثات المتبقية اليوم',
+        en: 'Conversations remaining today',
+        fr: 'Conversations restantes aujourd\'hui',
+        es: 'Conversaciones restantes hoy',
+        de: 'Verbleibende Gespräche heute',
+        it: 'Conversazioni rimanenti oggi',
+        ja: '今日の残り会話数',
+        ko: '오늘 남은 대화 수',
+        zh: '今日剩余对话数',
+      );
+
+  String _dailyLimitReachedLabel() => _text(
+        ar: 'لقد وصلت إلى الحد الأقصى للمحادثات اليوم',
+        en: 'You\'ve reached your conversation limit for today',
+        fr: 'Vous avez atteint votre limite de conversations pour aujourd\'hui',
+        es: 'Has alcanzado tu límite de conversaciones para hoy',
+        de: 'Sie haben Ihr Gesprächslimit für heute erreicht',
+        it: 'Hai raggiunto il limite di conversazioni per oggi',
+        ja: '今日の会話制限に達しました',
+        ko: '오늘 대화 한도에 도달했습니다',
+        zh: '您已达到今天的对话限制',
+      );
+
+  String _retryLabel() => _text(
+        ar: 'إعادة المحاولة',
+        en: 'Retry',
+        fr: 'Réessayer',
+        es: 'Reintentar',
+        de: 'Erneut versuchen',
+        it: 'Riprova',
+        ja: '再試行',
+        ko: '다시 시도',
+        zh: '重试',
+      );
+
+  String _restartLessonLabel() => _text(
+        ar: 'إعادة بدء الدرس',
+        en: 'Restart Lesson',
+        fr: 'Recommencer la leçon',
+        es: 'Reiniciar lección',
+        de: 'Lektion neu starten',
+        it: 'Riavvia lezione',
+        ja: 'レッスンを再開',
+        ko: '레슨 다시 시작',
+        zh: '重新开始课程',
+      );
+
+  String _aiTypingLabel() => _text(
+        ar: 'المدرّس الذكي يكتب...',
+        en: 'AI tutor is typing...',
+        fr: 'Le tuteur IA écrit...',
+        es: 'El tutor de IA está escribiendo...',
+        de: 'KI-Tutor tippt...',
+        it: 'Il tutor IA sta scrivendo...',
+        ja: 'AIチューターが入力中...',
+        ko: 'AI 튜터가 입력 중...',
+        zh: 'AI 导师正在输入...',
       );
 
   String _inputHint() => _text(
@@ -256,13 +319,16 @@ class _LessonPageState extends State<LessonPage> {
       setState(() {
         _messages.add(_TutorMessage(role: 'user', text: message));
         _error = null;
+        _lastFailedMessage = null;
       });
       _scrollToBottom();
     }
     setState(() {
       _sending = true;
+      _aiTyping = showUserMessage;
       _loading = !showUserMessage;
       _error = null;
+      _lastFailedMessage = showUserMessage ? message : _lastFailedMessage;
     });
 
     var assistantIndex = -1;
@@ -288,7 +354,9 @@ class _LessonPageState extends State<LessonPage> {
           }
           setState(() {
             _loading = false;
+            _aiTyping = false;
             _error = null;
+            _lastFailedMessage = null;
           });
           _scrollToBottom();
           continue;
@@ -303,7 +371,9 @@ class _LessonPageState extends State<LessonPage> {
             } else {
               _messages[assistantIndex].text += text;
             }
-            setState(() {});
+            setState(() {
+              _aiTyping = true;
+            });
             _scrollToBottom();
           }
         }
@@ -313,6 +383,10 @@ class _LessonPageState extends State<LessonPage> {
           if (id != null && id.isNotEmpty) _conversationId = id;
           _dailyLimit = chunk.dailyLimit;
           _dailyRemaining = chunk.dailyRemaining;
+          setState(() {
+            _aiTyping = false;
+            _lastFailedMessage = null;
+          });
 
           if (chunk.lessonReady == true && !_translationCheckShown) {
             _translationCheckShown = true;
@@ -326,8 +400,21 @@ class _LessonPageState extends State<LessonPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _error = e.toString());
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_errorLabel())));
+        setState(() {
+          _error = e.toString();
+          _aiTyping = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorLabel()),
+            action: showUserMessage
+                ? SnackBarAction(
+                    label: _retryLabel(),
+                    onPressed: () => _retryLastMessage(),
+                  )
+                : null,
+          ),
+        );
       }
     }
 
@@ -335,9 +422,85 @@ class _LessonPageState extends State<LessonPage> {
       setState(() {
         _sending = false;
         _loading = false;
+        _aiTyping = false;
       });
       _scrollToBottom();
     }
+  }
+
+  Future<void> _retryLastMessage() async {
+    final message = _lastFailedMessage;
+    if (message == null || message.isEmpty) return;
+
+    // Remove the failed user message
+    if (_messages.isNotEmpty && _messages.last.isUser) {
+      setState(() {
+        _messages.removeLast();
+      });
+    }
+
+    if (message == 'START_LESSON') {
+      await _startTutor();
+    } else {
+      await _sendCurrentMessage();
+    }
+  }
+
+  Future<void> _restartLesson() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(_restartLessonLabel()),
+          content: Text(_text(
+            ar: 'سيتم حذف المحادثة الحالية والبدء من جديد. هل أنت متأكد؟',
+            en: 'The current conversation will be deleted and the lesson will restart. Are you sure?',
+            fr: 'La conversation actuelle sera supprimée et la leçon redémarrera. Êtes-vous sûr ?',
+            es: 'Se eliminará la conversación actual y la lección se reiniciará. ¿Está seguro?',
+            de: 'Der aktuelle Chat wird gelöscht und die Lektion neu gestartet. Sind Sie sicher?',
+            it: 'La conversazione attuale verrà eliminata e la lezione verrà riavviata. Sei sicuro?',
+            ja: '現在の会話が削除され、レッスンが再開されます。よろしいですか？',
+            ko: '현재 대화가 삭제되고 레슨이 다시 시작됩니다. 계속하시겠습니까?',
+            zh: '当前对话将被删除，课程将重新开始。您确定吗？',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(_text(
+                ar: 'إلغاء', en: 'Cancel', fr: 'Annuler', es: 'Cancelar',
+                de: 'Abbrechen', it: 'Annulla', ja: 'キャンセル',
+                ko: '취소', zh: '取消',
+              )),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(_restartLessonLabel()),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _messages.clear();
+      _error = null;
+      _lastFailedMessage = null;
+      _aiTyping = false;
+      _sending = false;
+      _loading = true;
+      _lessonStarted = false;
+      _translationCheckShown = false;
+    });
+
+    // Clear API cache for this lesson
+    LessonAiApiService.clearCache(widget.lesson.id);
+
+    await _startTutor();
   }
 
   Future<void> _showTranslationCheckAndAssessment() async {
@@ -719,8 +882,48 @@ class _LessonPageState extends State<LessonPage> {
           if (_dailyRemaining != null)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 4),
-              child: Center(child: Text('$_dailyRemaining/${_dailyLimit ?? ''}', style: theme.textTheme.labelMedium)),
+              child: Tooltip(
+                message: _dailyLimitLabel(),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (_dailyRemaining ?? 0) > 0
+                          ? theme.colorScheme.primaryContainer
+                          : theme.colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 14,
+                          color: (_dailyRemaining ?? 0) > 0
+                              ? theme.colorScheme.onPrimaryContainer
+                              : theme.colorScheme.onErrorContainer,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_dailyRemaining ?? 0}/${_dailyLimit ?? '∞'}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: (_dailyRemaining ?? 0) > 0
+                                ? theme.colorScheme.onPrimaryContainer
+                                : theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
+          IconButton(
+            tooltip: _restartLessonLabel(),
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _sending || _submitting ? null : _restartLesson,
+          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -734,46 +937,189 @@ class _LessonPageState extends State<LessonPage> {
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                      itemCount: _messages.length + (_sending ? 1 : 0),
+                      itemCount: _messages.length + (_sending && !_aiTyping ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index >= _messages.length) {
-                          return Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                                  const SizedBox(width: 10),
-                                  Text(_text(
-                                    ar: 'يبدأ المدرّس الذكي الدرس...',
-                                    en: 'Your AI tutor is starting the lesson...',
-                                    fr: 'Votre tuteur IA démarre la leçon...',
-                                    es: 'Tu tutor de IA está iniciando la lección...',
-                                    de: 'Dein KI-Tutor startet die Lektion...',
-                                    it: 'Il tuo tutor IA sta iniziando la lezione...',
-                                    ja: 'AIチューターがレッスンを開始しています...',
-                                    ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
-                                    zh: 'AI 导师正在开始课程...',
-                                  )),
-                                ],
-                              ),
-                            ),
-                          );
+                          return _buildLoadingIndicator(theme);
                         }
                         return _buildMessage(_messages[index], theme);
                       },
                     ),
             ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(_errorLabel(), textAlign: TextAlign.center, style: TextStyle(color: theme.colorScheme.error)),
-              ),
+            if (_aiTyping && _messages.isNotEmpty && !_loading)
+              _buildTypingIndicator(theme),
+            if (_error != null) _buildErrorBanner(theme),
+            if ((_dailyRemaining ?? 1) <= 0 && !_loading)
+              _buildDailyLimitBanner(theme),
             _buildComposer(theme),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _TypingDots(color: theme.colorScheme.primary),
+          const SizedBox(width: 10),
+          Text(
+            _aiTypingLabel(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator(ThemeData theme) {
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(width: 10),
+            Text(_text(
+              ar: 'يبدأ المدرّس الذكي الدرس...',
+              en: 'Your AI tutor is starting the lesson...',
+              fr: 'Votre tuteur IA démarre la leçon...',
+              es: 'Tu tutor de IA está iniciando la lección...',
+              de: 'Dein KI-Tutor startet die Lektion...',
+              it: 'Il tuo tutor IA sta iniziando la lezione...',
+              ja: 'AIチューターがレッスンを開始しています...',
+              ko: 'AI 튜터가 레슨을 시작하고 있습니다...',
+              zh: 'AI 导师正在开始课程...',
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 20,
+            color: theme.colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorLabel(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+          if (_lastFailedMessage != null)
+            TextButton(
+              onPressed: _sending ? null : _retryLastMessage,
+              child: Text(_retryLabel()),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyLimitBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            size: 20,
+            color: theme.colorScheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _dailyLimitReachedLabel(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Animated typing indicator with three dots.
+class _TypingDots extends StatefulWidget {
+  final Color color;
+  const _TypingDots({required this.color});
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 36,
+      height: 18,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(3, (i) {
+              final progress = (_controller.value - i * 0.2) % 1.0;
+              final scale = (1.0 - (progress - 0.5).abs() * 2).clamp(0.5, 1.0);
+              return Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: widget.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              );
+            }),
+          );
+        },
       ),
     );
   }

@@ -76,14 +76,20 @@ class WordsController extends ChangeNotifier {
     }
   }
 
-  Future<void> loadWords() async {
+    Future<void> loadWords() async {
+    if (_isLoading) {
+      return;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _words = await repository.getWords();
-      _sentences = await repository.getSentences();
+      final words = await repository.getWords();
+      final sentences = await repository.getSentences();
+      _words = words;
+      _sentences = sentences;
     } catch (error) {
       _errorMessage = ErrorMessage.from(error);
     } finally {
@@ -107,31 +113,51 @@ class WordsController extends ChangeNotifier {
   }
 
   Future<void> toggleLearned({required int wordId, required bool learned}) async {
-    await repository.updateWordStatus(wordId: wordId, learned: learned);
-    final index = _words.indexWhere((word) => word['id'] == wordId);
-    if (index == -1) return;
-    _words[index]['learned'] = learned;
-    notifyListeners();
+    try {
+      await repository.updateWordStatus(wordId: wordId, learned: learned);
+      final index = _words.indexWhere((word) => word['id'] == wordId);
+      if (index == -1) return;
+      _words[index]['learned'] = learned;
+      notifyListeners();
+    } catch (error) {
+      _errorMessage = ErrorMessage.from(error);
+      notifyListeners();
+    }
   }
 
   Future<void> deleteWord(int wordId) async {
-    await repository.deleteWord(wordId: wordId);
-    _words.removeWhere((word) => word['id'] == wordId);
-    notifyListeners();
+    try {
+      await repository.deleteWord(wordId: wordId);
+      _words.removeWhere((word) => word['id'] == wordId);
+      notifyListeners();
+    } catch (error) {
+      _errorMessage = ErrorMessage.from(error);
+      notifyListeners();
+    }
   }
 
   Future<void> toggleSentenceLearned({required int sentenceId, required bool learned}) async {
-    await repository.updateSentenceStatus(sentenceId: sentenceId, learned: learned);
-    final index = _sentences.indexWhere((sentence) => sentence['id'] == sentenceId);
-    if (index == -1) return;
-    _sentences[index]['learned'] = learned;
-    notifyListeners();
+    try {
+      await repository.updateSentenceStatus(sentenceId: sentenceId, learned: learned);
+      final index = _sentences.indexWhere((sentence) => sentence['id'] == sentenceId);
+      if (index == -1) return;
+      _sentences[index]['learned'] = learned;
+      notifyListeners();
+    } catch (error) {
+      _errorMessage = ErrorMessage.from(error);
+      notifyListeners();
+    }
   }
 
   Future<void> deleteSentence(int sentenceId) async {
-    await repository.deleteSentence(sentenceId: sentenceId);
-    _sentences.removeWhere((sentence) => sentence['id'] == sentenceId);
-    notifyListeners();
+    try {
+      await repository.deleteSentence(sentenceId: sentenceId);
+      _sentences.removeWhere((sentence) => sentence['id'] == sentenceId);
+      notifyListeners();
+    } catch (error) {
+      _errorMessage = ErrorMessage.from(error);
+      notifyListeners();
+    }
   }
 
   void _onLearningLanguageChanged() => loadWords();
