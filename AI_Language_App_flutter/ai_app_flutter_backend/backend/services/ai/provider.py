@@ -60,10 +60,8 @@ class OpenRouterProvider(AIProvider):
     ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
 
-        # Do not compact or rewrite the lesson system prompt here. The lesson
-        # router deliberately builds a complete continuity/participant-memory
-        # instruction. Removing parts of it at provider level can cause the
-        # model to forget identities and previously established facts.
+        # Keep the complete lesson system prompt. It contains continuity and
+        # participant-memory rules that must not be removed before inference.
         if system_instruction:
             messages.append({"role": "system", "content": system_instruction})
 
@@ -193,8 +191,6 @@ class OpenRouterProvider(AIProvider):
         max_output_tokens: int = 1024,
         contents: Any = None,
     ) -> Iterable[AITextResponse]:
-        # Backward-compatible alias: lesson_ai.py historically called this
-        # argument "contents", while the provider API uses "prompt".
         if contents is not None:
             if prompt is not None:
                 raise TypeError("Provide either 'prompt' or 'contents', not both.")
@@ -207,7 +203,11 @@ class OpenRouterProvider(AIProvider):
         output_limit = max_output_tokens
 
         if system_instruction and LESSON_PROMPT_MARKER in system_instruction:
-            output_limit = min(output_limit, LESSON_MAX_OUTPUT_TOKENS)
+            # Lesson responses need enough completion budget for MiniMax's
+            # mandatory reasoning plus the visible tutor reply and marker.
+            # Use the dedicated lesson ceiling rather than the route's older
+            # 800-token default, which could terminate the visible reply early.
+            output_limit = LESSON_MAX_OUTPUT_TOKENS
 
         saw_visible_text = False
 
