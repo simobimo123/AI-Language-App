@@ -29,8 +29,9 @@ LESSON_TUTOR_MODEL = AI_MODEL
 MAX_HISTORY_MESSAGES = 0
 MAX_LESSON_CONTEXT_CHARS = 2500
 MAX_OUTPUT_TOKENS = 220
-PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]\s*$")
-STREAM_HOLD_CHARS = 80
+PROGRESS_MARKER = "[[LESSON_PROGRESS:"
+PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
+STREAM_HOLD_CHARS = max(80, len(PROGRESS_MARKER) - 1)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LESSONS_DIR = BASE_DIR / "data" / "lessons"
@@ -177,12 +178,18 @@ def _update_practice_progress(*, progress: UserLessonProgress, conversation_id: 
 
 
 def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
-    match = PROGRESS_MARKER_RE.search(text.strip())
-    if not match:
+    matches = list(PROGRESS_MARKER_RE.finditer(text))
+    if not matches:
         return text.strip(), set()
+
+    match = matches[-1]
     raw_ids = match.group(1)
     ids = {value.strip() for value in raw_ids.split(",") if value.strip()}
-    return text[:match.start()].rstrip(), ids
+
+    # Strip every internal marker from the learner-visible response. The last
+    # marker is the authoritative progress value; earlier markers are ignored.
+    cleaned = PROGRESS_MARKER_RE.sub("", text).strip()
+    return cleaned, ids
 
 
 def _lesson_completion(curriculum: dict, progress: UserLessonProgress) -> tuple[bool, int, int]:
@@ -251,6 +258,7 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
 
     full_response = ""
     pending_stream_text = ""
+    visible_stream_text = ""
     prompt_tokens = completion_tokens = total_tokens = 0
 
     try:
@@ -261,13 +269,27 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
             total_tokens = max(total_tokens, chunk.total_tokens)
             if not chunk.text:
                 continue
+
             full_response += chunk.text
             pending_stream_text += chunk.text
+
+            # Never emit a possible progress-marker prefix. This also handles
+            # the marker being split across provider chunks.
+            marker_start = pending_stream_text.find(PROGRESS_MARKER)
+            if marker_start >= 0:
+                emit_text = pending_stream_text[:marker_start]
+                pending_stream_text = pending_stream_text[marker_start:]
+                if emit_text:
+                    visible_stream_text += emit_text
+                    yield sse_event({"type": "chunk", "text": emit_text})
+                continue
+
             if len(pending_stream_text) > STREAM_HOLD_CHARS:
                 emit_length = len(pending_stream_text) - STREAM_HOLD_CHARS
                 emit_text = pending_stream_text[:emit_length]
                 pending_stream_text = pending_stream_text[emit_length:]
                 if emit_text:
+                    visible_stream_text += emit_text
                     yield sse_event({"type": "chunk", "text": emit_text})
 
         cleaned_response, new_completed_ids = _extract_progress_marker(full_response)
@@ -281,12 +303,16 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
         save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="model", content=cleaned_response, db=db)
         db.commit()
 
-        while pending_stream_text:
-            emit_length = min(len(pending_stream_text), STREAM_HOLD_CHARS)
-            emit_text = pending_stream_text[:emit_length]
-            pending_stream_text = pending_stream_text[emit_length:]
-            if emit_text:
-                yield sse_event({"type": "chunk", "text": emit_text})
+        # The database value is authoritative. Only send the not-yet-emitted
+        # suffix of the cleaned response, so a marker can never leak here.
+        if cleaned_response.startswith(visible_stream_text):
+            remaining_text = cleaned_response[len(visible_stream_text):]
+        else:
+            # Defensive fallback for unexpected whitespace/provider behavior.
+            remaining_text = cleaned_response
+
+        if remaining_text:
+            yield sse_event({"type": "chunk", "text": remaining_text})
 
         lesson_ready, practiced_count, total_target_count = _lesson_completion(curriculum, progress)
 
