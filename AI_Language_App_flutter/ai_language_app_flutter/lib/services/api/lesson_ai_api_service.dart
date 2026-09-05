@@ -84,7 +84,6 @@ class LessonAiApiService {
   // rebuild or rapid navigation. Only the first START_LESSON request should
   // reach the backend; later callers reuse its completed result.
   static final Map<int, Future<void>> _lessonStartInFlight = {};
-  static final Map<int, Completer<void>> _lessonStartCompleters = {};
 
   LessonAiApiService(this._client, {http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
@@ -119,8 +118,8 @@ class LessonAiApiService {
         try {
           await existingStart;
         } catch (_) {
-          // The original caller will surface the actual error. This caller
-          // simply falls through and can make one fresh attempt afterwards.
+          // If the first request failed, allow this caller to make one fresh
+          // attempt. It will still be protected by the normal sending guards.
         }
 
         final completed = _sessionCache[lessonId];
@@ -139,7 +138,6 @@ class LessonAiApiService {
       }
 
       final completer = Completer<void>();
-      _lessonStartCompleters[lessonId] = completer;
       _lessonStartInFlight[lessonId] = completer.future;
 
       try {
@@ -157,7 +155,6 @@ class LessonAiApiService {
         }
         rethrow;
       } finally {
-        _lessonStartCompleters.remove(lessonId);
         _lessonStartInFlight.remove(lessonId);
       }
       return;
