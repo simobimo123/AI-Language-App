@@ -306,28 +306,30 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
                 continue
             full_text += text
             buffer += text
-            safe_buffer = buffer
-            marker_index = safe_buffer.find(PROGRESS_MARKER)
+            marker_index = buffer.find(PROGRESS_MARKER)
             if marker_index >= 0:
-                safe_buffer = safe_buffer[:marker_index]
-                buffer = buffer[marker_index:]
-            elif len(buffer) > STREAM_HOLD_CHARS:
+                # Everything from the marker onward is internal metadata and
+                # must never be streamed to the learner.
+                learner_text = buffer[:marker_index]
+                buffer = ""
+                if learner_text:
+                    yield sse_event("token", {"text": learner_text})
+                continue
+            if len(buffer) > STREAM_HOLD_CHARS:
                 emit = buffer[:-STREAM_HOLD_CHARS]
                 buffer = buffer[-STREAM_HOLD_CHARS:]
                 if emit:
                     yield sse_event("token", {"text": emit})
                 continue
-            if safe_buffer:
-                yield sse_event("token", {"text": safe_buffer})
-                buffer = buffer[len(safe_buffer):]
 
         cleaned_text, completed_ids = _extract_progress_marker(full_text)
         cleaned_text = _remove_exact_duplicate_response(cleaned_text)
-        if buffer:
-            yield sse_event("token", {"text": buffer})
+
+        # The user message must be stored before the assistant reply so the
+        # next request sees the conversation in the correct chronological order.
+        save_conversation_message(user_id, conversation_id, "user", request.message, db)
         if cleaned_text:
             save_conversation_message(user_id, conversation_id, "assistant", cleaned_text, db)
-        save_conversation_message(user_id, conversation_id, "user", request.message, db)
         valid_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
         _update_practice_progress(
             progress=progress,
@@ -382,7 +384,7 @@ def lesson_chat(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found.")
 
     if lesson.language != profile.language:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lesson language does not match learning profile.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lesson language does not match the learning profile.")
 
     target_language = normalize_language(profile.language)
     native_language = normalize_language(current_user.native_language)
@@ -394,7 +396,10 @@ def lesson_chat(
     check_rate_limit(user_id=current_user.id)
     usage = get_current_usage(user_id=current_user.id, db=db)
     if usage.request_count >= DAILY_AI_LIMIT:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Daily AI limit reached.")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Daily AI limit reached.",
+        )
     reserve_ai_request(user_id=current_user.id, db=db)
 
     conversation_id = request.conversation_id or str(uuid4())
@@ -411,5 +416,5 @@ def lesson_chat(
             profile_id=profile.id,
         ),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
