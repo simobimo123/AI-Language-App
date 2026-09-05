@@ -12,7 +12,7 @@ load_dotenv()
 
 LESSON_PROMPT_MARKER = "You are the AI conversation partner for one language-learning lesson."
 LESSON_MAX_OUTPUT_TOKENS = 2048
-LESSON_STREAM_BUFFER_CHARS = 8192
+LESSON_PROGRESS_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
 
 
 @dataclass(frozen=True)
@@ -158,6 +158,19 @@ class OpenRouterProvider(AIProvider):
 
         return cleaned
 
+    @classmethod
+    def _clean_lesson_response(cls, text: str) -> str:
+        """Clean duplicate learner text while preserving the progress marker."""
+        markers = list(LESSON_PROGRESS_RE.finditer(text))
+        visible = LESSON_PROGRESS_RE.sub("", text)
+        visible = cls._remove_exact_duplicate_response(visible)
+
+        if markers:
+            marker = markers[-1].group(0)
+            return f"{visible} {marker}".strip()
+
+        return visible
+
     def generate_text(
         self,
         *,
@@ -282,7 +295,7 @@ class OpenRouterProvider(AIProvider):
             )
 
         if is_lesson:
-            cleaned = self._remove_exact_duplicate_response(
+            cleaned = self._clean_lesson_response(
                 buffered_lesson_text
             )
 
