@@ -186,10 +186,33 @@ def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
     raw_ids = match.group(1)
     ids = {value.strip() for value in raw_ids.split(",") if value.strip()}
 
-    # Strip every internal marker from the learner-visible response. The last
-    # marker is the authoritative progress value; earlier markers are ignored.
     cleaned = PROGRESS_MARKER_RE.sub("", text).strip()
     return cleaned, ids
+
+
+def _remove_exact_duplicate_response(text: str) -> str:
+    """Collapse a response that consists of the exact same text twice."""
+    cleaned = text.strip()
+    if len(cleaned) < 2 or len(cleaned) % 2 != 0:
+        return cleaned
+
+    midpoint = len(cleaned) // 2
+    first = cleaned[:midpoint].strip()
+    second = cleaned[midpoint:].strip()
+    if first and first == second:
+        return first
+
+    # Also catch the common case where the model inserted whitespace between
+    # two identical copies of the same complete response.
+    normalized = re.sub(r"\s+", " ", cleaned)
+    midpoint = len(normalized) // 2
+    if len(normalized) % 2 == 0:
+        first = normalized[:midpoint].strip()
+        second = normalized[midpoint:].strip()
+        if first and first == second:
+            return first
+
+    return cleaned
 
 
 def _lesson_completion(curriculum: dict, progress: UserLessonProgress) -> tuple[bool, int, int]:
@@ -229,6 +252,9 @@ Use only the lesson context above. Guide the learner through a natural conversat
 
 CONTINUITY
 Use the full conversation history provided separately. Continue naturally from it; never restart or ask for information already established in the conversation unless the learner has changed it.
+
+ANTI-DUPLICATION
+Never repeat the same learner-facing sentence or the same complete reply twice in one response. Do not echo your own previous reply. For START_LESSON, produce exactly one natural opening reply.
 
 PROGRESS
 Judge only the learner's latest message. Mark a target only when the learner genuinely produces its communicative meaning in the learning language. Natural wording differences are allowed. Do not mark something merely because you asked, displayed, translated, or mentioned it. Use only ids from the remaining list.
@@ -273,8 +299,6 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
             full_response += chunk.text
             pending_stream_text += chunk.text
 
-            # Never emit a possible progress-marker prefix. This also handles
-            # the marker being split across provider chunks.
             marker_start = pending_stream_text.find(PROGRESS_MARKER)
             if marker_start >= 0:
                 emit_text = pending_stream_text[:marker_start]
@@ -293,6 +317,7 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
                     yield sse_event({"type": "chunk", "text": emit_text})
 
         cleaned_response, new_completed_ids = _extract_progress_marker(full_response)
+        cleaned_response = _remove_exact_duplicate_response(cleaned_response)
         if not cleaned_response:
             raise RuntimeError("AI tutor returned an empty response.")
 
@@ -303,13 +328,13 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
         save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="model", content=cleaned_response, db=db)
         db.commit()
 
-        # The database value is authoritative. Only send the not-yet-emitted
-        # suffix of the cleaned response, so a marker can never leak here.
         if cleaned_response.startswith(visible_stream_text):
             remaining_text = cleaned_response[len(visible_stream_text):]
         else:
-            # Defensive fallback for unexpected whitespace/provider behavior.
-            remaining_text = cleaned_response
+            # If the model duplicated the whole response, the streamed prefix
+            # cannot safely be reconciled with the canonical cleaned value.
+            # Send no second copy; the already streamed prefix is sufficient.
+            remaining_text = "" if visible_stream_text else cleaned_response
 
         if remaining_text:
             yield sse_event({"type": "chunk", "text": remaining_text})
