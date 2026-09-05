@@ -31,8 +31,6 @@ MAX_LESSON_CONTEXT_CHARS = 2500
 MAX_OUTPUT_TOKENS = 220
 PROGRESS_MARKER = "[[LESSON_PROGRESS:"
 PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
-# Lesson replies are intentionally very short. Buffer the complete reply so
-# cleanup can happen before any learner-visible text is emitted.
 STREAM_HOLD_CHARS = 4096
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -192,18 +190,28 @@ def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
 
 
 def _remove_exact_duplicate_response(text: str) -> str:
-    """Collapse a response that consists of the same complete reply twice."""
-    cleaned = text.strip()
+    """Remove model duplication while preserving legitimate repeated wording."""
+    cleaned = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", text).strip()
     if not cleaned:
         return cleaned
 
-    # Handles: "Sentence. Sentence." where the two copies are separated by
-    # whitespace. The non-greedy capture plus backreference requires the entire
-    # response to be two identical copies, so legitimate repeated wording is
-    # not altered.
+    # First handle the exact case: A A, including punctuation/newlines.
     match = re.fullmatch(r"(.+?)\s+\1", cleaned, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
+
+    # Also handle equivalent copies where whitespace differs slightly.
+    normalized = re.sub(r"\s+", " ", cleaned).strip()
+    if len(normalized) >= 4 and len(normalized) % 2 == 0:
+        half = len(normalized) // 2
+        if normalized[:half].rstrip() == normalized[half:].lstrip():
+            return normalized[:half].strip()
+
+    # Finally collapse an immediately repeated sentence/phrase when the model
+    # repeats the same complete learner-facing sentence twice.
+    sentence_match = re.fullmatch(r"(.+?[.!?。！？])\s+\1", cleaned, flags=re.DOTALL)
+    if sentence_match:
+        return sentence_match.group(1).strip()
 
     return cleaned
 
@@ -229,6 +237,20 @@ def _build_target_tracking_context(curriculum: dict, progress: UserLessonProgres
 def _build_system_instruction(native_language: str, target_language: str, level: str, curriculum: dict, progress: UserLessonProgress) -> str:
     context = _lesson_context(curriculum)
     targets = _build_target_tracking_context(curriculum, progress)
+    teacher_instructions = curriculum.get("teacher_instructions", {})
+    if not isinstance(teacher_instructions, dict):
+        teacher_instructions = {}
+    start_message = str(teacher_instructions.get("start_message", "")).strip()
+
+    start_rule = ""
+    if start_message:
+        start_rule = f"""
+
+START_LESSON
+When the latest user message is START_LESSON, begin the lesson with exactly one short opening reply. Base the opening on this curriculum start message:
+{start_message}
+Do not output the opening twice, do not echo START_LESSON, and do not add a second greeting or question after the opening."""
+
     return f"""You are the AI conversation partner for one language-learning lesson.
 
 Language: {target_language}
@@ -247,7 +269,7 @@ CONTINUITY
 Use the full conversation history provided separately. Continue naturally from it; never restart or ask for information already established in the conversation unless the learner has changed it.
 
 ANTI-DUPLICATION
-Never repeat the same learner-facing sentence or the same complete reply twice in one response. Do not echo your own previous reply. For START_LESSON, produce exactly one natural opening reply.
+Never repeat the same learner-facing sentence or the same complete reply twice in one response. Do not echo your own previous reply. For START_LESSON, produce exactly one natural opening reply.{start_rule}
 
 PROGRESS
 Judge only the learner's latest message. Mark a target only when the learner genuinely produces its communicative meaning in the learning language. Natural wording differences are allowed. Do not mark something merely because you asked, displayed, translated, or mentioned it. Use only ids from the remaining list.
@@ -292,9 +314,6 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
             full_response += chunk.text
             pending_stream_text += chunk.text
 
-            # The response is short and stays buffered until it can be cleaned
-            # and validated, preventing model-generated duplicates from being
-            # displayed before cleanup.
             if len(pending_stream_text) > STREAM_HOLD_CHARS:
                 emit_length = len(pending_stream_text) - STREAM_HOLD_CHARS
                 emit_text = pending_stream_text[:emit_length]
