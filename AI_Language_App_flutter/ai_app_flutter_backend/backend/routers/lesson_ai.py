@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 LESSON_TUTOR_MODEL = AI_MODEL
 MAX_HISTORY_MESSAGES = 20
 MAX_LESSON_CONTEXT_CHARS = 2500
-MAX_OUTPUT_TOKENS = 220
+# MiniMax M2.7 is allowed to use the token budget needed for its mandatory
+# reasoning plus the concise learner-facing response and progress marker.
+MAX_OUTPUT_TOKENS = 800
 PROGRESS_MARKER = "[[LESSON_PROGRESS:"
 PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
 # Keep only a small tail buffered so the progress marker is not streamed to Flutter
@@ -374,50 +376,45 @@ def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Sessio
     except Exception as exc:
         db.rollback()
         logger.exception("Lesson AI streaming failed: %s", exc)
-        yield sse_event({"type": "error", "detail": "The AI lesson conversation could not be completed."})
+        yield sse_event({"type": "error", "detail": "The AI tutor could not respond. Please try again."})
 
 
 @router.post("/chat")
-def lesson_chat(request: LessonChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    user_id = current_user.id
+def lesson_chat(
+    request: LessonChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = db.execute(
+        select(LearningProfile).where(LearningProfile.user_id == current_user.id)
+    ).scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Learning profile not found.")
 
-    check_rate_limit(user_id)
-
-    current_usage = get_current_usage(user_id=user_id, db=db)
-    if current_usage.request_count >= DAILY_AI_LIMIT:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Daily AI usage limit reached.")
-
-    lesson = db.execute(select(CourseLesson).where(CourseLesson.id == request.lesson_id)).scalar_one_or_none()
+    lesson = db.execute(
+        select(CourseLesson).where(CourseLesson.id == request.lesson_id)
+    ).scalar_one_or_none()
     if lesson is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found.")
 
-    profile = db.execute(select(LearningProfile).where(LearningProfile.user_id == user_id, LearningProfile.language == lesson.language)).scalar_one_or_none()
-    if profile is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Learning profile not found for this lesson language.")
+    if lesson.language != profile.learning_language:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lesson language does not match the learning profile.")
 
     curriculum = _load_lesson_curriculum(lesson)
-    conversation_id = request.conversation_id or f"lesson_{request.lesson_id}_{uuid4().hex}"
-    if not conversation_id.startswith(f"lesson_{request.lesson_id}_"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid lesson conversation.")
+    target_language = normalize_language(profile.learning_language)
+    native_language = normalize_language(profile.native_language)
+    level = normalize_level(lesson.level)
+    if level is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid lesson level.")
 
-    try:
-        reserve_ai_request(user_id=user_id, db=db)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        db.rollback()
-        logger.exception("AI request reservation failed: %s", exc)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="AI request could not be reserved.") from exc
+    check_rate_limit(user_id=current_user.id, db=db)
+    reserve_ai_request(user_id=current_user.id, db=db)
 
-    db.commit()
-    native_language = normalize_language(current_user.native_language or "ar") or "ar"
-    target_language = normalize_language(lesson.language) or lesson.language
-    level = normalize_level(lesson.level) or lesson.level
-
-    response = StreamingResponse(
+    conversation_id = request.conversation_id or str(uuid4())
+    return StreamingResponse(
         _stream_lesson_response(
             request=request,
-            user_id=user_id,
+            user_id=current_user.id,
             db=db,
             native_language=native_language,
             target_language=target_language,
@@ -427,7 +424,9 @@ def lesson_chat(request: LessonChatRequest, current_user: User = Depends(get_cur
             profile_id=profile.id,
         ),
         media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
-    response.headers["Cache-Control"] = "no-cache"
-    response.headers["Connection"] = "keep-alive"
-    return response
