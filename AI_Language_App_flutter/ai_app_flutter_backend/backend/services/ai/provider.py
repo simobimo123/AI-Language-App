@@ -305,8 +305,14 @@ class OpenRouterProvider(AIProvider):
                     f"(model={model!r})."
                 )
 
+            # lesson_ai.py has a streaming compatibility layer that emits text
+            # as soon as its hold buffer sees the progress marker. Put an empty
+            # marker first so that no learner-facing prefix can escape before
+            # the already-cleaned response is processed there.
+            safe_text = f"[[LESSON_PROGRESS:]] {cleaned}"
+
             yield AITextResponse(
-                text=cleaned,
+                text=safe_text,
                 prompt_tokens=buffered_prompt_tokens,
                 completion_tokens=buffered_completion_tokens,
                 total_tokens=buffered_total_tokens,
