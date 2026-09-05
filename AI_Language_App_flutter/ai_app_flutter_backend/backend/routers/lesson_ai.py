@@ -393,7 +393,7 @@ def lesson_chat(
     curriculum = _load_lesson_curriculum(lesson)
     check_rate_limit(user_id=current_user.id)
     usage = get_current_usage(user_id=current_user.id, db=db)
-    if usage >= DAILY_AI_LIMIT:
+    if usage.request_count >= DAILY_AI_LIMIT:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Daily AI limit reached.")
     reserve_ai_request(user_id=current_user.id, db=db)
 
