@@ -28,13 +28,9 @@ logger = logging.getLogger(__name__)
 LESSON_TUTOR_MODEL = AI_MODEL
 MAX_HISTORY_MESSAGES = 20
 MAX_LESSON_CONTEXT_CHARS = 2500
-# MiniMax M2.7 is allowed to use the token budget needed for its mandatory
-# reasoning plus the concise learner-facing response and progress marker.
 MAX_OUTPUT_TOKENS = 800
 PROGRESS_MARKER = "[[LESSON_PROGRESS:"
 PROGRESS_MARKER_RE = re.compile(r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]")
-# Keep only a small tail buffered so the progress marker is not streamed to Flutter
-# while still allowing short tutor replies to appear progressively.
 STREAM_HOLD_CHARS = 64
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,17 +48,14 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
     level = normalize_level(lesson.level)
     if level is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid lesson level.")
-
     path = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}.json"
     if not path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson curriculum is not available.")
-
     try:
         data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
         logger.exception("Failed to load lesson curriculum: %s", exc)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Lesson curriculum could not be loaded.") from exc
-
     if not isinstance(data, dict):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid lesson curriculum format.")
     return data
@@ -84,7 +77,6 @@ def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
                     if isinstance(value, str) and value.strip():
                         collected.append(value.strip())
         raw = collected
-
     result: list[dict[str, str]] = []
     seen_ids: set[str] = set()
     seen_sentences: set[str] = set()
@@ -114,7 +106,6 @@ def _lesson_context(data: dict) -> str:
     metadata = data.get("metadata", {})
     if not isinstance(metadata, dict):
         metadata = {}
-
     section_context: dict[str, object] = {}
     sections = data.get("sections", [])
     if isinstance(sections, list):
@@ -131,7 +122,6 @@ def _lesson_context(data: dict) -> str:
                 "focus": section.get("focus", []),
             }
             break
-
     selected = {
         "topic": str(metadata.get("title", "")).strip(),
         "objective": str(metadata.get("objective", "")).strip(),
@@ -148,7 +138,6 @@ def _get_or_create_practice_progress(user_id: int, profile_id: int, lesson_id: i
             UserLessonProgress.lesson_id == lesson_id,
         )
     ).scalar_one_or_none()
-
     if progress is None:
         progress = UserLessonProgress(
             user_id=user_id,
@@ -159,7 +148,6 @@ def _get_or_create_practice_progress(user_id: int, profile_id: int, lesson_id: i
         db.add(progress)
         db.flush()
         return progress
-
     state = progress.practice_state if isinstance(progress.practice_state, dict) else {}
     if state.get("conversation_id") != conversation_id:
         progress.practice_state = {"conversation_id": conversation_id, "practiced_sentence_ids": []}
@@ -185,7 +173,6 @@ def _extract_progress_marker(text: str) -> tuple[str, set[str]]:
     matches = list(PROGRESS_MARKER_RE.finditer(text))
     if not matches:
         return text.strip(), set()
-
     match = matches[-1]
     raw_ids = match.group(1)
     ids = {value.strip() for value in raw_ids.split(",") if value.strip()}
@@ -198,21 +185,17 @@ def _remove_exact_duplicate_response(text: str) -> str:
     cleaned = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", text).strip()
     if not cleaned:
         return cleaned
-
     match = re.fullmatch(r"(.+?)\s+\1", cleaned, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
-
     normalized = re.sub(r"\s+", " ", cleaned).strip()
     if len(normalized) >= 4 and len(normalized) % 2 == 0:
         half = len(normalized) // 2
         if normalized[:half].rstrip() == normalized[half:].lstrip():
             return normalized[:half].strip()
-
     sentence_match = re.fullmatch(r"(.+?[.!?。！？])\s+\1", cleaned, flags=re.DOTALL)
     if sentence_match:
         return sentence_match.group(1).strip()
-
     return cleaned
 
 
@@ -241,16 +224,13 @@ def _build_system_instruction(native_language: str, target_language: str, level:
     if not isinstance(teacher_instructions, dict):
         teacher_instructions = {}
     start_message = str(teacher_instructions.get("start_message", "")).strip()
-
     start_rule = ""
     if start_message:
         start_rule = f"""
-
 START_LESSON
 When the latest user message is START_LESSON, begin the lesson with exactly one short opening reply. Base the opening on this curriculum start message:
 {start_message}
 Do not output the opening twice, do not echo START_LESSON, and do not add a second greeting or question after the opening."""
-
     return f"""You are the AI conversation partner for one language-learning lesson.
 
 Language: {target_language}
@@ -291,92 +271,65 @@ def _build_contents(history, message: str) -> list[dict[str, str]]:
     return contents
 
 
-def _stream_lesson_response(request: LessonChatRequest, user_id: int, db: Session, native_language: str, target_language: str, level: str, curriculum: dict, conversation_id: str, profile_id: int) -> Generator[str, None, None]:
-    history = get_conversation_history(user_id=user_id, conversation_id=conversation_id, max_messages=MAX_HISTORY_MESSAGES, db=db)
-    progress = _get_or_create_practice_progress(user_id=user_id, profile_id=profile_id, lesson_id=request.lesson_id, conversation_id=conversation_id, db=db)
-    contents = _build_contents(history, request.message)
-    system_instruction = _build_system_instruction(native_language=native_language, target_language=target_language, level=level, curriculum=curriculum, progress=progress)
-
-    full_response = ""
-    pending_stream_text = ""
-    visible_stream_text = ""
-    prompt_tokens = completion_tokens = total_tokens = 0
-
+def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Session, native_language: str, target_language: str, level: str, curriculum: dict, conversation_id: str, profile_id: int) -> Generator[str, None, None]:
+    progress = _get_or_create_practice_progress(user_id, profile_id, request.lesson_id, conversation_id, db)
+    history = get_conversation_history(user_id=user_id, conversation_id=conversation_id, db=db, limit=MAX_HISTORY_MESSAGES)
+    system_instruction = _build_system_instruction(native_language, target_language, level, curriculum, progress)
+    messages = _build_contents(history, request.message)
+    full_text = ""
+    usage = (0, 0, 0)
+    buffer = ""
     try:
-        yield sse_event({"type": "conversation", "conversation_id": conversation_id})
-        for chunk in provider.stream_text(model=LESSON_TUTOR_MODEL, prompt=contents, system_instruction=system_instruction, max_output_tokens=MAX_OUTPUT_TOKENS):
-            prompt_tokens = max(prompt_tokens, chunk.prompt_tokens)
-            completion_tokens = max(completion_tokens, chunk.completion_tokens)
-            total_tokens = max(total_tokens, chunk.total_tokens)
-            if not chunk.text:
-                continue
+        for chunk in provider.stream_text(
+            system_instruction=system_instruction,
+            contents=messages,
+            max_output_tokens=MAX_OUTPUT_TOKENS,
+            model=LESSON_TUTOR_MODEL,
+        ):
+            text = getattr(chunk, "text", None) if not isinstance(chunk, str) else chunk
+            if text:
+                full_text += text
+                buffer += text
+                while len(buffer) > STREAM_HOLD_CHARS:
+                    emit = buffer[:-STREAM_HOLD_CHARS]
+                    buffer = buffer[-STREAM_HOLD_CHARS:]
+                    if emit:
+                        yield sse_event("chunk", {"text": emit})
+            chunk_usage = getattr(chunk, "usage", None)
+            if chunk_usage:
+                usage = (
+                    int(chunk_usage.get("prompt_tokens", usage[0]) or usage[0]),
+                    int(chunk_usage.get("completion_tokens", usage[1]) or usage[1]),
+                    int(chunk_usage.get("total_tokens", usage[2]) or usage[2]),
+                )
+        if buffer:
+            yield sse_event("chunk", {"text": buffer})
 
-            full_response += chunk.text
-            pending_stream_text += chunk.text
-
-            if len(pending_stream_text) > STREAM_HOLD_CHARS:
-                emit_length = len(pending_stream_text) - STREAM_HOLD_CHARS
-                emit_text = pending_stream_text[:emit_length]
-                pending_stream_text = pending_stream_text[emit_length:]
-                if emit_text:
-                    visible_stream_text += emit_text
-                    yield sse_event({"type": "chunk", "text": emit_text})
-
-        cleaned_response, new_completed_ids = _extract_progress_marker(full_response)
-        cleaned_response = _remove_exact_duplicate_response(cleaned_response)
-        if not cleaned_response:
-            raise RuntimeError("AI tutor returned an empty response.")
-
+        cleaned_text, completed_ids = _extract_progress_marker(full_text)
+        cleaned_text = _remove_exact_duplicate_response(cleaned_text)
         valid_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
-        _update_practice_progress(progress=progress, conversation_id=conversation_id, completed_ids=new_completed_ids, valid_ids=valid_ids)
-
-        save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="user", content=request.message, db=db)
-        save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="model", content=cleaned_response, db=db)
+        practiced_ids = _update_practice_progress(
+            progress=progress,
+            conversation_id=conversation_id,
+            completed_ids=completed_ids,
+            valid_ids=valid_ids,
+        )
+        progress.completed = _lesson_completion(curriculum, progress)[0]
         db.commit()
-
-        if cleaned_response.startswith(visible_stream_text):
-            remaining_text = cleaned_response[len(visible_stream_text):]
-        else:
-            remaining_text = "" if visible_stream_text else cleaned_response
-
-        if remaining_text:
-            yield sse_event({"type": "chunk", "text": remaining_text})
-
-        lesson_ready, practiced_count, total_target_count = _lesson_completion(curriculum, progress)
-
+        save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="user", content=request.message, db=db)
+        save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="model", content=cleaned_text, db=db)
         record_api_usage(
             user_id=user_id,
-            model=LESSON_TUTOR_MODEL,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
+            prompt_tokens=usage[0],
+            completion_tokens=usage[1],
+            total_tokens=usage[2],
             db=db,
+            model=LESSON_TUTOR_MODEL,
         )
-        db.commit()
-
-        usage = get_current_usage(user_id=user_id, db=db)
-        daily_used = usage.request_count
-
-        yield sse_event({
-            "type": "done",
-            "conversation_id": conversation_id,
-            "lesson_ready": lesson_ready,
-            "practiced_sentence_count": practiced_count,
-            "total_target_sentence_count": total_target_count,
-            "daily_limit": DAILY_AI_LIMIT,
-            "daily_usage": daily_used,
-            "daily_remaining": max(0, DAILY_AI_LIMIT - daily_used),
-            "request_usage": {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens,
-            },
-        })
-
+        yield sse_event("done", {"conversation_id": conversation_id, "text": cleaned_text, "completed": progress.completed, "practiced_count": len(practiced_ids), "target_count": len(valid_ids)})
     except Exception as exc:
-        db.rollback()
         logger.exception("Lesson AI streaming failed: %s", exc)
-        yield sse_event({"type": "error", "detail": "The AI tutor could not respond. Please try again."})
+        yield sse_event("error", {"message": str(exc)})
 
 
 @router.post("/chat")
@@ -407,7 +360,7 @@ def lesson_chat(
     if level is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid lesson level.")
 
-    check_rate_limit(user_id=current_user.id, db=db)
+    check_rate_limit(user_id=current_user.id)
     reserve_ai_request(user_id=current_user.id, db=db)
 
     conversation_id = request.conversation_id or str(uuid4())
