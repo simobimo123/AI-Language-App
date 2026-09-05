@@ -482,11 +482,10 @@ def lesson_chat(
 ):
     user_id = current_user.id
 
-    if not check_rate_limit(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many requests. Please try again later.",
-        )
+    # check_rate_limit() raises HTTP 429 itself when the short-window limit is
+    # exceeded. It returns None on success, so do not treat its return value
+    # as a boolean.
+    check_rate_limit(user_id)
 
     if get_current_usage(user_id=user_id, db=db) >= DAILY_AI_LIMIT:
         raise HTTPException(
