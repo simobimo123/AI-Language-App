@@ -203,11 +203,11 @@ class OpenRouterProvider(AIProvider):
         output_limit = max_output_tokens
 
         if system_instruction and LESSON_PROMPT_MARKER in system_instruction:
-            # Lesson responses need enough completion budget for MiniMax's
-            # mandatory reasoning plus the visible tutor reply and marker.
-            # Use the dedicated lesson ceiling rather than the route's older
-            # 800-token default, which could terminate the visible reply early.
-            output_limit = LESSON_MAX_OUTPUT_TOKENS
+            # Keep the route's requested limit as the upper bound. This avoids
+            # unexpectedly changing the working lesson request budget while
+            # still allowing a dedicated lesson ceiling when the caller asks
+            # for a larger value.
+            output_limit = min(output_limit, LESSON_MAX_OUTPUT_TOKENS)
 
         saw_visible_text = False
 
