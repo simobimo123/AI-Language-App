@@ -12,7 +12,7 @@ load_dotenv()
 
 LESSON_PROMPT_MARKER = "You are the AI conversation partner for one language-learning lesson."
 LESSON_MAX_OUTPUT_TOKENS = 2048
-LESSON_STREAM_BUFFER_CHARS = 4096
+LESSON_STREAM_BUFFER_CHARS = 8192
 
 
 @dataclass(frozen=True)
@@ -146,10 +146,6 @@ class OpenRouterProvider(AIProvider):
         if not cleaned:
             return cleaned
 
-        # Handles both normal whitespace-separated duplication and the common
-        # case where the model repeats the whole learner-facing response after
-        # producing it once. The full-match requirement avoids changing normal
-        # repeated wording such as a deliberate "Ja, ja.".
         match = re.fullmatch(r"(.+?)\s+\1", cleaned, flags=re.DOTALL)
         if match:
             return match.group(1).strip()
@@ -289,12 +285,6 @@ class OpenRouterProvider(AIProvider):
             cleaned = self._remove_exact_duplicate_response(
                 buffered_lesson_text
             )
-
-            if len(cleaned) > LESSON_STREAM_BUFFER_CHARS:
-                # This should not normally happen because lesson responses are
-                # intentionally short. Keep a hard safety guard so a malformed
-                # model response cannot create an unbounded in-memory buffer.
-                cleaned = cleaned[:LESSON_STREAM_BUFFER_CHARS].rstrip()
 
             if not cleaned:
                 raise RuntimeError(
