@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -79,6 +80,12 @@ class LessonAiApiService {
 
   static final Map<int, _CachedLessonConversation> _sessionCache = {};
 
+  // A lesson can be opened by more than one widget/page instance during a
+  // rebuild or rapid navigation. Only the first START_LESSON request should
+  // reach the backend; later callers reuse its completed result.
+  static final Map<int, Future<void>> _lessonStartInFlight = {};
+  static final Map<int, Completer<void>> _lessonStartCompleters = {};
+
   LessonAiApiService(this._client, {http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
 
@@ -89,23 +96,86 @@ class LessonAiApiService {
   }) async* {
     final cached = _sessionCache[lessonId];
 
-    if (message == 'START_LESSON' &&
-        cached != null &&
-        cached.messages.isNotEmpty) {
-      yield LessonAiChunk(
-        type: 'conversation',
-        conversationId: cached.conversationId,
-      );
+    if (message == 'START_LESSON') {
+      if (cached != null && cached.messages.isNotEmpty) {
+        yield LessonAiChunk(
+          type: 'conversation',
+          conversationId: cached.conversationId,
+        );
 
-      yield LessonAiChunk(
-        type: 'history',
-        conversationId: cached.conversationId,
-        history: List<Map<String, String>>.from(cached.messages),
-      );
+        yield LessonAiChunk(
+          type: 'history',
+          conversationId: cached.conversationId,
+          history: List<Map<String, String>>.from(cached.messages),
+        );
 
+        return;
+      }
+
+      final existingStart = _lessonStartInFlight[lessonId];
+      if (existingStart != null) {
+        // Another page is already starting this lesson. Wait for that request
+        // instead of creating a second AI request.
+        try {
+          await existingStart;
+        } catch (_) {
+          // The original caller will surface the actual error. This caller
+          // simply falls through and can make one fresh attempt afterwards.
+        }
+
+        final completed = _sessionCache[lessonId];
+        if (completed != null && completed.messages.isNotEmpty) {
+          yield LessonAiChunk(
+            type: 'conversation',
+            conversationId: completed.conversationId,
+          );
+          yield LessonAiChunk(
+            type: 'history',
+            conversationId: completed.conversationId,
+            history: List<Map<String, String>>.from(completed.messages),
+          );
+          return;
+        }
+      }
+
+      final completer = Completer<void>();
+      _lessonStartCompleters[lessonId] = completer;
+      _lessonStartInFlight[lessonId] = completer.future;
+
+      try {
+        await for (final chunk in _performChat(
+          lessonId: lessonId,
+          message: message,
+          conversationId: conversationId,
+        )) {
+          yield chunk;
+        }
+        if (!completer.isCompleted) completer.complete();
+      } catch (error, stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+        rethrow;
+      } finally {
+        _lessonStartCompleters.remove(lessonId);
+        _lessonStartInFlight.remove(lessonId);
+      }
       return;
     }
 
+    yield* _performChat(
+      lessonId: lessonId,
+      message: message,
+      conversationId: conversationId,
+    );
+  }
+
+  Stream<LessonAiChunk> _performChat({
+    required int lessonId,
+    required String message,
+    required String? conversationId,
+  }) async* {
+    final cached = _sessionCache[lessonId];
     final token = await _client.getToken();
 
     final effectiveConversationId =
