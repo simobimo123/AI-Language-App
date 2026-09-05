@@ -273,7 +273,12 @@ def _build_contents(history, message: str) -> list[dict[str, str]]:
 
 def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Session, native_language: str, target_language: str, level: str, curriculum: dict, conversation_id: str, profile_id: int) -> Generator[str, None, None]:
     progress = _get_or_create_practice_progress(user_id, profile_id, request.lesson_id, conversation_id, db)
-    history = get_conversation_history(user_id=user_id, conversation_id=conversation_id, db=db, limit=MAX_HISTORY_MESSAGES)
+    history = get_conversation_history(
+        user_id=user_id,
+        conversation_id=conversation_id,
+        max_messages=MAX_HISTORY_MESSAGES,
+        db=db,
+    )
     system_instruction = _build_system_instruction(native_language, target_language, level, curriculum, progress)
     messages = _build_contents(history, request.message)
     full_text = ""
@@ -284,49 +289,68 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
             system_instruction=system_instruction,
             contents=messages,
             max_output_tokens=MAX_OUTPUT_TOKENS,
-            model=LESSON_TUTOR_MODEL,
         ):
-            text = getattr(chunk, "text", None) if not isinstance(chunk, str) else chunk
-            if text:
-                full_text += text
-                buffer += text
-                while len(buffer) > STREAM_HOLD_CHARS:
-                    emit = buffer[:-STREAM_HOLD_CHARS]
-                    buffer = buffer[-STREAM_HOLD_CHARS:]
-                    if emit:
-                        yield sse_event("chunk", {"text": emit})
-            chunk_usage = getattr(chunk, "usage", None)
-            if chunk_usage:
-                usage = (
-                    int(chunk_usage.get("prompt_tokens", usage[0]) or usage[0]),
-                    int(chunk_usage.get("completion_tokens", usage[1]) or usage[1]),
-                    int(chunk_usage.get("total_tokens", usage[2]) or usage[2]),
-                )
-        if buffer:
-            yield sse_event("chunk", {"text": buffer})
+            if isinstance(chunk, dict):
+                text = str(chunk.get("text", "") or "")
+                usage = chunk.get("usage", usage) or usage
+            else:
+                text = str(chunk or "")
+            if not text:
+                continue
+            full_text += text
+            buffer += text
+            safe_buffer = buffer
+            marker_index = safe_buffer.find(PROGRESS_MARKER)
+            if marker_index >= 0:
+                safe_buffer = safe_buffer[:marker_index]
+                buffer = buffer[marker_index:]
+            elif len(buffer) > STREAM_HOLD_CHARS:
+                emit = buffer[:-STREAM_HOLD_CHARS]
+                buffer = buffer[-STREAM_HOLD_CHARS:]
+                if emit:
+                    yield sse_event("token", {"text": emit})
+                continue
+            if safe_buffer:
+                yield sse_event("token", {"text": safe_buffer})
+                buffer = buffer[len(safe_buffer):]
 
         cleaned_text, completed_ids = _extract_progress_marker(full_text)
         cleaned_text = _remove_exact_duplicate_response(cleaned_text)
+        if buffer:
+            yield sse_event("token", {"text": buffer})
+        if cleaned_text:
+            save_conversation_message(user_id, conversation_id, "assistant", cleaned_text, db)
+        save_conversation_message(user_id, conversation_id, "user", request.message, db)
         valid_ids = {item["id"] for item in _lesson_target_sentences(curriculum)}
-        practiced_ids = _update_practice_progress(
+        _update_practice_progress(
             progress=progress,
             conversation_id=conversation_id,
             completed_ids=completed_ids,
             valid_ids=valid_ids,
         )
-        progress.completed = _lesson_completion(curriculum, progress)[0]
         db.commit()
-        save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="user", content=request.message, db=db)
-        save_conversation_message(user_id=user_id, conversation_id=conversation_id, role="model", content=cleaned_text, db=db)
-        record_api_usage(
-            user_id=user_id,
-            prompt_tokens=usage[0],
-            completion_tokens=usage[1],
-            total_tokens=usage[2],
-            db=db,
-            model=LESSON_TUTOR_MODEL,
+        try:
+            prompt_tokens, completion_tokens, total_tokens = usage
+            record_api_usage(
+                user_id=user_id,
+                prompt_tokens=int(prompt_tokens),
+                completion_tokens=int(completion_tokens),
+                total_tokens=int(total_tokens),
+                db=db,
+                model=LESSON_TUTOR_MODEL,
+            )
+        except Exception:
+            logger.exception("Failed to record lesson AI usage.")
+        completed, practiced_count, target_count = _lesson_completion(curriculum, progress)
+        yield sse_event(
+            "done",
+            {
+                "conversation_id": conversation_id,
+                "completed": completed,
+                "practiced_sentences": practiced_count,
+                "target_sentences": target_count,
+            },
         )
-        yield sse_event("done", {"conversation_id": conversation_id, "text": cleaned_text, "completed": progress.completed, "practiced_count": len(practiced_ids), "target_count": len(valid_ids)})
     except Exception as exc:
         logger.exception("Lesson AI streaming failed: %s", exc)
         yield sse_event("error", {"message": str(exc)})
