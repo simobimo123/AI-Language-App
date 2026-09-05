@@ -303,6 +303,7 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
     full_text = ""
     usage = (0, 0, 0)
     buffer = ""
+    streamed_visible_text = ""
     try:
         for chunk in provider.stream_text(
             system_instruction=system_instruction,
@@ -332,17 +333,27 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
                 learner_text = buffer[:marker_index]
                 buffer = ""
                 if learner_text:
+                    streamed_visible_text += learner_text
                     yield sse_event("token", {"text": learner_text})
                 continue
             if len(buffer) > STREAM_HOLD_CHARS:
                 emit = buffer[:-STREAM_HOLD_CHARS]
                 buffer = buffer[-STREAM_HOLD_CHARS:]
                 if emit:
+                    streamed_visible_text += emit
                     yield sse_event("token", {"text": emit})
                 continue
 
         cleaned_text, completed_ids = _extract_progress_marker(full_text)
         cleaned_text = _remove_exact_duplicate_response(cleaned_text)
+
+        # Flush the tail that was intentionally held while waiting to detect
+        # a possible progress marker. Without this, the final 64 characters
+        # could be lost whenever the model ended without a marker in the tail.
+        if cleaned_text.startswith(streamed_visible_text):
+            remaining_text = cleaned_text[len(streamed_visible_text):]
+            if remaining_text:
+                yield sse_event("token", {"text": remaining_text})
 
         # The user message must be stored before the assistant reply so the
         # next request sees the conversation in the correct chronological order.
