@@ -17,29 +17,19 @@ def extract_token_usage(response) -> tuple[int, int, int]:
         prompt_tokens = response.get("prompt_tokens", 0) or 0
         completion_tokens = response.get("completion_tokens", 0) or 0
         total_tokens = response.get("total_tokens", 0) or 0
-        return (
-            int(prompt_tokens),
-            int(completion_tokens),
-            int(total_tokens),
-        )
+        return int(prompt_tokens), int(completion_tokens), int(total_tokens)
 
     usage_metadata = getattr(response, "usage_metadata", None)
     if usage_metadata is None:
         return 0, 0, 0
 
     prompt_tokens = getattr(usage_metadata, "prompt_token_count", 0) or 0
-    completion_tokens = (
-        getattr(usage_metadata, "candidates_token_count", 0) or 0
-    )
+    completion_tokens = getattr(usage_metadata, "candidates_token_count", 0) or 0
     total_tokens = getattr(usage_metadata, "total_token_count", 0) or 0
     return int(prompt_tokens), int(completion_tokens), int(total_tokens)
 
 
-def _create_daily_usage_if_missing(
-    user_id: int,
-    usage_date: date,
-    db: Session,
-) -> None:
+def _create_daily_usage_if_missing(user_id: int, usage_date: date, db: Session) -> None:
     db.execute(
         insert(AIUsage)
         .values(
@@ -52,9 +42,7 @@ def _create_daily_usage_if_missing(
             total_tokens=0,
             estimated_cost=0.0,
         )
-        .on_conflict_do_nothing(
-            index_elements=["user_id", "usage_date"],
-        )
+        .on_conflict_do_nothing(index_elements=["user_id", "usage_date"])
     )
 
 
@@ -78,10 +66,7 @@ def reserve_ai_request(user_id: int, db: Session) -> AIUsage:
         db.rollback()
         raise HTTPException(
             status_code=429,
-            detail=(
-                "You have reached your daily AI usage limit. "
-                "Please try again tomorrow."
-            ),
+            detail="You have reached your daily AI usage limit. Please try again tomorrow.",
         )
 
     db.commit()
@@ -120,7 +105,14 @@ def record_api_usage(
     completion_tokens: int,
     total_tokens: int,
     db: Session,
+    model: str | None = None,
 ) -> None:
+    """Record provider token usage.
+
+    ``model`` is accepted for callers that track the model at the route level.
+    The current AIUsage table stores aggregate daily usage, so the value is
+    intentionally not persisted here.
+    """
     usage = get_current_usage(user_id=user_id, db=db)
     usage.api_call_count += 1
     usage.prompt_tokens += max(0, prompt_tokens)
