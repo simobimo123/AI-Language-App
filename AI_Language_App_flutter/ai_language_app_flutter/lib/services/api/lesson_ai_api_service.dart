@@ -123,8 +123,6 @@ class LessonAiApiService {
 
       final existingStart = _lessonStartInFlight[lessonId];
       if (existingStart != null) {
-        // Another page is already starting this lesson. Wait for that request
-        // instead of creating a second AI request.
         await existingStart;
 
         final completed = _sessionCache[lessonId];
@@ -155,9 +153,6 @@ class LessonAiApiService {
         }
         if (!completer.isCompleted) completer.complete();
       } catch (error, stackTrace) {
-        // The original caller receives the actual error. Complete the shared
-        // coordination future normally so duplicate callers can safely retry
-        // once instead of producing an unhandled future error.
         if (!completer.isCompleted) completer.complete();
         Error.throwWithStackTrace(error, stackTrace);
       } finally {
@@ -250,7 +245,7 @@ class LessonAiApiService {
       String? pendingEvent;
       final dataLines = <String>[];
 
-      Future<LessonAiChunk?> parseAndResetEvent() async {
+      LessonAiChunk? parseAndResetEvent() {
         if (dataLines.isEmpty) return null;
 
         final chunk = _parseEvent(
@@ -263,13 +258,18 @@ class LessonAiApiService {
         return chunk;
       }
 
-      Future<void> processChunk(LessonAiChunk chunk) async {
+      void processChunk(LessonAiChunk chunk) {
         if (chunk.conversationId != null &&
             chunk.conversationId!.isNotEmpty) {
           streamedConversationId = chunk.conversationId;
         }
 
-        if (chunk.type == 'chunk' && chunk.text != null) {
+        // The lesson backend historically called streamed text events
+        // `token`, while the Flutter lesson page consumes `chunk`. The parser
+        // normalizes `token` to `chunk`, but accept both here as a defensive
+        // compatibility measure.
+        if ((chunk.type == 'chunk' || chunk.type == 'token') &&
+            chunk.text != null) {
           streamedAssistantText.write(chunk.text);
         }
       }
@@ -288,10 +288,10 @@ class LessonAiApiService {
         }
 
         if (line.isEmpty && dataLines.isNotEmpty) {
-          final chunk = await parseAndResetEvent();
+          final chunk = parseAndResetEvent();
           if (chunk == null) continue;
 
-          await processChunk(chunk);
+          processChunk(chunk);
 
           if (chunk.type == 'done') {
             _storeCompletedTurn(
@@ -306,12 +306,10 @@ class LessonAiApiService {
         }
       }
 
-      // Some HTTP/SSE implementations may close the connection without an
-      // extra blank line after the final event. Do not lose that final event.
       if (dataLines.isNotEmpty) {
-        final chunk = await parseAndResetEvent();
+        final chunk = parseAndResetEvent();
         if (chunk != null) {
-          await processChunk(chunk);
+          processChunk(chunk);
 
           if (chunk.type == 'done') {
             _storeCompletedTurn(
@@ -326,9 +324,6 @@ class LessonAiApiService {
         }
       }
 
-      // If the server closed the stream after sending assistant text but the
-      // final `done` event was lost, keep the completed turn in the local
-      // session cache so the lesson is not considered empty on retry.
       if (streamedAssistantText.isNotEmpty &&
           !_sessionCache.containsKey(lessonId)) {
         _storeCompletedTurn(
@@ -339,9 +334,6 @@ class LessonAiApiService {
         );
       }
     } finally {
-      // The HTTP client must stay alive until response.stream has been fully
-      // consumed. Closing it immediately after client.send() can terminate the
-      // SSE stream before Flutter receives the first AI token.
       client.close();
     }
   }
@@ -386,14 +378,24 @@ class LessonAiApiService {
       final decoded = jsonDecode(payload);
 
       if (decoded is Map) {
-        return LessonAiChunk.fromJson(
-          Map<String, dynamic>.from(decoded),
-        );
+        final json = Map<String, dynamic>.from(decoded);
+        var type = json['type']?.toString();
+
+        // The backend sends the event type inside the JSON payload, but use
+        // the SSE `event:` name as a fallback too. Normalize the lesson
+        // endpoint's `token` event to the `chunk` protocol expected by the UI.
+        type ??= fallbackType;
+        if (type == 'token') type = 'chunk';
+
+        json['type'] = type ?? 'unknown';
+        return LessonAiChunk.fromJson(json);
       }
     } catch (_) {
       if (fallbackType != null && fallbackType.isNotEmpty) {
+        final normalizedType =
+            fallbackType == 'token' ? 'chunk' : fallbackType;
         return LessonAiChunk(
-          type: fallbackType,
+          type: normalizedType,
           text: payload,
         );
       }
