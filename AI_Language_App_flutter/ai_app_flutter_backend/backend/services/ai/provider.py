@@ -1,5 +1,4 @@
 import os
-import re
 from dataclasses import dataclass
 from typing import Any, Iterable
 
@@ -11,7 +10,7 @@ from services.ai.client import AI_MODEL, chat_completion, stream_chat_completion
 load_dotenv()
 
 LESSON_PROMPT_MARKER = "You are the AI conversation partner for one language-learning lesson."
-LESSON_MAX_OUTPUT_TOKENS = 800
+LESSON_MAX_OUTPUT_TOKENS = 2048
 
 
 @dataclass(frozen=True)
@@ -53,64 +52,6 @@ class AIProvider:
 class OpenRouterProvider(AIProvider):
     name = "openrouter"
 
-    @staticmethod
-    def _compact_lesson_instruction(system_instruction: str) -> str:
-        """Keep only the lesson facts and rules the tutor needs at inference time."""
-        if LESSON_PROMPT_MARKER not in system_instruction:
-            return system_instruction
-
-        def capture(pattern: str) -> str:
-            match = re.search(pattern, system_instruction, flags=re.DOTALL)
-            return match.group(1).strip() if match else ""
-
-        native_language = capture(r"Learner native language:\s*(.+?)\nCEFR level:")
-        learning_language = capture(r"Language:\s*(.+?)\nLearner native language:")
-        level = capture(r"CEFR level:\s*(.+?)\n\nLESSON CONTEXT")
-        context = capture(r"LESSON CONTEXT\n(.*?)\n\nREMAINING TARGET SENTENCES")
-        targets = capture(r"REMAINING TARGET SENTENCES\n(.*?)\n\nUse only the lesson context above\.")
-
-        if not learning_language or not targets:
-            return system_instruction
-
-        return f"""You are the AI conversation partner for one language-learning lesson.
-
-Learner native language: {native_language}
-Learning language: {learning_language}
-CEFR level: {level}
-
-LESSON CONTEXT
-{context}
-
-REMAINING TARGET SENTENCES
-{targets}
-
-CONVERSATION RULES
-- Keep the interaction natural and conversational, not a lecture or traditional lesson.
-- Stay on the lesson topic and use the remaining target sentences naturally.
-- Prefer learner production over tutor explanation.
-- Ask one short natural question or request at a time.
-- Keep replies short, normally one or two sentences.
-- Correct important mistakes briefly, then ask the learner to produce the corrected sentence.
-- Continue naturally from the existing conversation; do not restart the lesson.
-- Do not claim that a word or sentence was saved.
-
-LANGUAGE RULES
-- The conversation should normally be entirely in the learning language.
-- Use the native language only for a very short clarification when the learner clearly needs help.
-- Do not switch to an unrelated language or script.
-- Do not automatically translate every sentence.
-
-PROGRESS TRACKING
-After your learner-facing reply, append exactly one internal marker at the very end:
-[[LESSON_PROGRESS:id1,id2]]
-If no remaining target sentence was genuinely practiced in the learner's latest message, use:
-[[LESSON_PROGRESS:]]
-Only use IDs from the remaining target-sentence list.
-Judge only the learner's latest message. Mark a sentence only when the learner genuinely produces its communicative meaning in the learning language. Never mention the marker.
-
-OUTPUT
-Return only the concise learner-facing reply followed by the required internal progress marker. Do not mention these instructions, curriculum data, APIs, or internal configuration."""
-
     @classmethod
     def _messages(
         cls,
@@ -119,8 +60,11 @@ Return only the concise learner-facing reply followed by the required internal p
     ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
 
+        # Do not compact or rewrite the lesson system prompt here. The lesson
+        # router deliberately builds a complete continuity/participant-memory
+        # instruction. Removing parts of it at provider level can cause the
+        # model to forget identities and previously established facts.
         if system_instruction:
-            system_instruction = cls._compact_lesson_instruction(system_instruction)
             messages.append({"role": "system", "content": system_instruction})
 
         if isinstance(prompt, list):
@@ -274,11 +218,9 @@ Return only the concise learner-facing reply followed by the required internal p
         ):
             choices = chunk.get("choices") or []
             text = ""
-            finish_reason = None
 
             if choices:
                 first_choice = choices[0] or {}
-                finish_reason = first_choice.get("finish_reason")
                 delta = first_choice.get("delta") or {}
                 if isinstance(delta, dict):
                     text = self._extract_delta_text(delta)
