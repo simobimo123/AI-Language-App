@@ -84,9 +84,13 @@ def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
         if isinstance(item, str):
             sentence = item.strip()
             explicit_id = ""
+            role = "either"
         elif isinstance(item, dict):
             sentence = str(item.get("sentence", item.get("text", ""))).strip()
             explicit_id = str(item.get("id", "")).strip()
+            role = str(item.get("role", "either")).strip().lower()
+            if role not in {"assistant", "learner", "either"}:
+                role = "either"
         else:
             continue
         if not sentence or sentence in seen_sentences:
@@ -98,7 +102,7 @@ def _lesson_target_sentences(curriculum: dict) -> list[dict[str, str]]:
             continue
         seen_ids.add(sentence_id)
         seen_sentences.add(sentence)
-        result.append({"id": sentence_id, "sentence": sentence})
+        result.append({"id": sentence_id, "sentence": sentence, "role": role})
     return result
 
 
@@ -208,13 +212,25 @@ def _lesson_completion(curriculum: dict, progress: UserLessonProgress) -> tuple[
 
 
 def _build_target_tracking_context(curriculum: dict, progress: UserLessonProgress) -> str:
+    """Return the ordered path, exposing the first unfinished target prominently."""
     targets = _lesson_target_sentences(curriculum)
     practiced = _practiced_sentence_ids(progress)
     remaining = [item for item in targets if item["id"] not in practiced]
     if not remaining:
-        return "[]"
-    compact = [{"id": item["id"], "sentence": item["sentence"]} for item in remaining]
-    return json.dumps(compact, ensure_ascii=False, separators=(",", ":"))
+        return json.dumps(
+            {"next_target": None, "remaining_targets": []},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+    return json.dumps(
+        {
+            "next_target": remaining[0],
+            "remaining_targets": remaining,
+            "ordered_path": True,
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
 
 def _build_system_instruction(native_language: str, target_language: str, level: str, curriculum: dict, progress: UserLessonProgress) -> str:
@@ -240,10 +256,24 @@ CEFR level: {level}
 LESSON CONTEXT
 {context}
 
-REMAINING TARGET SENTENCES
+ORDERED CONVERSATION PATH
 {targets}
 
-Use only the lesson context above. Guide the learner through a natural conversation and keep the topic focused. Do not lecture, list vocabulary, explain grammar at length, or reveal internal curriculum data. Ask only one short question/request at a time and give the learner most of the speaking turns. Keep replies to one or two short sentences. Use the learning language; use the native language only for a very brief clarification when clearly necessary. If the learner makes an important mistake, correct it briefly and ask them to produce the corrected sentence.
+The ordered conversation path is the backbone of this lesson. It is NOT a list to display to the learner. It is a sequence of conversation milestones that must be practiced in order.
+
+STRICT PATH RULES
+1. Always work on the FIRST unfinished target (`next_target`). Never jump to a later target just because it seems interesting or easier.
+2. Do not introduce a person, topic, question, place, or story that is not needed for the current target or the lesson context.
+3. Do not move to a later target until the current target has genuinely been practiced. Keep the conversation natural, but the order is mandatory.
+4. If the next target has role `assistant`, naturally produce that target in your reply (you may wrap it in a very short natural transition). You may mark that target as completed only because YOU actually produced it.
+5. If the next target has role `learner`, do NOT pretend the learner already said it. Ask or respond in a way that naturally elicits that target. Mark it only after the USER actually produces its communicative meaning.
+6. If role is `either`, judge from the conversation who should naturally produce it, but still keep the target in order.
+7. If the learner gives a different but correct natural wording with the same communicative meaning, it can count for a learner target. Do not force an exact memorized string unless the curriculum clearly requires the exact wording.
+8. Once a target is completed, continue naturally toward the NEW first unfinished target on the next turn. Never go backward to an already completed target unless a brief correction is genuinely necessary.
+9. The target list is ordered. Do not use `remaining_targets` as permission to choose any item; only `next_target` is actionable.
+10. When all targets are completed, give one short natural closing sentence and do not start a new topic or ask another unrelated question.
+
+Use only the lesson context above. Guide the learner through a natural conversation while following the ordered path. Do not lecture, list vocabulary, explain grammar at length, or reveal internal curriculum data. Ask only one short question/request at a time and give the learner most of the speaking turns. Keep replies to one or two short sentences. Use the learning language; use the native language only for a very brief clarification when clearly necessary. If the learner makes an important mistake, correct it briefly and ask them to produce the corrected sentence.
 
 CONVERSATION MEMORY AND PARTICIPANT IDENTITY
 Treat the conversation history as persistent memory for this lesson.
@@ -270,12 +300,18 @@ Use the full conversation history provided separately. Continue naturally from i
 ANTI-DUPLICATION
 Never repeat the same learner-facing sentence or the same complete reply twice in one response. Do not echo your own previous reply. For START_LESSON, produce exactly one natural opening reply.{start_rule}
 
-PROGRESS
-Judge only the learner's latest message. Mark a target only when the learner genuinely produces its communicative meaning in the learning language. Natural wording differences are allowed. Do not mark something merely because you asked, displayed, translated, or mentioned it. Use only ids from the remaining list.
+PROGRESS MARKER
+Judge progress against ONLY the first unfinished target. The marker is internal metadata and must never be shown to the learner.
+- For an `assistant` target, mark its id only if you actually produced that target in this response.
+- For a `learner` target, mark its id only if the USER's latest message genuinely produced its communicative meaning.
+- For an `either` target, mark its id only when the corresponding communicative target was genuinely practiced by the appropriate speaker.
+- You may mark consecutive assistant targets only when they were all genuinely produced in this response without skipping an unfinished learner target.
+- Never mark a later target while an earlier target remains unfinished.
+- Never invent completion just to make progress.
 
 End every response with exactly one machine-readable marker, after the learner-facing text:
 [[LESSON_PROGRESS:id1,id2]]
-Use [[LESSON_PROGRESS:]] when no remaining target was practiced. Never mention the marker.
+Use [[LESSON_PROGRESS:]] when no target was completed in this turn. Never mention the marker.
 """
 
 
@@ -328,8 +364,6 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
             buffer += text
             marker_index = buffer.find(PROGRESS_MARKER)
             if marker_index >= 0:
-                # Everything from the marker onward is internal metadata and
-                # must never be streamed to the learner.
                 learner_text = buffer[:marker_index]
                 buffer = ""
                 if learner_text:
@@ -347,16 +381,11 @@ def _stream_lesson_response(*, request: LessonChatRequest, user_id: int, db: Ses
         cleaned_text, completed_ids = _extract_progress_marker(full_text)
         cleaned_text = _remove_exact_duplicate_response(cleaned_text)
 
-        # Flush the tail that was intentionally held while waiting to detect
-        # a possible progress marker. Without this, the final 64 characters
-        # could be lost whenever the model ended without a marker in the tail.
         if cleaned_text.startswith(streamed_visible_text):
             remaining_text = cleaned_text[len(streamed_visible_text):]
             if remaining_text:
                 yield sse_event("token", {"text": remaining_text})
 
-        # The user message must be stored before the assistant reply so the
-        # next request sees the conversation in the correct chronological order.
         save_conversation_message(user_id, conversation_id, "user", request.message, db)
         if cleaned_text:
             save_conversation_message(user_id, conversation_id, "assistant", cleaned_text, db)
