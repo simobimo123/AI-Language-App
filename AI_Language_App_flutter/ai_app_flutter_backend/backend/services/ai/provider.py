@@ -5,7 +5,7 @@ from typing import Any, Iterable
 
 from dotenv import load_dotenv
 
-from services.ai.client import chat_completion, stream_chat_completion
+from services.ai.client import AI_MODEL, chat_completion, stream_chat_completion
 
 
 load_dotenv()
@@ -41,10 +41,11 @@ class AIProvider:
     def stream_text(
         self,
         *,
-        model: str,
-        prompt: Any,
+        model: str = AI_MODEL,
+        prompt: Any = None,
         system_instruction: str | None = None,
         max_output_tokens: int = 1024,
+        contents: Any = None,
     ) -> Iterable[AITextResponse]:
         raise NotImplementedError
 
@@ -242,11 +243,22 @@ Return only the concise learner-facing reply followed by the required internal p
     def stream_text(
         self,
         *,
-        model: str,
-        prompt: Any,
+        model: str = AI_MODEL,
+        prompt: Any = None,
         system_instruction: str | None = None,
         max_output_tokens: int = 1024,
+        contents: Any = None,
     ) -> Iterable[AITextResponse]:
+        # Backward-compatible alias: lesson_ai.py historically called this
+        # argument "contents", while the provider API uses "prompt".
+        if contents is not None:
+            if prompt is not None:
+                raise TypeError("Provide either 'prompt' or 'contents', not both.")
+            prompt = contents
+
+        if prompt is None:
+            raise TypeError("stream_text() requires 'prompt' or 'contents'.")
+
         messages = self._messages(prompt, system_instruction)
         output_limit = max_output_tokens
 
