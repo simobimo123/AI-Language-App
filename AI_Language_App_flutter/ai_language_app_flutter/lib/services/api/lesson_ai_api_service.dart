@@ -203,67 +203,56 @@ class LessonAiApiService {
         'conversation_id': effectiveConversationId,
     });
 
-    late final http.StreamedResponse response;
     final client = http.Client();
-
-    try {
-      response = await client.send(request).timeout(
-            const Duration(seconds: 60),
-          );
-    } on TimeoutException {
-      throw NetworkException(
-        'The connection timed out. Please try again.',
-      );
-    } on http.ClientException catch (e) {
-      throw NetworkException(
-        'Unable to connect to the server. Please check your internet connection.',
-        cause: e,
-      );
-    } catch (e) {
-      throw NetworkException(
-        'A network error occurred. Please try again.',
-        cause: e,
-      );
-    } finally {
-      client.close();
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = await response.stream.bytesToString();
-      dynamic data;
-
-      try {
-        data = jsonDecode(body);
-      } catch (_) {
-        data = body;
-      }
-
-      throw _client.apiException(
-        data,
-        'Failed to contact the AI tutor.',
-        statusCode: response.statusCode,
-      );
-    }
-
-    String? pendingEvent;
-    final dataLines = <String>[];
     String? streamedConversationId = effectiveConversationId;
     final streamedAssistantText = StringBuffer();
 
-    await for (final line in response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())) {
-      if (line.startsWith('event:')) {
-        pendingEvent = line.substring(6).trim();
-        continue;
+    try {
+      late final http.StreamedResponse response;
+
+      try {
+        response = await client.send(request).timeout(
+          const Duration(seconds: 60),
+        );
+      } on TimeoutException {
+        throw NetworkException(
+          'The connection timed out. Please try again.',
+        );
+      } on http.ClientException catch (e) {
+        throw NetworkException(
+          'Unable to connect to the server. Please check your internet connection.',
+          cause: e,
+        );
+      } catch (e) {
+        throw NetworkException(
+          'A network error occurred. Please try again.',
+          cause: e,
+        );
       }
 
-      if (line.startsWith('data:')) {
-        dataLines.add(line.substring(5).trimLeft());
-        continue;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final body = await response.stream.bytesToString();
+        dynamic data;
+
+        try {
+          data = jsonDecode(body);
+        } catch (_) {
+          data = body;
+        }
+
+        throw _client.apiException(
+          data,
+          'Failed to contact the AI tutor.',
+          statusCode: response.statusCode,
+        );
       }
 
-      if (line.isEmpty && dataLines.isNotEmpty) {
+      String? pendingEvent;
+      final dataLines = <String>[];
+
+      Future<LessonAiChunk?> parseAndResetEvent() async {
+        if (dataLines.isEmpty) return null;
+
         final chunk = _parseEvent(
           dataLines.join('\n'),
           fallbackType: pendingEvent,
@@ -271,16 +260,38 @@ class LessonAiApiService {
 
         dataLines.clear();
         pendingEvent = null;
+        return chunk;
+      }
 
-        if (chunk != null) {
-          if (chunk.conversationId != null &&
-              chunk.conversationId!.isNotEmpty) {
-            streamedConversationId = chunk.conversationId;
-          }
+      Future<void> processChunk(LessonAiChunk chunk) async {
+        if (chunk.conversationId != null &&
+            chunk.conversationId!.isNotEmpty) {
+          streamedConversationId = chunk.conversationId;
+        }
 
-          if (chunk.type == 'chunk' && chunk.text != null) {
-            streamedAssistantText.write(chunk.text);
-          }
+        if (chunk.type == 'chunk' && chunk.text != null) {
+          streamedAssistantText.write(chunk.text);
+        }
+      }
+
+      await for (final line in response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        if (line.startsWith('event:')) {
+          pendingEvent = line.substring(6).trim();
+          continue;
+        }
+
+        if (line.startsWith('data:')) {
+          dataLines.add(line.substring(5).trimLeft());
+          continue;
+        }
+
+        if (line.isEmpty && dataLines.isNotEmpty) {
+          final chunk = await parseAndResetEvent();
+          if (chunk == null) continue;
+
+          await processChunk(chunk);
 
           if (chunk.type == 'done') {
             _storeCompletedTurn(
@@ -294,35 +305,44 @@ class LessonAiApiService {
           yield chunk;
         }
       }
-    }
 
-    if (dataLines.isNotEmpty) {
-      final chunk = _parseEvent(
-        dataLines.join('\n'),
-        fallbackType: pendingEvent,
-      );
+      // Some HTTP/SSE implementations may close the connection without an
+      // extra blank line after the final event. Do not lose that final event.
+      if (dataLines.isNotEmpty) {
+        final chunk = await parseAndResetEvent();
+        if (chunk != null) {
+          await processChunk(chunk);
 
-      if (chunk != null) {
-        if (chunk.conversationId != null &&
-            chunk.conversationId!.isNotEmpty) {
-          streamedConversationId = chunk.conversationId;
+          if (chunk.type == 'done') {
+            _storeCompletedTurn(
+              lessonId: lessonId,
+              conversationId: streamedConversationId,
+              userMessage: message,
+              assistantMessage: streamedAssistantText.toString(),
+            );
+          }
+
+          yield chunk;
         }
-
-        if (chunk.type == 'chunk' && chunk.text != null) {
-          streamedAssistantText.write(chunk.text);
-        }
-
-        if (chunk.type == 'done') {
-          _storeCompletedTurn(
-            lessonId: lessonId,
-            conversationId: streamedConversationId,
-            userMessage: message,
-            assistantMessage: streamedAssistantText.toString(),
-          );
-        }
-
-        yield chunk;
       }
+
+      // If the server closed the stream after sending assistant text but the
+      // final `done` event was lost, keep the completed turn in the local
+      // session cache so the lesson is not considered empty on retry.
+      if (streamedAssistantText.isNotEmpty &&
+          !_sessionCache.containsKey(lessonId)) {
+        _storeCompletedTurn(
+          lessonId: lessonId,
+          conversationId: streamedConversationId,
+          userMessage: message,
+          assistantMessage: streamedAssistantText.toString(),
+        );
+      }
+    } finally {
+      // The HTTP client must stay alive until response.stream has been fully
+      // consumed. Closing it immediately after client.send() can terminate the
+      // SSE stream before Flutter receives the first AI token.
+      client.close();
     }
   }
 
