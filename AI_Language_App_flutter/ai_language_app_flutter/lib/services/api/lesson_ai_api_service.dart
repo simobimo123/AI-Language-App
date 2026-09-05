@@ -115,12 +115,7 @@ class LessonAiApiService {
       if (existingStart != null) {
         // Another page is already starting this lesson. Wait for that request
         // instead of creating a second AI request.
-        try {
-          await existingStart;
-        } catch (_) {
-          // If the first request failed, allow this caller to make one fresh
-          // attempt. It will still be protected by the normal sending guards.
-        }
+        await existingStart;
 
         final completed = _sessionCache[lessonId];
         if (completed != null && completed.messages.isNotEmpty) {
@@ -150,10 +145,11 @@ class LessonAiApiService {
         }
         if (!completer.isCompleted) completer.complete();
       } catch (error, stackTrace) {
-        if (!completer.isCompleted) {
-          completer.completeError(error, stackTrace);
-        }
-        rethrow;
+        // The original caller receives the actual error. Complete the shared
+        // coordination future normally so duplicate callers can safely retry
+        // once instead of producing an unhandled future error.
+        if (!completer.isCompleted) completer.complete();
+        Error.throwWithStackTrace(error, stackTrace);
       } finally {
         _lessonStartInFlight.remove(lessonId);
       }
