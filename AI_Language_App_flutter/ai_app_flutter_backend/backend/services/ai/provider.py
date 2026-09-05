@@ -1,4 +1,5 @@
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, Iterable
 
@@ -11,6 +12,7 @@ load_dotenv()
 
 LESSON_PROMPT_MARKER = "You are the AI conversation partner for one language-learning lesson."
 LESSON_MAX_OUTPUT_TOKENS = 2048
+LESSON_STREAM_BUFFER_CHARS = 4096
 
 
 @dataclass(frozen=True)
@@ -137,6 +139,29 @@ class OpenRouterProvider(AIProvider):
         text = delta.get("text")
         return text if isinstance(text, str) else ""
 
+    @staticmethod
+    def _remove_exact_duplicate_response(text: str) -> str:
+        """Collapse a response that consists of the same complete reply twice."""
+        cleaned = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", text).strip()
+        if not cleaned:
+            return cleaned
+
+        # Handles both normal whitespace-separated duplication and the common
+        # case where the model repeats the whole learner-facing response after
+        # producing it once. The full-match requirement avoids changing normal
+        # repeated wording such as a deliberate "Ja, ja.".
+        match = re.fullmatch(r"(.+?)\s+\1", cleaned, flags=re.DOTALL)
+        if match:
+            return match.group(1).strip()
+
+        normalized = re.sub(r"\s+", " ", cleaned).strip()
+        if normalized != cleaned:
+            match = re.fullmatch(r"(.+?)\s+\1", normalized, flags=re.DOTALL)
+            if match:
+                return match.group(1).strip()
+
+        return cleaned
+
     def generate_text(
         self,
         *,
@@ -201,15 +226,18 @@ class OpenRouterProvider(AIProvider):
 
         messages = self._messages(prompt, system_instruction)
         output_limit = max_output_tokens
+        is_lesson = bool(
+            system_instruction and LESSON_PROMPT_MARKER in system_instruction
+        )
 
-        if system_instruction and LESSON_PROMPT_MARKER in system_instruction:
-            # Keep the route's requested limit as the upper bound. This avoids
-            # unexpectedly changing the working lesson request budget while
-            # still allowing a dedicated lesson ceiling when the caller asks
-            # for a larger value.
+        if is_lesson:
             output_limit = min(output_limit, LESSON_MAX_OUTPUT_TOKENS)
 
         saw_visible_text = False
+        buffered_lesson_text = ""
+        buffered_prompt_tokens = 0
+        buffered_completion_tokens = 0
+        buffered_total_tokens = 0
 
         for chunk in stream_chat_completion(
             model=model,
@@ -229,18 +257,56 @@ class OpenRouterProvider(AIProvider):
                 saw_visible_text = True
 
             usage = chunk.get("usage") or {}
+            prompt_tokens = int(usage.get("prompt_tokens") or 0)
+            completion_tokens = int(usage.get("completion_tokens") or 0)
+            total_tokens = int(usage.get("total_tokens") or 0)
+
+            if is_lesson:
+                if text:
+                    buffered_lesson_text += text
+                if prompt_tokens:
+                    buffered_prompt_tokens = prompt_tokens
+                if completion_tokens:
+                    buffered_completion_tokens = completion_tokens
+                if total_tokens:
+                    buffered_total_tokens = total_tokens
+                continue
 
             yield AITextResponse(
                 text=text,
-                prompt_tokens=int(usage.get("prompt_tokens") or 0),
-                completion_tokens=int(usage.get("completion_tokens") or 0),
-                total_tokens=int(usage.get("total_tokens") or 0),
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
             )
 
         if not saw_visible_text:
             raise RuntimeError(
                 "OpenRouter streaming completed without learner-facing text "
                 f"(model={model!r})."
+            )
+
+        if is_lesson:
+            cleaned = self._remove_exact_duplicate_response(
+                buffered_lesson_text
+            )
+
+            if len(cleaned) > LESSON_STREAM_BUFFER_CHARS:
+                # This should not normally happen because lesson responses are
+                # intentionally short. Keep a hard safety guard so a malformed
+                # model response cannot create an unbounded in-memory buffer.
+                cleaned = cleaned[:LESSON_STREAM_BUFFER_CHARS].rstrip()
+
+            if not cleaned:
+                raise RuntimeError(
+                    "OpenRouter lesson response became empty after cleanup "
+                    f"(model={model!r})."
+                )
+
+            yield AITextResponse(
+                text=cleaned,
+                prompt_tokens=buffered_prompt_tokens,
+                completion_tokens=buffered_completion_tokens,
+                total_tokens=buffered_total_tokens,
             )
 
 
