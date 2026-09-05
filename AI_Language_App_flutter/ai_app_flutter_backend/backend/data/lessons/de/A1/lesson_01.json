@@ -1,212 +1,119 @@
+
 {
   "lesson_id": "de_a1_lesson_01",
   "language": "de",
   "level": "A1",
-  "lesson_order": 1,
-  "unit_number": 1,
-  "topic_key": "ich_und_du",
-  "is_test": false,
-  "passing_score": 80,
-  "metadata": {
-    "title": "Ich und du",
-    "objective": "القدرة على التحدث بجمل ألمانية بسيطة للتعريف بالنفس والسؤال عن الاسم ومكان السكن والحديث عن أشخاص آخرين.",
-    "description": "محادثة تفاعلية قصيرة يكتسب فيها المتعلم الجمل من خلال التحدث، دون شرح نظري أو محاضرة.",
-    "estimated_minutes": 12,
-    "skills": [
-      "speaking",
-      "listening",
-      "conversation",
-      "introducing_yourself"
-    ]
-  },
-  "preview": {
-    "what_you_will_learn": [
-      "التعريف بالنفس بجمل بسيطة",
-      "السؤال عن اسم شخص ومكان سكنه",
-      "الحديث عن شخص آخر ومجموعة من الأشخاص"
-    ],
-    "new_items": [
-      "ich",
-      "du",
-      "er",
-      "sie",
-      "wir",
-      "ihr",
-      "heißen",
-      "wohnen"
-    ],
-    "new_vocabulary": [
-      { "word": "ich", "meaning": "أنا" },
-      { "word": "du", "meaning": "أنت" },
-      { "word": "er", "meaning": "هو" },
-      { "word": "sie", "meaning": "هي / هم" },
-      { "word": "wir", "meaning": "نحن" },
-      { "word": "ihr", "meaning": "أنتم" },
-      { "word": "heißen", "meaning": "يُدعى / اسمه" },
-      { "word": "wohnen", "meaning": "يسكن" }
-    ],
-    "goal": "في نهاية المحادثة يستطيع المتعلم استخدام جمل أساسية عن نفسه وعن أشخاص آخرين."
-  },
-  "prerequisites": [],
-  "sections": [
-    {
-      "id": "conversation_01",
-      "type": "conversation",
-      "title": "Erstes Kennenlernen",
-      "objective": "التعارف باستخدام ich و du.",
-      "focus": ["ich", "du"],
-      "scenario": "يلتقي المتعلم بشخص لأول مرة.",
-      "target_sentences": [
-        "Hallo! Ich heiße Anna.",
-        "Wie heißt du?",
-        "Ich heiße Ali.",
-        "Wo wohnst du?",
-        "Ich wohne in Fès."
-      ],
-      "expected_learner_responses": [
-        "Ich heiße ...",
-        "Ich wohne in ..."
-      ]
-    },
-    {
-      "id": "conversation_02",
-      "type": "conversation",
-      "title": "Über andere sprechen",
-      "objective": "الحديث عن شخص آخر باستخدام er و sie.",
-      "focus": ["er", "sie"],
-      "scenario": "يتحدث المتعلم مع شريكه عن أشخاص يعرفهم.",
-      "target_sentences": [
-        "Er heißt Tom.",
-        "Sie heißt Anna."
-      ],
-      "expected_learner_responses": [
-        "Er heißt ...",
-        "Sie heißt ..."
-      ]
-    },
-    {
-      "id": "conversation_03",
-      "type": "conversation",
-      "title": "Wir und ihr",
-      "objective": "استخدام wir و ihr و sie في سياق جماعي.",
-      "focus": ["wir", "ihr", "sie"],
-      "scenario": "يتحدث المتعلم مع مجموعة من الأشخاص عن السكن والتعارف.",
-      "target_sentences": [
-        "Wir wohnen in Fès.",
-        "Wo wohnt ihr?",
-        "Sie wohnen in Berlin."
-      ],
-      "expected_learner_responses": [
-        "Wir wohnen ...",
-        "Ihr wohnt ...",
-        "Sie wohnen ..."
-      ]
-    }
+  "unit": 1,
+  "order": 1,
+  "title": "Ich und du",
+  "objective": "Introduce yourself, ask about another person's name and place of residence, and talk about other people and groups.",
+
+  "vocabulary": [
+    ["ich", "I"],
+    ["du", "you"],
+    ["er", "he"],
+    ["sie", "she/they"],
+    ["wir", "we"],
+    ["ihr", "you plural"],
+    ["heißen", "to be called"],
+    ["wohnen", "to live"],
+    ["wie", "how/what"],
+    ["wo", "where"]
   ],
-  "practice": {
-    "mode": "conversation",
-    "minimum_turns": 6,
-    "activities": [
-      "التعريف بالنفس",
-      "السؤال والجواب عن الاسم",
-      "السؤال والجواب عن مكان السكن",
-      "الحديث عن شخص آخر",
-      "الحديث مع مجموعة"
-    ]
-  },
-  "key_sentences": [
-    { "sentence": "Hallo! Ich heiße Anna.", "translation": "مرحبًا! اسمي آنا." },
-    { "sentence": "Wie heißt du?", "translation": "ما اسمك؟" },
-    { "sentence": "Ich heiße Ali.", "translation": "اسمي علي." },
-    { "sentence": "Wo wohnst du?", "translation": "أين تسكن؟" },
-    { "sentence": "Ich wohne in Fès.", "translation": "أنا أسكن في فاس." },
-    { "sentence": "Er heißt Tom.", "translation": "اسمه توم." },
-    { "sentence": "Sie heißt Anna.", "translation": "اسمها آنا." },
-    { "sentence": "Wir wohnen in Fès.", "translation": "نحن نسكن في فاس." },
-    { "sentence": "Wo wohnt ihr?", "translation": "أين تسكنون؟" },
-    { "sentence": "Sie wohnen in Berlin.", "translation": "هم يسكنون في برلين." }
-  ],
-  "assessment": {
-    "enabled": true,
-    "type": "multiple_choice",
-    "questions_count": 5,
-    "passing_score": 80,
-    "retry_allowed": true,
-    "questions": [
+
+  "conversation": {
+    "mode": "guided_natural_conversation",
+
+    "path": [
       {
-        "id": 1,
-        "order": 1,
-        "type": "multiple_choice",
-        "question": "ما الضمير الألماني الذي يعني «أنا»؟",
-        "options": ["ich", "du", "er", "wir"],
-        "correct_answer": "ich"
+        "id": "p1",
+        "role": "assistant",
+        "target": "Hallo! Ich heiße ...",
+        "context": "The tutor introduces themselves naturally."
       },
       {
-        "id": 2,
-        "order": 2,
-        "type": "multiple_choice",
-        "question": "اختر الجملة الصحيحة لمعنى «اسمي علي».",
-        "options": ["Ich heiße Ali.", "Du heißt Ali.", "Er heißt Ali.", "Wir heißen Ali."],
-        "correct_answer": "Ich heiße Ali."
+        "id": "p2",
+        "role": "assistant",
+        "target": "Wie heißt du?",
+        "context": "Ask the learner for their name."
       },
       {
-        "id": 3,
-        "order": 3,
-        "type": "multiple_choice",
-        "question": "ماذا يعني «Sie heißt Anna.»؟",
-        "options": ["اسمها آنا.", "اسمه آنا.", "اسمي آنا.", "اسمهم آنا."],
-        "correct_answer": "اسمها آنا."
+        "id": "p3",
+        "role": "learner",
+        "target": "Ich heiße ...",
+        "context": "Elicit the learner's own name."
       },
       {
-        "id": 4,
-        "order": 4,
-        "type": "multiple_choice",
-        "question": "أي ضمير يعني «نحن»؟",
-        "options": ["ihr", "wir", "sie", "er"],
-        "correct_answer": "wir"
+        "id": "p4",
+        "role": "assistant",
+        "target": "Wo wohnst du?",
+        "context": "Ask where the learner lives."
       },
       {
-        "id": 5,
-        "order": 5,
-        "type": "multiple_choice",
-        "question": "أي جملة تعني «أنا أسكن في فاس»؟",
-        "options": ["Ich wohne in Fès.", "Ich heiße Fès.", "Wir wohnen Berlin.", "Sie wohnt in Fès."],
-        "correct_answer": "Ich wohne in Fès."
+        "id": "p5",
+        "role": "learner",
+        "target": "Ich wohne in ...",
+        "context": "Elicit the learner's place of residence."
+      },
+      {
+        "id": "p6",
+        "role": "assistant",
+        "target": "Er heißt ...",
+        "context": "Introduce a male third person naturally."
+      },
+      {
+        "id": "p7",
+        "role": "learner",
+        "target": "Er heißt ...",
+        "context": "Elicit a sentence about a male third person."
+      },
+      {
+        "id": "p8",
+        "role": "assistant",
+        "target": "Sie heißt ...",
+        "context": "Introduce a female third person naturally."
+      },
+      {
+        "id": "p9",
+        "role": "learner",
+        "target": "Sie heißt ...",
+        "context": "Elicit a sentence about a female third person."
+      },
+      {
+        "id": "p10",
+        "role": "assistant",
+        "target": "Wo wohnt ihr?",
+        "context": "Ask where a group lives."
+      },
+      {
+        "id": "p11",
+        "role": "learner",
+        "target": "Wir wohnen in ...",
+        "context": "Elicit a statement about where the learner and their group live."
+      },
+      {
+        "id": "p12",
+        "role": "learner",
+        "target": "Ihr wohnt ...",
+        "context": "Elicit a statement using ihr about where other people live."
+      },
+      {
+        "id": "p13",
+        "role": "learner",
+        "target": "Sie wohnen in ...",
+        "context": "Elicit a statement about where a group of other people lives."
       }
     ]
   },
+
+  "assessment": {
+    "required": true,
+    "passing_score": 80
+  },
+
   "completion": {
-    "requires_assessment": true,
-    "passing_score": 80,
-    "minimum_practice": 6,
-    "mark_completed_after": "assessment_passed"
-  },
-  "teacher_instructions": {
-    "mode": "conversation_only",
-    "start_message": "ابدأ مباشرة بحوار طبيعي بالألمانية: Hallo! Ich heiße Anna. Wie heißt du?",
-    "rules": [
-      "لا تقدم شرحًا نظريًا أو محاضرة.",
-      "لا تعرض قائمة كلمات أو قواعد للمستخدم أثناء الحوار.",
-      "اجعل المستخدم يتحدث ويجيب في معظم الأدوار.",
-      "اسأل سؤالًا واحدًا أو اطلب جملة واحدة في كل مرة.",
-      "استخدم الجمل المستهدفة داخل الحوار بشكل طبيعي.",
-      "إذا أخطأ المستخدم، صحح الخطأ باختصار ثم اطلب منه إعادة الجملة.",
-      "استخدم الألمانية في الحوار، والعربية فقط عند الحاجة إلى مساعدة قصيرة جدًا.",
-      "لا تستخدم الصينية أو اليابانية أو أي لغة أخرى غير اللغة المستهدفة.",
-      "لا تنتقل إلى موضوع خارج أهداف هذا الدرس."
-    ],
-    "progression": [
-      "ابدأ بالتعارف باستخدام ich و du.",
-      "دع المتعلم يجيب ثم اسأله عن مكان السكن.",
-      "بعد عدة أدوار، أدخل er و sie من خلال الحديث عن أشخاص آخرين.",
-      "في النهاية أدخل wir و ihr و sie من خلال موقف جماعي.",
-      "حافظ على الحوار قصيرًا وطبيعيًا وركز على إنتاج المتعلم للجمل."
-    ],
-    "hint_policy": [
-      "💡 الرد المقترح",
-      "🔊 استمع إلى الرد",
-      "🎤 قل الجملة"
-    ]
-  },
-  "metadata_version": 2
+    "conversation_required": true,
+    "assessment_required": true,
+    "passing_score": 80
+  }
 }
