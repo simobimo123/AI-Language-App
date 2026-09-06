@@ -1,5 +1,10 @@
 {
   "schema_version": "1.0",
+  "language": "de",
+  "level": "A1",
+  "lesson_order": 1,
+  "lesson_id": "de_a1_lesson_01",
+  "topic_key": "de_a1_lesson_01",
   "lesson": {
     "id": "de_a1_lesson_01",
     "language": "de",
