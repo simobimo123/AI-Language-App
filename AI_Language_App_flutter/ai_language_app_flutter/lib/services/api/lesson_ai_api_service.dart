@@ -298,7 +298,9 @@ class LessonAiApiService {
               lessonId: lessonId,
               conversationId: streamedConversationId,
               userMessage: message,
-              assistantMessage: streamedAssistantText.toString(),
+              assistantMessage: _normalizeAssistantText(
+                streamedAssistantText.toString(),
+              ),
             );
           }
 
@@ -316,7 +318,9 @@ class LessonAiApiService {
               lessonId: lessonId,
               conversationId: streamedConversationId,
               userMessage: message,
-              assistantMessage: streamedAssistantText.toString(),
+              assistantMessage: _normalizeAssistantText(
+                streamedAssistantText.toString(),
+              ),
             );
           }
 
@@ -330,12 +334,51 @@ class LessonAiApiService {
           lessonId: lessonId,
           conversationId: streamedConversationId,
           userMessage: message,
-          assistantMessage: streamedAssistantText.toString(),
+          assistantMessage: _normalizeAssistantText(
+            streamedAssistantText.toString(),
+          ),
         );
       }
     } finally {
       client.close();
     }
+  }
+
+  /// Remove an accidental exact repetition of the complete tutor response.
+  ///
+  /// This is intentionally done at the transport boundary as a final safety
+  /// net. The backend also performs duplicate-response cleanup, but the app
+  /// must never display the same complete tutor reply twice if a provider or
+  /// proxy happens to return it duplicated.
+  static String _normalizeAssistantText(String text) {
+    var cleaned = text
+        .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF]'), '')
+        .trim();
+
+    if (cleaned.isEmpty) return cleaned;
+
+    // Normalize all whitespace for comparison only.
+    final normalized = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    // First handle the common form:
+    // "Hallo! Wie heißt du? Hallo! Wie heißt du?"
+    final separator = RegExp(r'\s+');
+    final match = RegExp(r'^(.+?)\s+\1$').firstMatch(normalized);
+    if (match != null) {
+      return match.group(1)!.trim();
+    }
+
+    // Handle two identical halves even when the provider uses unusual
+    // whitespace between the two copies.
+    final half = normalized.length ~/ 2;
+    if (normalized.length >= 4 && normalized.length.isEven) {
+      final left = normalized.substring(0, half).trim();
+      final right = normalized.substring(half).trim();
+      if (left == right) return left;
+    }
+
+    // Keep the original punctuation/spacing when no duplicate was found.
+    return cleaned;
   }
 
   void _storeCompletedTurn({
@@ -344,7 +387,8 @@ class LessonAiApiService {
     required String userMessage,
     required String assistantMessage,
   }) {
-    if (assistantMessage.trim().isEmpty) return;
+    final normalizedAssistant = _normalizeAssistantText(assistantMessage);
+    if (normalizedAssistant.isEmpty) return;
 
     final cached = _sessionCache.putIfAbsent(
       lessonId,
@@ -364,7 +408,7 @@ class LessonAiApiService {
 
     cached.messages.add({
       'role': 'assistant',
-      'text': assistantMessage,
+      'text': normalizedAssistant,
     });
   }
 
