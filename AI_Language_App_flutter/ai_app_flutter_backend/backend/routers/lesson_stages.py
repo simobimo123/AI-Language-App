@@ -21,7 +21,6 @@ router = APIRouter(prefix="/lessons", tags=["Lesson Stages"])
 STAGES = ("learn", "teaching", "practice")
 STATUS_LOCKED = "locked"
 STATUS_AVAILABLE = "available"
-STATUS_IN_PROGRESS = "in_progress"
 STATUS_COMPLETED = "completed"
 
 
@@ -74,13 +73,11 @@ def _get_or_create_stage_progress(
 
 
 def _sync_unlocked_statuses(progress: UserLessonStageProgress) -> None:
-    if progress.learn_status == STATUS_COMPLETED:
-        if progress.teaching_status == STATUS_LOCKED:
-            progress.teaching_status = STATUS_AVAILABLE
+    if progress.learn_status == STATUS_COMPLETED and progress.teaching_status == STATUS_LOCKED:
+        progress.teaching_status = STATUS_AVAILABLE
 
-    if progress.teaching_status == STATUS_COMPLETED:
-        if progress.practice_status == STATUS_LOCKED:
-            progress.practice_status = STATUS_AVAILABLE
+    if progress.teaching_status == STATUS_COMPLETED and progress.practice_status == STATUS_LOCKED:
+        progress.practice_status = STATUS_AVAILABLE
 
 
 def _serialize(progress: UserLessonStageProgress) -> dict:
@@ -95,6 +92,14 @@ def _serialize(progress: UserLessonStageProgress) -> dict:
         "conversations": {
             "teaching": progress.teaching_conversation_id,
             "practice": progress.practice_conversation_id,
+        },
+        "timestamps": {
+            "learn_started_at": progress.learn_started_at,
+            "learn_completed_at": progress.learn_completed_at,
+            "teaching_started_at": progress.teaching_started_at,
+            "teaching_completed_at": progress.teaching_completed_at,
+            "practice_started_at": progress.practice_started_at,
+            "practice_completed_at": progress.practice_completed_at,
         },
         "lesson_completed": progress.practice_status == STATUS_COMPLETED,
     }
@@ -141,12 +146,9 @@ def complete_lesson_stage(
     lesson = _get_lesson(db, lesson_id)
     profile = _get_learning_profile(db, current_user, lesson)
     progress = _get_or_create_stage_progress(db, current_user, profile, lesson)
-
     _sync_unlocked_statuses(progress)
 
-    status_field = f"{stage}_status"
-    current_status = getattr(progress, status_field)
-
+    current_status = getattr(progress, f"{stage}_status")
     if current_status == STATUS_COMPLETED:
         return _serialize(progress)
 
@@ -156,8 +158,13 @@ def complete_lesson_stage(
             detail=f"Stage '{stage}' is locked until the previous stage is completed.",
         )
 
+    now = datetime.utcnow()
+
     if stage == "learn":
+        if progress.learn_started_at is None:
+            progress.learn_started_at = now
         progress.learn_status = STATUS_COMPLETED
+        progress.learn_completed_at = now
         _sync_unlocked_statuses(progress)
 
     elif stage == "teaching":
@@ -166,18 +173,24 @@ def complete_lesson_stage(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Teaching cannot be completed before interactive learning.",
             )
+        if progress.teaching_started_at is None:
+            progress.teaching_started_at = now
         progress.teaching_status = STATUS_COMPLETED
+        progress.teaching_completed_at = now
         if payload.conversation_id:
             progress.teaching_conversation_id = payload.conversation_id
         _sync_unlocked_statuses(progress)
 
-    elif stage == "practice":
+    else:  # practice
         if progress.teaching_status != STATUS_COMPLETED:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Practice cannot be completed before AI teaching.",
             )
+        if progress.practice_started_at is None:
+            progress.practice_started_at = now
         progress.practice_status = STATUS_COMPLETED
+        progress.practice_completed_at = now
         if payload.conversation_id:
             progress.practice_conversation_id = payload.conversation_id
 
@@ -196,7 +209,7 @@ def complete_lesson_stage(
             db.add(lesson_progress)
 
         lesson_progress.completed = True
-        lesson_progress.completed_at = datetime.utcnow()
+        lesson_progress.completed_at = now
 
     db.commit()
     db.refresh(progress)
