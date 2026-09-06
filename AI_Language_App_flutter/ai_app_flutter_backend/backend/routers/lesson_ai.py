@@ -37,15 +37,20 @@ logger = logging.getLogger(__name__)
 LESSON_TUTOR_MODEL = AI_MODEL
 
 MAX_HISTORY_MESSAGES = 20
-MAX_LESSON_CONTEXT_CHARS = 2500
-MAX_OUTPUT_TOKENS = 800
+MAX_LESSON_CONTEXT_CHARS = 1800
+MAX_OUTPUT_TOKENS = 500
 
 PROGRESS_MARKER = "[[LESSON_PROGRESS:"
+
+# Correct regex:
+# [[LESSON_PROGRESS:target_id]]
+# or
+# [[LESSON_PROGRESS:]]
 PROGRESS_MARKER_RE = re.compile(
     r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]"
 )
 
-STREAM_HOLD_CHARS = 64
+STREAM_HOLD_CHARS = 48
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LESSONS_DIR = BASE_DIR / "data" / "lessons"
@@ -59,6 +64,11 @@ class LessonChatRequest(BaseModel):
         min_length=1,
         max_length=100,
     )
+
+
+# ============================================================================
+# LESSON LOADING
+# ============================================================================
 
 
 def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
@@ -104,784 +114,251 @@ def _load_lesson_curriculum(lesson: CourseLesson) -> dict:
             detail="Invalid lesson curriculum format.",
         )
 
+    lesson_data = data.get("lesson")
+
+    if not isinstance(lesson_data, dict):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invalid lesson structure.",
+        )
+
     return data
 
 
-def _normalize_target_role(role: str) -> str:
-    role = str(role or "").strip().lower()
-
-    if role in {"assistant", "assistant_character"}:
-        return "assistant"
-
-    if role == "learner":
-        return "learner"
-
-    if role == "either":
-        return "either"
-
-    return "either"
+# ============================================================================
+# LESSON TARGET ENGINE
+# ============================================================================
 
 
-def _lesson_target_sentences(
-    curriculum: dict,
-) -> list[dict[str, str]]:
+def _lesson_data(curriculum: dict) -> dict:
+    lesson = curriculum.get("lesson")
+    return lesson if isinstance(lesson, dict) else {}
+
+
+def _lesson_targets(curriculum: dict) -> list[dict]:
     """
-    Build one ordered list of conversation milestones.
+    Read:
 
-    Supported formats:
+    lesson.targets = [
+        {
+            "id": "...",
+            "order": 1,
+            "required": true,
+            "goal": "...",
+            "patterns": [...],
+            "suggestion": "...",
+            "context": "..."
+        }
+    ]
 
-    1. New scene-based format:
-       conversation.scenes[].flow[]
+    The backend keeps the complete target list internally.
 
-    2. Intermediate path format:
-       conversation.path[]
-
-    3. Legacy formats:
-       key_sentences / sections
+    Only the current and immediate next target are sent to the AI.
     """
 
-    conversation = curriculum.get("conversation")
+    lesson = _lesson_data(curriculum)
 
-    # ------------------------------------------------------------------
-    # NEW FORMAT: conversation.scenes
-    # ------------------------------------------------------------------
-    if isinstance(conversation, dict):
-        scenes = conversation.get("scenes")
+    raw_targets = lesson.get("targets", [])
 
-        if isinstance(scenes, list) and scenes:
-            result: list[dict[str, str]] = []
-            seen_ids: set[str] = set()
+    if not isinstance(raw_targets, list):
+        return []
 
-            for scene_index, scene in enumerate(scenes, start=1):
-                if not isinstance(scene, dict):
-                    continue
-
-                scene_id = str(
-                    scene.get(
-                        "id",
-                        f"scene_{scene_index}",
-                    )
-                ).strip()
-
-                scene_context = str(
-                    scene.get("context", "")
-                ).strip()
-
-                scene_purpose = str(
-                    scene.get("purpose", "")
-                ).strip()
-
-                scene_character = str(
-                    scene.get("character", "")
-                ).strip()
-
-                flow = scene.get("flow")
-
-                if not isinstance(flow, list):
-                    continue
-
-                for flow_index, item in enumerate(
-                    flow,
-                    start=1,
-                ):
-                    if not isinstance(item, dict):
-                        continue
-
-                    target = str(
-                        item.get(
-                            "target_pattern",
-                            item.get(
-                                "target",
-                                item.get(
-                                    "sentence",
-                                    item.get(
-                                        "text",
-                                        "",
-                                    ),
-                                ),
-                            ),
-                        )
-                    ).strip()
-
-                    if not target:
-                        continue
-
-                    target_id = str(
-                        item.get(
-                            "id",
-                            f"{scene_id}_{flow_index}",
-                        )
-                    ).strip()
-
-                    if not target_id:
-                        target_id = f"{scene_id}_{flow_index}"
-
-                    if target_id in seen_ids:
-                        target_id = (
-                            f"{scene_id}_{flow_index}_{len(result)}"
-                        )
-
-                    if target_id in seen_ids:
-                        continue
-
-                    role = _normalize_target_role(
-                        str(item.get("role", "either"))
-                    )
-
-                    speaker = str(
-                        item.get(
-                            "speaker",
-                            "",
-                        )
-                    ).strip()
-
-                    goal = str(
-                        item.get(
-                            "goal",
-                            "",
-                        )
-                    ).strip()
-
-                    action = str(
-                        item.get(
-                            "action",
-                            "",
-                        )
-                    ).strip()
-
-                    item_context = str(
-                        item.get(
-                            "context",
-                            "",
-                        )
-                    ).strip()
-
-                    context_parts: list[str] = []
-
-                    if scene_context:
-                        context_parts.append(
-                            f"Scene context: {scene_context}"
-                        )
-
-                    if scene_purpose:
-                        context_parts.append(
-                            f"Scene purpose: {scene_purpose}"
-                        )
-
-                    if scene_character:
-                        context_parts.append(
-                            f"Scene character: {scene_character}"
-                        )
-
-                    if goal:
-                        context_parts.append(
-                            f"Goal: {goal}"
-                        )
-
-                    if action:
-                        context_parts.append(
-                            f"Action: {action}"
-                        )
-
-                    if item_context:
-                        context_parts.append(
-                            f"Target context: {item_context}"
-                        )
-
-                    context = " ".join(context_parts)
-
-                    seen_ids.add(target_id)
-
-                    result.append(
-                        {
-                            "id": target_id,
-                            "sentence": target,
-                            "role": role,
-                            "context": context,
-                            "scene_id": scene_id,
-                            "speaker": speaker,
-                        }
-                    )
-
-            if result:
-                return result
-
-        # ------------------------------------------------------------------
-        # INTERMEDIATE FORMAT: conversation.path
-        # ------------------------------------------------------------------
-        raw_path = conversation.get("path")
-
-        if isinstance(raw_path, list) and raw_path:
-            result: list[dict[str, str]] = []
-            seen_ids: set[str] = set()
-
-            for index, item in enumerate(
-                raw_path,
-                start=1,
-            ):
-                if not isinstance(item, dict):
-                    continue
-
-                sentence = str(
-                    item.get(
-                        "target",
-                        item.get(
-                            "sentence",
-                            item.get(
-                                "text",
-                                "",
-                            ),
-                        ),
-                    )
-                ).strip()
-
-                if not sentence:
-                    continue
-
-                sentence_id = str(
-                    item.get(
-                        "id",
-                        f"p{index}",
-                    )
-                ).strip()
-
-                if not sentence_id:
-                    sentence_id = f"p{index}"
-
-                if sentence_id in seen_ids:
-                    sentence_id = f"p{index}"
-
-                if sentence_id in seen_ids:
-                    continue
-
-                role = _normalize_target_role(
-                    str(
-                        item.get(
-                            "role",
-                            "either",
-                        )
-                    )
-                )
-
-                context = str(
-                    item.get(
-                        "context",
-                        "",
-                    )
-                ).strip()
-
-                speaker = str(
-                    item.get(
-                        "speaker",
-                        "",
-                    )
-                ).strip()
-
-                seen_ids.add(sentence_id)
-
-                result.append(
-                    {
-                        "id": sentence_id,
-                        "sentence": sentence,
-                        "role": role,
-                        "context": context,
-                        "scene_id": "",
-                        "speaker": speaker,
-                    }
-                )
-
-            if result:
-                return result
-
-    # ------------------------------------------------------------------
-    # LEGACY FORMAT
-    # ------------------------------------------------------------------
-
-    raw = curriculum.get("key_sentences", [])
-
-    expected_learner_responses: list[str] = []
-
-    sections = curriculum.get("sections", [])
-
-    if isinstance(sections, list):
-        for section in sections:
-            if not isinstance(section, dict):
-                continue
-
-            values = section.get(
-                "expected_learner_responses",
-                [],
-            )
-
-            if isinstance(values, list):
-                expected_learner_responses.extend(
-                    str(value).strip()
-                    for value in values
-                    if isinstance(value, str)
-                    and value.strip()
-                )
-
-    if not isinstance(raw, list) or not raw:
-        collected: list[dict[str, str]] = []
-
-        if isinstance(sections, list):
-            for section in sections:
-                if not isinstance(section, dict):
-                    continue
-
-                values = section.get(
-                    "target_sentences",
-                    [],
-                )
-
-                if not isinstance(values, list):
-                    continue
-
-                for value in values:
-                    if (
-                        isinstance(value, str)
-                        and value.strip()
-                    ):
-                        collected.append(
-                            {
-                                "sentence": value.strip()
-                            }
-                        )
-
-        raw = collected
-
-    def looks_like_learner_response(
-        sentence: str,
-    ) -> bool:
-        normalized_sentence = (
-            re.sub(
-                r"\s+",
-                " ",
-                sentence.strip().lower(),
-            )
-            .rstrip(".!?。！？")
-        )
-
-        for pattern in expected_learner_responses:
-            normalized_pattern = (
-                re.sub(
-                    r"\s+",
-                    " ",
-                    pattern.strip().lower(),
-                )
-                .rstrip(".!?。！？")
-            )
-
-            if "..." in normalized_pattern:
-                prefix, suffix = normalized_pattern.split(
-                    "...",
-                    1,
-                )
-
-                if (
-                    normalized_sentence.startswith(
-                        prefix.strip()
-                    )
-                    and normalized_sentence.endswith(
-                        suffix.strip()
-                    )
-                ):
-                    return True
-
-            elif normalized_sentence == normalized_pattern:
-                return True
-
-        return False
-
-    result: list[dict[str, str]] = []
+    targets: list[dict] = []
     seen_ids: set[str] = set()
-    seen_sentences: set[str] = set()
 
-    for index, item in enumerate(
-        raw,
-        start=1,
-    ):
-        if isinstance(item, str):
-            sentence = item.strip()
-            explicit_id = ""
+    for index, raw in enumerate(raw_targets, start=1):
+        if not isinstance(raw, dict):
+            continue
 
-            role = (
-                "learner"
-                if looks_like_learner_response(sentence)
-                else "assistant"
+        target_id = str(
+            raw.get("id", f"target_{index}")
+        ).strip()
+
+        if not target_id or target_id in seen_ids:
+            continue
+
+        order = raw.get("order", index)
+
+        try:
+            order = int(order)
+        except (TypeError, ValueError):
+            order = index
+
+        goal = raw.get("goal", "")
+
+        if isinstance(goal, dict):
+            goal = goal.get("description", "")
+
+        goal = str(goal or "").strip()
+
+        patterns = raw.get("patterns", [])
+
+        if isinstance(patterns, str):
+            patterns = [patterns]
+
+        if not isinstance(patterns, list):
+            patterns = []
+
+        normalized_patterns = [
+            str(pattern).strip()
+            for pattern in patterns
+            if str(pattern).strip()
+        ]
+
+        suggestion = raw.get("suggestion", "")
+
+        if isinstance(suggestion, dict):
+            suggestion = suggestion.get("text", "")
+
+        suggestion = str(suggestion or "").strip()
+
+        required = raw.get("required", True)
+        required = bool(required)
+
+        context = raw.get("context", "")
+
+        if isinstance(context, dict):
+            context = json.dumps(
+                context,
+                ensure_ascii=False,
+                separators=(",", ":"),
             )
-
-        elif isinstance(item, dict):
-            sentence = str(
-                item.get(
-                    "sentence",
-                    item.get(
-                        "text",
-                        "",
-                    ),
-                )
-            ).strip()
-
-            explicit_id = str(
-                item.get(
-                    "id",
-                    "",
-                )
-            ).strip()
-
-            role = str(
-                item.get(
-                    "role",
-                    "",
-                )
-            ).strip().lower()
-
-            if role not in {
-                "assistant",
-                "learner",
-                "either",
-            }:
-                role = (
-                    "learner"
-                    if looks_like_learner_response(sentence)
-                    else "assistant"
-                )
-
         else:
-            continue
+            context = str(context or "").strip()
 
-        if (
-            not sentence
-            or sentence in seen_sentences
-        ):
-            continue
-
-        sentence_id = (
-            explicit_id
-            or str(index)
-        )
-
-        if sentence_id in seen_ids:
-            sentence_id = str(index)
-
-        if sentence_id in seen_ids:
-            continue
-
-        seen_ids.add(sentence_id)
-        seen_sentences.add(sentence)
-
-        result.append(
+        targets.append(
             {
-                "id": sentence_id,
-                "sentence": sentence,
-                "role": role,
-                "context": "",
-                "scene_id": "",
-                "speaker": "",
-            }
-        )
-
-    return result
-
-
-def _lesson_characters(
-    curriculum: dict,
-) -> list[dict[str, str]]:
-    conversation = curriculum.get("conversation")
-
-    if not isinstance(conversation, dict):
-        return []
-
-    raw_characters = conversation.get(
-        "characters",
-        [],
-    )
-
-    if not isinstance(raw_characters, list):
-        return []
-
-    characters: list[dict[str, str]] = []
-
-    for item in raw_characters:
-        if not isinstance(item, dict):
-            continue
-
-        character_id = str(
-            item.get(
-                "id",
-                "",
-            )
-        ).strip()
-
-        character_type = str(
-            item.get(
-                "type",
-                "",
-            )
-        ).strip()
-
-        name = str(
-            item.get(
-                "name",
-                "",
-            )
-        ).strip()
-
-        description = str(
-            item.get(
-                "description",
-                "",
-            )
-        ).strip()
-
-        if not (
-            character_id
-            or character_type
-            or name
-            or description
-        ):
-            continue
-
-        characters.append(
-            {
-                "id": character_id,
-                "type": character_type,
-                "name": name,
-                "description": description,
-            }
-        )
-
-    return characters
-
-
-def _lesson_scenes_context(
-    curriculum: dict,
-) -> list[dict[str, object]]:
-    conversation = curriculum.get("conversation")
-
-    if not isinstance(conversation, dict):
-        return []
-
-    raw_scenes = conversation.get(
-        "scenes",
-        [],
-    )
-
-    if not isinstance(raw_scenes, list):
-        return []
-
-    scenes: list[dict[str, object]] = []
-
-    for scene in raw_scenes:
-        if not isinstance(scene, dict):
-            continue
-
-        scene_id = str(
-            scene.get(
-                "id",
-                "",
-            )
-        ).strip()
-
-        purpose = str(
-            scene.get(
-                "purpose",
-                "",
-            )
-        ).strip()
-
-        context = str(
-            scene.get(
-                "context",
-                "",
-            )
-        ).strip()
-
-        character = str(
-            scene.get(
-                "character",
-                "",
-            )
-        ).strip()
-
-        transition = scene.get(
-            "transition",
-            {},
-        )
-
-        transition_data: dict[str, object] = {}
-
-        if isinstance(transition, dict):
-            transition_data = {
-                "condition": str(
-                    transition.get(
-                        "condition",
-                        "",
-                    )
-                ).strip(),
-                "next_scene": str(
-                    transition.get(
-                        "next_scene",
-                        "",
-                    )
-                ).strip(),
-                "style": str(
-                    transition.get(
-                        "style",
-                        "",
-                    )
-                ).strip(),
-                "instruction": str(
-                    transition.get(
-                        "instruction",
-                        "",
-                    )
-                ).strip(),
-            }
-
-        scenes.append(
-            {
-                "id": scene_id,
-                "purpose": purpose,
+                "id": target_id,
+                "order": order,
+                "required": required,
+                "goal": goal,
+                "patterns": normalized_patterns,
+                "suggestion": suggestion,
                 "context": context,
-                "character": character,
-                "transition": transition_data,
             }
         )
 
-    return scenes
+        seen_ids.add(target_id)
 
-
-def _lesson_context(
-    data: dict,
-) -> str:
-    """
-    Build compact context from the scene-based and legacy lesson formats.
-    """
-
-    metadata = data.get(
-        "metadata",
-        {},
+    targets.sort(
+        key=lambda item: (
+            item["order"],
+            item["id"],
+        )
     )
 
-    if not isinstance(metadata, dict):
-        metadata = {}
+    return targets
+
+
+def _required_target_ids(curriculum: dict) -> list[str]:
+    return [
+        target["id"]
+        for target in _lesson_targets(curriculum)
+        if target.get("required", True)
+    ]
+
+
+# ============================================================================
+# CONVERSATION CONTEXT
+# ============================================================================
+
+
+def _lesson_context(curriculum: dict) -> str:
+    """
+    Build a compact context.
+
+    Do NOT send the whole JSON to the AI.
+    """
+
+    lesson = _lesson_data(curriculum)
 
     title = str(
-        data.get(
-            "title",
-            metadata.get(
-                "title",
-                "",
-            ),
-        )
+        lesson.get("title", "")
     ).strip()
 
-    objective = str(
-        data.get(
-            "objective",
-            metadata.get(
-                "objective",
-                "",
-            ),
-        )
+    language = str(
+        lesson.get("language", "")
     ).strip()
 
-    conversation = data.get(
+    level = str(
+        lesson.get("level", "")
+    ).strip()
+
+    conversation = lesson.get(
         "conversation",
         {},
     )
 
-    mode = ""
+    if not isinstance(conversation, dict):
+        conversation = {}
 
-    if isinstance(conversation, dict):
-        mode = str(
-            conversation.get(
-                "mode",
-                "",
-            )
-        ).strip()
+    mode = str(
+        conversation.get(
+            "mode",
+            "guided_natural",
+        )
+    ).strip()
 
-    characters = _lesson_characters(data)
-
-    scenes = _lesson_scenes_context(data)
-
-    section_context: dict[str, object] = {}
-
-    sections = data.get(
-        "sections",
+    entities = conversation.get(
+        "entities",
         [],
     )
 
-    if isinstance(sections, list):
-        for section in sections:
-            if not isinstance(section, dict):
+    compact_entities: list[dict] = []
+
+    if isinstance(entities, list):
+        for entity in entities:
+            if not isinstance(entity, dict):
                 continue
 
-            section_type = str(
-                section.get(
-                    "type",
-                    "",
-                )
-            ).lower()
-
-            if section_type in {
-                "test",
-                "assessment",
-                "review",
-                "end_test",
-            }:
-                continue
-
-            section_context = {
-                "title": str(
-                    section.get(
-                        "title",
-                        "",
-                    )
+            compact = {
+                "id": str(
+                    entity.get("id", "")
                 ).strip(),
-                "objective": str(
-                    section.get(
-                        "objective",
-                        "",
-                    )
+                "type": str(
+                    entity.get("type", "")
                 ).strip(),
-                "scenario": str(
-                    section.get(
-                        "scenario",
-                        "",
-                    )
+                "name": str(
+                    entity.get("name", "")
                 ).strip(),
-                "focus": section.get(
-                    "focus",
-                    [],
-                ),
+                "gender": str(
+                    entity.get("gender", "")
+                ).strip(),
             }
 
-            break
+            compact = {
+                key: value
+                for key, value in compact.items()
+                if value
+            }
 
-    selected: dict[str, object] = {
-        "topic": title,
-        "objective": objective,
-        "conversation_mode": mode,
+            if compact:
+                compact_entities.append(compact)
+
+    context = {
+        "title": title,
+        "language": language,
+        "level": level,
+        "mode": mode,
+        "participants": [
+            "tutor",
+            "learner",
+        ],
+        "entities": compact_entities,
     }
 
-    if characters:
-        selected["characters"] = characters
-
-    if scenes:
-        selected["scenes"] = scenes
-
-    if section_context:
-        selected["legacy_focus"] = section_context
-
     text = json.dumps(
-        selected,
+        context,
         ensure_ascii=False,
         separators=(",", ":"),
     )
 
     return text[:MAX_LESSON_CONTEXT_CHARS]
+
+
+# ============================================================================
+# PROGRESS
+# ============================================================================
 
 
 def _get_or_create_practice_progress(
@@ -905,7 +382,7 @@ def _get_or_create_practice_progress(
             lesson_id=lesson_id,
             practice_state={
                 "conversation_id": conversation_id,
-                "practiced_sentence_ids": [],
+                "practiced_target_ids": [],
             },
         )
 
@@ -916,38 +393,39 @@ def _get_or_create_practice_progress(
 
     state = (
         progress.practice_state
-        if isinstance(
-            progress.practice_state,
-            dict,
-        )
+        if isinstance(progress.practice_state, dict)
         else {}
     )
 
     if state.get("conversation_id") != conversation_id:
         progress.practice_state = {
             "conversation_id": conversation_id,
-            "practiced_sentence_ids": [],
+            "practiced_target_ids": [],
         }
 
     return progress
 
 
-def _practiced_sentence_ids(
+def _practiced_target_ids(
     progress: UserLessonProgress,
 ) -> set[str]:
     state = (
         progress.practice_state
-        if isinstance(
-            progress.practice_state,
-            dict,
-        )
+        if isinstance(progress.practice_state, dict)
         else {}
     )
 
     raw = state.get(
-        "practiced_sentence_ids",
+        "practiced_target_ids",
         [],
     )
+
+    # Backwards compatibility.
+    if not isinstance(raw, list):
+        raw = state.get(
+            "practiced_sentence_ids",
+            [],
+        )
 
     if not isinstance(raw, list):
         return set()
@@ -964,42 +442,55 @@ def _update_practice_progress(
     progress: UserLessonProgress,
     conversation_id: str,
     completed_ids: set[str],
-    ordered_ids: list[str],
+    targets: list[dict],
 ) -> set[str]:
     """
-    Apply only a contiguous prefix of the curriculum.
+    Update only the current unfinished target.
 
-    A later target can never be marked complete while an earlier
-    target remains unfinished.
+    This is deliberately stricter than simply accepting every ID
+    returned by the AI.
+
+    The backend is the source of truth.
     """
 
-    ordered_set = set(ordered_ids)
+    required_ids = [
+        target["id"]
+        for target in targets
+        if target.get("required", True)
+    ]
 
     current = (
-        _practiced_sentence_ids(progress)
-        & ordered_set
+        _practiced_target_ids(progress)
+        & set(required_ids)
     )
 
-    completed = (
-        completed_ids
-        & ordered_set
-    )
+    if not required_ids:
+        progress.practice_state = {
+            "conversation_id": conversation_id,
+            "practiced_target_ids": [],
+        }
+        return set()
 
-    for target_id in ordered_ids:
-        if target_id in current:
-            continue
+    # Find the first unfinished target.
+    current_target_id = None
 
-        if target_id in completed:
-            current.add(target_id)
-            continue
+    for target_id in required_ids:
+        if target_id not in current:
+            current_target_id = target_id
+            break
 
-        break
+    # The AI may only complete the current unfinished target.
+    if (
+        current_target_id is not None
+        and current_target_id in completed_ids
+    ):
+        current.add(current_target_id)
 
     progress.practice_state = {
         "conversation_id": conversation_id,
-        "practiced_sentence_ids": [
+        "practiced_target_ids": [
             target_id
-            for target_id in ordered_ids
+            for target_id in required_ids
             if target_id in current
         ],
     }
@@ -1007,118 +498,9 @@ def _update_practice_progress(
     return current
 
 
-def _extract_progress_marker(
-    text: str,
-) -> tuple[str, set[str]]:
-    matches = list(
-        PROGRESS_MARKER_RE.finditer(text)
-    )
-
-    if not matches:
-        return text.strip(), set()
-
-    match = matches[-1]
-
-    raw_ids = match.group(1)
-
-    ids = {
-        value.strip()
-        for value in raw_ids.split(",")
-        if value.strip()
-    }
-
-    cleaned = PROGRESS_MARKER_RE.sub(
-        "",
-        text,
-    ).strip()
-
-    return cleaned, ids
-
-
-def _remove_exact_duplicate_response(
-    text: str,
-) -> str:
-    """
-    Remove accidental complete-response duplication while
-    preserving legitimate repeated wording.
-    """
-
-    cleaned = re.sub(
-        r"[\u200b\u200c\u200d\ufeff]",
-        "",
-        text,
-    ).strip()
-
-    if not cleaned:
-        return cleaned
-
-    match = re.fullmatch(
-        r"(.+?)\s+\1",
-        cleaned,
-        flags=re.DOTALL,
-    )
-
-    if match:
-        return match.group(1).strip()
-
-    normalized = re.sub(
-        r"\s+",
-        " ",
-        cleaned,
-    ).strip()
-
-    if (
-        len(normalized) >= 4
-        and len(normalized) % 2 == 0
-    ):
-        half = len(normalized) // 2
-
-        if (
-            normalized[:half].rstrip()
-            == normalized[half:].lstrip()
-        ):
-            return normalized[:half].strip()
-
-    sentence_match = re.fullmatch(
-        r"(.+?[.!?。！？])\s+\1",
-        cleaned,
-        flags=re.DOTALL,
-    )
-
-    if sentence_match:
-        return sentence_match.group(1).strip()
-
-    return cleaned
-
-
-def _lesson_completion(
-    curriculum: dict,
-    progress: UserLessonProgress,
-) -> tuple[bool, int, int]:
-    target_ids = {
-        item["id"]
-        for item in _lesson_target_sentences(
-            curriculum
-        )
-    }
-
-    practiced_ids = (
-        _practiced_sentence_ids(progress)
-        & target_ids
-    )
-
-    if not target_ids:
-        return (
-            False,
-            len(practiced_ids),
-            0,
-        )
-
-    return (
-        target_ids.issubset(practiced_ids),
-        len(practiced_ids),
-        len(target_ids),
-    )
+# ============================================================================
+# TARGET TRACKING SENT TO AI
+# ============================================================================
 
 
 def _build_target_tracking_context(
@@ -1126,94 +508,76 @@ def _build_target_tracking_context(
     progress: UserLessonProgress,
 ) -> str:
     """
-    Return the current actionable milestone and compact
-    remaining scene/path information.
+    Send only the current target and the immediate next target.
+
+    This intentionally keeps the prompt compact.
     """
 
-    targets = _lesson_target_sentences(
-        curriculum
-    )
+    targets = _lesson_targets(curriculum)
+    practiced = _practiced_target_ids(progress)
 
-    practiced = _practiced_sentence_ids(
-        progress
-    )
+    required_targets = [
+        target
+        for target in targets
+        if target.get("required", True)
+    ]
 
     remaining = [
-        item
-        for item in targets
-        if item["id"] not in practiced
+        target
+        for target in required_targets
+        if target["id"] not in practiced
     ]
 
     if not remaining:
         return json.dumps(
             {
-                "next_target": None,
-                "remaining_targets": [],
+                "current": None,
+                "next": None,
             },
             ensure_ascii=False,
             separators=(",", ":"),
         )
 
-    next_target = remaining[0]
+    current = remaining[0]
 
-    compact_remaining: list[dict[str, str]] = []
+    next_target = (
+        remaining[1]
+        if len(remaining) > 1
+        else None
+    )
 
-    for item in remaining:
-        compact_item = {
-            "id": item["id"],
-            "role": item["role"],
-            "target": item["sentence"],
-            "context": item.get(
-                "context",
-                "",
-            ),
+    current_data = {
+        "id": current["id"],
+        "goal": current["goal"],
+        "patterns": current["patterns"],
+        "suggestion": current["suggestion"],
+    }
+
+    if current.get("context"):
+        current_data["context"] = current["context"]
+
+    next_data = None
+
+    if next_target is not None:
+        next_data = {
+            "id": next_target["id"],
+            "goal": next_target["goal"],
+            "patterns": next_target["patterns"],
         }
-
-        scene_id = item.get(
-            "scene_id",
-            "",
-        )
-
-        speaker = item.get(
-            "speaker",
-            "",
-        )
-
-        if scene_id:
-            compact_item["scene_id"] = scene_id
-
-        if speaker:
-            compact_item["speaker"] = speaker
-
-        compact_remaining.append(
-            compact_item
-        )
 
     return json.dumps(
         {
-            "next_target": {
-                "id": next_target["id"],
-                "role": next_target["role"],
-                "target": next_target["sentence"],
-                "context": next_target.get(
-                    "context",
-                    "",
-                ),
-                "scene_id": next_target.get(
-                    "scene_id",
-                    "",
-                ),
-                "speaker": next_target.get(
-                    "speaker",
-                    "",
-                ),
-            },
-            "remaining_targets": compact_remaining,
-            "ordered_path": True,
+            "current": current_data,
+            "next": next_data,
         },
         ensure_ascii=False,
         separators=(",", ":"),
     )
+
+
+# ============================================================================
+# SYSTEM PROMPT
+# ============================================================================
 
 
 def _build_system_instruction(
@@ -1223,315 +587,266 @@ def _build_system_instruction(
     curriculum: dict,
     progress: UserLessonProgress,
 ) -> str:
-    context = _lesson_context(
-        curriculum
-    )
+    context = _lesson_context(curriculum)
 
-    targets = _build_target_tracking_context(
+    tracking = _build_target_tracking_context(
         curriculum,
         progress,
     )
 
-    teacher_instructions = curriculum.get(
-        "teacher_instructions",
+    lesson = _lesson_data(curriculum)
+
+    completion = lesson.get(
+        "completion",
         {},
     )
 
-    if not isinstance(
-        teacher_instructions,
-        dict,
-    ):
-        teacher_instructions = {}
+    if not isinstance(completion, dict):
+        completion = {}
 
-    start_message = str(
-        teacher_instructions.get(
-            "start_message",
-            "",
+    closing = completion.get(
+        "closing",
+        {},
+    )
+
+    if isinstance(closing, dict):
+        closing_instruction = str(
+            closing.get(
+                "instruction",
+                "Naturally close the conversation after all required targets are completed.",
+            )
+        ).strip()
+
+        completion_signal = str(
+            closing.get(
+                "signal",
+                "LESSON_COMPLETED",
+            )
+        ).strip()
+
+    else:
+        closing_instruction = (
+            "Naturally close the conversation after all required targets are completed."
         )
-    ).strip()
 
-    legacy_start_rule = ""
+        completion_signal = "LESSON_COMPLETED"
 
-    if start_message:
-        legacy_start_rule = f"""
-LEGACY LESSON START INSTRUCTION:
+    return f"""
+You are an AI tutor conducting a guided natural conversation practice.
 
-{start_message}
-"""
-
-    return f"""You are the AI conversation partner for one language-learning lesson.
-
-Language: {target_language}
+Target language: {target_language}
 
 Learner native language: {native_language}
 
 CEFR level: {level}
 
-LESSON CURRICULUM CONTEXT
+LESSON CONTEXT
 
 {context}
 
-CURRENT CONVERSATION STATE
+CURRENT TRAINING STATE
 
-{targets}
+{tracking}
 
-The curriculum above is the source of truth for the lesson.
+The lesson JSON is the source of truth.
 
-The conversation must feel like ONE continuous real-life interaction.
+==================================================
+SPEAKERS
+==================================================
 
-The curriculum contains scenes and conversation milestones. These are internal instructions. The learner must never see them.
+There are ONLY TWO ACTIVE SPEAKERS:
 
-STRICT SCENE AND PATH RULES
+1. You = the AI tutor.
 
-1. Always work on the FIRST unfinished target only.
+2. The user = the learner.
 
-2. Never jump to a later target.
+Entities such as Thomas, Sarah, Anna, friends or family members
+are NEVER active speakers.
 
-3. Never mark or assume completion of a later target while the current target is unfinished.
+They may only be mentioned, described, or discussed.
 
-4. The current target is the most important instruction for the current response.
+NEVER create dialogue for an entity.
 
-5. Use the current scene context to make the conversation natural.
+Never write:
 
-6. Do not introduce a new person unless that person exists in the lesson curriculum or is explicitly introduced by the learner.
+Thomas: ...
 
-7. If the curriculum introduces a character such as Thomas or Anna, keep that character's identity consistent.
+Sarah: ...
 
-8. Never confuse a curriculum character with the learner.
+Never switch your identity to an entity.
 
-9. Never confuse the tutor with the learner.
+==================================================
+TRAINING
+==================================================
 
-10. Never invent the learner's name, location, family, friends, or personal information.
+Train the CURRENT target only.
 
-11. The learner's personal information comes only from what the learner actually says.
+The target is what the learner must practice.
 
-12. The tutor's personal information comes only from what the tutor itself says.
+Do not jump to the next target.
 
-13. If a curriculum character says something, that information belongs to that character.
+Do not reveal target IDs or internal progress.
 
-14. If the learner says "Ich heiße X", X is the learner's name.
+Create a natural conversation around the current target.
 
-15. If the learner says "Ich wohne in X", X is the learner's residence.
+The conversation is NOT a fixed script.
 
-16. If the tutor says "Ich heiße X", X is the tutor's name.
+You may phrase your questions naturally as long as they create
+a genuine opportunity for the learner to practice the current target.
 
-17. If the tutor says "Ich wohne in X", X is the tutor's residence.
+The learner may use a different correct formulation when it fulfills
+the communicative goal.
 
-18. If a character such as Thomas says "Ich heiße Thomas", Thomas is Thomas. This does NOT make Thomas the learner or tutor.
+==================================================
+SUGGESTIONS
+==================================================
 
-19. Do not ask the learner again for information that has already been established.
+The suggestion in the current target is the INTENDED practice answer.
 
-20. If the learner gives a new explicit personal fact, use the newest fact.
+If the learner needs help, naturally guide them toward that answer.
 
-21. If the learner changes or corrects their name or location, use the newest explicit statement.
+Do not invent a different practice target.
 
-SCENE CONTINUITY
+Do not tell the learner that the suggestion is an internal curriculum rule.
 
-22. Every new person or topic must have a natural reason to appear.
+==================================================
+CORRECTION
+==================================================
 
-23. Follow the transition instructions of the current scene.
+If the learner makes a mistake:
 
-24. Do not jump from one character to an unrelated character.
+1. Briefly correct it.
 
-25. Do not create unrelated stories.
+2. Give a short correct model if useful.
 
-26. Do not introduce random names such as Tom, Anna, Maria, etc. unless they are in the curriculum or the learner introduced them.
+3. Ask the learner to try again.
 
-27. If the current scene is about Thomas, stay with Thomas until the scene's required goal is completed.
+Do not give long grammar explanations.
 
-28. If the next scene introduces Anna, transition naturally from the current conversation to Anna.
+If the learner is correct, continue naturally.
 
-29. When the curriculum says that the learner should ask a character a question, make that request naturally. Do not present it as a numbered exercise.
+Do not force unnecessary repetitions.
 
-30. When a character is supposed to answer, speak as that character when appropriate.
+==================================================
+CONVERSATION
+==================================================
 
-31. Do not invent facts about curriculum characters beyond what the curriculum establishes.
+You must lead the conversation.
 
-TARGET ROLE RULES
+Ask only ONE short question or request at a time.
 
-32. If the next target has role "assistant", naturally produce that target in your response.
+Keep responses short, normally one or two sentences.
 
-33. If the next target has role "learner", do NOT pretend the learner already said it.
+Do not restart the lesson.
 
-34. For a learner target, naturally ask, prompt, or create the situation that makes the learner produce it.
+Do not repeat the opening greeting.
 
-35. If the next target has role "assistant", the tutor may add a very short natural transition before or after the target.
+Do not repeat an already answered question unless correction
+is genuinely necessary.
 
-36. If the next target has role "learner", do not give the learner's target sentence yourself as though the learner said it.
+Never invent the learner's personal information.
 
-37. If the target role is "assistant", only the tutor or the specified assistant character should produce it.
+Never assume the learner's name, city, family, friends, or identity.
 
-38. If the target role is "learner", only the learner can complete it.
+Use only information the learner actually provided.
 
-39. Natural wording differences are allowed for learner targets if they preserve the intended communicative meaning.
+If the learner goes off-topic, briefly acknowledge it and guide
+the conversation back to the current target.
 
-40. Do not force an exact memorized sentence unless the curriculum clearly requires it.
+Do not turn the session into a grammar lecture.
 
-41. Ask only one short question or request at a time.
+==================================================
+START
+==================================================
 
-42. Do not complete several learner milestones in one response.
+If the user message is exactly:
 
-START LESSON
+START_LESSON
 
-If the latest user message is exactly START_LESSON:
+begin the conversation naturally.
 
-- Follow the first unfinished target only.
+Use the first unfinished target.
 
-- If it is an assistant target, produce that target as the opening reply.
+Do not mention START_LESSON.
 
-- If it is a learner target, naturally begin by eliciting that target.
+Do not explain the lesson.
 
-- Do not echo START_LESSON.
+Do not complete multiple targets in one response.
 
-- Do not produce multiple milestones.
-
-- Do not explain the curriculum.
-
-{legacy_start_rule}
-
-CONVERSATION MEMORY AND PARTICIPANT IDENTITY
-
-Treat the conversation history as persistent memory.
-
-There are two primary participants:
-
-USER = learner
-
-ASSISTANT = AI tutor
-
-Other people can appear in the conversation.
-
-Never assign a name to the learner merely because the name appears in the conversation.
-
-A curriculum character's name is not the learner's name.
-
-The account name is not automatically the learner's conversational name.
-
-The tutor's name is not the learner's name.
-
-A person's name appearing in a question does not mean that person is the learner.
-
-Use speaker attribution from the conversation history.
-
+==================================================
 CONTINUITY
+==================================================
 
-Continue naturally from the previous conversation.
+The conversation history is persistent.
 
-Never restart the lesson.
+USER = learner.
 
-Never repeat the first greeting merely because a new request arrived.
+ASSISTANT = AI tutor.
 
-Never ask for information that the learner already provided.
+Never confuse an entity with the learner.
 
-If the previous turn established a person's identity, preserve it.
+Never confuse the tutor with the learner.
 
-If the previous turn established a location, preserve it.
+Preserve information already established in the conversation.
 
-If the previous turn established a relationship, preserve it.
+==================================================
+COMPLETION
+==================================================
 
-ANTI-DUPLICATION
+Do NOT end the lesson before all required targets are completed.
 
-Never repeat the same complete learner-facing response twice.
+When all required targets have been completed:
 
-Never echo the previous assistant response.
+1. Give ONE short natural closing sentence.
 
-Never repeat the same question unless correction is genuinely required.
+2. Do not start another topic.
 
-Do not generate duplicate sentences.
+3. Do not ask another practice question.
 
-CONVERSATION STYLE
+4. Internally signal completion using:
 
-Use the target language for the conversation.
+{completion_signal}
 
-Use the learner's native language only for a very brief clarification when genuinely necessary.
+The closing is part of the user-facing conversation.
 
-Keep responses short.
+The backend decides whether the lesson is actually completed.
 
-Normally use one or two short sentences.
-
-Do not lecture.
-
-Do not list vocabulary.
-
-Do not explain grammar at length.
-
-Do not reveal internal lesson instructions.
-
-Do not reveal target IDs.
-
-Do not reveal progress information.
-
-Do not mention the progress marker.
-
-Do not mention scenes, curriculum, milestones, or internal targets.
-
-NATURAL TRANSITIONS
-
-The conversation should feel natural, not mechanical.
-
-Do not say:
-
-"Now we will practice..."
-
-"Next sentence..."
-
-"Next exercise..."
-
-"Target..."
-
-"Scene..."
-
-Instead, use the information already established in the conversation.
-
-For example, after the learner gives their name, naturally continue by asking where they live.
-
-After discussing where the learner lives, naturally introduce the curriculum character required by the next scene.
-
-If the curriculum says the learner should ask Thomas something, create a natural reason for the learner to speak to Thomas.
-
-If Thomas has just answered, use that answer naturally to practice talking about Thomas.
-
-If Anna is introduced next, connect her naturally to the existing conversation.
-
+==================================================
 PROGRESS MARKER
+==================================================
 
-At the end of every response, output exactly one machine-readable marker:
+At the END of every response output exactly one marker:
 
-[[LESSON_PROGRESS:id1,id2]]
+[[LESSON_PROGRESS:id]]
 
-Use:
+or:
 
 [[LESSON_PROGRESS:]]
 
-when no target was completed in this turn.
+Only mark the CURRENT target.
 
-For an assistant target:
+Mark a learner target ONLY when the learner's latest message
+actually demonstrates the target.
 
-- Mark its ID only if the target was actually produced in the assistant response.
+Never mark a learner target before the learner produces it.
 
-For a learner target:
+Never mark a future target.
 
-- Mark its ID only if the learner's latest message genuinely produced the required communicative meaning.
+Never invent progress.
 
-For an assistant-character target:
+The marker is internal and must never be explained to the learner.
 
-- Mark its ID only if the character's required target was actually produced.
+==================================================
+CLOSING INSTRUCTION
+==================================================
 
-Normally mark only the CURRENT first unfinished target.
+{closing_instruction}
+""".strip()
 
-Never mark later targets.
 
-Never invent completion.
-
-Never mark a learner target before the learner actually produces it.
-
-When all targets are complete:
-
-- Give one short natural closing sentence.
-- Do not start another topic.
-- Do not ask another unrelated question.
-- Mark the final completed target.
-"""
+# ============================================================================
+# MESSAGE HISTORY
+# ============================================================================
 
 
 def _build_contents(
@@ -1571,6 +886,110 @@ def _build_contents(
     return contents
 
 
+# ============================================================================
+# RESPONSE CLEANING
+# ============================================================================
+
+
+def _extract_progress_marker(
+    text: str,
+) -> tuple[str, set[str]]:
+    matches = list(
+        PROGRESS_MARKER_RE.finditer(text)
+    )
+
+    if not matches:
+        return text.strip(), set()
+
+    completed_ids: set[str] = set()
+
+    for match in matches:
+        raw_ids = match.group(1)
+
+        for value in raw_ids.split(","):
+            value = value.strip()
+
+            if value:
+                completed_ids.add(value)
+
+    cleaned = PROGRESS_MARKER_RE.sub(
+        "",
+        text,
+    ).strip()
+
+    return cleaned, completed_ids
+
+
+def _remove_exact_duplicate_response(
+    text: str,
+) -> str:
+    cleaned = re.sub(
+        r"[\u200b\u200c\u200d\ufeff]",
+        "",
+        text,
+    ).strip()
+
+    if not cleaned:
+        return cleaned
+
+    match = re.fullmatch(
+        r"(.+?)\s+\1",
+        cleaned,
+        flags=re.DOTALL,
+    )
+
+    if match:
+        return match.group(1).strip()
+
+    normalized = re.sub(
+        r"\s+",
+        " ",
+        cleaned,
+    ).strip()
+
+    if (
+        len(normalized) >= 4
+        and len(normalized) % 2 == 0
+    ):
+        half = len(normalized) // 2
+
+        if (
+            normalized[:half].rstrip()
+            == normalized[half:].lstrip()
+        ):
+            return normalized[:half].strip()
+
+    return cleaned
+
+
+# ============================================================================
+# COMPLETION
+# ============================================================================
+
+
+def _lesson_completion(
+    curriculum: dict,
+    progress: UserLessonProgress,
+) -> tuple[bool, int, int]:
+    required_ids = set(
+        _required_target_ids(curriculum)
+    )
+
+    if not required_ids:
+        return False, 0, 0
+
+    practiced_ids = (
+        _practiced_target_ids(progress)
+        & required_ids
+    )
+
+    return (
+        required_ids.issubset(practiced_ids),
+        len(practiced_ids),
+        len(required_ids),
+    )
+
+
 def _completed_lesson_stream(
     conversation_id: str,
     practiced_count: int,
@@ -1582,10 +1001,17 @@ def _completed_lesson_stream(
             "conversation_id": conversation_id,
             "completed": True,
             "conversation_completed": True,
-            "practiced_sentences": practiced_count,
-            "target_sentences": target_count,
+            "assessment_unlocked": True,
+            "next_action": "assessment",
+            "practiced_targets": practiced_count,
+            "target_targets": target_count,
         },
     )
+
+
+# ============================================================================
+# MAIN STREAM
+# ============================================================================
 
 
 def _stream_lesson_response(
@@ -1617,11 +1043,11 @@ def _stream_lesson_response(
         )
 
         system_instruction = _build_system_instruction(
-            native_language,
-            target_language,
-            level,
-            curriculum,
-            progress,
+            native_language=native_language,
+            target_language=target_language,
+            level=level,
+            curriculum=curriculum,
+            progress=progress,
         )
 
         messages = _build_contents(
@@ -1638,7 +1064,6 @@ def _stream_lesson_response(
         )
 
         buffer = ""
-
         streamed_visible_text = ""
 
         for chunk in provider.stream_text(
@@ -1708,21 +1133,19 @@ def _stream_lesson_response(
             )
 
             if marker_index >= 0:
-                learner_text = buffer[
+                visible_text = buffer[
                     :marker_index
                 ]
 
                 buffer = ""
 
-                if learner_text:
-                    streamed_visible_text += (
-                        learner_text
-                    )
+                if visible_text:
+                    streamed_visible_text += visible_text
 
                     yield sse_event(
                         "token",
                         {
-                            "text": learner_text
+                            "text": visible_text,
                         },
                     )
 
@@ -1743,7 +1166,7 @@ def _stream_lesson_response(
                     yield sse_event(
                         "token",
                         {
-                            "text": emit
+                            "text": emit,
                         },
                     )
 
@@ -1759,8 +1182,11 @@ def _stream_lesson_response(
             )
         )
 
-        # Flush everything that was intentionally held back
-        # during streaming.
+        if not cleaned_text:
+            raise RuntimeError(
+                "AI tutor returned an empty response."
+            )
+
         if cleaned_text.startswith(
             streamed_visible_text
         ):
@@ -1772,20 +1198,25 @@ def _stream_lesson_response(
                 yield sse_event(
                     "token",
                     {
-                        "text": remaining_text
+                        "text": remaining_text,
                     },
                 )
 
         else:
-            # Defensive fallback if the model's final text
-            # differs from the streamed prefix.
-            if cleaned_text:
+            # This is a safety fallback for unexpected cleanup differences.
+            # Avoid sending duplicated text if part of the response was
+            # already streamed.
+            if cleaned_text != streamed_visible_text:
                 yield sse_event(
                     "token",
                     {
-                        "text": cleaned_text
+                        "text": cleaned_text,
                     },
                 )
+
+        # ------------------------------------------------------------------
+        # Save conversation
+        # ------------------------------------------------------------------
 
         save_conversation_message(
             user_id,
@@ -1795,34 +1226,34 @@ def _stream_lesson_response(
             db,
         )
 
-        if cleaned_text:
-            save_conversation_message(
-                user_id,
-                conversation_id,
-                "assistant",
-                cleaned_text,
-                db,
-            )
-
-        ordered_targets = (
-            _lesson_target_sentences(
-                curriculum
-            )
+        save_conversation_message(
+            user_id,
+            conversation_id,
+            "assistant",
+            cleaned_text,
+            db,
         )
 
-        ordered_ids = [
-            item["id"]
-            for item in ordered_targets
-        ]
+        # ------------------------------------------------------------------
+        # Update target progress
+        # ------------------------------------------------------------------
+
+        targets = _lesson_targets(
+            curriculum
+        )
 
         _update_practice_progress(
             progress=progress,
             conversation_id=conversation_id,
             completed_ids=completed_ids,
-            ordered_ids=ordered_ids,
+            targets=targets,
         )
 
         db.commit()
+
+        # ------------------------------------------------------------------
+        # Usage
+        # ------------------------------------------------------------------
 
         try:
             prompt_tokens = 0
@@ -1844,15 +1275,9 @@ def _stream_lesson_response(
 
             record_api_usage(
                 user_id=user_id,
-                prompt_tokens=int(
-                    prompt_tokens
-                ),
-                completion_tokens=int(
-                    completion_tokens
-                ),
-                total_tokens=int(
-                    total_tokens
-                ),
+                prompt_tokens=int(prompt_tokens),
+                completion_tokens=int(completion_tokens),
+                total_tokens=int(total_tokens),
                 db=db,
                 model=LESSON_TUTOR_MODEL,
             )
@@ -1862,11 +1287,17 @@ def _stream_lesson_response(
                 "Failed to record lesson AI usage."
             )
 
-        completed, practiced_count, target_count = (
-            _lesson_completion(
-                curriculum,
-                progress,
-            )
+        # ------------------------------------------------------------------
+        # Completion
+        # ------------------------------------------------------------------
+
+        (
+            completed,
+            practiced_count,
+            target_count,
+        ) = _lesson_completion(
+            curriculum,
+            progress,
         )
 
         yield sse_event(
@@ -1875,8 +1306,14 @@ def _stream_lesson_response(
                 "conversation_id": conversation_id,
                 "completed": completed,
                 "conversation_completed": completed,
-                "practiced_sentences": practiced_count,
-                "target_sentences": target_count,
+                "assessment_unlocked": completed,
+                "next_action": (
+                    "assessment"
+                    if completed
+                    else None
+                ),
+                "practiced_targets": practiced_count,
+                "target_targets": target_count,
             },
         )
 
@@ -1886,7 +1323,6 @@ def _stream_lesson_response(
             exc,
         )
 
-        # Roll back any uncommitted database state.
         try:
             db.rollback()
         except Exception:
@@ -1897,9 +1333,14 @@ def _stream_lesson_response(
         yield sse_event(
             "error",
             {
-                "message": str(exc)
+                "message": str(exc),
             },
         )
+
+
+# ============================================================================
+# ROUTE
+# ============================================================================
 
 
 @router.post("/chat")
@@ -1936,7 +1377,16 @@ def lesson_chat(
             detail="Lesson not found.",
         )
 
-    if lesson.language != profile.language:
+    # Compare normalized language codes.
+    profile_language = normalize_language(
+        profile.language
+    )
+
+    lesson_language = normalize_language(
+        lesson.language
+    )
+
+    if lesson_language != profile_language:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
@@ -1945,9 +1395,7 @@ def lesson_chat(
             ),
         )
 
-    target_language = normalize_language(
-        profile.language
-    )
+    target_language = profile_language
 
     native_language = normalize_language(
         current_user.native_language
@@ -1967,39 +1415,35 @@ def lesson_chat(
         lesson
     )
 
-    targets = _lesson_target_sentences(
+    targets = _lesson_targets(
         curriculum
     )
 
     if not targets:
         logger.error(
-            "Lesson %s has no conversation targets. "
-            "Curriculum keys=%s conversation_keys=%s",
+            "Lesson %s has no targets.",
             request.lesson_id,
-            list(curriculum.keys()),
-            (
-                list(
-                    curriculum.get(
-                        "conversation",
-                        {},
-                    ).keys()
-                )
-                if isinstance(
-                    curriculum.get(
-                        "conversation",
-                        {},
-                    ),
-                    dict,
-                )
-                else []
-            ),
         )
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=(
-                "Lesson conversation targets are empty. "
-                "Check conversation.scenes or conversation.path."
+                "Lesson has no training targets. "
+                "Check lesson.targets."
+            ),
+        )
+
+    required_targets = [
+        target
+        for target in targets
+        if target.get("required", True)
+    ]
+
+    if not required_targets:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Lesson has no required training targets."
             ),
         )
 
@@ -2016,13 +1460,16 @@ def lesson_chat(
         db,
     )
 
-    completed, practiced_count, target_count = (
-        _lesson_completion(
-            curriculum,
-            progress,
-        )
+    (
+        completed,
+        practiced_count,
+        target_count,
+    ) = _lesson_completion(
+        curriculum,
+        progress,
     )
 
+    # Already completed: do not call the AI again.
     if completed:
         db.commit()
 
