@@ -5,6 +5,7 @@ import 'learning_api_service.dart';
 import 'lesson_ai_api_service.dart';
 import 'lesson_hint_api_service.dart';
 import 'lesson_preview_api_service.dart';
+import 'lesson_stage_api_service.dart';
 import 'lesson_translation_check_api_service.dart';
 import 'placement_api_service.dart';
 import 'stats_api_service.dart';
@@ -19,13 +20,13 @@ class ApiService {
   late final LessonAiApiService _lessonAi;
   late final LessonHintApiService _lessonHint;
   late final LessonPreviewApiService _lessonPreview;
+  late final LessonStageApiService _lessonStage;
   late final LessonTranslationCheckApiService _lessonTranslationCheck;
   late final PlacementApiService _placement;
   late final StatsApiService _stats;
   late final TranslationApiService _translation;
   late final WordApiService _words;
 
-  // Public getter for ApiClient to share instances
   ApiClient get client => _client;
 
   ApiService() {
@@ -35,6 +36,7 @@ class ApiService {
     _lessonAi = LessonAiApiService(_client);
     _lessonHint = LessonHintApiService(_client);
     _lessonPreview = LessonPreviewApiService(_client);
+    _lessonStage = LessonStageApiService(_client);
     _lessonTranslationCheck = LessonTranslationCheckApiService(_client);
     _placement = PlacementApiService(_client);
     _stats = StatsApiService(_client);
@@ -66,6 +68,9 @@ class ApiService {
   Future<Map<String, dynamic>> submitLessonAssessment({required int lessonId, String? conversationId, required List<Map<String, String>> answers}) => _learning.submitLessonAssessment(lessonId: lessonId, conversationId: conversationId, answers: answers);
   Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) => _learning.completeLesson(lessonId: lessonId, score: score);
   Future<Map<String, dynamic>> getLessonPreview({required int lessonId}) => _lessonPreview.getLessonPreview(lessonId: lessonId);
+
+  Future<Map<String, dynamic>> getLessonStages({required int lessonId}) => _lessonStage.getStages(lessonId: lessonId);
+  Future<Map<String, dynamic>> completeLessonStage({required int lessonId, required String stage, String? conversationId}) => _lessonStage.completeStage(lessonId: lessonId, stage: stage, conversationId: conversationId);
 
   Stream<LessonAiChunk> lessonAiChat({required int lessonId, required String message, String? conversationId}) => _lessonAi.chat(lessonId: lessonId, message: message, conversationId: conversationId);
   Future<LessonHint> getLessonHint({required int lessonId, String? conversationId}) => _lessonHint.getHint(lessonId: lessonId, conversationId: conversationId);
