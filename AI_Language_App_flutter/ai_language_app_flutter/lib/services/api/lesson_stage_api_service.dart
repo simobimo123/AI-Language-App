@@ -1,4 +1,4 @@
-import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 import 'api_client.dart';
 
@@ -8,7 +8,10 @@ class LessonStageApiService {
   LessonStageApiService(this._client);
 
   Future<Map<String, dynamic>> getStages({required int lessonId}) async {
-    final response = await _client.get('/lessons/$lessonId/stages');
+    final response = await _client.get(
+      '/lessons/$lessonId/stages',
+      authenticated: true,
+    );
     final data = _client.decodeResponse(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw _client.apiException(
@@ -25,19 +28,15 @@ class LessonStageApiService {
     required String stage,
     String? conversationId,
   }) async {
-    final token = await _client.getToken();
     final response = await _client.post(
       '/lessons/$lessonId/stages/complete',
-      headers: {
-        ..._client.jsonHeaders,
-        if (token != null && token.isNotEmpty)
-          'Authorization': 'Bearer $token',
-      },
-      body: {
+      authenticated: true,
+      headers: _client.jsonHeaders,
+      body: jsonEncode({
         'stage': stage,
         if (conversationId != null && conversationId.isNotEmpty)
           'conversation_id': conversationId,
-      },
+      }),
     );
     final data = _client.decodeResponse(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
