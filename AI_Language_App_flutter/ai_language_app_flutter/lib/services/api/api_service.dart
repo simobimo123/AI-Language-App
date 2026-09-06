@@ -5,6 +5,7 @@ import 'learning_api_service.dart';
 import 'lesson_ai_api_service.dart';
 import 'lesson_hint_api_service.dart';
 import 'lesson_preview_api_service.dart';
+import 'lesson_stage_ai_api_service.dart';
 import 'lesson_stage_api_service.dart';
 import 'lesson_translation_check_api_service.dart';
 import 'placement_api_service.dart';
@@ -18,6 +19,7 @@ class ApiService {
   late final AuthApiService _auth;
   late final LearningApiService _learning;
   late final LessonAiApiService _lessonAi;
+  late final LessonStageAiApiService _lessonStageAi;
   late final LessonHintApiService _lessonHint;
   late final LessonPreviewApiService _lessonPreview;
   late final LessonStageApiService _lessonStage;
@@ -34,6 +36,7 @@ class ApiService {
     _auth = AuthApiService(_client);
     _learning = LearningApiService(_client);
     _lessonAi = LessonAiApiService(_client);
+    _lessonStageAi = LessonStageAiApiService(_client);
     _lessonHint = LessonHintApiService(_client);
     _lessonPreview = LessonPreviewApiService(_client);
     _lessonStage = LessonStageApiService(_client);
@@ -73,6 +76,7 @@ class ApiService {
   Future<Map<String, dynamic>> completeLessonStage({required int lessonId, required String stage, String? conversationId}) => _lessonStage.completeStage(lessonId: lessonId, stage: stage, conversationId: conversationId);
 
   Stream<LessonAiChunk> lessonAiChat({required int lessonId, required String message, String? conversationId}) => _lessonAi.chat(lessonId: lessonId, message: message, conversationId: conversationId);
+  Stream<LessonStageAiChunk> lessonStageAiChat({required int lessonId, required String stage, required String message, String? conversationId}) => _lessonStageAi.chat(lessonId: lessonId, stage: stage, message: message, conversationId: conversationId);
   Future<LessonHint> getLessonHint({required int lessonId, String? conversationId}) => _lessonHint.getHint(lessonId: lessonId, conversationId: conversationId);
 
   Future<Map<String, dynamic>> getLessonTranslationCheck({required int lessonId, required String conversationId}) => _lessonTranslationCheck.getQuestions(lessonId: lessonId, conversationId: conversationId);
