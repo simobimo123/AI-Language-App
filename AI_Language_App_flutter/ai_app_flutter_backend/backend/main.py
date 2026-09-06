@@ -14,12 +14,12 @@ from routers.users import router as users_router
 from routers.words import router as words_router
 from routers.word_lookup import router as word_lookup_router
 from routers.translation import router as translation_router
-
 from routers.learning_profiles import router as learning_router
 from routers.learning_path import router as learning_path_router, seed_learning_content
 from routers.ai import router as ai_router
 from routers.lesson_ai import router as lesson_ai_router
 from routers.lesson_stages import router as lesson_stages_router
+from routers.lesson_curriculum import router as lesson_curriculum_router
 from routers.lesson_hint import router as lesson_hint_router
 from routers.lesson_assessment import router as lesson_assessment_router
 from routers.lesson_translation_check import router as lesson_translation_check_router
@@ -68,6 +68,7 @@ app.include_router(learning_path_router)
 app.include_router(ai_router)
 app.include_router(lesson_ai_router)
 app.include_router(lesson_stages_router)
+app.include_router(lesson_curriculum_router)
 app.include_router(lesson_hint_router)
 app.include_router(lesson_assessment_router)
 app.include_router(lesson_translation_check_router)
