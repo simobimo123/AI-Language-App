@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../controllers/learning_path_controller.dart';
 import '../core/language/language_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
-import '../screens/lesson_page.dart';
+import '../screens/lesson_journey_page.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/learning_path/learning_path_view.dart';
 import '../widgets/learning_path/lesson_info_dialog.dart';
@@ -14,11 +14,7 @@ class LearningPathPage extends StatefulWidget {
   final ThemeController themeController;
   final LanguageController languageController;
 
-  const LearningPathPage({
-    super.key,
-    required this.themeController,
-    required this.languageController,
-  });
+  const LearningPathPage({super.key, required this.themeController, required this.languageController});
 
   @override
   State<LearningPathPage> createState() => _LearningPathPageState();
@@ -30,10 +26,7 @@ class _LearningPathPageState extends State<LearningPathPage> {
   @override
   void initState() {
     super.initState();
-
-    _controller = LearningPathController(
-      learningLanguageController: LearningLanguageController.instance,
-    );
+    _controller = LearningPathController(learningLanguageController: LearningLanguageController.instance);
     _controller.addListener(_onChanged);
     widget.languageController.addListener(_onChanged);
     _controller.load();
@@ -47,35 +40,23 @@ class _LearningPathPageState extends State<LearningPathPage> {
     super.dispose();
   }
 
-  void _onChanged() {
-    if (mounted) setState(() {});
-  }
+  void _onChanged() { if (mounted) setState(() {}); }
 
   Future<void> _openLesson(LearningLessonModel lesson) async {
     final shouldStart = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => LessonInfoDialog(
-        lesson: lesson,
-        onStart: () => Navigator.of(context).pop(true),
-      ),
+      builder: (_) => LessonInfoDialog(lesson: lesson, onStart: () => Navigator.of(context).pop(true)),
     );
-
     if (shouldStart != true || !mounted) return;
 
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => LessonPage(
-          lesson: lesson,
-          languageController: widget.languageController,
-          repository: LearningRepository(),
-        ),
+        builder: (_) => LessonJourneyPage(lesson: lesson, languageController: widget.languageController),
       ),
     );
 
-    if (completed == true && mounted) {
-      await _controller.refresh();
-    }
+    if (completed == true && mounted) await _controller.refresh();
   }
 
   String _title() {
@@ -94,16 +75,12 @@ class _LearningPathPageState extends State<LearningPathPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: Text(
-          _title(),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        title: Text(_title(), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
       ),
       body: LearningPathView(
         controller: _controller,
