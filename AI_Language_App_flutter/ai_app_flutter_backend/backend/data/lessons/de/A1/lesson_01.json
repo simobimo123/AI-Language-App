@@ -86,12 +86,18 @@
       "short_corrections": true,
       "off_topic_redirect": true,
       "accept_correct_alternatives": true,
-      "suggestion_is_intended_answer": true
+      "suggestion_is_intended_answer": true,
+      "one_question_at_a_time": true,
+      "never_continue_after_completion": true,
+      "no_goodbye_loop": true
     },
 
     "completion": {
       "condition": "all_targets_completed",
-      "closing": "After all targets are completed, naturally end the conversation.",
+      "closing": {
+        "instruction": "After the final required target is demonstrated, give exactly ONE short natural closing sentence. Do not ask a question, introduce a new topic, continue the conversation, or produce multiple goodbye phrases. A single goodbye such as 'Sehr gut! Bis zum nächsten Mal!' is enough.",
+        "signal": "LESSON_COMPLETED"
+      },
       "signal": "LESSON_COMPLETED",
       "next": "assessment"
     }
