@@ -18,6 +18,7 @@ from routers.learning_profiles import router as learning_router
 from routers.learning_path import router as learning_path_router, seed_learning_content
 from routers.ai import router as ai_router
 from routers.lesson_ai import router as lesson_ai_router
+from routers.lesson_stage_ai import router as lesson_stage_ai_router
 from routers.lesson_stages import router as lesson_stages_router
 from routers.lesson_curriculum import router as lesson_curriculum_router
 from routers.lesson_hint import router as lesson_hint_router
@@ -33,12 +34,10 @@ from routers.lesson_preview import router as lesson_preview_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = SessionLocal()
-
     try:
         seed_learning_content(db)
     finally:
         db.close()
-
     yield
 
 
@@ -67,6 +66,7 @@ app.include_router(learning_router)
 app.include_router(learning_path_router)
 app.include_router(ai_router)
 app.include_router(lesson_ai_router)
+app.include_router(lesson_stage_ai_router)
 app.include_router(lesson_stages_router)
 app.include_router(lesson_curriculum_router)
 app.include_router(lesson_hint_router)
