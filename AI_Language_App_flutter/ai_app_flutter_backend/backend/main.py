@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import SessionLocal
 import migrations_learning_bank  # noqa: F401
 import migrations_lesson_progress  # noqa: F401
+import migrations_lesson_stages  # noqa: F401
 
 from routers.auth import router as auth_router
 from routers.users import router as users_router
@@ -28,6 +29,10 @@ from routers.ai import (
 
 from routers.lesson_ai import (
     router as lesson_ai_router,
+)
+
+from routers.lesson_stages import (
+    router as lesson_stages_router,
 )
 
 from routers.lesson_hint import (
@@ -109,6 +114,7 @@ app.include_router(learning_router)
 app.include_router(learning_path_router)
 app.include_router(ai_router)
 app.include_router(lesson_ai_router)
+app.include_router(lesson_stages_router)
 app.include_router(lesson_hint_router)
 app.include_router(lesson_assessment_router)
 app.include_router(lesson_translation_check_router)
