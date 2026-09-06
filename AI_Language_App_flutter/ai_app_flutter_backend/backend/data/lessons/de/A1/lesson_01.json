@@ -1,105 +1,103 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
+  "lesson_id": "de_a1_lesson_01",
   "language": "de",
   "level": "A1",
   "lesson_order": 1,
-  "lesson_id": "de_a1_lesson_01",
-  "topic_key": "de_a1_lesson_01",
+  "unit_number": 1,
+  "topic_key": "ich_und_du",
+  "is_test": false,
+  "passing_score": 80,
+  "metadata": {
+    "title": "Ich und du",
+    "objective": "القدرة على التعريف بالنفس وسؤال شخص آخر عن اسمه ومكان سكنه واستخدام الجمل الأساسية في سياق بسيط.",
+    "description": "درس تفاعلي يجمع التعلم الموجّه والتعليم مع الذكاء الاصطناعي ثم ممارسة الجمل في محادثة طبيعية.",
+    "estimated_minutes": 15,
+    "skills": ["speaking", "listening", "basic_grammar", "interaction"]
+  },
+  "preview": {
+    "what_you_will_learn": [
+      "Ich heiße ... = اسمي ...",
+      "Wie heißt du? = ما اسمك؟",
+      "Er heißt ... / Sie heißt ...",
+      "Ich wohne in ... = أنا أسكن في ...",
+      "Wo wohnt er? / Wo wohnt sie?"
+    ]
+  },
+  "sections": [
+    {
+      "id": "learn_01",
+      "order": 1,
+      "type": "teaching",
+      "content": {"target_text": "Ich heiße Mohammed.", "pronunciation": null},
+      "translations": {"ar": {"translation": "اسمي محمد.", "explanation": "نستخدم Ich heiße عندما نذكر اسمنا."}}
+    },
+    {
+      "id": "learn_02",
+      "order": 2,
+      "type": "teaching",
+      "content": {"target_text": "Wie heißt du?", "pronunciation": null},
+      "translations": {"ar": {"translation": "ما اسمك؟", "explanation": "هذا سؤال بسيط لسؤال شخص عن اسمه."}}
+    },
+    {
+      "id": "learn_03",
+      "order": 3,
+      "type": "teaching",
+      "content": {"target_text": "Er heißt Thomas.", "pronunciation": null},
+      "translations": {"ar": {"translation": "اسمه توماس.", "explanation": "Er تعني هو، ونستخدمها للحديث عن رجل أو فتى."}}
+    },
+    {
+      "id": "learn_04",
+      "order": 4,
+      "type": "teaching",
+      "content": {"target_text": "Sie heißt Sarah.", "pronunciation": null},
+      "translations": {"ar": {"translation": "اسمها سارة.", "explanation": "Sie تعني هي في هذا السياق."}}
+    },
+    {
+      "id": "learn_05",
+      "order": 5,
+      "type": "teaching",
+      "content": {"target_text": "Ich wohne in Fès.", "pronunciation": null},
+      "translations": {"ar": {"translation": "أنا أسكن في فاس.", "explanation": "نستخدم Ich wohne in للحديث عن مكان السكن."}}
+    },
+    {
+      "id": "learn_06",
+      "order": 6,
+      "type": "teaching",
+      "content": {"target_text": "Wo wohnt er?", "pronunciation": null},
+      "translations": {"ar": {"translation": "أين يسكن؟", "explanation": "سؤال عن مكان سكن شخص آخر."}}
+    }
+  ],
+  "exercises": [
+    {"id": "q01", "order": 1, "type": "multiple_choice", "correct_answer": "اسمي محمد.", "translations": {"ar": {"question": "ماذا تعني: Ich heiße Mohammed?", "options": ["اسمي محمد.", "أين يسكن محمد؟", "ما اسمك؟", "هو محمد."], "explanation": "Ich heiße تعني اسمي."}}},
+    {"id": "q02", "order": 2, "type": "multiple_choice", "correct_answer": "Wie heißt du?", "translations": {"ar": {"question": "كيف تقول: ما اسمك؟", "options": ["Wie heißt du?", "Ich heiße du.", "Wo wohnst du?", "Er heißt du."], "explanation": "Wie heißt du? هو السؤال عن الاسم."}}},
+    {"id": "q03", "order": 3, "type": "multiple_choice", "correct_answer": "Er heißt Thomas.", "translations": {"ar": {"question": "أي جملة تعني: اسمه توماس؟", "options": ["Er heißt Thomas.", "Sie heißt Thomas.", "Ich heiße Thomas.", "Wie heißt Thomas?"], "explanation": "Er = هو."}}},
+    {"id": "q04", "order": 4, "type": "multiple_choice", "correct_answer": "Sie heißt Sarah.", "translations": {"ar": {"question": "اختر الجملة الصحيحة لمعنى: اسمها سارة.", "options": ["Sie heißt Sarah.", "Er heißt Sarah.", "Ich heiße Sarah.", "Wo heißt Sarah?"], "explanation": "Sie = هي في هذا السياق."}}},
+    {"id": "q05", "order": 5, "type": "multiple_choice", "correct_answer": "Ich wohne in Fès.", "translations": {"ar": {"question": "كيف تقول: أنا أسكن في فاس؟", "options": ["Ich wohne in Fès.", "Ich heiße Fès.", "Wo wohnt Fès?", "Sie wohnt Fès."], "explanation": "Ich wohne in ... تعني أنا أسكن في ..."}}},
+    {"id": "q06", "order": 6, "type": "short_answer", "correct_answer": "Wo wohnt er?", "accepted_answers": ["Wo wohnt er?", "wo wohnt er?"], "translations": {"ar": {"question": "اكتب بالألمانية: أين يسكن؟", "options": [], "explanation": "Wo wohnt er?"}}}
+  ],
   "lesson": {
     "id": "de_a1_lesson_01",
     "language": "de",
     "level": "A1",
     "title": "Ich und du",
-
-    "conversation": {
-      "mode": "guided_natural",
-      "participants": ["tutor", "learner"],
-
-      "entities": [
-        {
-          "id": "thomas",
-          "type": "person",
-          "name": "Thomas",
-          "gender": "male"
-        },
-        {
-          "id": "sarah",
-          "type": "person",
-          "name": "Sarah",
-          "gender": "female"
-        }
-      ],
-
-      "rule": "Only tutor and learner speak. Entities are context only and never speak."
-    },
-
+    "conversation": {"mode": "guided_natural", "participants": ["tutor", "learner"], "entities": [{"id": "thomas", "type": "person", "name": "Thomas", "gender": "male"}, {"id": "sarah", "type": "person", "name": "Sarah", "gender": "female"}], "rule": "Only tutor and learner speak. Entities are context only and never speak."},
     "targets": [
-      {
-        "id": "introduce_name",
-        "order": 1,
-        "goal": "Learner introduces their name.",
-        "patterns": ["Ich heiße {name}"],
-        "suggestion": "Ich heiße {name}"
-      },
-      {
-        "id": "ask_name",
-        "order": 2,
-        "goal": "Learner asks someone's name.",
-        "patterns": ["Wie heißt du?"],
-        "suggestion": "Wie heißt du?"
-      },
-      {
-        "id": "describe_male",
-        "order": 3,
-        "goal": "Learner talks about a male person.",
-        "patterns": ["Er heißt {name}", "Er wohnt in {city}"],
-        "suggestion": "Er heißt Thomas."
-      },
-      {
-        "id": "describe_female",
-        "order": 4,
-        "goal": "Learner talks about a female person.",
-        "patterns": ["Sie heißt {name}", "Sie wohnt in {city}"],
-        "suggestion": "Sie heißt Sarah."
-      },
-      {
-        "id": "say_where_live",
-        "order": 5,
-        "goal": "Learner says where they live.",
-        "patterns": ["Ich wohne in {city}"],
-        "suggestion": "Ich wohne in {city}"
-      },
-      {
-        "id": "ask_where",
-        "order": 6,
-        "goal": "Learner asks where someone lives.",
-        "patterns": ["Wo wohnt er?", "Wo wohnt sie?"],
-        "suggestion": "Wo wohnt er?"
-      }
+      {"id": "introduce_name", "order": 1, "required": true, "goal": "Learner introduces their name.", "patterns": ["Ich heiße {name}"], "suggestion": "Ich heiße {name}"},
+      {"id": "ask_name", "order": 2, "required": true, "goal": "Learner asks someone's name.", "patterns": ["Wie heißt du?"], "suggestion": "Wie heißt du?"},
+      {"id": "describe_male", "order": 3, "required": true, "goal": "Learner talks about a male person.", "patterns": ["Er heißt {name}", "Er wohnt in {city}"], "suggestion": "Er heißt Thomas."},
+      {"id": "describe_female", "order": 4, "required": true, "goal": "Learner talks about a female person.", "patterns": ["Sie heißt {name}", "Sie wohnt in {city}"], "suggestion": "Sie heißt Sarah."},
+      {"id": "say_where_live", "order": 5, "required": true, "goal": "Learner says where they live.", "patterns": ["Ich wohne in {city}"], "suggestion": "Ich wohne in {city}"},
+      {"id": "ask_where", "order": 6, "required": true, "goal": "Learner asks where someone lives.", "patterns": ["Wo wohnt er?", "Wo wohnt sie?"], "suggestion": "Wo wohnt er?"}
     ],
-
-    "behavior": {
-      "lead": true,
-      "strict_order": true,
-      "natural_wording": true,
-      "no_grammar_lecture": true,
-      "short_corrections": true,
-      "off_topic_redirect": true,
-      "accept_correct_alternatives": true,
-      "suggestion_is_intended_answer": true,
-      "one_question_at_a_time": true,
-      "never_continue_after_completion": true,
-      "no_goodbye_loop": true
+    "axes": {
+      "learn": {"status": "available", "title": "Interactive learning", "description": "Teach each target sentence with an explanation followed by a question or guided response.", "completion": {"type": "all_steps_completed"}},
+      "teaching": {"status": "locked_until_learn_complete", "title": "AI teaching", "description": "MiniMax teaches the same targets and adapts correction and hints to the learner.", "completion": {"type": "ai_judged_mastery"}},
+      "practice": {"status": "locked_until_teaching_complete", "title": "Interactive practice", "description": "Natural conversation using the same lesson targets and context.", "completion": {"type": "ai_judged_practice"}}
     },
-
-    "completion": {
-      "condition": "all_targets_completed",
-      "closing": {
-        "instruction": "After the final required target is demonstrated, give exactly ONE short natural closing sentence. Do not ask a question, introduce a new topic, continue the conversation, or produce multiple goodbye phrases. A single goodbye such as 'Sehr gut! Bis zum nächsten Mal!' is enough.",
-        "signal": "LESSON_COMPLETED"
-      },
-      "signal": "LESSON_COMPLETED",
-      "next": "assessment"
-    }
-  }
+    "behavior": {"lead": true, "strict_order": true, "natural_wording": true, "no_grammar_lecture": true, "short_corrections": true, "off_topic_redirect": true, "accept_correct_alternatives": true, "suggestion_is_intended_answer": true, "one_question_at_a_time": true, "never_continue_after_completion": true, "no_goodbye_loop": true},
+    "completion": {"condition": "learn_then_teaching_then_practice", "closing": {"instruction": "After the practice axis is completed, give exactly one short natural closing sentence and stop.", "signal": "LESSON_COMPLETED"}, "signal": "LESSON_COMPLETED", "next": "assessment"}
+  },
+  "assessment": {"enabled": true, "type": "multiple_choice_and_short_answer", "questions_count": 5, "passing_score": 80, "retry_allowed": true},
+  "completion": {"requires_assessment": true, "passing_score": 80, "mark_completed_after": "assessment_passed"}
 }
