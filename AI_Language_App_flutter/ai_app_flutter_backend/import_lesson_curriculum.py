@@ -28,7 +28,9 @@ from models import (
 
 
 BASE_DIR = Path(__file__).resolve().parent
-LESSONS_DIR = BASE_DIR / "data" / "lessons"
+# This importer lives in ai_app_flutter_backend/, while the canonical lesson
+# files live in ai_app_flutter_backend/backend/data/lessons/.
+LESSONS_DIR = BASE_DIR / "backend" / "data" / "lessons"
 
 
 def _load_json(path: Path) -> dict:
@@ -73,8 +75,6 @@ def _upsert_content(db: Session, lesson: CourseLesson, data: dict) -> None:
         )
         return
 
-    # Keep the sync idempotent. A backend restart must not increment content
-    # versions when the canonical JSON has not changed.
     if existing.content == data and existing.status == "PUBLISHED":
         return
 
@@ -83,11 +83,7 @@ def _upsert_content(db: Session, lesson: CourseLesson, data: dict) -> None:
     existing.version += 1
 
 
-def _upsert_target(
-    db: Session,
-    lesson: CourseLesson,
-    target_data: dict,
-) -> LessonTarget:
+def _upsert_target(db: Session, lesson: CourseLesson, target_data: dict) -> LessonTarget:
     key = str(target_data.get("id", "")).strip()
     if not key:
         raise ValueError(f"Target without id in lesson {lesson.id}")
@@ -119,11 +115,7 @@ def _upsert_target(
     return target
 
 
-def _upsert_patterns(
-    db: Session,
-    target: LessonTarget,
-    target_data: dict,
-) -> None:
+def _upsert_patterns(db: Session, target: LessonTarget, target_data: dict) -> None:
     patterns = target_data.get("patterns", [])
     if not isinstance(patterns, list):
         patterns = []
@@ -166,12 +158,7 @@ def _upsert_patterns(
             )
 
 
-def _upsert_learning_items(
-    db: Session,
-    lesson: CourseLesson,
-    sections: list,
-    targets_by_order: dict[int, LessonTarget],
-) -> None:
+def _upsert_learning_items(db: Session, lesson: CourseLesson, sections: list, targets_by_order: dict[int, LessonTarget]) -> None:
     for index, section in enumerate(sections, start=1):
         if not isinstance(section, dict):
             continue
@@ -216,12 +203,7 @@ def _upsert_learning_items(
                 setattr(row, key, value)
 
 
-def _upsert_questions(
-    db: Session,
-    lesson: CourseLesson,
-    exercises: list,
-    targets_by_order: dict[int, LessonTarget],
-) -> None:
+def _upsert_questions(db: Session, lesson: CourseLesson, exercises: list, targets_by_order: dict[int, LessonTarget]) -> None:
     for index, exercise in enumerate(exercises, start=1):
         if not isinstance(exercise, dict):
             continue
@@ -263,12 +245,7 @@ def _upsert_questions(
                 setattr(row, field, value)
 
 
-def _upsert_scenarios(
-    db: Session,
-    lesson: CourseLesson,
-    canonical: dict,
-    targets_by_key: dict[str, LessonTarget],
-) -> None:
+def _upsert_scenarios(db: Session, lesson: CourseLesson, canonical: dict, targets_by_key: dict[str, LessonTarget]) -> None:
     scenarios = canonical.get("practice_scenarios")
     if not isinstance(scenarios, list):
         scenarios = canonical.get("scenarios")
@@ -281,12 +258,7 @@ def _upsert_scenarios(
                 "id": "default",
                 "order": 1,
                 "title": str(canonical.get("title", "Lesson practice")),
-                "context": str(
-                    canonical.get(
-                        "objective",
-                        "Practice the lesson targets in a natural conversation.",
-                    )
-                ),
+                "context": str(canonical.get("objective", "Practice the lesson targets in a natural conversation.")),
                 "instructions": "Use the lesson targets naturally in conversation.",
                 "target_ids": list(targets_by_key.keys()),
             }
@@ -296,12 +268,7 @@ def _upsert_scenarios(
         if not isinstance(scenario, dict):
             continue
 
-        key = str(
-            scenario.get("id")
-            or scenario.get("scenario_key")
-            or f"scenario_{index}"
-        ).strip()
-
+        key = str(scenario.get("id") or scenario.get("scenario_key") or f"scenario_{index}").strip()
         raw_target_ids = scenario.get("target_ids", [])
         if not isinstance(raw_target_ids, list):
             raw_target_ids = []
@@ -377,12 +344,7 @@ def import_lesson(db: Session, path: Path) -> bool:
 
 
 def sync_lesson_curriculum(db: Session) -> int:
-    """Synchronize every canonical lesson JSON into PostgreSQL.
-
-    The caller owns the transaction. This makes the function safe to use from
-    the FastAPI lifespan and from tests while keeping the CLI entry point
-    simple.
-    """
+    """Synchronize every canonical lesson JSON into PostgreSQL."""
     imported = 0
     paths = sorted(LESSONS_DIR.glob("*/*/lesson_*.json"))
 
@@ -395,7 +357,6 @@ def sync_lesson_curriculum(db: Session) -> int:
 
 def main() -> None:
     db = SessionLocal()
-
     try:
         imported = sync_lesson_curriculum(db)
         db.commit()
