@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../core/language/language_controller.dart';
@@ -21,8 +23,11 @@ class LessonLearnPage extends StatefulWidget {
 class _LessonLearnPageState extends State<LessonLearnPage> {
   final ApiService _api = ApiService();
   final TextEditingController _input = TextEditingController();
+  final Random _random = Random();
+
   List<Map<String, dynamic>> _sections = [];
   List<Map<String, dynamic>> _questions = [];
+  List<String> _displayOptions = [];
   bool _loading = true;
   String? _error;
   int _index = 0;
@@ -63,11 +68,14 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
               .map((e) => Map<String, dynamic>.from(e))
               .toList()
           : <Map<String, dynamic>>[];
+
       if (!mounted) return;
+
       setState(() {
         _sections = sections;
         _questions = questions;
         _loading = false;
+        _prepareOptions();
       });
     } catch (_) {
       if (!mounted) return;
@@ -91,31 +99,53 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
       _questions.isNotEmpty ? _questions.length : _sections.length;
 
   String _answerFor(Map<String, dynamic> question) {
-    // The backend lesson-content schema uses `correct_answer`.
-    // Keep `answer` as a compatibility fallback for older lessons.
     return (question['correct_answer'] ?? question['answer'] ?? '')
         .toString();
   }
 
+  bool _isShortAnswer() {
+    final type = (_question?['type'] ?? '').toString();
+    final options = _question?['options'];
+    return type == 'short_answer' || options is! List || options.isEmpty;
+  }
+
+  void _prepareOptions() {
+    if (_question == null) {
+      _displayOptions = [];
+      return;
+    }
+
+    final raw = _question!['options'];
+    if (raw is! List) {
+      _displayOptions = [];
+      return;
+    }
+
+    _displayOptions = raw.map((value) => value.toString()).toList();
+    _displayOptions.shuffle(_random);
+  }
+
   void _choose(int i) {
     if (_answered || _question == null) return;
-    final options = List<String>.from(_question!['options'] ?? const []);
+
     final answer = _answerFor(_question!);
     setState(() {
       _selected = i;
       _answered = true;
-      _correct = i < options.length && options[i] == answer;
+      _correct = i < _displayOptions.length && _displayOptions[i] == answer;
     });
   }
 
   void _submitText() {
     if (_answered || _question == null) return;
+
     final expected = _answerFor(_question!).trim().toLowerCase();
     final value = _input.text.trim().toLowerCase();
     final accepted = (_question!['accepted_answers'] is List) &&
         (_question!['accepted_answers'] as List).any(
           (x) => x.toString().trim().toLowerCase() == value,
         );
+
     setState(() {
       _answered = true;
       _correct = value.isNotEmpty && (value == expected || accepted);
@@ -124,18 +154,41 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
 
   void _next() {
     if (!_answered) return;
+
     if (_index + 1 >= _total) {
       Navigator.pop(context, true);
       return;
     }
+
     setState(() {
       _index++;
       _selected = null;
       _answered = false;
       _correct = false;
       _input.clear();
+      _prepareOptions();
     });
   }
+
+  void _finishButtonPressed() {
+    if (_answered) {
+      _next();
+      return;
+    }
+
+    // For the final short-answer question, allow the main button to
+    // validate the typed answer. This prevents the "Finish stage" button
+    // from looking dead while the learner is still on the answer field.
+    if (_index + 1 >= _total && _isShortAnswer() && _input.text.trim().isNotEmpty) {
+      _submitText();
+    }
+  }
+
+  bool get _finishButtonEnabled =>
+      _answered ||
+      (_index + 1 >= _total &&
+          _isShortAnswer() &&
+          _input.text.trim().isNotEmpty);
 
   @override
   Widget build(BuildContext context) {
@@ -187,15 +240,40 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
                               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                               child: Column(
                                 children: [
-                                  _TeachingCard(
-                                    section: _section,
-                                    theme: theme,
-                                    languageController:
-                                        widget.languageController,
-                                  ),
-                                  const SizedBox(height: 16),
+                                  if ((_section?['target_text'] ?? '')
+                                      .toString()
+                                      .trim()
+                                      .isNotEmpty ||
+                                      (_section?['translation'] ?? '')
+                                          .toString()
+                                          .trim()
+                                          .isNotEmpty ||
+                                      (_section?['explanation'] ?? '')
+                                          .toString()
+                                          .trim()
+                                          .isNotEmpty)
+                                    _TeachingCard(
+                                      section: _section,
+                                      theme: theme,
+                                      languageController:
+                                          widget.languageController,
+                                    ),
+                                  if ((_section?['target_text'] ?? '')
+                                          .toString()
+                                          .trim()
+                                          .isNotEmpty ||
+                                      (_section?['translation'] ?? '')
+                                          .toString()
+                                          .trim()
+                                          .isNotEmpty ||
+                                      (_section?['explanation'] ?? '')
+                                          .toString()
+                                          .trim()
+                                          .isNotEmpty)
+                                    const SizedBox(height: 16),
                                   _QuestionCard(
                                     question: _question,
+                                    options: _displayOptions,
                                     answered: _answered,
                                     selected: _selected,
                                     correct: _correct,
@@ -214,7 +292,9 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
                             child: SizedBox(
                               width: double.infinity,
                               child: FilledButton(
-                                onPressed: _answered ? _next : null,
+                                onPressed: _finishButtonEnabled
+                                    ? _finishButtonPressed
+                                    : null,
                                 style: FilledButton.styleFrom(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),
@@ -358,6 +438,7 @@ class _TeachingCard extends StatelessWidget {
 
 class _QuestionCard extends StatelessWidget {
   final Map<String, dynamic>? question;
+  final List<String> options;
   final bool answered;
   final int? selected;
   final bool correct;
@@ -368,6 +449,7 @@ class _QuestionCard extends StatelessWidget {
 
   const _QuestionCard({
     required this.question,
+    required this.options,
     required this.answered,
     required this.selected,
     required this.correct,
@@ -387,7 +469,6 @@ class _QuestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final title = (question?['question'] ?? '').toString();
-    final options = List<String>.from(question?['options'] ?? const []);
     final type = (question?['type'] ?? 'multiple_choice').toString();
     final answer = question == null ? '' : _answerFor(question!);
 
@@ -424,6 +505,7 @@ class _QuestionCard extends StatelessWidget {
                   child: TextField(
                     controller: input,
                     enabled: !answered,
+                    onSubmitted: (_) => onSubmitText(),
                     decoration: InputDecoration(
                       hintText: _t('اكتب بالألمانية...', 'Write in German...'),
                     ),
