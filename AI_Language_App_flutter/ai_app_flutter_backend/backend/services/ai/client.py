@@ -23,23 +23,39 @@ OPENROUTER_BASE_URL = os.getenv(
 
 
 # ============================================================================
-# AI MODEL
+# AI MODELS
 # ============================================================================
 
-# Single AI model for the entire application.
+# The application uses separate OpenRouter models for different workloads.
+# Keep these values in .env so changing a provider/model does not require a
+# source-code change or redeploy of the Python module itself.
 #
-# Chat
-# Classification
-# Vocabulary enrichment
-# Translation
-# Lesson tutoring
-# Hints
-# Lesson generation
+# Main model:
+#   Chat, lesson tutoring, lesson generation and other general AI tasks.
+# Classifier model:
+#   Classification-specific tasks.
 #
-# All use MiniMax through OpenRouter.
-AI_MODEL = "minimax/minimax-m2.7:free"
+# Translation models are intentionally not defined here because their callers
+# may use dedicated translation configuration.
+AI_MODEL = os.getenv(
+    "OPENROUTER_MAIN_MODEL",
+    "minimax/minimax-m2.7:free",
+).strip()
 
-AI_CLASSIFIER_MODEL = AI_MODEL
+AI_CLASSIFIER_MODEL = os.getenv(
+    "OPENROUTER_CLASSIFIER_MODEL",
+    AI_MODEL,
+).strip()
+
+if not AI_MODEL:
+    raise RuntimeError(
+        "OPENROUTER_MAIN_MODEL is empty in the .env file"
+    )
+
+if not AI_CLASSIFIER_MODEL:
+    raise RuntimeError(
+        "OPENROUTER_CLASSIFIER_MODEL is empty in the .env file"
+    )
 
 
 # ============================================================================
@@ -102,8 +118,6 @@ def chat_completion(
     Send one non-streaming request to OpenRouter.
 
     Reasoning configuration is intentionally left to the model/endpoint.
-
-    MiniMax reasoning is not disabled.
     """
 
     import httpx
