@@ -362,7 +362,6 @@ class LessonAiApiService {
 
     // First handle the common form:
     // "Hallo! Wie heißt du? Hallo! Wie heißt du?"
-    final separator = RegExp(r'\s+');
     final match = RegExp(r'^(.+?)\s+\1$').firstMatch(normalized);
     if (match != null) {
       return match.group(1)!.trim();

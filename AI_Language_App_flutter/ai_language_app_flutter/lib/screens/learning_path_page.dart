@@ -4,7 +4,6 @@ import '../controllers/learning_path_controller.dart';
 import '../core/language/language_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/learning_lesson_model.dart';
-import '../repositories/learning_repository.dart';
 import '../screens/lesson_journey_page.dart';
 import '../services/learning_language_controller.dart';
 import '../widgets/learning_path/learning_path_view.dart';

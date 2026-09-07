@@ -19,3 +19,4 @@ git pull origin main
 cd AI_Language_App_flutter\ai_language_app_flutter
 flutter gen-l10n
 flutter analyze
+
