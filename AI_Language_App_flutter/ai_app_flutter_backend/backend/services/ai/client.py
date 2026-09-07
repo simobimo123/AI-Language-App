@@ -26,17 +26,6 @@ OPENROUTER_BASE_URL = os.getenv(
 # AI MODELS
 # ============================================================================
 
-# The application uses separate OpenRouter models for different workloads.
-# Keep these values in .env so changing a provider/model does not require a
-# source-code change or redeploy of the Python module itself.
-#
-# Main model:
-#   Chat, lesson tutoring, lesson generation and other general AI tasks.
-# Classifier model:
-#   Classification-specific tasks.
-#
-# Translation models are intentionally not defined here because their callers
-# may use dedicated translation configuration.
 AI_MODEL = os.getenv(
     "OPENROUTER_MAIN_MODEL",
     "minimax/minimax-m2.7:free",
@@ -55,6 +44,28 @@ if not AI_MODEL:
 if not AI_CLASSIFIER_MODEL:
     raise RuntimeError(
         "OPENROUTER_CLASSIFIER_MODEL is empty in the .env file"
+    )
+
+
+# OpenRouter exposes reasoning controls for models that support them.
+# "none" is intentionally the default for this app: lesson decisions are
+# simple and should not spend output tokens on hidden reasoning.
+OPENROUTER_REASONING_EFFORT = os.getenv(
+    "OPENROUTER_REASONING_EFFORT",
+    "none",
+).strip().lower()
+
+if OPENROUTER_REASONING_EFFORT not in {
+    "none",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+}:
+    raise RuntimeError(
+        "OPENROUTER_REASONING_EFFORT must be one of: "
+        "none, minimal, low, medium, high, xhigh"
     )
 
 
@@ -117,7 +128,8 @@ def chat_completion(
     """
     Send one non-streaming request to OpenRouter.
 
-    Reasoning configuration is intentionally left to the model/endpoint.
+    Reasoning is explicitly controlled so simple application decisions do not
+    silently consume most of the output budget.
     """
 
     import httpx
@@ -126,6 +138,9 @@ def chat_completion(
         "model": model,
         "messages": messages,
         "max_tokens": max_tokens,
+        "reasoning": {
+            "effort": OPENROUTER_REASONING_EFFORT,
+        },
     }
 
     if response_format is not None:
@@ -178,8 +193,8 @@ def stream_chat_completion(
     """
     Yield decoded OpenRouter SSE payloads.
 
-    The lesson provider intentionally buffers lesson responses so the
-    backend can process the internal LESSON_PROGRESS marker safely.
+    The lesson provider intentionally buffers lesson responses so the backend
+    can process the internal LESSON_PROGRESS marker safely.
     """
 
     import json
@@ -192,6 +207,9 @@ def stream_chat_completion(
         "stream": True,
         "stream_options": {
             "include_usage": True,
+        },
+        "reasoning": {
+            "effort": OPENROUTER_REASONING_EFFORT,
         },
     }
 
@@ -237,7 +255,6 @@ def stream_chat_completion(
                     if not line:
                         continue
 
-                    # SSE comments / keep-alives.
                     if not line.startswith("data:"):
                         continue
 
@@ -250,8 +267,6 @@ def stream_chat_completion(
                         yield json.loads(data)
 
                     except json.JSONDecodeError:
-                        # Ignore malformed/non-JSON SSE lines rather than
-                        # terminating an otherwise valid stream.
                         continue
 
     except httpx.HTTPError as exc:
