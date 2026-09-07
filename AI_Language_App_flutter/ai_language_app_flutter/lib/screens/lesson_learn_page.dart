@@ -176,10 +176,9 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
       return;
     }
 
-    // For the final short-answer question, allow the main button to
-    // validate the typed answer. This prevents the "Finish stage" button
-    // from looking dead while the learner is still on the answer field.
-    if (_index + 1 >= _total && _isShortAnswer() && _input.text.trim().isNotEmpty) {
+    if (_index + 1 >= _total &&
+        _isShortAnswer() &&
+        _input.text.trim().isNotEmpty) {
       _submitText();
     }
   }
@@ -196,6 +195,11 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
     final progress = _total == 0
         ? 0.0
         : ((_index + 1) / _total).clamp(0.0, 1.0);
+
+    final sectionHasTeaching =
+        (_section?['target_text'] ?? '').toString().trim().isNotEmpty ||
+            (_section?['translation'] ?? '').toString().trim().isNotEmpty ||
+            (_section?['explanation'] ?? '').toString().trim().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -240,36 +244,14 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
                               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                               child: Column(
                                 children: [
-                                  if ((_section?['target_text'] ?? '')
-                                      .toString()
-                                      .trim()
-                                      .isNotEmpty ||
-                                      (_section?['translation'] ?? '')
-                                          .toString()
-                                          .trim()
-                                          .isNotEmpty ||
-                                      (_section?['explanation'] ?? '')
-                                          .toString()
-                                          .trim()
-                                          .isNotEmpty)
+                                  if (sectionHasTeaching)
                                     _TeachingCard(
                                       section: _section,
                                       theme: theme,
                                       languageController:
                                           widget.languageController,
                                     ),
-                                  if ((_section?['target_text'] ?? '')
-                                          .toString()
-                                          .trim()
-                                          .isNotEmpty ||
-                                      (_section?['translation'] ?? '')
-                                          .toString()
-                                          .trim()
-                                          .isNotEmpty ||
-                                      (_section?['explanation'] ?? '')
-                                          .toString()
-                                          .trim()
-                                          .isNotEmpty)
+                                  if (sectionHasTeaching)
                                     const SizedBox(height: 16),
                                   _QuestionCard(
                                     question: _question,
@@ -280,6 +262,7 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
                                     input: _input,
                                     onChoose: _choose,
                                     onSubmitText: _submitText,
+                                    onTextChanged: () => setState(() {}),
                                     languageController:
                                         widget.languageController,
                                   ),
@@ -445,6 +428,7 @@ class _QuestionCard extends StatelessWidget {
   final TextEditingController input;
   final ValueChanged<int> onChoose;
   final VoidCallback onSubmitText;
+  final VoidCallback onTextChanged;
   final LanguageController languageController;
 
   const _QuestionCard({
@@ -456,6 +440,7 @@ class _QuestionCard extends StatelessWidget {
     required this.input,
     required this.onChoose,
     required this.onSubmitText,
+    required this.onTextChanged,
     required this.languageController,
   });
 
@@ -505,6 +490,7 @@ class _QuestionCard extends StatelessWidget {
                   child: TextField(
                     controller: input,
                     enabled: !answered,
+                    onChanged: (_) => onTextChanged(),
                     onSubmitted: (_) => onSubmitText(),
                     decoration: InputDecoration(
                       hintText: _t('اكتب بالألمانية...', 'Write in German...'),
