@@ -1,13 +1,12 @@
 """Import canonical lesson JSON into normalized curriculum tables.
 
-The JSON files remain the authoring/source format. This script mirrors their
+The JSON files remain the authoring/source format. This module mirrors their
 three-stage curriculum data into PostgreSQL so runtime services can use stable
 foreign keys and persistent learner progress.
 
-Run from the backend directory:
-    python import_lesson_curriculum.py
-
-The operation is idempotent: existing rows are updated rather than duplicated.
+The sync is intentionally reusable by the API startup lifecycle as well as the
+standalone CLI entry point. It is idempotent: unchanged lesson files do not
+cause unnecessary database writes or version bumps.
 """
 
 import json
@@ -63,18 +62,25 @@ def _upsert_content(db: Session, lesson: CourseLesson, data: dict) -> None:
     )
 
     if existing is None:
-        existing = LessonContent(
-            lesson_id=lesson.id,
-            instruction_language="ar",
-            status="PUBLISHED",
-            content=data,
-            version=1,
+        db.add(
+            LessonContent(
+                lesson_id=lesson.id,
+                instruction_language="ar",
+                status="PUBLISHED",
+                content=data,
+                version=1,
+            )
         )
-        db.add(existing)
-    else:
-        existing.content = data
-        existing.status = "PUBLISHED"
-        existing.version += 1
+        return
+
+    # Keep the sync idempotent. A backend restart must not increment content
+    # versions when the canonical JSON has not changed.
+    if existing.content == data and existing.status == "PUBLISHED":
+        return
+
+    existing.content = data
+    existing.status = "PUBLISHED"
+    existing.version += 1
 
 
 def _upsert_target(
@@ -269,8 +275,6 @@ def _upsert_scenarios(
     if not isinstance(scenarios, list):
         scenarios = []
 
-    # A lesson can still be practiced without authoring a dedicated scenario.
-    # In that case create one reusable context from the lesson objective.
     if not scenarios:
         scenarios = [
             {
@@ -372,15 +376,28 @@ def import_lesson(db: Session, path: Path) -> bool:
     return True
 
 
+def sync_lesson_curriculum(db: Session) -> int:
+    """Synchronize every canonical lesson JSON into PostgreSQL.
+
+    The caller owns the transaction. This makes the function safe to use from
+    the FastAPI lifespan and from tests while keeping the CLI entry point
+    simple.
+    """
+    imported = 0
+    paths = sorted(LESSONS_DIR.glob("*/*/lesson_*.json"))
+
+    for path in paths:
+        if import_lesson(db, path):
+            imported += 1
+
+    return imported
+
+
 def main() -> None:
     db = SessionLocal()
-    imported = 0
 
     try:
-        paths = sorted(LESSONS_DIR.glob("*/*/lesson_*.json"))
-        for path in paths:
-            if import_lesson(db, path):
-                imported += 1
+        imported = sync_lesson_curriculum(db)
         db.commit()
     except Exception:
         db.rollback()
