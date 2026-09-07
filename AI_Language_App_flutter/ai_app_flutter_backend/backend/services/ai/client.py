@@ -47,9 +47,9 @@ if not AI_CLASSIFIER_MODEL:
     )
 
 
-# OpenRouter exposes reasoning controls for models that support them.
-# "none" is intentionally the default for this app: lesson decisions are
-# simple and should not spend output tokens on hidden reasoning.
+# OpenRouter supports explicit reasoning controls for models that expose
+# reasoning. The app defaults to no reasoning because lesson decisions are
+# small and should not spend output tokens on unnecessary thinking.
 OPENROUTER_REASONING_EFFORT = os.getenv(
     "OPENROUTER_REASONING_EFFORT",
     "none",
@@ -67,6 +67,11 @@ if OPENROUTER_REASONING_EFFORT not in {
         "OPENROUTER_REASONING_EFFORT must be one of: "
         "none, minimal, low, medium, high, xhigh"
     )
+
+
+# A truncated structured response is retried once with a modestly larger
+# output budget. This is deliberately a small safety net, not a normal path.
+OPENROUTER_TRUNCATION_RETRY_TOKENS = 700
 
 
 # ============================================================================
@@ -125,12 +130,7 @@ def chat_completion(
     max_tokens: int,
     response_format: dict | None = None,
 ) -> dict:
-    """
-    Send one non-streaming request to OpenRouter.
-
-    Reasoning is explicitly controlled so simple application decisions do not
-    silently consume most of the output budget.
-    """
+    """Send one non-streaming request to OpenRouter."""
 
     import httpx
 
@@ -147,36 +147,74 @@ def chat_completion(
         payload["response_format"] = response_format
 
     try:
-        with httpx.Client(
-            timeout=120.0
-        ) as http:
+        with httpx.Client(timeout=120.0) as http:
             response = http.post(
                 f"{OPENROUTER_BASE_URL}/chat/completions",
                 headers=_headers(),
                 json=payload,
             )
 
+            if (
+                response.status_code < 200
+                or response.status_code >= 300
+            ):
+                try:
+                    detail = response.json()
+                except ValueError:
+                    detail = response.text
+
+                raise OpenRouterRequestError(
+                    response.status_code,
+                    detail,
+                )
+
+            result = response.json()
+
+            choices = result.get("choices") or []
+            finish_reason = None
+            if choices and isinstance(choices[0], dict):
+                finish_reason = choices[0].get("finish_reason")
+
+            # Safe fallback for structured responses that were cut off.
+            # We retry only once and only after an actual length truncation.
+            # The normal path remains the smaller token budget.
+            if (
+                finish_reason == "length"
+                and max_tokens < OPENROUTER_TRUNCATION_RETRY_TOKENS
+            ):
+                retry_payload = dict(payload)
+                retry_payload["max_tokens"] = (
+                    OPENROUTER_TRUNCATION_RETRY_TOKENS
+                )
+
+                retry_response = http.post(
+                    f"{OPENROUTER_BASE_URL}/chat/completions",
+                    headers=_headers(),
+                    json=retry_payload,
+                )
+
+                if (
+                    retry_response.status_code < 200
+                    or retry_response.status_code >= 300
+                ):
+                    try:
+                        detail = retry_response.json()
+                    except ValueError:
+                        detail = retry_response.text
+
+                    raise OpenRouterRequestError(
+                        retry_response.status_code,
+                        detail,
+                    )
+
+                result = retry_response.json()
+
+            return result
+
     except httpx.HTTPError as exc:
         raise RuntimeError(
             f"OpenRouter network request failed: {exc}"
         ) from exc
-
-    if (
-        response.status_code < 200
-        or response.status_code >= 300
-    ):
-        try:
-            detail = response.json()
-
-        except ValueError:
-            detail = response.text
-
-        raise OpenRouterRequestError(
-            response.status_code,
-            detail,
-        )
-
-    return response.json()
 
 
 # ============================================================================
@@ -214,17 +252,13 @@ def stream_chat_completion(
     }
 
     try:
-        with httpx.Client(
-            timeout=120.0
-        ) as http:
-
+        with httpx.Client(timeout=120.0) as http:
             with http.stream(
                 "POST",
                 f"{OPENROUTER_BASE_URL}/chat/completions",
                 headers=_headers(),
                 json=payload,
             ) as response:
-
                 if (
                     response.status_code < 200
                     or response.status_code >= 300
@@ -235,7 +269,6 @@ def stream_chat_completion(
                         detail = json.loads(
                             body.decode("utf-8")
                         )
-
                     except (
                         ValueError,
                         UnicodeDecodeError,
@@ -251,7 +284,6 @@ def stream_chat_completion(
                     )
 
                 for line in response.iter_lines():
-
                     if not line:
                         continue
 
@@ -265,7 +297,6 @@ def stream_chat_completion(
 
                     try:
                         yield json.loads(data)
-
                     except json.JSONDecodeError:
                         continue
 
