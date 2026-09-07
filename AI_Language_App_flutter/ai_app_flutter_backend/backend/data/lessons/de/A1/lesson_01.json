@@ -66,6 +66,34 @@
       "type": "teaching",
       "content": {"target_text": "Wo wohnt er?", "pronunciation": null},
       "translations": {"ar": {"translation": "أين يسكن؟", "explanation": "سؤال عن مكان سكن شخص آخر."}}
+    },
+    {
+      "id": "retention_01",
+      "order": 7,
+      "type": "retention",
+      "content": {"target_text": "", "pronunciation": null},
+      "translations": {"ar": {"translation": "تثبيت واسترجاع", "explanation": "الآن سنرى هل ما زلت تتذكر ما تعلمته. الأسئلة التالية جديدة وليست تكرارًا حرفيًا لأسئلة التعلم."}}
+    },
+    {
+      "id": "retention_02",
+      "order": 8,
+      "type": "retention",
+      "content": {"target_text": "", "pronunciation": null},
+      "translations": {"ar": {"translation": "تذكّر واستخدم", "explanation": "فكر في الموقف ثم اختر الجملة المناسبة."}}
+    },
+    {
+      "id": "retention_03",
+      "order": 9,
+      "type": "retention",
+      "content": {"target_text": "", "pronunciation": null},
+      "translations": {"ar": {"translation": "استرجاع من الذاكرة", "explanation": "حاول الإجابة اعتمادًا على ما تتذكره من الدرس."}}
+    },
+    {
+      "id": "retention_04",
+      "order": 10,
+      "type": "retention",
+      "content": {"target_text": "", "pronunciation": null},
+      "translations": {"ar": {"translation": "آخر سؤال للتثبيت", "explanation": "استخدم الجملة التي تعلمتها في موقف مختلف قليلًا."}}
     }
   ],
   "exercises": [
@@ -74,8 +102,20 @@
     {"id": "q03", "order": 3, "type": "multiple_choice", "correct_answer": "Er heißt Thomas.", "translations": {"ar": {"question": "أي جملة تعني: اسمه توماس؟", "options": ["Er heißt Thomas.", "Sie heißt Thomas.", "Ich heiße Thomas.", "Wie heißt Thomas?"], "explanation": "Er = هو."}}},
     {"id": "q04", "order": 4, "type": "multiple_choice", "correct_answer": "Sie heißt Sarah.", "translations": {"ar": {"question": "اختر الجملة الصحيحة لمعنى: اسمها سارة.", "options": ["Sie heißt Sarah.", "Er heißt Sarah.", "Ich heiße Sarah.", "Wo heißt Sarah?"], "explanation": "Sie = هي في هذا السياق."}}},
     {"id": "q05", "order": 5, "type": "multiple_choice", "correct_answer": "Ich wohne in Fès.", "translations": {"ar": {"question": "كيف تقول: أنا أسكن في فاس؟", "options": ["Ich wohne in Fès.", "Ich heiße Fès.", "Wo wohnt Fès?", "Sie wohnt Fès."], "explanation": "Ich wohne in ... تعني أنا أسكن في ..."}}},
-    {"id": "q06", "order": 6, "type": "short_answer", "correct_answer": "Wo wohnt er?", "accepted_answers": ["Wo wohnt er?", "wo wohnt er?"], "translations": {"ar": {"question": "اكتب بالألمانية: أين يسكن؟", "options": [], "explanation": "Wo wohnt er?"}}}
+    {"id": "q06", "order": 6, "type": "short_answer", "correct_answer": "Wo wohnt er?", "accepted_answers": ["Wo wohnt er?", "wo wohnt er?"], "translations": {"ar": {"question": "اكتب بالألمانية: أين يسكن؟", "options": [], "explanation": "Wo wohnt er?"}}},
+    {"id": "r01", "order": 7, "type": "multiple_choice", "correct_answer": "Wie heißt du?", "translations": {"ar": {"question": "قابلت شخصًا جديدًا وتريد أن تسأله عن اسمه. ماذا تقول؟", "options": ["Wie heißt du?", "Wo wohnt er?", "Ich wohne in Fès.", "Sie heißt Sarah."], "explanation": "نسترجع سؤال الاسم ونستخدمه في موقف جديد."}}},
+    {"id": "r02", "order": 8, "type": "multiple_choice", "correct_answer": "Er wohnt in Berlin.", "translations": {"ar": {"question": "توماس يسكن في برلين. أي جملة تصف ذلك؟", "options": ["Er wohnt in Berlin.", "Sie wohnt in Berlin.", "Ich wohne in Berlin.", "Wie heißt Thomas?"], "explanation": "هنا نتحدث عن رجل، لذلك نستخدم Er مع wohnt."}}},
+    {"id": "r03", "order": 9, "type": "multiple_choice", "correct_answer": "Sie heißt Sarah.", "translations": {"ar": {"question": "أنت تتحدث عن Sarah. كيف تقول إن اسمها Sarah؟", "options": ["Sie heißt Sarah.", "Er heißt Sarah.", "Ich heiße Sarah.", "Wie heißt sie Sarah?"], "explanation": "عند الحديث عن Sarah نستخدم Sie في هذا الدرس."}}},
+    {"id": "r04", "order": 10, "type": "short_answer", "correct_answer": "Ich wohne in Fès.", "accepted_answers": ["Ich wohne in Fès.", "ich wohne in fès.", "Ich wohne in Fes.", "ich wohne in fes."], "translations": {"ar": {"question": "تخيل أن شخصًا يسألك أين تسكن. اكتب بالألمانية: أنا أسكن في فاس.", "options": [], "explanation": "استخدم Ich wohne in ... للتعبير عن مكان سكنك."}}}
   ],
+  "retention": {
+    "enabled": true,
+    "type": "retrieval",
+    "description": "أسئلة جديدة بعد انتهاء التعليم للتأكد من بقاء الأهداف في الذاكرة.",
+    "question_count": 4,
+    "passing_score": 75,
+    "questions": ["r01", "r02", "r03", "r04"]
+  },
   "lesson": {
     "id": "de_a1_lesson_01",
     "language": "de",
@@ -91,12 +131,12 @@
       {"id": "ask_where", "order": 6, "required": true, "goal": "Learner asks where someone lives.", "patterns": ["Wo wohnt er?", "Wo wohnt sie?"], "suggestion": "Wo wohnt er?"}
     ],
     "axes": {
-      "learn": {"status": "available", "title": "Interactive learning", "description": "Teach each target sentence with an explanation followed by a question or guided response.", "completion": {"type": "all_steps_completed"}},
+      "learn": {"status": "available", "title": "Interactive learning", "description": "Teach each target sentence with an explanation followed by educational questions, then use new retrieval questions to verify retention.", "completion": {"type": "all_steps_completed_after_retention"}},
       "teaching": {"status": "locked_until_learn_complete", "title": "AI teaching", "description": "MiniMax teaches the same targets and adapts correction and hints to the learner.", "completion": {"type": "ai_judged_mastery"}},
       "practice": {"status": "locked_until_teaching_complete", "title": "Interactive practice", "description": "Natural conversation using the same lesson targets and context.", "completion": {"type": "ai_judged_practice"}}
     },
     "behavior": {"lead": true, "strict_order": true, "natural_wording": true, "no_grammar_lecture": true, "short_corrections": true, "off_topic_redirect": true, "accept_correct_alternatives": true, "suggestion_is_intended_answer": true, "one_question_at_a_time": true, "never_continue_after_completion": true, "no_goodbye_loop": true},
-    "completion": {"condition": "learn_then_teaching_then_practice", "closing": {"instruction": "After the practice axis is completed, give exactly one short natural closing sentence and stop.", "signal": "LESSON_COMPLETED"}, "signal": "LESSON_COMPLETED", "next": "assessment"}
+    "completion": {"condition": "learn_then_retention_then_teaching_then_practice", "closing": {"instruction": "After the practice axis is completed, give exactly one short natural closing sentence and stop.", "signal": "LESSON_COMPLETED"}, "signal": "LESSON_COMPLETED", "next": "assessment"}
   },
   "assessment": {"enabled": true, "type": "multiple_choice_and_short_answer", "questions_count": 5, "passing_score": 80, "retry_allowed": true},
   "completion": {"requires_assessment": true, "passing_score": 80, "mark_completed_after": "assessment_passed"}
