@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import sys
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,16 @@ import migrations_learning_bank  # noqa: F401
 import migrations_lesson_progress  # noqa: F401
 import migrations_lesson_stages  # noqa: F401
 import migrations_lesson_curriculum  # noqa: F401
+
+# The canonical lesson importer lives beside the backend package so it can
+# also be executed directly from the project root. Add that project directory
+# explicitly to the import path instead of duplicating its synchronization
+# logic inside the API.
+_PROJECT_DIR = Path(__file__).resolve().parents[1]
+if str(_PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_DIR))
+
+from import_lesson_curriculum import sync_lesson_curriculum  # noqa: E402
 
 from routers.auth import router as auth_router
 from routers.users import router as users_router
@@ -35,7 +47,20 @@ from routers.lesson_preview import router as lesson_preview_router
 async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
+        # Seed the lesson catalog first because the curriculum importer resolves
+        # each canonical JSON file to an existing CourseLesson row.
         seed_learning_content(db)
+        db.flush()
+
+        # Keep PostgreSQL's normalized curriculum synchronized with the JSON
+        # authoring source before the API starts serving requests. This prevents
+        # stage AI and stage-gating endpoints from seeing an incomplete lesson.
+        imported = sync_lesson_curriculum(db)
+        db.commit()
+        print(f"Lesson curriculum synchronized: {imported} lesson file(s).")
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
     yield
