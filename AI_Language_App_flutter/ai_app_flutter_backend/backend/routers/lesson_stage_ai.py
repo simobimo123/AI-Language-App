@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database import SessionLocal, get_db
 from models import (
     CourseLesson,
     LearningProfile,
@@ -255,10 +255,11 @@ def _apply_decision(*, db: Session, user: User, profile: LearningProfile, lesson
         decision.update(action="CONTINUE", evidence="", confidence=0.0)
         action = "CONTINUE"
 
-    if stage == "teaching":
-        target_progress.teaching_attempts += 1
-    else:
-        target_progress.practice_attempts += 1
+    if learner_evidence_allowed:
+        if stage == "teaching":
+            target_progress.teaching_attempts += 1
+        else:
+            target_progress.practice_attempts += 1
 
     if action == "TARGET_MASTERED":
         if (not learner_evidence_allowed or
@@ -300,9 +301,34 @@ def _apply_decision(*, db: Session, user: User, profile: LearningProfile, lesson
     return decision, axis_completed
 
 
-def _stream_stage_response(*, request: StageChatRequest, user: User, profile: LearningProfile, lesson: CourseLesson, stage_progress: UserLessonStageProgress, conversation_id: str, db: Session):
+def _stream_stage_response(*, request: StageChatRequest, user_id: int, profile_id: int, lesson_id: int, conversation_id: str):
+    """Run the whole SSE stream inside its own SQLAlchemy session.
+
+    FastAPI closes the request-scoped dependency session before a lazy/streaming
+    response necessarily finishes. Passing ORM instances from that request into
+    this generator therefore leaves them detached and can trigger
+    ``Instance ... is not bound to a Session`` when SQLAlchemy tries to refresh
+    an expired attribute. Re-opening the session here also guarantees that all
+    mutations made while streaming are persisted by the same live session.
+    """
+    db = SessionLocal()
     try:
+        user = db.get(User, user_id)
+        if user is None:
+            raise RuntimeError("User not found.")
+
+        lesson = _get_lesson(db, lesson_id)
+        profile = db.get(LearningProfile, profile_id)
+        if profile is None:
+            raise RuntimeError("Learning profile not found.")
+
+        stage_progress = _get_stage_progress(db, user, profile, lesson)
         _ensure_stage_open(stage_progress, request.stage)
+        if request.stage == "teaching" and stage_progress.learn_status != "completed":
+            raise RuntimeError("Teaching requires completed interactive learning.")
+        if request.stage == "practice" and stage_progress.teaching_status != "completed":
+            raise RuntimeError("Practice requires completed AI teaching.")
+
         targets = _targets(db, lesson.id)
         required_targets = [target for target in targets if target["required"]]
         if not required_targets:
@@ -394,6 +420,8 @@ def _stream_stage_response(*, request: StageChatRequest, user: User, profile: Le
         except Exception:
             logger.exception("Failed to rollback lesson stage AI transaction.")
         yield sse_event("error", {"message": str(exc)})
+    finally:
+        db.close()
 
 
 @router.post("/stage-chat")
@@ -425,7 +453,13 @@ def stage_chat(request: StageChatRequest, current_user: User = Depends(get_curre
     db.commit()
 
     return StreamingResponse(
-        _stream_stage_response(request=request, user=current_user, profile=profile, lesson=lesson, stage_progress=stage_progress, conversation_id=conversation_id, db=db),
+        _stream_stage_response(
+            request=request,
+            user_id=current_user.id,
+            profile_id=profile.id,
+            lesson_id=lesson.id,
+            conversation_id=conversation_id,
+        ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
