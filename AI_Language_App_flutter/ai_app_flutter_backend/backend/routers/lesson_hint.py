@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -22,7 +23,10 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 HINT_MODEL = AI_MODEL
-HINT_MAX_OUTPUT_TOKENS = 300
+
+# The model may spend part of the output budget on internal reasoning.
+# Keep reasoning enabled, but leave enough room for the tiny final answer.
+HINT_MAX_OUTPUT_TOKENS = 700
 
 
 class LessonHintRequest(BaseModel):
@@ -46,32 +50,57 @@ def _hint_prompt(
     native_language: str,
 ) -> str:
     return (
-        f"Reply to this tutor message in {target_language}. "
-        "Give one short natural learner reply. "
-        f"Translate that reply to {native_language}. "
-        "Return exactly:\n"
+        f"Give a short learner reply to the tutor in {target_language}. "
+        f"Then translate the reply to {native_language}. "
+        "Keep both very short. Do not explain. "
+        "Your final answer must contain only these two lines:\n"
         "SUGGESTION: <reply>\n"
         "TRANSLATION: <translation>\n\n"
-        f"Tutor message: {tutor_message}"
+        f"Tutor: {tutor_message}"
     )
 
 
+def _clean_value(value: str) -> str:
+    value = value.strip().strip("`*_ ")
+    value = re.sub(r"^[-*•]\s*", "", value)
+    return value.strip()
+
+
 def _parse_hint(text: str) -> tuple[str, str]:
-    suggestion = ""
-    translation = ""
+    """Parse the compact final answer without requiring exact line formatting."""
+    cleaned = text.strip()
 
-    for line in text.splitlines():
-        stripped = line.strip()
-        upper = stripped.upper()
-        if upper.startswith("SUGGESTION:"):
-            suggestion = stripped.split(":", 1)[1].strip()
-        elif upper.startswith("TRANSLATION:"):
-            translation = stripped.split(":", 1)[1].strip()
+    suggestion_match = re.search(
+        r"(?:SUGGESTION|REPLY)\s*:\s*(.+?)(?=\n\s*(?:TRANSLATION|TRANSLATE)\s*:|$)",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    translation_match = re.search(
+        r"(?:TRANSLATION|TRANSLATE)\s*:\s*(.+)$",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
 
-    if not suggestion or not translation:
-        raise RuntimeError("AI hint returned an invalid format.")
+    if suggestion_match and translation_match:
+        suggestion = _clean_value(suggestion_match.group(1))
+        translation = _clean_value(translation_match.group(1))
+        if suggestion and translation:
+            return suggestion, translation
 
-    return suggestion, translation
+    # Some models return a tiny JSON object despite the plain-text instruction.
+    try:
+        import json
+
+        data = json.loads(cleaned.strip("` "))
+        if isinstance(data, dict):
+            suggestion = _clean_value(str(data.get("suggestion", "")))
+            translation = _clean_value(str(data.get("translation", "")))
+            if suggestion and translation:
+                return suggestion, translation
+    except Exception:
+        pass
+
+    raise RuntimeError("AI hint returned an invalid format.")
 
 
 @router.post("/hint")
