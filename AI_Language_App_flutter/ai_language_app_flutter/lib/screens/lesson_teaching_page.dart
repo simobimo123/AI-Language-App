@@ -838,8 +838,7 @@ class _AnimatedTypingBubbleState extends State<_AnimatedTypingBubble>
 
   double _valueForDot(int index) {
     final phase = (_controller.value - index * 0.18) % 1.0;
-    final wave = (phase * 2 * 3.141592653589793).sin();
-    return ((wave + 1) / 2);
+    return phase < 0.5 ? phase * 2 : (1.0 - phase) * 2;
   }
 
   @override
