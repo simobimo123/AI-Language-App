@@ -329,68 +329,57 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                child: Column(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: hasAssistantMessage &&
-                                    !_translating &&
-                                    !_sending
-                                ? _translateLatest
-                                : null,
-                            icon: _translating
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.translate_rounded),
-                            label: Text(_t('ترجمة', 'Translate')),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _conversationId != null &&
-                                    !_suggesting &&
-                                    !_sending
-                                ? _suggestReply
-                                : null,
-                            icon: _suggesting
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.lightbulb_outline_rounded),
-                            label: Text(_t('اقتراح رد', 'Suggest reply')),
-                          ),
-                        ),
-                      ],
+                    IconButton(
+                      tooltip: _t('ترجمة آخر رسالة', 'Translate last message'),
+                      onPressed: hasAssistantMessage && !_translating && !_sending
+                          ? _translateLatest
+                          : null,
+                      icon: _translating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.translate_rounded),
                     ),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _input,
-                          enabled: !_sending,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _sendCurrent(),
-                          decoration: InputDecoration(
-                            hintText: _t('اكتب ردك...', 'Write your reply...'),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18)),
-                          ),
+                    IconButton(
+                      tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
+                      onPressed: _conversationId != null &&
+                              !_suggesting &&
+                              !_sending &&
+                              !_completed
+                          ? _suggestReply
+                          : null,
+                      icon: _suggesting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.lightbulb_outline_rounded),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: _input,
+                        enabled: !_sending,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendCurrent(),
+                        decoration: InputDecoration(
+                          hintText: _t('اكتب ردك...', 'Write your reply...'),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18)),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        onPressed: _sending ? null : _sendCurrent,
-                        icon: const Icon(Icons.send_rounded),
-                      ),
-                    ]),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: _sending ? null : _sendCurrent,
+                      icon: const Icon(Icons.send_rounded),
+                    ),
                   ],
                 ),
               ),
