@@ -21,14 +21,9 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-# Translation uses the exact same centralized MiniMax model as chat,
-# classification, vocabulary enrichment, lesson tutoring, hints, and lesson
-# generation. No Google/Gemma translation fallback is allowed.
 TRANSLATION_MODEL = AI_MODEL
-TRANSLATION_MAX_OUTPUT_TOKENS = 2048
+TRANSLATION_MAX_OUTPUT_TOKENS = 300
 
-# A temporary upstream failure can be retried on the SAME MiniMax model.
-# We never switch to another provider/model.
 _TRANSLATION_RETRY_STATUS_CODES = {
     408,
     429,
@@ -47,7 +42,7 @@ class TranslationRequest(BaseModel):
 def _translation_prompt(text: str, source_language: str, target_language: str) -> str:
     return (
         f"Translate from {source_language} to {target_language}. "
-        "Return only the translation, with no explanation or extra text.\n\n"
+        "Return only the translation. No explanation.\n\n"
         f"{text}"
     )
 
@@ -101,11 +96,7 @@ def translate_text(
     target_language = normalize_language(current_user.native_language)
 
     if source_language == target_language:
-        return {
-            "translation": text,
-            "source_language": source_language,
-            "target_language": target_language,
-        }
+        return {"translation": text}
 
     check_rate_limit(current_user.id)
     reserve_ai_request(user_id=current_user.id, db=db)
@@ -115,8 +106,6 @@ def translate_text(
         translation = None
         last_error = None
 
-        # Retry only the same MiniMax model. This prevents the previous
-        # Google/Gemma fallback chain from ever being used again.
         for attempt in range(TRANSLATION_MAX_RETRIES + 1):
             try:
                 response, translation = _generate_translation(
@@ -128,13 +117,10 @@ def translate_text(
                 break
             except Exception as exc:
                 last_error = exc
-
                 if attempt >= TRANSLATION_MAX_RETRIES or not _should_retry(exc):
                     raise
-
                 logger.warning(
-                    "MiniMax translation attempt failed (%s); retry=%s/%s "
-                    "for user_id=%s",
+                    "Translation attempt failed (%s); retry=%s/%s user_id=%s",
                     exc,
                     attempt + 1,
                     TRANSLATION_MAX_RETRIES,
@@ -143,7 +129,7 @@ def translate_text(
 
         if response is None or translation is None:
             raise RuntimeError(
-                "MiniMax translation failed after all retry attempts."
+                "Translation failed after all retry attempts."
             ) from last_error
 
         record_api_usage(
@@ -155,11 +141,7 @@ def translate_text(
         )
         db.commit()
 
-        return {
-            "translation": translation,
-            "source_language": source_language,
-            "target_language": target_language,
-        }
+        return {"translation": translation}
     except HTTPException:
         db.rollback()
         raise
