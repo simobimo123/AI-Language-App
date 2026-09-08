@@ -30,14 +30,14 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
   final List<_PracticeMessage> _messages = [];
+  final Map<int, String> _translations = {};
 
   String? _conversationId;
   String? _error;
-  String? _translation;
   bool _starting = true;
   bool _sending = false;
   bool _completed = false;
-  bool _translating = false;
+  int? _translatingIndex;
   bool _suggesting = false;
 
   String _t(String ar, String en) =>
@@ -61,7 +61,6 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     final text = _input.text.trim();
     if (text.isEmpty || _sending || _completed) return;
     _input.clear();
-    setState(() => _translation = null);
     await _send(text, showUser: true);
   }
 
@@ -133,32 +132,23 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     }
   }
 
-  String? _latestAssistantMessage() {
-    for (var i = _messages.length - 1; i >= 0; i--) {
-      if (!_messages[i].isUser && _messages[i].text.trim().isNotEmpty) {
-        return _messages[i].text.trim();
-      }
-    }
-    return null;
-  }
-
-  Future<void> _translateLatest() async {
-    final text = _latestAssistantMessage();
-    if (text == null || _translating || _sending) return;
+  Future<void> _translateMessage(int index) async {
+    final text = _messages[index].text.trim();
+    if (text.isEmpty || _translatingIndex != null || _sending) return;
     setState(() {
-      _translating = true;
+      _translatingIndex = index;
       _error = null;
     });
     try {
       final translation = await _api.translateText(text: text);
       if (!mounted) return;
-      setState(() => _translation = translation);
+      setState(() => _translations[index] = translation);
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = _t('تعذر ترجمة الرسالة.',
           'Could not translate the message.'));
     } finally {
-      if (mounted) setState(() => _translating = false);
+      if (mounted) setState(() => _translatingIndex = null);
     }
   }
 
@@ -178,7 +168,6 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
         text: hint.suggestion,
         selection: TextSelection.collapsed(offset: hint.suggestion.length),
       );
-      setState(() => _translation = hint.translation);
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = _t('تعذر إنشاء اقتراح للرد.',
@@ -186,6 +175,64 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     } finally {
       if (mounted) setState(() => _suggesting = false);
     }
+  }
+
+  Widget _messageActions(BuildContext context, int index) {
+    final theme = Theme.of(context);
+    final translation = _translations[index];
+    final translating = _translatingIndex == index;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 6),
+        TextButton.icon(
+          onPressed: translating || _sending
+              ? null
+              : () => _translateMessage(index),
+          icon: translating
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.translate_rounded, size: 17),
+          label: Text(_t('ترجمة', 'Translate')),
+        ),
+        if (translation != null)
+          Container(
+            margin: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.translate_rounded,
+                    size: 18, color: theme.colorScheme.onPrimaryContainer),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    translation,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: _t('إخفاء الترجمة', 'Hide translation'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => setState(() => _translations.remove(index)),
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 22),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 
   void _scrollToEnd() {
@@ -202,7 +249,6 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasAssistantMessage = _latestAssistantMessage() != null;
     return Scaffold(
       appBar: AppBar(
         title: Text(_t('المرحلة 3 · الممارسة', 'Stage 3 · Practice')),
@@ -263,46 +309,24 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                                 : theme.colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(18),
                           ),
-                          child: Text(
-                            message.text,
-                            style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                message.text,
+                                style: theme.textTheme.bodyLarge
+                                    ?.copyWith(height: 1.45),
+                              ),
+                              if (!message.isUser &&
+                                  message.text.trim().isNotEmpty)
+                                _messageActions(context, index),
+                            ],
                           ),
                         ),
                       );
                     },
                   ),
           ),
-          if (_translation != null)
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.translate_rounded,
-                      size: 20, color: theme.colorScheme.onPrimaryContainer),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _translation!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => setState(() => _translation = null),
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                  ),
-                ],
-              ),
-            ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -332,19 +356,6 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    IconButton(
-                      tooltip: _t('ترجمة آخر رسالة', 'Translate last message'),
-                      onPressed: hasAssistantMessage && !_translating && !_sending
-                          ? _translateLatest
-                          : null,
-                      icon: _translating
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.translate_rounded),
-                    ),
                     IconButton(
                       tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
                       onPressed: _conversationId != null &&
