@@ -117,7 +117,9 @@ def chat_completion(
     """
     Send one non-streaming request to OpenRouter.
 
-    Reasoning configuration is intentionally left to the model/endpoint.
+    Reasoning is explicitly disabled for the request. The model still
+    generates its normal final answer without spending the output budget on
+    reasoning tokens.
     """
 
     import httpx
@@ -126,6 +128,9 @@ def chat_completion(
         "model": model,
         "messages": messages,
         "max_tokens": max_tokens,
+        "reasoning": {
+            "enabled": False,
+        },
     }
 
     if response_format is not None:
@@ -180,6 +185,8 @@ def stream_chat_completion(
 
     The lesson provider intentionally buffers lesson responses so the
     backend can process the internal LESSON_PROGRESS marker safely.
+
+    Reasoning is explicitly disabled for the request.
     """
 
     import json
@@ -192,6 +199,9 @@ def stream_chat_completion(
         "stream": True,
         "stream_options": {
             "include_usage": True,
+        },
+        "reasoning": {
+            "enabled": False,
         },
     }
 
