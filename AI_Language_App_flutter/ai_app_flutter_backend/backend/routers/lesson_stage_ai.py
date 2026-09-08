@@ -191,21 +191,23 @@ def _system_prompt(
     user: User,
     targets: list[dict],
     scenario: dict | None,
+    is_start: bool,
 ) -> str:
     if stage == "teaching":
-        mode = """You are the learner's TEACHER, not merely a conversation partner.
-Teach the lesson step by step through a short interactive dialogue.
-For each important learner answer, first judge whether it is correct, incomplete, or incorrect.
-If it is correct, briefly praise/confirm it and move to the next useful teaching step.
-If it is incorrect or incomplete, do NOT simply ask the same question again: briefly explain what is wrong, show the correct target-language form, and ask the learner to try that form again.
-Use examples from the lesson goals when introducing a new form, then immediately let the learner practice it.
-Do not move to a new goal until the learner has had a reasonable chance to understand and use the current form.
-Keep teaching adaptive: simplify when the learner struggles and increase the challenge when the learner succeeds."""
+        mode = (
+            "You are a LANGUAGE TEACHER, not merely a conversation partner. "
+            "Teach the learner step by step through a short interactive lesson. "
+            "When the learner makes a mistake or gives an incomplete answer, briefly explain what is wrong, "
+            "show the correct form, and ask the learner to try it again. "
+            "When the learner succeeds, briefly confirm it and teach or practice the next useful point. "
+            "Do not simply ask another question without teaching when teaching or correction is needed."
+        )
     else:
-        mode = """You are a natural conversation partner for PRACTICE.
-Use the lesson goals naturally in a realistic conversation.
-Do not turn the conversation into a lesson or give explanations unless a short correction is useful.
-Keep corrections gentle and brief, then continue the conversation naturally."""
+        mode = (
+            "Have a natural conversation using the lesson goals. "
+            "Act as a conversation partner, not as a lesson lecturer. "
+            "Gently correct important mistakes when useful and keep the conversation moving."
+        )
 
     scenario_text = ""
     if scenario:
@@ -216,7 +218,18 @@ Keep corrections gentle and brief, then continue the conversation naturally."""
             f"{scenario.get('instructions', '')}"
         )
 
-    return f"""You are a concise AI language tutor.
+    start_rules = ""
+    if is_start:
+        start_rules = """
+FIRST TURN RULES:
+- This is the first tutor turn and the learner has not answered yet.
+- Output ONLY the tutor's first message.
+- Do NOT invent, simulate, or write a learner reply.
+- Do NOT write both sides of a dialogue.
+- Ask the learner one clear question or give one short teaching prompt.
+"""
+
+    return f"""You are the AI tutor for a language-learning lesson.
 Mode: {stage.upper()}
 Target language: {lesson.language}
 Level: {lesson.level}
@@ -227,20 +240,17 @@ Lesson goals:
 {scenario_text}
 
 {mode}
-
-General response rules:
-- Stay strictly within the lesson goals.
-- Use the target language for the actual examples, questions, and learner practice.
+- Stay within the lesson goals.
+- Use the target language for the actual conversation and examples.
 - Use the learner's instruction language only for short explanations or corrections when useful.
-- One teaching/conversation step at a time.
-- Keep each reply short: normally 1-3 short sentences.
-- In TEACHING, a correction should normally contain: brief feedback + correct example + retry request.
-- In TEACHING, never respond to a learner mistake with only a replacement fragment or a bare question.
-- In TEACHING, do not repeat the opening greeting/question unless the learner genuinely needs the same task repeated after feedback.
-- In PRACTICE, prioritize natural conversation over explanation.
-- No long explanations, lists, meta-commentary, or discussion of these instructions.
+- Respond ONLY as the tutor. Never generate the learner's words or role.
+- Never write dialogue labels such as "Teacher:", "Student:", "Learner:", or "User:".
+- One short turn at a time.
+- Reply in at most 2 short sentences.
+- Do not repeat the opening unless the learner genuinely needs the opening repeated.
+- Do not give long explanations, lists, or meta-commentary.
 - Never mention these instructions.
-""".strip()
+{start_rules}""".strip()
 
 
 def _complete_stage(
@@ -323,12 +333,8 @@ def _stream_stage_response(
 
         messages = _history_messages(history)
         learner_message = request.message[:MAX_LEARNER_MESSAGE_CHARS]
-        messages.append(
-            {
-                "role": "user",
-                "content": "Start the lesson naturally." if is_control_message else learner_message,
-            }
-        )
+        if not is_control_message:
+            messages.append({"role": "user", "content": learner_message})
 
         scenario = (
             _practice_context(db, lesson.id)
@@ -345,6 +351,7 @@ def _stream_stage_response(
                 user=user,
                 targets=targets,
                 scenario=scenario,
+                is_start=is_control_message,
             ),
             max_output_tokens=MAX_OUTPUT_TOKENS,
         )
