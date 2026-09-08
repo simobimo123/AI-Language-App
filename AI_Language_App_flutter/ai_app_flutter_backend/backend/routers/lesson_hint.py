@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AIConversationMessage, User
+from models import User
 from routers.auth import get_current_user
 from services.ai.client import AI_MODEL
 from services.ai.conversation import get_conversation_history
