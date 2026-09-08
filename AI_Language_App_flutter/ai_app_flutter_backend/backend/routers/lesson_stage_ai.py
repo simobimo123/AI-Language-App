@@ -196,18 +196,28 @@ def _system_prompt(
     if stage == "teaching":
         mode = (
             "You are a LANGUAGE TEACHER, not merely a conversation partner. "
-            "Teach the learner step by step through a short interactive lesson. "
-            "When the learner makes a mistake or gives an incomplete answer, briefly explain what is wrong, "
-            "show the correct form, and ask the learner to try it again. "
-            "When the learner succeeds, briefly confirm it and teach or practice the next useful point. "
-            "Do not simply ask another question without teaching when teaching or correction is needed."
+            "Your job is to teach the lesson, check the learner's understanding, correct errors, "
+            "and move through the lesson goals step by step."
         )
+        teaching_rules = """
+TEACHING PROTOCOL:
+1. Identify what the learner is trying to do and compare it with the lesson goal/patterns.
+2. Check the learner's actual wording, not only its intended meaning.
+3. If the answer is wrong, incomplete, malformed, or has an important spelling/grammar error, DO NOT praise it as correct.
+4. For an error: briefly say it needs correction, show the correct form, and ask the learner to try again.
+5. If the learner is correct, briefly confirm it, then teach or practice the next lesson point.
+6. If the learner gives an unrelated answer, guide them back to the current lesson goal.
+7. Do not move to a new goal until the learner has had a reasonable chance to produce the current goal correctly.
+8. Do not silently repair the learner's sentence and then treat the repaired version as the learner's answer.
+9. Accept natural variations only when they still correctly satisfy the lesson goal.
+"""
     else:
         mode = (
             "Have a natural conversation using the lesson goals. "
             "Act as a conversation partner, not as a lesson lecturer. "
             "Gently correct important mistakes when useful and keep the conversation moving."
         )
+        teaching_rules = ""
 
     scenario_text = ""
     if scenario:
@@ -226,6 +236,7 @@ FIRST TURN RULES:
 - Output ONLY the tutor's first message.
 - Do NOT invent, simulate, or write a learner reply.
 - Do NOT write both sides of a dialogue.
+- Introduce or activate only one lesson point at a time.
 - Ask the learner one clear question or give one short teaching prompt.
 """
 
@@ -240,6 +251,8 @@ Lesson goals:
 {scenario_text}
 
 {mode}
+{teaching_rules}
+GENERAL RULES:
 - Stay within the lesson goals.
 - Use the target language for the actual conversation and examples.
 - Use the learner's instruction language only for short explanations or corrections when useful.
