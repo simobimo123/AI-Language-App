@@ -21,7 +21,9 @@ class LessonPracticePage extends StatefulWidget {
 class _PracticeMessage {
   final String role;
   final String text;
+
   const _PracticeMessage({required this.role, required this.text});
+
   bool get isUser => role == 'user';
 }
 
@@ -79,6 +81,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
 
   Future<void> _send(String text, {required bool showUser}) async {
     if (_sending) return;
+
     if (showUser) {
       setState(() {
         _messages.add(_PracticeMessage(role: 'user', text: text));
@@ -94,6 +97,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     });
 
     var assistantIndex = -1;
+
     try {
       await for (final chunk in _api.lessonStageAiChat(
         lessonId: widget.lesson.id,
@@ -102,39 +106,56 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
         conversationId: _conversationId,
       )) {
         if (!mounted) return;
+
         if (chunk.conversationId != null &&
             chunk.conversationId!.isNotEmpty) {
           _conversationId = chunk.conversationId;
         }
+
         if (chunk.type == 'token' || chunk.type == 'chunk') {
           final part = chunk.text ?? '';
           if (part.isEmpty) continue;
+
           if (assistantIndex == -1) {
-            _messages.add(const _PracticeMessage(role: 'assistant', text: ''));
+            _messages.add(
+              const _PracticeMessage(role: 'assistant', text: ''),
+            );
             assistantIndex = _messages.length - 1;
           }
+
           final old = _messages[assistantIndex];
-          _messages[assistantIndex] =
-              _PracticeMessage(role: old.role, text: old.text + part);
+          _messages[assistantIndex] = _PracticeMessage(
+            role: old.role,
+            text: old.text + part,
+          );
+
           setState(() {
             _starting = false;
             _error = null;
           });
           _scrollToEnd();
         }
+
         if (chunk.type == 'done' && chunk.axisCompleted) {
           setState(() => _completed = true);
         }
+
         if (chunk.type == 'error') {
-          setState(() => _error = chunk.message ??
-              _t('تعذر الاتصال بالمدرّس الذكي.',
-                  'Could not reach the AI tutor.'));
+          setState(() {
+            _error = chunk.message ??
+                _t('تعذر الاتصال بالمدرّس الذكي.',
+                    'Could not reach the AI tutor.');
+          });
         }
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = _t('تعذر إرسال الرسالة. حاول مرة أخرى.',
-          'Could not send the message. Please try again.'));
+      setState(() {
+        _error = _t(
+          'تعذر إرسال الرسالة. حاول مرة أخرى.',
+          'Could not send the message. Please try again.',
+        );
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -148,35 +169,44 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   Future<void> _translateMessage(int index) async {
     final text = _messages[index].text.trim();
     if (text.isEmpty || _translatingIndex != null || _sending) return;
+
     setState(() {
       _translatingIndex = index;
       _error = null;
     });
+
     try {
       final translation = await _api.translateText(text: text);
       if (!mounted) return;
       setState(() => _translations[index] = translation);
+      _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = _t('تعذر ترجمة الرسالة.',
-          'Could not translate the message.'));
+      setState(() {
+        _error = _t('تعذر ترجمة الرسالة.', 'Could not translate the message.');
+      });
     } finally {
       if (mounted) setState(() => _translatingIndex = null);
     }
   }
 
   Future<void> _suggestReply() async {
-    if (_conversationId == null || _suggesting || _sending || _completed) return;
+    if (_conversationId == null || _suggesting || _sending || _completed) {
+      return;
+    }
+
     setState(() {
       _suggesting = true;
       _error = null;
     });
+
     try {
       final hint = await _api.getLessonHint(
         lessonId: widget.lesson.id,
         conversationId: _conversationId,
       );
       if (!mounted) return;
+
       setState(() {
         _suggestionText = hint.suggestion;
         _suggestionTranslation = hint.translation;
@@ -185,8 +215,12 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
       _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = _t('تعذر إنشاء اقتراح للرد.',
-          'Could not generate a reply suggestion.'));
+      setState(() {
+        _error = _t(
+          'تعذر إنشاء اقتراح للرد.',
+          'Could not generate a reply suggestion.',
+        );
+      });
     } finally {
       if (mounted) setState(() => _suggesting = false);
     }
@@ -260,40 +294,29 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
         child: Material(
           color: theme.colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () => setState(() => _suggestionCollapsed = false),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.lightbulb_outline_rounded,
-                      size: 19, color: theme.colorScheme.onSecondaryContainer),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _t('اقتراح رد جاهز', 'Reply suggestion'),
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.lightbulb_outline_rounded,
+                    size: 19, color: theme.colorScheme.onSecondaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _t('اقتراح رد جاهز', 'Reply suggestion'),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton(
-                    tooltip: _t('إظهار الاقتراح', 'Show suggestion'),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () =>
-                        setState(() => _suggestionCollapsed = false),
-                    icon: const Icon(Icons.keyboard_arrow_up_rounded),
-                  ),
-                  IconButton(
-                    tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _clearSuggestion,
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  tooltip: _t('إظهار الاقتراح', 'Show suggestion'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => setState(() => _suggestionCollapsed = false),
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                ),
+              ],
             ),
           ),
         ),
@@ -327,8 +350,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                   IconButton(
                     tooltip: _t('إخفاء الاقتراح', 'Hide suggestion'),
                     visualDensity: VisualDensity.compact,
-                    onPressed: () =>
-                        setState(() => _suggestionCollapsed = true),
+                    onPressed: () => setState(() => _suggestionCollapsed = true),
                     icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   ),
                   IconButton(
@@ -366,6 +388,71 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     );
   }
 
+  Widget _buildMessage(BuildContext context, int index) {
+    final theme = Theme.of(context);
+    final message = _messages[index];
+
+    return Align(
+      alignment: message.isUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 650),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: message.isUser
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message.text,
+              style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+            ),
+            if (!message.isUser && message.text.trim().isNotEmpty)
+              _messageActions(context, index),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _typingIndicator(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: SizedBox(
+          width: 34,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(
+              3,
+              (_) => Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) return;
@@ -380,6 +467,8 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final showTyping = _sending && !_starting && !_completed;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_t('المرحلة 3 · الممارسة', 'Stage 3 · Practice')),
@@ -397,24 +486,26 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
               color: theme.colorScheme.tertiaryContainer,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(children: [
-              Icon(Icons.forum_rounded,
-                  color: theme.colorScheme.onTertiaryContainer),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _t(
-                    'استخدم أهداف الدرس الآن في محادثة طبيعية مع المدرّس الذكي.',
-                    'Now use the lesson goals in a natural conversation with your AI tutor.',
-                  ),
-                  style: TextStyle(
-                    color: theme.colorScheme.onTertiaryContainer,
-                    height: 1.35,
-                    fontWeight: FontWeight.w600,
+            child: Row(
+              children: [
+                Icon(Icons.forum_rounded,
+                    color: theme.colorScheme.onTertiaryContainer),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _t(
+                      'استخدم أهداف الدرس الآن في محادثة طبيعية مع المدرّس الذكي.',
+                      'Now use the lesson goals in a natural conversation with your AI tutor.',
+                    ),
+                    style: TextStyle(
+                      color: theme.colorScheme.onTertiaryContainer,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ),
           Expanded(
             child: _starting && _messages.isEmpty
@@ -422,39 +513,12 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                 : ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    itemCount: _messages.length,
+                    itemCount: _messages.length + (showTyping ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      return Align(
-                        alignment: message.isUser
-                            ? AlignmentDirectional.centerEnd
-                            : AlignmentDirectional.centerStart,
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 650),
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: message.isUser
-                                ? theme.colorScheme.primaryContainer
-                                : theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                message.text,
-                                style: theme.textTheme.bodyLarge
-                                    ?.copyWith(height: 1.45),
-                              ),
-                              if (!message.isUser &&
-                                  message.text.trim().isNotEmpty)
-                                _messageActions(context, index),
-                            ],
-                          ),
-                        ),
-                      );
+                      if (showTyping && index == _messages.length) {
+                        return _typingIndicator(context);
+                      }
+                      return _buildMessage(context, index);
                     },
                   ),
           ),
