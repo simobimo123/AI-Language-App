@@ -431,29 +431,27 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     final theme = Theme.of(context);
     return Align(
       alignment: AlignmentDirectional.centerStart,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: SizedBox(
-          width: 34,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(
-              3,
-              (_) => Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  shape: BoxShape.circle,
-                ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              margin: const EdgeInsetsDirectional.only(end: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
               ),
+              child: Icon(Icons.auto_awesome_rounded,
+                  size: 18, color: theme.colorScheme.onPrimaryContainer),
             ),
-          ),
+            _AnimatedTypingBubble(
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              dotColor: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
         ),
       ),
     );
@@ -606,6 +604,90 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _AnimatedTypingBubble extends StatefulWidget {
+  final Color backgroundColor;
+  final Color dotColor;
+
+  const _AnimatedTypingBubble({
+    required this.backgroundColor,
+    required this.dotColor,
+  });
+
+  @override
+  State<_AnimatedTypingBubble> createState() => _AnimatedTypingBubbleState();
+}
+
+class _AnimatedTypingBubbleState extends State<_AnimatedTypingBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double _valueForDot(int index) {
+    final phase = (_controller.value - index * 0.18) % 1.0;
+    return phase < 0.5 ? phase * 2 : (1.0 - phase) * 2;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
+      decoration: BoxDecoration(
+        color: widget.backgroundColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(5),
+        ),
+      ),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return SizedBox(
+            width: 34,
+            height: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: List.generate(3, (index) {
+                final value = _valueForDot(index);
+                return Transform.translate(
+                  offset: Offset(0, -3 * value),
+                  child: Opacity(
+                    opacity: 0.35 + 0.65 * value,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: widget.dotColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          );
+        },
       ),
     );
   }
