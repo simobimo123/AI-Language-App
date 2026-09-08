@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/language/language_controller.dart';
+import '../core/language/lesson_chat_ui_text.dart';
 import '../models/learning_lesson_model.dart';
 import '../services/api/api_service.dart';
 
@@ -45,8 +46,13 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   String? _suggestionTranslation;
   bool _suggestionCollapsed = false;
 
-  String _t(String ar, String en) =>
-      widget.languageController.locale.languageCode == 'ar' ? ar : en;
+  String _ui(String key) => lessonChatUiText(
+        widget.languageController.locale.languageCode,
+        key,
+      );
+
+  TextDirection get _learningDirection =>
+      directionForLanguage(widget.lesson.language);
 
   @override
   void initState() {
@@ -141,21 +147,12 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
         }
 
         if (chunk.type == 'error') {
-          setState(() {
-            _error = chunk.message ??
-                _t('تعذر الاتصال بالمدرّس الذكي.',
-                    'Could not reach the AI tutor.');
-          });
+          setState(() => _error = chunk.message ?? _ui('connectionError'));
         }
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = _t(
-          'تعذر إرسال الرسالة. حاول مرة أخرى.',
-          'Could not send the message. Please try again.',
-        );
-      });
+      setState(() => _error = _ui('sendError'));
     } finally {
       if (mounted) {
         setState(() {
@@ -182,9 +179,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
       _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = _t('تعذر ترجمة الرسالة.', 'Could not translate the message.');
-      });
+      setState(() => _error = _ui('translationError'));
     } finally {
       if (mounted) setState(() => _translatingIndex = null);
     }
@@ -215,12 +210,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
       _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = _t(
-          'تعذر إنشاء اقتراح للرد.',
-          'Could not generate a reply suggestion.',
-        );
-      });
+      setState(() => _error = _ui('suggestionError'));
     } finally {
       if (mounted) setState(() => _suggesting = false);
     }
@@ -234,7 +224,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         TextButton.icon(
           onPressed: translating || _sending
               ? null
@@ -246,7 +236,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.translate_rounded, size: 17),
-          label: Text(_t('ترجمة', 'Translate')),
+          label: Text(_ui('translate')),
         ),
         if (translation != null)
           Container(
@@ -259,22 +249,30 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.translate_rounded,
-                    size: 18, color: theme.colorScheme.onPrimaryContainer),
+                Icon(
+                  Icons.translate_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
                 const SizedBox(width: 7),
                 Expanded(
-                  child: Text(
-                    translation,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      height: 1.35,
+                  child: Directionality(
+                    textDirection: directionForText(translation),
+                    child: Text(
+                      translation,
+                      textAlign: TextAlign.start,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        height: 1.35,
+                      ),
                     ),
                   ),
                 ),
                 IconButton(
-                  tooltip: _t('إخفاء الترجمة', 'Hide translation'),
+                  tooltip: _ui('hideTranslation'),
                   visualDensity: VisualDensity.compact,
-                  onPressed: () => setState(() => _translations.remove(index)),
+                  onPressed: () =>
+                      setState(() => _translations.remove(index)),
                   icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 22),
                 ),
               ],
@@ -298,12 +296,15 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                Icon(Icons.lightbulb_outline_rounded,
-                    size: 19, color: theme.colorScheme.onSecondaryContainer),
+                Icon(
+                  Icons.lightbulb_outline_rounded,
+                  size: 19,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _t('اقتراح رد جاهز', 'Reply suggestion'),
+                    _ui('replySuggestion'),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSecondaryContainer,
                       fontWeight: FontWeight.w600,
@@ -311,16 +312,11 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                   ),
                 ),
                 IconButton(
-                  tooltip: _t('إظهار الاقتراح', 'Show suggestion'),
+                  tooltip: _ui('showSuggestion'),
                   visualDensity: VisualDensity.compact,
-                  onPressed: () => setState(() => _suggestionCollapsed = false),
+                  onPressed: () =>
+                      setState(() => _suggestionCollapsed = false),
                   icon: const Icon(Icons.keyboard_arrow_up_rounded),
-                ),
-                IconButton(
-                  tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _clearSuggestion,
-                  icon: const Icon(Icons.close_rounded),
                 ),
               ],
             ),
@@ -341,12 +337,14 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.lightbulb_rounded,
-                      color: theme.colorScheme.onSecondaryContainer),
+                  Icon(
+                    Icons.lightbulb_rounded,
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _t('اقتراح للرد', 'Suggested reply'),
+                      _ui('replySuggestion'),
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: theme.colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.bold,
@@ -354,36 +352,39 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                     ),
                   ),
                   IconButton(
-                    tooltip: _t('إخفاء الاقتراح', 'Hide suggestion'),
+                    tooltip: _ui('hideSuggestion'),
                     visualDensity: VisualDensity.compact,
-                    onPressed: () => setState(() => _suggestionCollapsed = true),
+                    onPressed: () =>
+                        setState(() => _suggestionCollapsed = true),
                     icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  ),
-                  IconButton(
-                    tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _clearSuggestion,
-                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                _suggestionText!,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
-                  height: 1.45,
-                  fontWeight: FontWeight.w600,
+              Directionality(
+                textDirection: _learningDirection,
+                child: Text(
+                  _suggestionText!,
+                  textAlign: TextAlign.start,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                    height: 1.45,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (_suggestionTranslation != null &&
                   _suggestionTranslation!.trim().isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(
-                  _suggestionTranslation!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer,
-                    height: 1.35,
+                Directionality(
+                  textDirection: directionForText(_suggestionTranslation!),
+                  child: Text(
+                    _suggestionTranslation!,
+                    textAlign: TextAlign.start,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                      height: 1.35,
+                    ),
                   ),
                 ),
               ],
@@ -397,6 +398,9 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   Widget _buildMessage(BuildContext context, int index) {
     final theme = Theme.of(context);
     final message = _messages[index];
+    final messageDirection = message.isUser
+        ? directionForText(message.text, fallback: _learningDirection)
+        : _learningDirection;
 
     return Align(
       alignment: message.isUser
@@ -415,9 +419,13 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message.text,
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+            Directionality(
+              textDirection: messageDirection,
+              child: Text(
+                message.text,
+                textAlign: TextAlign.start,
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+              ),
             ),
             if (!message.isUser && message.text.trim().isNotEmpty)
               _messageActions(context, index),
@@ -444,12 +452,113 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                 color: theme.colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.auto_awesome_rounded,
-                  size: 18, color: theme.colorScheme.onPrimaryContainer),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 18,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             _AnimatedTypingBubble(
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
               dotColor: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComposer(BuildContext context) {
+    final theme = Theme.of(context);
+    final canSuggest = _conversationId != null &&
+        !_suggesting && !_sending && !_completed;
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 5, 12, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Tooltip(
+              message: _ui('suggestReply'),
+              child: Material(
+                color: theme.colorScheme.secondaryContainer,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: canSuggest ? _suggestReply : null,
+                  child: SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: Center(
+                      child: _suggesting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              Icons.lightbulb_outline_rounded,
+                              color: canSuggest
+                                  ? theme.colorScheme.onSecondaryContainer
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _input,
+                enabled: !_sending && !_completed,
+                minLines: 1,
+                maxLines: 5,
+                textDirection: _learningDirection,
+                textAlign: TextAlign.start,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendCurrent(),
+                decoration: InputDecoration(
+                  hintText: _ui('writeReply'),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceContainerHighest,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 17,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline.withValues(alpha: .08),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              tooltip: _ui('send'),
+              onPressed: _sending || _completed ? null : _sendCurrent,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(50, 50),
+                maximumSize: const Size(50, 50),
+              ),
+              icon: const Icon(Icons.arrow_upward_rounded),
             ),
           ],
         ),
@@ -478,11 +587,84 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_t('المرحلة 3 · الممارسة', 'Stage 3 · Practice')),
+        elevation: 0,
+        titleSpacing: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
+        title: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _ui('aiTutor'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _ui('stagePractice'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (_completed)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 10),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _ui('complete'),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -495,19 +677,17 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
             ),
             child: Row(
               children: [
-                Icon(Icons.forum_rounded,
-                    color: theme.colorScheme.onTertiaryContainer),
+                Icon(
+                  Icons.forum_rounded,
+                  color: theme.colorScheme.onTertiaryContainer,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _t(
-                      'استخدم أهداف الدرس الآن في محادثة طبيعية مع المدرّس الذكي.',
-                      'Now use the lesson goals in a natural conversation with your AI tutor.',
-                    ),
+                    _ui('practiceDescription'),
                     style: TextStyle(
                       color: theme.colorScheme.onTertiaryContainer,
                       height: 1.35,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -516,10 +696,35 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
           ),
           Expanded(
             child: _starting && _messages.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(18),
+                            child: CircularProgressIndicator(strokeWidth: 2.4),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          _ui('starting'),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : ListView.builder(
                     controller: _scroll,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                     itemCount: _messages.length + (showTyping ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (showTyping && index == _messages.length) {
@@ -531,22 +736,38 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
           ),
           if (_error != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: theme.colorScheme.error),
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
+                ),
               ),
             ),
           if (_completed)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.pop(context, true),
-                  icon: const Icon(Icons.check_circle_rounded),
-                  label: Text(_t('إكمال الدرس', 'Complete lesson')),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.pop(context, true),
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(_ui('complete')),
+                  ),
                 ),
               ),
             )
@@ -555,52 +776,7 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _suggestionPanel(context),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
-                          onPressed: _conversationId != null &&
-                                  !_suggesting &&
-                                  !_sending &&
-                                  !_completed
-                              ? _suggestReply
-                              : null,
-                          icon: _suggesting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.lightbulb_outline_rounded),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: TextField(
-                            controller: _input,
-                            enabled: !_sending,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendCurrent(),
-                            decoration: InputDecoration(
-                              hintText: _t('اكتب ردك...', 'Write your reply...'),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton.filled(
-                          onPressed: _sending ? null : _sendCurrent,
-                          icon: const Icon(Icons.send_rounded),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildComposer(context),
               ],
             ),
         ],
