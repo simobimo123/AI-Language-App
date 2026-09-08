@@ -31,14 +31,13 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
   final _scroll = ScrollController();
   final List<_Message> _messages = [];
   final Map<int, String> _translations = {};
-  final Map<int, String> _suggestions = {};
   String? _conversationId;
   String? _error;
   bool _starting = true;
   bool _sending = false;
   bool _completed = false;
   int? _translatingIndex;
-  int? _suggestingIndex;
+  bool _suggesting = false;
 
   String _t(String ar, String en) =>
       widget.languageController.locale.languageCode == 'ar' ? ar : en;
@@ -151,15 +150,12 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
     }
   }
 
-  Future<void> _suggestReply(int index) async {
-    if (_conversationId == null ||
-        _suggestingIndex != null ||
-        _sending ||
-        _completed) {
+  Future<void> _suggestReply() async {
+    if (_conversationId == null || _suggesting || _sending || _completed) {
       return;
     }
     setState(() {
-      _suggestingIndex = index;
+      _suggesting = true;
       _error = null;
     });
     try {
@@ -172,58 +168,36 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
         text: hint.suggestion,
         selection: TextSelection.collapsed(offset: hint.suggestion.length),
       );
-      setState(() => _suggestions[index] = hint.suggestion);
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = _t('تعذر إنشاء اقتراح للرد.',
           'Could not generate a reply suggestion.'));
     } finally {
-      if (mounted) setState(() => _suggestingIndex = null);
+      if (mounted) setState(() => _suggesting = false);
     }
   }
 
   Widget _messageActions(BuildContext context, int index) {
     final theme = Theme.of(context);
     final translation = _translations[index];
-    final suggestion = _suggestions[index];
     final translating = _translatingIndex == index;
-    final suggesting = _suggestingIndex == index;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 6),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextButton.icon(
-              onPressed: translating || suggesting || _sending
-                  ? null
-                  : () => _translateMessage(index),
-              icon: translating
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.translate_rounded, size: 17),
-              label: Text(_t('ترجمة', 'Translate')),
-            ),
-            const SizedBox(width: 4),
-            TextButton.icon(
-              onPressed: suggesting || translating || _sending || _completed
-                  ? null
-                  : () => _suggestReply(index),
-              icon: suggesting
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lightbulb_outline_rounded, size: 17),
-              label: Text(_t('اقتراح رد', 'Suggest reply')),
-            ),
-          ],
+        TextButton.icon(
+          onPressed: translating || _sending
+              ? null
+              : () => _translateMessage(index),
+          icon: translating
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.translate_rounded, size: 17),
+          label: Text(_t('ترجمة', 'Translate')),
         ),
         if (translation != null)
           Container(
@@ -248,47 +222,11 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                     ),
                   ),
                 ),
-                InkWell(
-                  onTap: () => setState(() => _translations.remove(index)),
-                  child: const Padding(
-                    padding: EdgeInsets.all(2),
-                    child: Icon(Icons.close_rounded, size: 17),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (suggestion != null)
-          Container(
-            margin: const EdgeInsets.only(top: 6),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.lightbulb_rounded,
-                    size: 18, color: theme.colorScheme.onSecondaryContainer),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    suggestion,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                      fontWeight: FontWeight.w600,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () => setState(() => _suggestions.remove(index)),
-                  child: const Padding(
-                    padding: EdgeInsets.all(2),
-                    child: Icon(Icons.close_rounded, size: 17),
-                  ),
+                IconButton(
+                  tooltip: _t('إخفاء الترجمة', 'Hide translation'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => setState(() => _translations.remove(index)),
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 22),
                 ),
               ],
             ),
@@ -421,49 +359,14 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   IconButton(
-                    tooltip: _t('ترجمة آخر رسالة', 'Translate last message'),
-                    onPressed: hasAssistantMessage &&
-                            _translatingIndex == null &&
-                            _sending
-                        ? null
-                        : hasAssistantMessage &&
-                                _translatingIndex == null &&
-                                !_sending
-                            ? () {
-                                for (var i = _messages.length - 1; i >= 0; i--) {
-                                  if (!_messages[i].isUser &&
-                                      _messages[i].text.trim().isNotEmpty) {
-                                    _translateMessage(i);
-                                    break;
-                                  }
-                                }
-                              }
-                            : null,
-                    icon: _translatingIndex != null
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.translate_rounded),
-                  ),
-                  IconButton(
                     tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
                     onPressed: _conversationId != null &&
-                            _suggestingIndex == null &&
+                            !_suggesting &&
                             !_sending &&
                             !_completed
-                        ? () {
-                            for (var i = _messages.length - 1; i >= 0; i--) {
-                              if (!_messages[i].isUser &&
-                                  _messages[i].text.trim().isNotEmpty) {
-                                _suggestReply(i);
-                                break;
-                              }
-                            }
-                          }
+                        ? _suggestReply
                         : null,
-                    icon: _suggestingIndex != null
+                    icon: _suggesting
                         ? const SizedBox(
                             width: 20,
                             height: 20,
