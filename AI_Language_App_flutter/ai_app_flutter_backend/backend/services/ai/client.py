@@ -1,25 +1,41 @@
+from pathlib import Path
 import os
 
 from dotenv import load_dotenv
 
 
-load_dotenv()
+# Load the backend .env independently of the process working directory.
+# This prevents OpenRouter credentials from disappearing when Uvicorn is
+# started from a different folder.
+_THIS_FILE = Path(__file__).resolve()
+_BACKEND_ROOT = _THIS_FILE.parents[2]
+_APP_ROOT = _THIS_FILE.parents[3]
+
+for _env_path in (
+    _BACKEND_ROOT / ".env",
+    _APP_ROOT / ".env",
+):
+    if _env_path.is_file():
+        load_dotenv(dotenv_path=_env_path, override=False)
+
+# Also keep normal environment variables supported (for deployment/CI).
+load_dotenv(override=False)
 
 
-OPENROUTER_API_KEY = os.getenv(
-    "OPENROUTER_API_KEY"
-)
+OPENROUTER_API_KEY = (os.getenv("OPENROUTER_API_KEY") or "").strip()
 
+# Avoid accidentally sending an empty/whitespace Authorization header.
 if not OPENROUTER_API_KEY:
     raise RuntimeError(
-        "OPENROUTER_API_KEY is not configured in the .env file"
+        "OPENROUTER_API_KEY is not configured. "
+        "Set it in the backend .env file or as an environment variable."
     )
 
 
 OPENROUTER_BASE_URL = os.getenv(
     "OPENROUTER_BASE_URL",
     "https://openrouter.ai/api/v1",
-).rstrip("/")
+).strip().rstrip("/")
 
 
 # ============================================================================
@@ -86,10 +102,10 @@ class OpenRouterRequestError(RuntimeError):
 
 
 def _headers() -> dict[str, str]:
+    # Construct the Authorization header at request time so every request
+    # uses the same validated credential and no request can omit it.
     return {
-        "Authorization": (
-            f"Bearer {OPENROUTER_API_KEY}"
-        ),
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": os.getenv(
             "OPENROUTER_HTTP_REFERER",
