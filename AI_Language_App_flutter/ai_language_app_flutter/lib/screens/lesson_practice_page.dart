@@ -316,6 +316,12 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
                   onPressed: () => setState(() => _suggestionCollapsed = false),
                   icon: const Icon(Icons.keyboard_arrow_up_rounded),
                 ),
+                IconButton(
+                  tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _clearSuggestion,
+                  icon: const Icon(Icons.close_rounded),
+                ),
               ],
             ),
           ),
@@ -467,7 +473,10 @@ class _LessonPracticePageState extends State<LessonPracticePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showTyping = _sending && !_starting && !_completed;
+    final showTyping = _sending &&
+        !_starting &&
+        !_completed &&
+        (_messages.isEmpty || _messages.last.isUser);
 
     return Scaffold(
       appBar: AppBar(
