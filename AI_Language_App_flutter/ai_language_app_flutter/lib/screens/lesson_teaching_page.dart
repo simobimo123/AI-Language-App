@@ -168,6 +168,10 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
         conversationId: _conversationId,
       );
       if (!mounted) return;
+      _input.value = TextEditingValue(
+        text: hint.suggestion,
+        selection: TextSelection.collapsed(offset: hint.suggestion.length),
+      );
       setState(() => _suggestions[index] = hint.suggestion);
     } catch (_) {
       if (!mounted) return;
@@ -261,9 +265,7 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
             decoration: BoxDecoration(
               color: theme.colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant,
-              ),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,6 +311,9 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasAssistantMessage = _messages.any(
+      (message) => !message.isUser && message.text.trim().isNotEmpty,
+    );
     return Scaffold(
       appBar: AppBar(
         title: Text(_t('المرحلة 2 · التعليم بالذكاء الاصطناعي',
@@ -412,26 +417,81 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _input,
-                    enabled: !_sending,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendCurrent(),
-                    decoration: InputDecoration(
-                      hintText: _t('اكتب إجابتك...', 'Write your answer...'),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  IconButton(
+                    tooltip: _t('ترجمة آخر رسالة', 'Translate last message'),
+                    onPressed: hasAssistantMessage &&
+                            _translatingIndex == null &&
+                            _sending
+                        ? null
+                        : hasAssistantMessage &&
+                                _translatingIndex == null &&
+                                !_sending
+                            ? () {
+                                for (var i = _messages.length - 1; i >= 0; i--) {
+                                  if (!_messages[i].isUser &&
+                                      _messages[i].text.trim().isNotEmpty) {
+                                    _translateMessage(i);
+                                    break;
+                                  }
+                                }
+                              }
+                            : null,
+                    icon: _translatingIndex != null
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.translate_rounded),
+                  ),
+                  IconButton(
+                    tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
+                    onPressed: _conversationId != null &&
+                            _suggestingIndex == null &&
+                            !_sending &&
+                            !_completed
+                        ? () {
+                            for (var i = _messages.length - 1; i >= 0; i--) {
+                              if (!_messages[i].isUser &&
+                                  _messages[i].text.trim().isNotEmpty) {
+                                _suggestReply(i);
+                                break;
+                              }
+                            }
+                          }
+                        : null,
+                    icon: _suggestingIndex != null
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.lightbulb_outline_rounded),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: TextField(
+                      controller: _input,
+                      enabled: !_sending,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendCurrent(),
+                      decoration: InputDecoration(
+                        hintText: _t('اكتب إجابتك...', 'Write your answer...'),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18)),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _sending ? null : _sendCurrent,
-                  icon: const Icon(Icons.send_rounded),
-                ),
-              ]),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _sending ? null : _sendCurrent,
+                    icon: const Icon(Icons.send_rounded),
+                  ),
+                ],
+              ),
             ),
           ),
       ]),
