@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/language/language_controller.dart';
+import '../core/language/lesson_chat_ui_text.dart';
 import '../models/learning_lesson_model.dart';
 import '../services/api/api_service.dart';
 
@@ -45,8 +46,13 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
   String? _suggestionTranslation;
   bool _suggestionCollapsed = false;
 
-  String _t(String ar, String en) =>
-      widget.languageController.locale.languageCode == 'ar' ? ar : en;
+  String _ui(String key) => lessonChatUiText(
+        widget.languageController.locale.languageCode,
+        key,
+      );
+
+  TextDirection get _learningDirection =>
+      directionForLanguage(widget.lesson.language);
 
   @override
   void initState() {
@@ -138,20 +144,13 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
 
         if (chunk.type == 'error') {
           setState(() {
-            _error = chunk.message ??
-                _t('تعذر الاتصال بالمدرّس الذكي.',
-                    'Could not reach the AI tutor.');
+            _error = chunk.message ?? _ui('connectionError');
           });
         }
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = _t(
-          'تعذر إرسال الرسالة. حاول مرة أخرى.',
-          'Could not send the message. Please try again.',
-        );
-      });
+      setState(() => _error = _ui('sendError'));
     } finally {
       if (mounted) {
         setState(() {
@@ -178,9 +177,7 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
       _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = _t('تعذر ترجمة الرسالة.', 'Could not translate the message.');
-      });
+      setState(() => _error = _ui('translationError'));
     } finally {
       if (mounted) setState(() => _translatingIndex = null);
     }
@@ -211,12 +208,7 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
       _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = _t(
-          'تعذر إنشاء اقتراح للرد.',
-          'Could not generate a reply suggestion.',
-        );
-      });
+      setState(() => _error = _ui('suggestionError'));
     } finally {
       if (mounted) setState(() => _suggesting = false);
     }
@@ -251,11 +243,14 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                             height: 15,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(Icons.translate_rounded,
-                            size: 16, color: theme.colorScheme.primary),
+                        : Icon(
+                            Icons.translate_rounded,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
                     const SizedBox(width: 6),
                     Text(
-                      _t('ترجمة', 'Translate'),
+                      _ui('translate'),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
@@ -281,24 +276,33 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.translate_rounded,
-                    size: 17, color: theme.colorScheme.onPrimaryContainer),
+                Icon(
+                  Icons.translate_rounded,
+                  size: 17,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    translation,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      height: 1.4,
+                  child: Directionality(
+                    textDirection: directionForText(translation),
+                    child: Text(
+                      translation,
+                      textAlign: TextAlign.start,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ),
                 IconButton(
-                  tooltip: _t('إخفاء الترجمة', 'Hide translation'),
+                  tooltip: _ui('hideTranslation'),
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                  onPressed: () => setState(() => _translations.remove(index)),
+                  constraints:
+                      const BoxConstraints(minWidth: 30, minHeight: 30),
+                  onPressed: () =>
+                      setState(() => _translations.remove(index)),
                   icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 21),
                 ),
               ],
@@ -322,12 +326,15 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
             child: Row(
               children: [
-                Icon(Icons.lightbulb_outline_rounded,
-                    size: 19, color: theme.colorScheme.onSecondaryContainer),
+                Icon(
+                  Icons.lightbulb_outline_rounded,
+                  size: 19,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _t('اقتراح رد', 'Reply suggestion'),
+                    _ui('replySuggestion'),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSecondaryContainer,
                       fontWeight: FontWeight.w700,
@@ -335,10 +342,11 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   ),
                 ),
                 IconButton(
-                  tooltip: _t('إظهار الاقتراح', 'Show suggestion'),
+                  tooltip: _ui('showSuggestion'),
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
-                  onPressed: () => setState(() => _suggestionCollapsed = false),
+                  onPressed: () =>
+                      setState(() => _suggestionCollapsed = false),
                   icon: const Icon(Icons.keyboard_arrow_up_rounded),
                 ),
               ],
@@ -364,16 +372,20 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSecondaryContainer.withValues(alpha: .08),
+                      color: theme.colorScheme.onSecondaryContainer
+                          .withValues(alpha: .08),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.lightbulb_rounded,
-                        size: 19, color: theme.colorScheme.onSecondaryContainer),
+                    child: Icon(
+                      Icons.lightbulb_rounded,
+                      size: 19,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      _t('اقتراح للرد', 'Suggested reply'),
+                      _ui('replySuggestion'),
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: theme.colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.w800,
@@ -381,38 +393,41 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                     ),
                   ),
                   IconButton(
-                    tooltip: _t('إخفاء الاقتراح', 'Hide suggestion'),
+                    tooltip: _ui('hideSuggestion'),
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
-                    onPressed: () => setState(() => _suggestionCollapsed = true),
+                    onPressed: () =>
+                        setState(() => _suggestionCollapsed = true),
                     icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  ),
-                  IconButton(
-                    tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    onPressed: _clearSuggestion,
-                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                _suggestionText!,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
-                  height: 1.45,
-                  fontWeight: FontWeight.w700,
+              Directionality(
+                textDirection: _learningDirection,
+                child: Text(
+                  _suggestionText!,
+                  textAlign: TextAlign.start,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                    height: 1.45,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               if (_suggestionTranslation != null &&
                   _suggestionTranslation!.trim().isNotEmpty) ...[
                 const SizedBox(height: 7),
-                Text(
-                  _suggestionTranslation!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer.withValues(alpha: .78),
-                    height: 1.35,
+                Directionality(
+                  textDirection: directionForText(_suggestionTranslation!),
+                  child: Text(
+                    _suggestionTranslation!,
+                    textAlign: TextAlign.start,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer
+                          .withValues(alpha: .78),
+                      height: 1.35,
+                    ),
                   ),
                 ),
               ],
@@ -433,6 +448,9 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
     final foregroundColor = isUser
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface;
+    final messageDirection = isUser
+        ? directionForText(message.text, fallback: _learningDirection)
+        : _learningDirection;
 
     return Align(
       alignment: isUser
@@ -454,8 +472,11 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   color: theme.colorScheme.primaryContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.auto_awesome_rounded,
-                    size: 18, color: theme.colorScheme.onPrimaryContainer),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
             ],
             Flexible(
@@ -482,11 +503,15 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        message.text,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: foregroundColor,
-                          height: 1.5,
+                      Directionality(
+                        textDirection: messageDirection,
+                        child: Text(
+                          message.text,
+                          textAlign: TextAlign.start,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: foregroundColor,
+                            height: 1.5,
+                          ),
                         ),
                       ),
                       if (!isUser && message.text.trim().isNotEmpty)
@@ -505,8 +530,11 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   color: theme.colorScheme.primaryContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.person_rounded,
-                    size: 18, color: theme.colorScheme.onPrimaryContainer),
+                child: Icon(
+                  Icons.person_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
           ],
         ),
@@ -531,8 +559,11 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                 color: theme.colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.auto_awesome_rounded,
-                  size: 18, color: theme.colorScheme.onPrimaryContainer),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 18,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             _AnimatedTypingBubble(
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
@@ -557,11 +588,12 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Tooltip(
-              message: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
+              message: _ui('suggestReply'),
               child: Material(
                 color: theme.colorScheme.secondaryContainer,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: canSuggest ? _suggestReply : null,
@@ -575,10 +607,12 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(Icons.lightbulb_outline_rounded,
+                          : Icon(
+                              Icons.lightbulb_outline_rounded,
                               color: canSuggest
                                   ? theme.colorScheme.onSecondaryContainer
-                                  : theme.colorScheme.onSurfaceVariant),
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
                     ),
                   ),
                 ),
@@ -591,14 +625,18 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                 enabled: !_sending && !_completed,
                 minLines: 1,
                 maxLines: 5,
+                textDirection: _learningDirection,
+                textAlign: TextAlign.start,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendCurrent(),
                 decoration: InputDecoration(
-                  hintText: _t('اكتب إجابتك...', 'Write your answer...'),
+                  hintText: _ui('writeReply'),
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 17, vertical: 14),
+                    horizontal: 17,
+                    vertical: 14,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide.none,
@@ -606,19 +644,22 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide(
-                        color: theme.colorScheme.outline.withValues(alpha: .08)),
+                      color: theme.colorScheme.outline.withValues(alpha: .08),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                     borderSide: BorderSide(
-                        color: theme.colorScheme.primary, width: 1.4),
+                      color: theme.colorScheme.primary,
+                      width: 1.4,
+                    ),
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             IconButton.filled(
-              tooltip: _t('إرسال', 'Send'),
+              tooltip: _ui('send'),
               onPressed: _sending || _completed ? null : _sendCurrent,
               style: IconButton.styleFrom(
                 minimumSize: const Size(50, 50),
@@ -668,20 +709,27 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                 color: theme.colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.auto_awesome_rounded,
-                  size: 20, color: theme.colorScheme.onPrimaryContainer),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_t('المدرّس الذكي', 'AI Tutor'),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
                   Text(
-                    _t('المرحلة 2 · التعليم', 'Stage 2 · Teaching'),
+                    _ui('aiTutor'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _ui('stageTeaching'),
                     style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -694,7 +742,10 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
               padding: const EdgeInsetsDirectional.only(end: 10),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(20),
@@ -702,13 +753,19 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded,
-                          size: 16, color: theme.colorScheme.onPrimaryContainer),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
                       const SizedBox(width: 5),
-                      Text(_t('مكتملة', 'Complete'),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        _ui('complete'),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -738,9 +795,10 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          _t('جاري بدء المحادثة...', 'Starting the conversation...'),
+                          _ui('starting'),
                           style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant),
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -762,7 +820,10 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(12),
@@ -771,7 +832,8 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   _error!,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onErrorContainer),
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
                 ),
               ),
             ),
@@ -785,7 +847,7 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                   child: FilledButton.icon(
                     onPressed: () => Navigator.pop(context, true),
                     icon: const Icon(Icons.arrow_forward_rounded),
-                    label: Text(_t('فتح المرحلة 3', 'Continue to stage 3')),
+                    label: Text(_ui('continueStage3')),
                   ),
                 ),
               ),
