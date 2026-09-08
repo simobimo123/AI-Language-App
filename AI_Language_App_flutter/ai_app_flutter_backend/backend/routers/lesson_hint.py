@@ -1,4 +1,3 @@
-import json
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,9 +5,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import User
+from models import AIConversationMessage, User
 from routers.auth import get_current_user
 from services.ai.client import AI_MODEL
+from services.ai.conversation import get_conversation_history
 from services.ai.normalization import normalize_language
 from services.ai.provider import provider
 from services.ai.rate_limit import check_rate_limit
@@ -26,23 +26,33 @@ HINT_MAX_OUTPUT_TOKENS = 300
 
 
 class LessonHintRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=600)
+    lesson_id: int = Field(gt=0)
+    conversation_id: str = Field(min_length=1, max_length=100)
+
+
+def _latest_tutor_message(history) -> str:
+    for item in reversed(history):
+        if item.role == "assistant":
+            text = str(item.content or "").strip()
+            if text:
+                return text[:600]
+    return ""
 
 
 def _hint_prompt(
     *,
-    message: str,
+    tutor_message: str,
     target_language: str,
     native_language: str,
 ) -> str:
     return (
         f"Reply to this tutor message in {target_language}. "
         "Give one short natural learner reply. "
-        f"Then translate that reply to {native_language}. "
-        "Return exactly two lines:\n"
+        f"Translate that reply to {native_language}. "
+        "Return exactly:\n"
         "SUGGESTION: <reply>\n"
         "TRANSLATION: <translation>\n\n"
-        f"Tutor message: {message}"
+        f"Tutor message: {tutor_message}"
     )
 
 
@@ -70,20 +80,24 @@ def lesson_hint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    message = request.message.strip()
-    if not message:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Message cannot be empty.",
-        )
-
     target_language = normalize_language(current_user.learning_language)
     native_language = normalize_language(current_user.native_language)
 
-    if target_language == native_language:
-        translation_target = native_language
-    else:
-        translation_target = native_language
+    # Only the latest tutor message is needed. The lesson JSON, full history,
+    # previous learner turns, and lesson metadata are deliberately excluded.
+    history = get_conversation_history(
+        user_id=current_user.id,
+        conversation_id=request.conversation_id,
+        max_messages=2,
+        db=db,
+    )
+    tutor_message = _latest_tutor_message(history)
+
+    if not tutor_message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There is no tutor message to answer.",
+        )
 
     check_rate_limit(current_user.id)
     reserve_ai_request(user_id=current_user.id, db=db)
@@ -92,9 +106,9 @@ def lesson_hint(
         response = provider.generate_text(
             model=HINT_MODEL,
             prompt=_hint_prompt(
-                message=message,
+                tutor_message=tutor_message,
                 target_language=target_language,
-                native_language=translation_target,
+                native_language=native_language,
             ),
             max_output_tokens=HINT_MAX_OUTPUT_TOKENS,
         )
@@ -120,8 +134,9 @@ def lesson_hint(
     except Exception as exc:
         db.rollback()
         logger.exception(
-            "Lesson AI hint failed user_id=%s: %s",
+            "Lesson AI hint failed user_id=%s lesson_id=%s: %s",
             current_user.id,
+            request.lesson_id,
             exc,
         )
         raise HTTPException(
