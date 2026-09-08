@@ -38,6 +38,9 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
   bool _completed = false;
   int? _translatingIndex;
   bool _suggesting = false;
+  String? _suggestionText;
+  String? _suggestionTranslation;
+  bool _suggestionCollapsed = false;
 
   String _t(String ar, String en) =>
       widget.languageController.locale.languageCode == 'ar' ? ar : en;
@@ -60,7 +63,17 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
     final text = _input.text.trim();
     if (text.isEmpty || _sending || _completed) return;
     _input.clear();
+    _clearSuggestion();
     await _send(text, showUser: true);
+  }
+
+  void _clearSuggestion() {
+    if (_suggestionText == null && _suggestionTranslation == null) return;
+    setState(() {
+      _suggestionText = null;
+      _suggestionTranslation = null;
+      _suggestionCollapsed = false;
+    });
   }
 
   Future<void> _send(String text, {required bool showUser}) async {
@@ -164,10 +177,12 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
         conversationId: _conversationId,
       );
       if (!mounted) return;
-      _input.value = TextEditingValue(
-        text: hint.suggestion,
-        selection: TextSelection.collapsed(offset: hint.suggestion.length),
-      );
+      setState(() {
+        _suggestionText = hint.suggestion;
+        _suggestionTranslation = hint.translation;
+        _suggestionCollapsed = false;
+      });
+      _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = _t('تعذر إنشاء اقتراح للرد.',
@@ -235,6 +250,122 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
     );
   }
 
+  Widget _suggestionPanel(BuildContext context) {
+    if (_suggestionText == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    if (_suggestionCollapsed) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+        child: Material(
+          color: theme.colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => setState(() => _suggestionCollapsed = false),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline_rounded,
+                      size: 19, color: theme.colorScheme.onSecondaryContainer),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _t('اقتراح رد جاهز', 'Reply suggestion'),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSecondaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: _t('إظهار الاقتراح', 'Show suggestion'),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () =>
+                        setState(() => _suggestionCollapsed = false),
+                    icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                  ),
+                  IconButton(
+                    tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _clearSuggestion,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Material(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.lightbulb_rounded,
+                      color: theme.colorScheme.onSecondaryContainer),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _t('اقتراح للرد', 'Suggested reply'),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.onSecondaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: _t('إخفاء الاقتراح', 'Hide suggestion'),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () =>
+                        setState(() => _suggestionCollapsed = true),
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  ),
+                  IconButton(
+                    tooltip: _t('إزالة الاقتراح', 'Remove suggestion'),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _clearSuggestion,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _suggestionText!,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSecondaryContainer,
+                  height: 1.45,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_suggestionTranslation != null &&
+                  _suggestionTranslation!.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _suggestionTranslation!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) return;
@@ -249,9 +380,6 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasAssistantMessage = _messages.any(
-      (message) => !message.isUser && message.text.trim().isNotEmpty,
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text(_t('المرحلة 2 · التعليم بالذكاء الاصطناعي',
@@ -351,51 +479,57 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
             ),
           )
         else
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
-                    onPressed: _conversationId != null &&
-                            !_suggesting &&
-                            !_sending &&
-                            !_completed
-                        ? _suggestReply
-                        : null,
-                    icon: _suggesting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.lightbulb_outline_rounded),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: TextField(
-                      controller: _input,
-                      enabled: !_sending,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendCurrent(),
-                      decoration: InputDecoration(
-                        hintText: _t('اكتب إجابتك...', 'Write your answer...'),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18)),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _suggestionPanel(context),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        tooltip: _t('اقتراح رد مناسب', 'Suggest a suitable reply'),
+                        onPressed: _conversationId != null &&
+                                !_suggesting &&
+                                !_sending &&
+                                !_completed
+                            ? _suggestReply
+                            : null,
+                        icon: _suggesting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.lightbulb_outline_rounded),
                       ),
-                    ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: TextField(
+                          controller: _input,
+                          enabled: !_sending,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _sendCurrent(),
+                          decoration: InputDecoration(
+                            hintText: _t('اكتب إجابتك...', 'Write your answer...'),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        onPressed: _sending ? null : _sendCurrent,
+                        icon: const Icon(Icons.send_rounded),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _sending ? null : _sendCurrent,
-                    icon: const Icon(Icons.send_rounded),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
       ]),
     );
