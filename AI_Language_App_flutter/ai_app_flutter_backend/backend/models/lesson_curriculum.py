@@ -7,7 +7,7 @@ from .base import Base
 
 
 class LessonTarget(Base):
-    """Canonical learning objective used by all three lesson stages."""
+    """Canonical learning objective used by the active lesson stages."""
 
     __tablename__ = "lesson_targets"
 
@@ -22,27 +22,12 @@ class LessonTarget(Base):
     goal: Mapped[str] = mapped_column(Text, nullable=False)
     required: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     cefr_level: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        nullable=False,
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False,
-    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(
-            "lesson_id",
-            "target_key",
-            name="uq_lesson_target_key",
-        ),
-        UniqueConstraint(
-            "lesson_id",
-            "target_order",
-            name="uq_lesson_target_order",
-        ),
+        UniqueConstraint("lesson_id", "target_key", name="uq_lesson_target_key"),
+        UniqueConstraint("lesson_id", "target_order", name="uq_lesson_target_order"),
     )
 
 
@@ -58,110 +43,16 @@ class LessonTargetPattern(Base):
         index=True,
     )
     pattern: Mapped[str] = mapped_column(Text, nullable=False)
-    pattern_type: Mapped[str] = mapped_column(
-        String(30),
-        default="expected",
-        nullable=False,
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        nullable=False,
-    )
+    pattern_type: Mapped[str] = mapped_column(String(30), default="expected", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(
-            "target_id",
-            "pattern",
-            name="uq_lesson_target_pattern",
-        ),
-    )
-
-
-class LessonLearningItem(Base):
-    """Deterministic teaching material for stage 1."""
-
-    __tablename__ = "lesson_learning_items"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    lesson_id: Mapped[int] = mapped_column(
-        ForeignKey("course_lessons.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    target_id: Mapped[int | None] = mapped_column(
-        ForeignKey("lesson_targets.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
-    item_key: Mapped[str] = mapped_column(String(100), nullable=False)
-    item_order: Mapped[int] = mapped_column(Integer, nullable=False)
-    item_type: Mapped[str] = mapped_column(String(40), default="teaching", nullable=False)
-    target_text: Mapped[str] = mapped_column(Text, nullable=False)
-    pronunciation: Mapped[str | None] = mapped_column(Text, nullable=True)
-    translations: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    extra_data: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        nullable=False,
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "lesson_id",
-            "item_key",
-            name="uq_lesson_learning_item_key",
-        ),
-        UniqueConstraint(
-            "lesson_id",
-            "item_order",
-            name="uq_lesson_learning_item_order",
-        ),
-    )
-
-
-class LessonLearningQuestion(Base):
-    """Question used by the deterministic interactive-learning stage."""
-
-    __tablename__ = "lesson_learning_questions"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    lesson_id: Mapped[int] = mapped_column(
-        ForeignKey("course_lessons.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    target_id: Mapped[int | None] = mapped_column(
-        ForeignKey("lesson_targets.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
-    question_key: Mapped[str] = mapped_column(String(100), nullable=False)
-    question_order: Mapped[int] = mapped_column(Integer, nullable=False)
-    question_type: Mapped[str] = mapped_column(String(40), default="multiple_choice", nullable=False)
-    correct_answer: Mapped[str] = mapped_column(Text, nullable=False)
-    accepted_answers: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    translations: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        nullable=False,
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "lesson_id",
-            "question_key",
-            name="uq_lesson_learning_question_key",
-        ),
-        UniqueConstraint(
-            "lesson_id",
-            "question_order",
-            name="uq_lesson_learning_question_order",
-        ),
+        UniqueConstraint("target_id", "pattern", name="uq_lesson_target_pattern"),
     )
 
 
 class LessonPracticeScenario(Base):
-    """Natural contexts available to stage 3."""
+    """Natural contexts available to the practice stage."""
 
     __tablename__ = "lesson_practice_scenarios"
 
@@ -177,22 +68,15 @@ class LessonPracticeScenario(Base):
     context: Mapped[str] = mapped_column(Text, nullable=False)
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     target_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        nullable=False,
-    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(
-            "lesson_id",
-            "scenario_key",
-            name="uq_lesson_practice_scenario_key",
-        ),
+        UniqueConstraint("lesson_id", "scenario_key", name="uq_lesson_practice_scenario_key"),
     )
 
 
 class UserLessonTargetProgress(Base):
-    """Per-target evidence collected independently in stages 2 and 3."""
+    """Per-target evidence collected independently in teaching and practice."""
 
     __tablename__ = "user_lesson_target_progress"
 
@@ -226,17 +110,8 @@ class UserLessonTargetProgress(Base):
     practice_successes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     mastery_confidence: Mapped[float] = mapped_column(default=0.0, nullable=False)
     last_evidence: Mapped[str | None] = mapped_column(Text, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False,
-    )
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(
-            "user_id",
-            "lesson_id",
-            "target_id",
-            name="uq_user_lesson_target_progress",
-        ),
+        UniqueConstraint("user_id", "lesson_id", "target_id", name="uq_user_lesson_target_progress"),
     )
