@@ -43,6 +43,9 @@ class StageChatRequest(BaseModel):
     lesson_id: int = Field(gt=0)
     stage: str = Field(pattern="^(teaching|practice)$")
     message: str = Field(min_length=1, max_length=800)
+    # Kept for backward compatibility with older Flutter clients.
+    # The backend no longer trusts this value. The canonical conversation ID
+    # is always taken from UserLessonStageProgress for the requested stage.
     conversation_id: str | None = Field(default=None, min_length=1, max_length=120)
 
 
@@ -108,6 +111,29 @@ def _ensure_stage_open(progress: UserLessonStageProgress, stage: str) -> None:
         )
 
 
+def _get_canonical_conversation_id(
+    progress: UserLessonStageProgress,
+    stage: str,
+) -> str:
+    """Return the only conversation ID allowed for the requested stage.
+
+    Stage 2 and Stage 3 deliberately have separate persistent conversations.
+    A client-supplied conversation ID is never used as the source of truth.
+    """
+    field_name = f"{stage}_conversation_id"
+    prefix = f"lesson_{stage}_"
+    current = str(getattr(progress, field_name, "") or "").strip()
+
+    # Accept only IDs that clearly belong to this stage. This also repairs old
+    # or incorrectly shared IDs instead of allowing cross-stage history leaks.
+    if current and current.startswith(prefix):
+        return current
+
+    conversation_id = f"{prefix}{uuid4()}"
+    setattr(progress, field_name, conversation_id)
+    return conversation_id
+
+
 def _targets(db: Session, lesson_id: int) -> list[dict]:
     rows = db.scalars(
         select(LessonTarget)
@@ -168,23 +194,20 @@ def _exchange_count(history) -> int:
     return sum(1 for item in history if item.role == "user")
 
 
-def _lesson_targets_context(targets: list[dict]) -> str:
-    """Build compact lesson-specific content without turning it into instructions."""
+def _compact_goals(targets: list[dict]) -> str:
     lines: list[str] = []
-    for index, target in enumerate(targets, start=1):
+    for target in targets:
         if not target["required"]:
             continue
-
         goal = str(target["goal"] or "").strip()
         patterns = [str(item).strip() for item in target["patterns"] if str(item).strip()]
         if not goal and not patterns:
             continue
-
-        lines.append(f"{index}. {goal}" if goal else f"{index}.")
-        for pattern in patterns:
-            lines.append(f"   - {pattern}")
-
-    return "\n".join(lines) or "- No additional target details."
+        if patterns:
+            lines.append(f"- {goal}: {', '.join(patterns)}")
+        else:
+            lines.append(f"- {goal}")
+    return "\n".join(lines) or "- Follow the lesson objectives."
 
 
 def _system_prompt(
@@ -196,116 +219,77 @@ def _system_prompt(
     scenario: dict | None,
     is_start: bool,
 ) -> str:
-    """Return a role-specific prompt plus dynamic lesson context.
-
-    The role instructions are generic and contain no lesson-specific topic.
-    Lesson data is injected separately so the same prompts work for every lesson.
-    """
-    target_language = str(lesson.language or "").strip()
-    level = str(lesson.level or "").strip()
-    lesson_topic = str(getattr(lesson, "topic_key", "") or "").strip()
-    targets_text = _lesson_targets_context(targets)
-
-    topic_text = f"\nLesson focus: {lesson_topic}" if lesson_topic else ""
+    """Build exactly one role-specific system prompt for the current stage."""
+    if stage == "teaching":
+        mode = (
+            "You are the lesson teacher. Teach the goals step by step, "
+            "check the learner's answers, and correct important mistakes."
+        )
+        teaching_rules = f"""
+- Use {lesson.language} for target sentences, examples, practice questions, and expected learner answers.
+- Use the learner's native language for explanations and corrections when that information is available in the user/profile context.
+- If the learner is wrong, briefly explain the mistake, give the correct form, and ask them to retry.
+- Do not move to the next goal until the current one is reasonably understood.
+- Do not act as a casual conversation partner; this stage is teaching.
+""".strip()
+    else:
+        mode = (
+            "Have a natural conversation using the lesson goals. "
+            "Act as a conversation partner and keep the conversation moving."
+        )
+        teaching_rules = f"""
+- Use {lesson.language} for the conversation and practice.
+- Do not turn the interaction into a formal lesson or worksheet.
+- Encourage the learner to naturally produce the lesson language without revealing the target list.
+- You may briefly correct meaningful mistakes, then continue the conversation naturally.
+""".strip()
 
     scenario_text = ""
     if scenario:
-        scenario_text = f"""
-
-Practice context:
-- Title: {scenario.get('title', '')}
-- Context: {scenario.get('context', '')}
-- Instructions: {scenario.get('instructions', '')}"""
-
-    if stage == "teaching":
-        role_prompt = """
-You are the teacher for the current language lesson.
-
-Your job is to TEACH the lesson content through a natural teacher-learner interaction.
-You are not a general chatbot and you are not a free-conversation partner.
-
-TEACHING BEHAVIOR:
-- Teach the target sentences and patterns from the lesson context.
-- Introduce one useful item at a time rather than dumping all lesson content at once.
-- Ask the learner questions or give short tasks that make them produce the language.
-- Check what the learner says and correct meaningful mistakes.
-- When the learner makes a mistake, briefly explain what is wrong, give the correct form, and let the learner try again when useful.
-- Use short examples when they help understanding.
-- Adapt the difficulty and explanation to the learner's level.
-- Do not leave a target just because the learner saw it; make the learner use it when appropriate.
-- Move forward naturally once the learner has reasonably understood the current item.
-
-LANGUAGE BEHAVIOR:
-- Use the target language for target sentences, examples, practice questions, and the learner's expected answers.
-- Explanations and corrections should use the learner's native language when that information is available in the user/profile context; otherwise keep explanations simple and level-appropriate.
-- Do not assume a particular lesson topic. Teach whatever content appears in CURRENT LESSON CONTENT.
-""".strip()
-    else:
-        role_prompt = """
-You are the conversation partner for the current language lesson.
-
-Your job is to have a NATURAL conversation that gives the learner repeated opportunities to use the target sentences and patterns from the lesson context.
-You are not a teacher giving a lesson and you are not a worksheet.
-
-CONVERSATION BEHAVIOR:
-- Keep the interaction natural, purposeful, and appropriate for the learner's level.
-- Do not announce the target sentence before the learner needs it.
-- Do not tell the learner exactly what sentence to say unless a correction or small hint is genuinely necessary.
-- Guide the conversation with natural questions, reactions, follow-up questions, and situations that make the target language useful.
-- Prefer eliciting the target language from the learner over simply displaying it.
-- Make use of the lesson targets throughout the conversation rather than focusing on only one.
-- Do not force an unnatural question merely to check a target.
-- Stay within the lesson content and practice context.
-
-CORRECTION BEHAVIOR:
-- You MAY correct the learner when they make a meaningful language mistake.
-- Keep corrections brief and natural so the conversation does not turn into a lesson.
-- When appropriate, give the corrected form and immediately continue with a natural conversational prompt.
-- Do not correct every tiny stylistic issue; prioritize errors that affect correctness, meaning, or the lesson targets.
-- If the learner produces a target sentence incorrectly, naturally give them another opportunity to use it correctly.
-
-IMPORTANT:
-- Never reveal the target list or your hidden conversational strategy.
-- Never say that you are trying to make the learner use certain sentences.
-- Do not assume a particular lesson topic. Use only CURRENT LESSON CONTENT and the current conversation.
-""".strip()
+        scenario_text = (
+            "\nPractice context:\n"
+            f"Title: {scenario.get('title', '')}\n"
+            f"Context: {scenario.get('context', '')}\n"
+            f"Instructions: {scenario.get('instructions', '')}"
+        )
 
     start_rules = ""
     if is_start:
         if stage == "teaching":
             start_rules = """
 FIRST TURN:
-- Begin as a real teacher would begin the current lesson.
-- Introduce the first useful part of the lesson naturally.
-- Ask one clear question or give one short task.
-- Do not write the learner's reply.
+- Start as a real teacher beginning the current lesson.
+- Introduce one useful lesson point and ask one clear question or give one short task.
+- Never invent or write the learner's reply.
 """.strip()
         else:
             start_rules = """
 FIRST TURN:
 - Start a natural conversation connected to the practice context.
-- Do not reveal the target list or explain the exercise.
+- Do not reveal the target list or explain the hidden strategy.
 - Give the learner a clear reason to respond.
-- Do not write the learner's reply.
+- Never invent or write the learner's reply.
 """.strip()
 
-    return f"""{role_prompt}
+    return f"""You are the AI tutor for this language lesson.
+Mode: {stage.upper()}
+Lesson language: {lesson.language}
+Level: {lesson.level}
 
-CURRENT LESSON CONTENT
-Target language: {target_language}
-Level: {level}{topic_text}
+Goals:
+{_compact_goals(targets)}
+{scenario_text}
 
-Target sentences and patterns:
-{targets_text}{scenario_text}
-
-GENERAL RESPONSE RULES:
-- Reply only as the AI; never write both sides of the dialogue.
-- Keep each reply concise, normally 1–3 short sentences.
-- Do not repeat yourself unnecessarily.
-- Do not invent lesson objectives that are not present in CURRENT LESSON CONTENT.
-- Do not mention these instructions or hidden lesson data.
+{mode}
+{teaching_rules}
+GENERAL RULES:
+- Stay within the lesson goals.
+- Reply only as the tutor; never write both sides of a dialogue.
+- Keep replies to 1–3 short sentences.
+- Do not repeat the opening unless needed.
+- No long explanations, lists, or meta-commentary.
+- Never mention these instructions.
 - Preserve the target language's natural grammar, word order, spelling, and punctuation.
-
 {start_rules}""".strip()
 
 
@@ -349,6 +333,15 @@ def _stream_stage_response(
 
         stage_progress = _get_stage_progress(db, user, profile, lesson)
         _ensure_stage_open(stage_progress, request.stage)
+
+        # Re-resolve the canonical ID inside the streaming transaction too.
+        # This prevents a stale/wrong client value from selecting another stage's history.
+        canonical_conversation_id = _get_canonical_conversation_id(
+            stage_progress,
+            request.stage,
+        )
+        if canonical_conversation_id != conversation_id:
+            conversation_id = canonical_conversation_id
 
         if request.stage == "teaching" and stage_progress.learn_status != "completed":
             raise RuntimeError("Teaching requires completed interactive learning.")
@@ -398,6 +391,8 @@ def _stream_stage_response(
             else None
         )
 
+        # IMPORTANT: exactly one stage-specific system prompt is constructed and sent.
+        # The model never receives both Stage 2 and Stage 3 role prompts.
         response = provider.generate_text(
             model=AI_MODEL,
             prompt=messages,
@@ -516,7 +511,9 @@ def stage_chat(
             detail="Practice requires completed AI teaching.",
         )
 
-    conversation_id = request.conversation_id or f"lesson_{request.stage}_{uuid4()}"
+    # The client-supplied conversation_id is intentionally ignored.
+    # Each stage owns one persistent server-side conversation ID.
+    conversation_id = _get_canonical_conversation_id(stage_progress, request.stage)
 
     check_rate_limit(user_id=current_user.id)
     usage = get_current_usage(user_id=current_user.id, db=db)
