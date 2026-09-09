@@ -245,6 +245,7 @@ Goals (internal only):
 {_compact_goals(targets)}
 {scenario_text}
 {role_rules}
+Process the lesson targets one at a time. Focus on the current target before moving to the next, and do not mix multiple targets in the same exercise or response.
 Use short, simple sentences that match the learner's level.
 Use the learner's native language for explanations/corrections when available.
 Reply only as the tutor/partner. Never invent the learner's response. Keep replies short (1–3 sentences).
@@ -295,6 +296,9 @@ def _stream_stage_response(
 
         is_control_message = request.message == "START_STAGE"
 
+        # START_STAGE always begins a clean AI session. Reusing an old
+        # conversation here makes the tutor sound as if the learner already
+        # spoke before opening the page and also wastes input tokens on stale history.
         if is_control_message:
             conversation_id = _new_stage_conversation_id(stage_progress, request.stage)
             history = []
