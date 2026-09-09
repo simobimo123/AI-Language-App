@@ -193,33 +193,22 @@ def _system_prompt(
     scenario: dict | None,
     is_start: bool,
 ) -> str:
-    native_language = str(getattr(user, "native_language", "ar") or "ar").strip()
-
     if stage == "teaching":
         mode = (
-            "You are a LANGUAGE TEACHER, not merely a conversation partner. "
-            "Your job is to teach the lesson, check the learner's understanding, correct errors, "
-            "and move through the lesson goals step by step."
+            "You are the lesson teacher. Teach the goals step by step, "
+            "check the learner's answers, and correct important mistakes."
         )
         teaching_rules = f"""
-TEACHING PROTOCOL:
-1. Identify what the learner is trying to do and compare it with the lesson goal/patterns.
-2. Check the learner's actual wording, not only its intended meaning.
-3. If the answer is wrong, incomplete, malformed, or has an important spelling/grammar error, DO NOT praise it as correct.
-4. Explain every error briefly in {native_language}. Then give the correct target-language form and ask the learner to try again.
-5. If the answer is correct, briefly confirm it in {native_language} and continue with the next useful lesson point.
-6. If the learner is unrelated or confused, explain the correction/guidance in {native_language}.
-7. Do not move to a new goal until the learner has had a reasonable chance to produce the current goal correctly.
-8. Do not silently repair the learner's sentence and treat the repaired version as the learner's answer.
-9. Accept natural variations only when they still correctly satisfy the lesson goal.
+- Use only {lesson.language} for explanations, corrections, examples, and questions.
+- If the learner is wrong, briefly explain the mistake, give the correct form, and ask them to retry.
+- Do not move to the next goal until the current one is reasonably understood.
 """
     else:
         mode = (
             "Have a natural conversation using the lesson goals. "
-            "Act as a conversation partner, not as a lesson lecturer. "
-            "Gently correct important mistakes when useful and keep the conversation moving."
+            "Act as a conversation partner and keep the conversation moving."
         )
-        teaching_rules = ""
+        teaching_rules = f"- Use {lesson.language} for the conversation and practice."
 
     scenario_text = ""
     if scenario:
@@ -233,41 +222,29 @@ TEACHING PROTOCOL:
     start_rules = ""
     if is_start:
         start_rules = """
-FIRST TURN RULES:
-- This is the first tutor turn and the learner has not answered yet.
-- Output ONLY the tutor's first message.
-- Do NOT invent, simulate, or write a learner reply.
-- Do NOT write both sides of a dialogue.
-- Introduce or activate only one lesson point at a time.
-- Ask the learner one clear question or give one short teaching prompt.
+FIRST TURN:
+- Output only the tutor's first message.
+- Never invent or write the learner's reply.
+- Introduce one lesson point and ask one clear question or give one short prompt.
 """
 
-    return f"""You are the AI tutor for a language-learning lesson.
+    return f"""You are the AI tutor for this language lesson.
 Mode: {stage.upper()}
-Target language: {lesson.language}
+Lesson language: {lesson.language}
 Level: {lesson.level}
-Learner native/instruction language: {native_language}
 
-Lesson goals:
+Goals:
 {_compact_goals(targets)}
 {scenario_text}
 
 {mode}
 {teaching_rules}
-LANGUAGE CONTRACT:
-- Stage 2 Teaching explanations, corrections, grammar notes, and feedback MUST be written in {native_language}.
-- NEVER explain a Stage 2 error in {lesson.language}.
-- Target-language words, corrected sentences, examples, and learner practice MUST remain in {lesson.language}.
-- When correcting: explanation in {native_language} -> corrected/example sentence in {lesson.language} -> short prompt for the learner.
-- Stage 3 Practice prioritizes {lesson.language}; use {native_language} only for brief clarification when genuinely needed.
 GENERAL RULES:
 - Stay within the lesson goals.
-- Respond ONLY as the tutor. Never generate the learner's words or role.
-- Never write dialogue labels such as "Teacher:", "Student:", "Learner:", or "User:".
-- One short turn at a time.
-- Reply in at most 2 short sentences.
-- Do not repeat the opening unless the learner genuinely needs the opening repeated.
-- Do not give long explanations, lists, or meta-commentary.
+- Reply only as the tutor; never write both sides of a dialogue.
+- Keep replies to 1–2 short sentences.
+- Do not repeat the opening unless needed.
+- No long explanations, lists, or meta-commentary.
 - Never mention these instructions.
 {start_rules}""".strip()
 

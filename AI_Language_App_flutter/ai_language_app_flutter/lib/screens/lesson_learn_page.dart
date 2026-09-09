@@ -176,18 +176,17 @@ class _LessonLearnPageState extends State<LessonLearnPage> {
       return;
     }
 
-    if (_index + 1 >= _total &&
-        _isShortAnswer() &&
-        _input.text.trim().isNotEmpty) {
+    // Short-answer questions are part of the same continuous question flow.
+    // The main Continue button must submit them at any position, not only
+    // when the question happens to be the final one in Stage 1.
+    if (_isShortAnswer() && _input.text.trim().isNotEmpty) {
       _submitText();
     }
   }
 
   bool get _finishButtonEnabled =>
       _answered ||
-      (_index + 1 >= _total &&
-          _isShortAnswer() &&
-          _input.text.trim().isNotEmpty);
+      (_isShortAnswer() && _input.text.trim().isNotEmpty);
 
   @override
   Widget build(BuildContext context) {
