@@ -214,6 +214,44 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
     }
   }
 
+  InlineSpan _messageSpan(
+    String text,
+    TextStyle baseStyle,
+    Color highlightColor,
+  ) {
+    final pattern = RegExp(r'\*\*(.+?)\*\*', dotAll: true);
+    final matches = pattern.allMatches(text);
+    if (matches.isEmpty) {
+      return TextSpan(text: text, style: baseStyle);
+    }
+
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final match in matches) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(
+          text: text.substring(cursor, match.start),
+          style: baseStyle,
+        ));
+      }
+      spans.add(TextSpan(
+        text: match.group(1),
+        style: baseStyle.copyWith(
+          color: highlightColor,
+          fontWeight: FontWeight.w700,
+        ),
+      ));
+      cursor = match.end;
+    }
+    if (cursor < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(cursor),
+        style: baseStyle,
+      ));
+    }
+    return TextSpan(children: spans);
+  }
+
   Widget _messageActions(BuildContext context, int index) {
     final theme = Theme.of(context);
     final translation = _translations[index];
@@ -451,6 +489,11 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
     final messageDirection = isUser
         ? directionForText(message.text, fallback: _learningDirection)
         : _learningDirection;
+    final baseTextStyle = theme.textTheme.bodyLarge?.copyWith(
+          color: foregroundColor,
+          height: 1.5,
+        ) ??
+        TextStyle(color: foregroundColor, height: 1.5);
 
     return Align(
       alignment: isUser
@@ -505,12 +548,12 @@ class _LessonTeachingPageState extends State<LessonTeachingPage> {
                     children: [
                       Directionality(
                         textDirection: messageDirection,
-                        child: Text(
-                          message.text,
+                        child: RichText(
                           textAlign: TextAlign.start,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: foregroundColor,
-                            height: 1.5,
+                          text: _messageSpan(
+                            message.text,
+                            baseTextStyle,
+                            isUser ? foregroundColor : Colors.red.shade700,
                           ),
                         ),
                       ),
