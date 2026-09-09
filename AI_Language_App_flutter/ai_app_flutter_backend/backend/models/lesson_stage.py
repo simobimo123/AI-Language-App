@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
 
 class UserLessonStageProgress(Base):
-    """Persistent state for the three independent stages of a lesson."""
+    """Persistent state for the two active stages of a lesson."""
 
     __tablename__ = "user_lesson_stage_progress"
 
@@ -28,18 +28,13 @@ class UserLessonStageProgress(Base):
         index=True,
     )
 
-    learn_status: Mapped[str] = mapped_column(
-        String(20), default="available", nullable=False
-    )
     teaching_status: Mapped[str] = mapped_column(
-        String(20), default="locked", nullable=False
+        String(20), default="available", nullable=False
     )
     practice_status: Mapped[str] = mapped_column(
         String(20), default="locked", nullable=False
     )
 
-    learn_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    learn_completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     teaching_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     teaching_completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     practice_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
