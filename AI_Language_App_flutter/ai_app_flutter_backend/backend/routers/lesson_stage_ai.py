@@ -437,16 +437,20 @@ def stage_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    lesson = _get_lesson(db, request.lesson_id)
+
     profile = db.scalar(
         select(LearningProfile).where(
             LearningProfile.user_id == current_user.id,
-            LearningProfile.is_active.is_(True),
+            LearningProfile.language == lesson.language,
         )
     )
     if profile is None:
-        raise HTTPException(status_code=404, detail="Active learning profile not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Learning profile not found for this lesson language.",
+        )
 
-    lesson = _get_lesson(db, request.lesson_id)
     progress = _get_stage_progress(db, current_user, profile, lesson)
     _ensure_stage_open(progress, request.stage)
 
