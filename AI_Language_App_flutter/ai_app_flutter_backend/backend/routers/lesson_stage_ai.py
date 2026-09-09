@@ -193,16 +193,13 @@ def _system_prompt(
     scenario: dict | None,
     is_start: bool,
 ) -> str:
-    native_language = str(getattr(user, "native_language", "ar") or "ar").strip()
-
     if stage == "teaching":
         mode = (
             "You are the lesson teacher. Teach the goals step by step, "
             "check the learner's answers, and correct important mistakes."
         )
         teaching_rules = f"""
-- Use {native_language} for explanations, corrections, and teaching feedback.
-- Keep target-language examples and learner practice in {lesson.language}.
+- Use only {lesson.language} for explanations, corrections, examples, and questions.
 - If the learner is wrong, briefly explain the mistake, give the correct form, and ask them to retry.
 - Do not move to the next goal until the current one is reasonably understood.
 """
