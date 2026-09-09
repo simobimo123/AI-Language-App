@@ -1,17 +1,16 @@
-"""AI tutor for lesson stages 2 and 3."""
+from __future__ import annotations
 
 import logging
 from datetime import datetime
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from database import SessionLocal, get_db
-from models import (
+from ..database import SessionLocal, get_db
+from ..models import (
     CourseLesson,
     LearningProfile,
     LessonPracticeScenario,
@@ -20,30 +19,32 @@ from models import (
     User,
     UserLessonStageProgress,
 )
-from routers.auth import get_current_user
-from services.ai.client import AI_MODEL
-from services.ai.conversation import get_conversation_history, save_conversation_message
-from services.ai.provider import provider
-from services.ai.rate_limit import check_rate_limit
-from services.ai.response_stream import sse_event
-from services.ai.usage import DAILY_AI_LIMIT, get_current_usage, record_api_usage, reserve_ai_request
+from ..services.ai.provider import AI_MODEL, provider
+from ..services.ai.usage import record_api_usage
+from ..services.auth import get_current_user
+from ..services.lesson_chat import get_conversation_history, save_conversation_message
 
-router = APIRouter(prefix="/ai/lesson", tags=["AI Lesson Stages"])
 logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/ai/lesson", tags=["Lesson AI"])
 
 MAX_STAGE_EXCHANGES = 20
-MAX_HISTORY_MESSAGES = 4
-MAX_HISTORY_CHARS_PER_MESSAGE = 220
-MAX_LEARNER_MESSAGE_CHARS = 600
-MAX_OUTPUT_TOKENS = 350
+MAX_HISTORY_MESSAGES = 40
+MAX_HISTORY_CHARS_PER_MESSAGE = 1800
+MAX_LEARNER_MESSAGE_CHARS = 800
+MAX_OUTPUT_TOKENS = 420
 
 
 class StageChatRequest(BaseModel):
     lesson_id: int = Field(gt=0)
     stage: str = Field(pattern="^(teaching|practice)$")
     message: str = Field(min_length=1, max_length=800)
-    # Kept for compatibility; the backend always uses the stage's canonical ID.
     conversation_id: str | None = Field(default=None, min_length=1, max_length=120)
+
+
+def sse_event(event: str, data: dict) -> str:
+    import json
+
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
 def _get_lesson(db: Session, lesson_id: int) -> CourseLesson:
@@ -51,21 +52,6 @@ def _get_lesson(db: Session, lesson_id: int) -> CourseLesson:
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found.")
     return lesson
-
-
-def _get_profile(db: Session, user: User, lesson: CourseLesson) -> LearningProfile:
-    profile = db.scalar(
-        select(LearningProfile).where(
-            LearningProfile.user_id == user.id,
-            LearningProfile.language == lesson.language,
-        )
-    )
-    if profile is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Learning profile not found for this lesson language.",
-        )
-    return profile
 
 
 def _get_stage_progress(
@@ -77,6 +63,7 @@ def _get_stage_progress(
     progress = db.scalar(
         select(UserLessonStageProgress).where(
             UserLessonStageProgress.user_id == user.id,
+            UserLessonStageProgress.learning_profile_id == profile.id,
             UserLessonStageProgress.lesson_id == lesson.id,
         )
     )
@@ -85,7 +72,7 @@ def _get_stage_progress(
             user_id=user.id,
             learning_profile_id=profile.id,
             lesson_id=lesson.id,
-            learn_status="available",
+            learn_status="locked",
             teaching_status="locked",
             practice_status="locked",
         )
@@ -108,6 +95,16 @@ def _ensure_stage_open(progress: UserLessonStageProgress, stage: str) -> None:
         )
 
 
+def _new_stage_conversation_id(
+    progress: UserLessonStageProgress,
+    stage: str,
+) -> str:
+    field_name = f"{stage}_conversation_id"
+    conversation_id = f"lesson_{stage}_{uuid4()}"
+    setattr(progress, field_name, conversation_id)
+    return conversation_id
+
+
 def _get_canonical_conversation_id(
     progress: UserLessonStageProgress,
     stage: str,
@@ -117,9 +114,7 @@ def _get_canonical_conversation_id(
     current = str(getattr(progress, field_name, "") or "").strip()
     if current and current.startswith(prefix):
         return current
-    conversation_id = f"{prefix}{uuid4()}"
-    setattr(progress, field_name, conversation_id)
-    return conversation_id
+    return _new_stage_conversation_id(progress, stage)
 
 
 def _targets(db: Session, lesson_id: int) -> list[dict]:
@@ -294,9 +289,26 @@ def _stream_stage_response(
         stage_progress = _get_stage_progress(db, user, profile, lesson)
         _ensure_stage_open(stage_progress, request.stage)
 
-        canonical_conversation_id = _get_canonical_conversation_id(stage_progress, request.stage)
-        if canonical_conversation_id != conversation_id:
-            conversation_id = canonical_conversation_id
+        is_control_message = request.message == "START_STAGE"
+
+        # START_STAGE always begins a clean AI session. Reusing an old
+        # conversation here makes the tutor sound as if the learner already
+        # spoke before opening the page and also wastes input tokens on stale history.
+        if is_control_message:
+            conversation_id = _new_stage_conversation_id(stage_progress, request.stage)
+            history = []
+        else:
+            canonical_conversation_id = _get_canonical_conversation_id(
+                stage_progress, request.stage
+            )
+            if canonical_conversation_id != conversation_id:
+                conversation_id = canonical_conversation_id
+            history = get_conversation_history(
+                user_id=user.id,
+                conversation_id=conversation_id,
+                max_messages=40,
+                db=db,
+            )
 
         if request.stage == "teaching" and stage_progress.learn_status != "completed":
             raise RuntimeError("Teaching requires completed interactive learning.")
@@ -307,14 +319,7 @@ def _stream_stage_response(
         if not any(target["required"] for target in targets):
             raise RuntimeError("Lesson has no required training targets.")
 
-        history = get_conversation_history(
-            user_id=user.id,
-            conversation_id=conversation_id,
-            max_messages=40,
-            db=db,
-        )
         exchange_count_before = _exchange_count(history)
-        is_control_message = request.message == "START_STAGE"
 
         if exchange_count_before >= MAX_STAGE_EXCHANGES and not is_control_message:
             _complete_stage(
@@ -429,38 +434,28 @@ def stage_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    profile = db.scalar(
+        select(LearningProfile).where(
+            LearningProfile.user_id == current_user.id,
+            LearningProfile.is_active.is_(True),
+        )
+    )
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Active learning profile not found.")
+
     lesson = _get_lesson(db, request.lesson_id)
-    profile = _get_profile(db, current_user, lesson)
-    stage_progress = _get_stage_progress(db, current_user, profile, lesson)
-    _ensure_stage_open(stage_progress, request.stage)
+    progress = _get_stage_progress(db, current_user, profile, lesson)
+    _ensure_stage_open(progress, request.stage)
 
-    if request.stage == "teaching" and stage_progress.learn_status != "completed":
-        raise HTTPException(
-            status_code=409,
-            detail="Teaching requires completed interactive learning.",
-        )
-    if request.stage == "practice" and stage_progress.teaching_status != "completed":
-        raise HTTPException(
-            status_code=409,
-            detail="Practice requires completed AI teaching.",
-        )
+    is_control_message = request.message == "START_STAGE"
+    if is_control_message:
+        conversation_id = _new_stage_conversation_id(progress, request.stage)
+        db.commit()
+    else:
+        conversation_id = _get_canonical_conversation_id(progress, request.stage)
+        db.commit()
 
-    conversation_id = _get_canonical_conversation_id(stage_progress, request.stage)
-
-    check_rate_limit(user_id=current_user.id)
-    usage = get_current_usage(user_id=current_user.id, db=db)
-    if usage.request_count >= DAILY_AI_LIMIT:
-        raise HTTPException(status_code=429, detail="Daily AI limit reached.")
-    reserve_ai_request(user_id=current_user.id, db=db)
-
-    now = datetime.utcnow()
-    if request.stage == "teaching" and stage_progress.teaching_started_at is None:
-        stage_progress.teaching_started_at = now
-        stage_progress.teaching_status = "available"
-    if request.stage == "practice" and stage_progress.practice_started_at is None:
-        stage_progress.practice_started_at = now
-        stage_progress.practice_status = "available"
-    db.commit()
+    from fastapi.responses import StreamingResponse
 
     return StreamingResponse(
         _stream_stage_response(
@@ -474,5 +469,6 @@ def stage_chat(
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
         },
     )
