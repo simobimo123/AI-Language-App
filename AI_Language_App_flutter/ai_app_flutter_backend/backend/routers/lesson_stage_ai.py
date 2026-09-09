@@ -231,10 +231,13 @@ Use short, level-appropriate language.
 Give one task or question, then wait for the learner's answer.
 Never speak for the learner or answer your own questions.
 Output only words intended for the learner. Never output lesson metadata, headings, labels, plans, task descriptions, or parenthetical instructions.
+Understand the learner's intended meaning, even when the answer is incomplete or uses only a word or short phrase.
+When the answer is incomplete, briefly show the natural complete form and ask the learner to say it.
+Do not merely repeat the same request.
 Check the answer before moving to the next target.
 If correct, give brief feedback and continue. If wrong, correct briefly and ask for a retry.
 Use the learner's native language for brief explanations when needed.
-Never invent learner responses. Reply only as the tutor.{start_rule}""".strip()
+Never invent learner responses or placeholders such as {{name}}. Reply only as the tutor.{start_rule}""".strip()
 
 
 def _practice_system_prompt(
@@ -257,10 +260,12 @@ Ask one question at a time and wait for the learner's answer.
 Never speak for the learner or answer your own questions.
 Do not invent learner responses.
 Output only words intended for the learner. Never output lesson metadata, headings, labels, plans, or parenthetical instructions.
+Understand the learner's intended meaning, even when the answer is incomplete or uses only a word or short phrase.
+When correction is needed, briefly give the natural form and continue the conversation; do not merely repeat the same request.
 Keep language short and level-appropriate.
 Correct only important mistakes briefly.
 Do not turn the conversation into a formal lesson or worksheet.
-Reply only as the conversation partner.{start_rule}""".strip()
+Never output placeholders such as {{name}}. Reply only as the conversation partner.{start_rule}""".strip()
 
 
 def _system_prompt(
