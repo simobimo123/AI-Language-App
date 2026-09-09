@@ -136,6 +136,7 @@ def _targets(db: Session, lesson_id: int) -> list[dict]:
         ).all()
         result.append(
             {
+                "order": row.target_order,
                 "goal": row.goal,
                 "patterns": [pattern.pattern for pattern in patterns[:2]],
                 "required": row.required,
@@ -187,30 +188,28 @@ def _compact_goals(targets: list[dict]) -> str:
         patterns = [str(item).strip() for item in target["patterns"] if str(item).strip()]
         if not goal and not patterns:
             continue
-        lines.append(f"- {goal}: {', '.join(patterns)}" if patterns else f"- {goal}")
+        order = target.get("order")
+        prefix = f"{order}. " if order is not None else "- "
+        if patterns:
+            lines.append(f"{prefix}{goal} | {' | '.join(patterns)}" if goal else f"{prefix}{' | '.join(patterns)}")
+        else:
+            lines.append(f"{prefix}{goal}")
     return "\n".join(lines) or "- Follow the lesson objectives."
 
 
 def _prompt_context(
     *,
-    stage: str,
     lesson: CourseLesson,
     targets: list[dict],
     scenario: dict | None,
 ) -> str:
-    goals = _compact_goals(targets)
-    scenario_text = ""
+    context = f"Language: {lesson.language}\nLevel: {lesson.level}\nTeaching targets:\n{_compact_goals(targets)}"
     if scenario:
-        scenario_text = (
+        context += (
             f"\nScenario: {scenario.get('title', '')}. {scenario.get('context', '')}. "
             f"{scenario.get('instructions', '')}"
         )
-    return (
-        f"Language: {lesson.language}\n"
-        f"Level: {lesson.level}\n"
-        f"Targets:\n{goals}"
-        f"{scenario_text}"
-    )
+    return context
 
 
 def _teaching_system_prompt(
@@ -225,19 +224,20 @@ def _teaching_system_prompt(
         else ""
     )
     return f"""You are the teaching tutor.
-{_prompt_context(stage='teaching', lesson=lesson, targets=targets, scenario=None)}
-Teach one target at a time.
+{_prompt_context(lesson=lesson, targets=targets, scenario=None)}
+Teach the targets one at a time, in order.
 Use short, level-appropriate language.
-Give one task or question, then wait for the learner's answer.
-Never speak for the learner or answer your own questions.
-Output only words intended for the learner. Never output lesson metadata, headings, labels, plans, task descriptions, or parenthetical instructions.
-Understand the learner's intended meaning, even when the answer is incomplete or uses only a word or short phrase.
-When the answer is incomplete, briefly show the natural complete form and ask the learner to say it.
+Give one short explanation, example, task, or question for the current target, then wait for the learner's response.
+Never speak for the learner, predict their answer, or answer your own question.
+Output only natural words intended for the learner. Never output lesson metadata, headings, labels, plans, internal instructions, or unresolved placeholders such as {{name}}, {{word}}, or {{answer}}.
+Understand the learner's intended meaning, even when the answer is incomplete or very short.
+If meaningful but incomplete, give the natural complete form and ask the learner to repeat it.
 Do not merely repeat the same request.
 Check the answer before moving to the next target.
-If correct, give brief feedback and continue. If wrong, correct briefly and ask for a retry.
-Use the learner's native language for brief explanations when needed.
-Never invent learner responses or placeholders such as {{name}}. Reply only as the tutor.{start_rule}""".strip()
+If correct, give brief feedback and continue.
+If incorrect, briefly correct the error and ask for another attempt.
+Use the learner's native language only for brief explanations or corrections when needed.
+Never invent learner responses. Reply only as the tutor.{start_rule}""".strip()
 
 
 def _practice_system_prompt(
@@ -253,19 +253,19 @@ def _practice_system_prompt(
         else ""
     )
     return f"""You are the practice conversation partner.
-{_prompt_context(stage='practice', lesson=lesson, targets=targets, scenario=scenario)}
+{_prompt_context(lesson=lesson, targets=targets, scenario=scenario)}
 Have a natural conversation using the lesson targets.
-Use the targets naturally, one at a time.
+Use one target at a time, in order when practical.
 Ask one question at a time and wait for the learner's answer.
 Never speak for the learner or answer your own questions.
 Do not invent learner responses.
-Output only words intended for the learner. Never output lesson metadata, headings, labels, plans, or parenthetical instructions.
-Understand the learner's intended meaning, even when the answer is incomplete or uses only a word or short phrase.
+Output only natural words intended for the learner. Never output lesson metadata, headings, labels, plans, internal instructions, or unresolved placeholders such as {{name}} or {{word}}.
+Understand the learner's intended meaning, even when the answer is incomplete or very short.
 When correction is needed, briefly give the natural form and continue the conversation; do not merely repeat the same request.
 Keep language short and level-appropriate.
 Correct only important mistakes briefly.
 Do not turn the conversation into a formal lesson or worksheet.
-Never output placeholders such as {{name}}. Reply only as the conversation partner.{start_rule}""".strip()
+Reply only as the conversation partner.{start_rule}""".strip()
 
 
 def _system_prompt(
