@@ -25,8 +25,6 @@ from .learning import CourseLesson, UserLessonProgress, Word
 from .lesson_stage import UserLessonStageProgress
 from .lesson_content import LessonContent
 from .lesson_curriculum import (
-    LessonLearningItem,
-    LessonLearningQuestion,
     LessonPracticeScenario,
     LessonTarget,
     LessonTargetPattern,
