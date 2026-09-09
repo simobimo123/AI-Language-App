@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database import SessionLocal, get_db
-from ..models import (
+from database import SessionLocal, get_db
+from models import (
     CourseLesson,
     LearningProfile,
     LessonPracticeScenario,
@@ -19,10 +19,10 @@ from ..models import (
     User,
     UserLessonStageProgress,
 )
-from ..services.ai.provider import AI_MODEL, provider
-from ..services.ai.usage import record_api_usage
-from ..services.auth import get_current_user
-from ..services.lesson_chat import get_conversation_history, save_conversation_message
+from services.ai.provider import AI_MODEL, provider
+from services.ai.usage import record_api_usage
+from services.auth import get_current_user
+from services.lesson_chat import get_conversation_history, save_conversation_message
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai/lesson", tags=["Lesson AI"])
