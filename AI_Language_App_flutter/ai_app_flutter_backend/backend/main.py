@@ -10,6 +10,7 @@ import migrations_learning_bank  # noqa: F401
 import migrations_lesson_progress  # noqa: F401
 import migrations_lesson_stages  # noqa: F401
 import migrations_lesson_curriculum  # noqa: F401
+import migrations_remove_lesson_learn_stage  # noqa: F401
 
 # The canonical lesson importer lives beside the backend package so it can
 # also be executed directly from the project root. Add that project directory
