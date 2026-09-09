@@ -21,8 +21,11 @@ from models import (
 )
 from services.ai.provider import AI_MODEL, provider
 from services.ai.usage import record_api_usage
-from services.auth import get_current_user
-from services.lesson_chat import get_conversation_history, save_conversation_message
+from routers.auth import get_current_user
+from services.ai.conversation import (
+    get_conversation_history,
+    save_conversation_message,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai/lesson", tags=["Lesson AI"])
