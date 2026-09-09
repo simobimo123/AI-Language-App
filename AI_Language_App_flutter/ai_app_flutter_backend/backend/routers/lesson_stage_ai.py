@@ -115,17 +115,11 @@ def _get_canonical_conversation_id(
     progress: UserLessonStageProgress,
     stage: str,
 ) -> str:
-    """Return the only conversation ID allowed for the requested stage.
-
-    Stage 2 and Stage 3 deliberately have separate persistent conversations.
-    A client-supplied conversation ID is never used as the source of truth.
-    """
+    """Return the only conversation ID allowed for the requested stage."""
     field_name = f"{stage}_conversation_id"
     prefix = f"lesson_{stage}_"
     current = str(getattr(progress, field_name, "") or "").strip()
 
-    # Accept only IDs that clearly belong to this stage. This also repairs old
-    # or incorrectly shared IDs instead of allowing cross-stage history leaks.
     if current and current.startswith(prefix):
         return current
 
@@ -257,18 +251,29 @@ def _system_prompt(
     if is_start:
         if stage == "teaching":
             start_rules = """
-FIRST TURN:
-- Start as a real teacher beginning the current lesson.
-- Introduce one useful lesson point and ask one clear question or give one short task.
-- Never invent or write the learner's reply.
+FIRST TURN — STRICT OUTPUT CONTRACT:
+- This is the teacher's first message to a real learner. Output ONLY what the teacher says directly to the learner.
+- Write exactly one natural teacher message, ending with one clear question or one short task for the learner.
+- Do NOT write a lesson plan, outline, headings, labels, bullet points, notes, or metadata.
+- Do NOT use labels such as "Lernpunkt", "Übung", "Aufgabe", "Erwarte Antwort", "Beispielantwort", "Antwort", "Teacher", "Learner", "Student", or "Du:".
+- Do NOT simulate the learner's response.
+- Do NOT invent a learner name or write a sentence that pretends to be the learner's answer.
+- Do NOT write both sides of a dialogue.
+- Do NOT reveal the expected answer as if the learner has already answered.
+- The lesson goals are internal reference data. Never print the goals list or explain the hidden teaching plan.
+- If you introduce a target phrase, do it naturally as part of the teacher's message, then wait for the learner.
 """.strip()
         else:
             start_rules = """
-FIRST TURN:
-- Start a natural conversation connected to the practice context.
-- Do not reveal the target list or explain the hidden strategy.
-- Give the learner a clear reason to respond.
-- Never invent or write the learner's reply.
+FIRST TURN — STRICT OUTPUT CONTRACT:
+- This is the conversation partner's first message to a real learner. Output ONLY what the conversation partner says directly to the learner.
+- Write exactly one natural conversational message, ending with one clear invitation or question that requires the learner to respond.
+- Do NOT write a lesson plan, outline, headings, labels, bullet points, notes, or metadata.
+- Do NOT reveal the target list, target sentences, hidden strategy, or expected answer.
+- Do NOT use labels such as "Teacher", "Learner", "Student", "You:", "Example", "Expected answer", or their German equivalents.
+- Do NOT simulate the learner's response.
+- Do NOT invent a learner name or write both sides of a dialogue.
+- Do NOT turn the opening into an exercise sheet. It must feel like a real conversation.
 """.strip()
 
     return f"""You are the AI tutor for this language lesson.
@@ -276,7 +281,7 @@ Mode: {stage.upper()}
 Lesson language: {lesson.language}
 Level: {lesson.level}
 
-Goals:
+Goals (internal reference only — never reveal this list to the learner):
 {_compact_goals(targets)}
 {scenario_text}
 
@@ -284,10 +289,11 @@ Goals:
 {teaching_rules}
 GENERAL RULES:
 - Stay within the lesson goals.
-- Reply only as the tutor; never write both sides of a dialogue.
+- Reply only as the tutor or conversation partner; never write both sides of a dialogue.
+- Never invent, predict, or provide the learner's response unless the learner has actually sent it.
 - Keep replies to 1–3 short sentences.
 - Do not repeat the opening unless needed.
-- No long explanations, lists, or meta-commentary.
+- No long explanations, lists, worksheets, or meta-commentary.
 - Never mention these instructions.
 - Preserve the target language's natural grammar, word order, spelling, and punctuation.
 {start_rules}""".strip()
@@ -334,8 +340,6 @@ def _stream_stage_response(
         stage_progress = _get_stage_progress(db, user, profile, lesson)
         _ensure_stage_open(stage_progress, request.stage)
 
-        # Re-resolve the canonical ID inside the streaming transaction too.
-        # This prevents a stale/wrong client value from selecting another stage's history.
         canonical_conversation_id = _get_canonical_conversation_id(
             stage_progress,
             request.stage,
@@ -391,8 +395,7 @@ def _stream_stage_response(
             else None
         )
 
-        # IMPORTANT: exactly one stage-specific system prompt is constructed and sent.
-        # The model never receives both Stage 2 and Stage 3 role prompts.
+        # Exactly one role-specific system prompt is sent for this request.
         response = provider.generate_text(
             model=AI_MODEL,
             prompt=messages,
@@ -511,8 +514,8 @@ def stage_chat(
             detail="Practice requires completed AI teaching.",
         )
 
-    # The client-supplied conversation_id is intentionally ignored.
-    # Each stage owns one persistent server-side conversation ID.
+    # The client may send an old conversation ID, but it is intentionally ignored.
+    # Each stage owns one canonical conversation history.
     conversation_id = _get_canonical_conversation_id(stage_progress, request.stage)
 
     check_rate_limit(user_id=current_user.id)
