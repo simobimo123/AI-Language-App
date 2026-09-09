@@ -4,7 +4,7 @@ from database import engine
 
 
 def ensure_lesson_curriculum() -> None:
-    """Create normalized curriculum tables used by the three lesson stages."""
+    """Create normalized curriculum tables used by AI teaching and practice."""
     with engine.begin() as connection:
         inspector = inspect(connection)
         tables = set(inspector.get_table_names())
@@ -25,9 +25,7 @@ def ensure_lesson_curriculum() -> None:
                     CONSTRAINT uq_lesson_target_order UNIQUE (lesson_id, target_order)
                 )
             """))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_targets_lesson_id ON lesson_targets (lesson_id)"
-            ))
+            connection.execute(text("CREATE INDEX ix_lesson_targets_lesson_id ON lesson_targets (lesson_id)"))
 
         if "lesson_target_patterns" not in tables:
             connection.execute(text("""
@@ -40,58 +38,7 @@ def ensure_lesson_curriculum() -> None:
                     CONSTRAINT uq_lesson_target_pattern UNIQUE (target_id, pattern)
                 )
             """))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_target_patterns_target_id ON lesson_target_patterns (target_id)"
-            ))
-
-        if "lesson_learning_items" not in tables:
-            connection.execute(text("""
-                CREATE TABLE lesson_learning_items (
-                    id SERIAL PRIMARY KEY,
-                    lesson_id INTEGER NOT NULL REFERENCES course_lessons(id) ON DELETE CASCADE,
-                    target_id INTEGER REFERENCES lesson_targets(id) ON DELETE SET NULL,
-                    item_key VARCHAR(100) NOT NULL,
-                    item_order INTEGER NOT NULL,
-                    item_type VARCHAR(40) NOT NULL DEFAULT 'teaching',
-                    target_text TEXT NOT NULL,
-                    pronunciation TEXT,
-                    translations JSON NOT NULL DEFAULT '{}'::json,
-                    extra_data JSON NOT NULL DEFAULT '{}'::json,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    CONSTRAINT uq_lesson_learning_item_key UNIQUE (lesson_id, item_key),
-                    CONSTRAINT uq_lesson_learning_item_order UNIQUE (lesson_id, item_order)
-                )
-            """))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_learning_items_lesson_id ON lesson_learning_items (lesson_id)"
-            ))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_learning_items_target_id ON lesson_learning_items (target_id)"
-            ))
-
-        if "lesson_learning_questions" not in tables:
-            connection.execute(text("""
-                CREATE TABLE lesson_learning_questions (
-                    id SERIAL PRIMARY KEY,
-                    lesson_id INTEGER NOT NULL REFERENCES course_lessons(id) ON DELETE CASCADE,
-                    target_id INTEGER REFERENCES lesson_targets(id) ON DELETE SET NULL,
-                    question_key VARCHAR(100) NOT NULL,
-                    question_order INTEGER NOT NULL,
-                    question_type VARCHAR(40) NOT NULL DEFAULT 'multiple_choice',
-                    correct_answer TEXT NOT NULL,
-                    accepted_answers JSON NOT NULL DEFAULT '[]'::json,
-                    translations JSON NOT NULL DEFAULT '{}'::json,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    CONSTRAINT uq_lesson_learning_question_key UNIQUE (lesson_id, question_key),
-                    CONSTRAINT uq_lesson_learning_question_order UNIQUE (lesson_id, question_order)
-                )
-            """))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_learning_questions_lesson_id ON lesson_learning_questions (lesson_id)"
-            ))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_learning_questions_target_id ON lesson_learning_questions (target_id)"
-            ))
+            connection.execute(text("CREATE INDEX ix_lesson_target_patterns_target_id ON lesson_target_patterns (target_id)"))
 
         if "lesson_practice_scenarios" not in tables:
             connection.execute(text("""
@@ -108,9 +55,7 @@ def ensure_lesson_curriculum() -> None:
                     CONSTRAINT uq_lesson_practice_scenario_key UNIQUE (lesson_id, scenario_key)
                 )
             """))
-            connection.execute(text(
-                "CREATE INDEX ix_lesson_practice_scenarios_lesson_id ON lesson_practice_scenarios (lesson_id)"
-            ))
+            connection.execute(text("CREATE INDEX ix_lesson_practice_scenarios_lesson_id ON lesson_practice_scenarios (lesson_id)"))
 
         if "user_lesson_target_progress" not in tables:
             connection.execute(text("""
@@ -132,15 +77,9 @@ def ensure_lesson_curriculum() -> None:
                     CONSTRAINT uq_user_lesson_target_progress UNIQUE (user_id, lesson_id, target_id)
                 )
             """))
-            connection.execute(text(
-                "CREATE INDEX ix_user_lesson_target_progress_user_id ON user_lesson_target_progress (user_id)"
-            ))
-            connection.execute(text(
-                "CREATE INDEX ix_user_lesson_target_progress_lesson_id ON user_lesson_target_progress (lesson_id)"
-            ))
-            connection.execute(text(
-                "CREATE INDEX ix_user_lesson_target_progress_target_id ON user_lesson_target_progress (target_id)"
-            ))
+            connection.execute(text("CREATE INDEX ix_user_lesson_target_progress_user_id ON user_lesson_target_progress (user_id)"))
+            connection.execute(text("CREATE INDEX ix_user_lesson_target_progress_lesson_id ON user_lesson_target_progress (lesson_id)"))
+            connection.execute(text("CREATE INDEX ix_user_lesson_target_progress_target_id ON user_lesson_target_progress (target_id)"))
 
 
 def main() -> None:
