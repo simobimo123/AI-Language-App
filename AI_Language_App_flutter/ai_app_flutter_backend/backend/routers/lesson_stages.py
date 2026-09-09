@@ -9,11 +9,9 @@ from database import get_db
 from models import (
     CourseLesson,
     LearningProfile,
-    LessonTarget,
     User,
     UserLessonProgress,
     UserLessonStageProgress,
-    UserLessonTargetProgress,
 )
 from routers.auth import get_current_user
 
@@ -106,29 +104,6 @@ def _get_lesson(db: Session, lesson_id: int) -> CourseLesson:
     return lesson
 
 
-def _required_targets_completed(db: Session, user_id: int, lesson_id: int, stage: str) -> bool:
-    targets = db.scalars(
-        select(LessonTarget).where(
-            LessonTarget.lesson_id == lesson_id,
-            LessonTarget.required.is_(True),
-        )
-    ).all()
-    if not targets:
-        return False
-
-    target_ids = [target.id for target in targets]
-    rows = db.scalars(
-        select(UserLessonTargetProgress).where(
-            UserLessonTargetProgress.user_id == user_id,
-            UserLessonTargetProgress.lesson_id == lesson_id,
-            UserLessonTargetProgress.target_id.in_(target_ids),
-        )
-    ).all()
-    by_target = {row.target_id: row for row in rows}
-    field = "teaching_status" if stage == "teaching" else "practice_status"
-    return all(getattr(by_target.get(target.id), field, None) == STATUS_COMPLETED for target in targets)
-
-
 @router.get("/{lesson_id}/stages")
 def get_lesson_stages(
     lesson_id: int,
@@ -168,8 +143,6 @@ def complete_lesson_stage(
     now = datetime.utcnow()
 
     if stage == "teaching":
-        if not _required_targets_completed(db, current_user.id, lesson.id, "teaching"):
-            raise HTTPException(status_code=409, detail="Teaching cannot be completed until all required targets are mastered.")
         if progress.teaching_started_at is None:
             progress.teaching_started_at = now
         progress.teaching_status = STATUS_COMPLETED
@@ -181,8 +154,6 @@ def complete_lesson_stage(
     else:
         if progress.teaching_status != STATUS_COMPLETED:
             raise HTTPException(status_code=409, detail="Practice cannot be completed before AI teaching.")
-        if not _required_targets_completed(db, current_user.id, lesson.id, "practice"):
-            raise HTTPException(status_code=409, detail="Practice cannot be completed until all required targets are demonstrated.")
         if progress.practice_started_at is None:
             progress.practice_started_at = now
         progress.practice_status = STATUS_COMPLETED
