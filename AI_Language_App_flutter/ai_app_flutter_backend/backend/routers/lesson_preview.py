@@ -16,29 +16,10 @@ router = APIRouter(
 )
 
 
-LESSONS_DIR = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "lessons"
-)
+LESSONS_DIR = Path(__file__).resolve().parent.parent / "data" / "lessons"
 
 
-def _load_lesson_json(lesson: CourseLesson) -> dict:
-    language = normalize_language(lesson.language)
-    level = str(lesson.level).upper()
-    path = (
-        LESSONS_DIR
-        / language
-        / level
-        / f"lesson_{lesson.lesson_order:02d}.json"
-    )
-
-    if not path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson preview source file was not found.",
-        )
-
+def _load_json(path: Path) -> dict:
     try:
         with path.open("r", encoding="utf-8") as file:
             data = json.load(file)
@@ -53,14 +34,67 @@ def _load_lesson_json(lesson: CourseLesson) -> dict:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Lesson preview source is invalid.",
         )
-
     return data
+
+
+def _load_lesson_json(lesson: CourseLesson) -> dict:
+    language = normalize_language(lesson.language)
+    level = str(lesson.level).upper()
+    lesson_dir = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}"
+    legacy_path = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}.json"
+
+    if legacy_path.exists():
+        return _load_json(legacy_path)
+
+    teaching_path = lesson_dir / "teaching.json"
+    practice_path = lesson_dir / "practice.json"
+    if not teaching_path.exists() or not practice_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lesson preview source files were not found.",
+        )
+
+    teaching = _load_json(teaching_path)
+    practice = _load_json(practice_path)
+
+    return {
+        "lesson_id": f"{language}_{level.lower()}_lesson_{lesson.lesson_order:02d}",
+        "language": language,
+        "level": level,
+        "lesson_order": lesson.lesson_order,
+        "teaching": teaching,
+        "practice": practice,
+    }
 
 
 def _list_of_strings(value) -> list[str]:
     if not isinstance(value, list):
         return []
     return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _fallback_targets(data: dict) -> list[str]:
+    teaching = data.get("teaching")
+    if not isinstance(teaching, dict):
+        return []
+    targets = teaching.get("targets")
+    if not isinstance(targets, list):
+        return []
+
+    result = []
+    for target in targets:
+        if not isinstance(target, dict):
+            continue
+        patterns = target.get("patterns")
+        if isinstance(patterns, list) and patterns:
+            first = str(patterns[0]).strip()
+            if first:
+                result.append(first)
+                continue
+        goal = str(target.get("goal", "")).strip()
+        if goal:
+            result.append(goal)
+    return result
 
 
 @router.get("/{lesson_id}")
@@ -77,9 +111,7 @@ def get_lesson_preview(
             detail="Lesson not found.",
         )
 
-    learning_language = normalize_language(
-        current_user.learning_language
-    )
+    learning_language = normalize_language(current_user.learning_language)
 
     if normalize_language(lesson.language) != learning_language:
         raise HTTPException(
@@ -112,15 +144,14 @@ def get_lesson_preview(
     if not isinstance(preview, dict):
         preview = {}
 
-    # Intentionally exclude new_vocabulary/new_items. Those are shown after
-    # successful completion, not before starting the lesson.
-    what_you_will_learn = _list_of_strings(
-        preview.get("what_you_will_learn")
-    )
+    what_you_will_learn = _list_of_strings(preview.get("what_you_will_learn"))
+    if not what_you_will_learn:
+        what_you_will_learn = _fallback_targets(data)
+
     skills = _list_of_strings(metadata.get("skills"))
 
     return {
-        "lesson_id": data.get("lesson_id", ""),
+        "lesson_id": data.get("lesson_id", f"{learning_language}_{str(lesson.level).lower()}_lesson_{lesson.lesson_order:02d}"),
         "language": data.get("language", lesson.language),
         "level": data.get("level", lesson.level),
         "lesson_order": data.get("lesson_order", lesson.lesson_order),
