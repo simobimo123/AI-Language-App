@@ -1,9 +1,4 @@
-"""Import canonical lesson JSON into normalized curriculum tables.
-
-The JSON files remain the authoring/source format. Runtime lesson stages now
-use only AI teaching and interactive practice, so this importer synchronizes
-lesson metadata, targets, target patterns, and practice scenarios.
-"""
+"""Import canonical lesson curriculum from split teaching/practice JSON files."""
 
 import json
 from pathlib import Path
@@ -32,17 +27,64 @@ def _load_json(path: Path) -> dict:
     return data
 
 
-def _course_lesson(db: Session, data: dict) -> CourseLesson | None:
+def _load_split_lesson(folder: Path) -> tuple[dict, dict]:
+    teaching_path = folder / "teaching.json"
+    practice_path = folder / "practice.json"
+
+    if not teaching_path.exists():
+        raise FileNotFoundError(f"Missing teaching.json: {teaching_path}")
+    if not practice_path.exists():
+        raise FileNotFoundError(f"Missing practice.json: {practice_path}")
+
+    teaching = _load_json(teaching_path)
+    practice = _load_json(practice_path)
+
+    language = str(teaching.get("language", "")).lower().strip()
+    practice_language = str(practice.get("language", "")).lower().strip()
+    level = str(teaching.get("level", "")).upper().strip()
+    practice_level = str(practice.get("level", "")).upper().strip()
+
+    if not language or language != practice_language:
+        raise ValueError(f"Teaching/practice language mismatch in {folder}")
+    if not level or level != practice_level:
+        raise ValueError(f"Teaching/practice level mismatch in {folder}")
+
+    return teaching, practice
+
+
+def _course_lesson(db: Session, teaching: dict, folder: Path) -> CourseLesson | None:
+    language = str(teaching.get("language", "")).lower().strip()
+    level = str(teaching.get("level", "")).upper().strip()
+
+    try:
+        lesson_order = int(teaching["lesson_order"])
+    except (KeyError, TypeError, ValueError):
+        try:
+            lesson_order = int(folder.name.split("_")[-1])
+        except (ValueError, IndexError) as exc:
+            raise ValueError(f"Cannot determine lesson order for {folder}") from exc
+
     return db.scalar(
         select(CourseLesson).where(
-            CourseLesson.language == str(data.get("language", "")).lower(),
-            CourseLesson.level == str(data.get("level", "")).upper(),
-            CourseLesson.lesson_order == int(data["lesson_order"]),
+            CourseLesson.language == language,
+            CourseLesson.level == level,
+            CourseLesson.lesson_order == lesson_order,
         )
     )
 
 
-def _upsert_content(db: Session, lesson: CourseLesson, data: dict) -> None:
+def _content_payload(teaching: dict, practice: dict) -> dict:
+    return {
+        "format": "split_v1",
+        "language": teaching.get("language"),
+        "level": teaching.get("level"),
+        "teaching": teaching,
+        "practice": practice,
+    }
+
+
+def _upsert_content(db: Session, lesson: CourseLesson, teaching: dict, practice: dict) -> None:
+    data = _content_payload(teaching, practice)
     existing = db.scalar(
         select(LessonContent).where(
             LessonContent.lesson_id == lesson.id,
@@ -67,7 +109,7 @@ def _upsert_content(db: Session, lesson: CourseLesson, data: dict) -> None:
 
     existing.content = data
     existing.status = "PUBLISHED"
-    existing.version += 1
+    existing.version = (existing.version or 0) + 1
 
 
 def _upsert_target(db: Session, lesson: CourseLesson, target_data: dict) -> LessonTarget:
@@ -132,23 +174,32 @@ def _upsert_patterns(db: Session, target: LessonTarget, target_data: dict) -> No
 def _upsert_scenarios(
     db: Session,
     lesson: CourseLesson,
-    canonical: dict,
+    practice: dict,
     targets_by_key: dict[str, LessonTarget],
 ) -> None:
-    scenarios = canonical.get("practice_scenarios")
+    scenarios = practice.get("practice_scenarios")
     if not isinstance(scenarios, list):
-        scenarios = canonical.get("scenarios")
+        scenarios = practice.get("scenarios")
     if not isinstance(scenarios, list):
         scenarios = []
+
+    conversation = practice.get("conversation")
+    if not isinstance(conversation, dict):
+        conversation = {}
 
     if not scenarios:
         scenarios = [
             {
                 "id": "default",
                 "order": 1,
-                "title": str(canonical.get("title", "Lesson practice")),
-                "context": str(canonical.get("objective", "Practice the lesson targets in a natural conversation.")),
-                "instructions": "Use the lesson targets naturally in conversation.",
+                "title": "Lesson practice",
+                "context": str(conversation.get("mode", "guided_natural")).strip(),
+                "instructions": str(
+                    conversation.get(
+                        "rule",
+                        "Use the lesson targets naturally in conversation.",
+                    )
+                ).strip(),
                 "target_ids": list(targets_by_key.keys()),
             }
         ]
@@ -157,7 +208,11 @@ def _upsert_scenarios(
         if not isinstance(scenario, dict):
             continue
 
-        key = str(scenario.get("id") or scenario.get("scenario_key") or f"scenario_{index}").strip()
+        key = str(
+            scenario.get("id")
+            or scenario.get("scenario_key")
+            or f"scenario_{index}"
+        ).strip()
         raw_target_ids = scenario.get("target_ids", [])
         if not isinstance(raw_target_ids, list):
             raw_target_ids = []
@@ -192,20 +247,16 @@ def _upsert_scenarios(
                 setattr(row, field, value)
 
 
-def import_lesson(db: Session, path: Path) -> bool:
-    data = _load_json(path)
-    lesson = _course_lesson(db, data)
+def import_lesson(db: Session, folder: Path) -> bool:
+    teaching, practice = _load_split_lesson(folder)
+    lesson = _course_lesson(db, teaching, folder)
     if lesson is None:
-        print(f"SKIP {path}: CourseLesson not found")
+        print(f"SKIP {folder}: CourseLesson not found")
         return False
 
-    canonical = data.get("lesson")
-    if not isinstance(canonical, dict):
-        canonical = {}
+    _upsert_content(db, lesson, teaching, practice)
 
-    _upsert_content(db, lesson, data)
-
-    raw_targets = canonical.get("targets", [])
+    raw_targets = teaching.get("targets", [])
     if not isinstance(raw_targets, list):
         raw_targets = []
 
@@ -217,15 +268,31 @@ def import_lesson(db: Session, path: Path) -> bool:
         _upsert_patterns(db, target, target_data)
         targets_by_key[target.target_key] = target
 
-    _upsert_scenarios(db, lesson, canonical, targets_by_key)
+    practice_targets = practice.get("targets", [])
+    if isinstance(practice_targets, list):
+        for target_data in practice_targets:
+            if not isinstance(target_data, dict):
+                continue
+            key = str(target_data.get("id", "")).strip()
+            target = targets_by_key.get(key)
+            if target is None:
+                target = _upsert_target(db, lesson, target_data)
+                targets_by_key[target.target_key] = target
+            _upsert_patterns(db, target, target_data)
+
+    _upsert_scenarios(db, lesson, practice, targets_by_key)
     return True
 
 
 def sync_lesson_curriculum(db: Session) -> int:
-    """Synchronize every canonical lesson JSON into PostgreSQL."""
+    """Synchronize every split lesson folder into PostgreSQL."""
     imported = 0
-    for path in sorted(LESSONS_DIR.glob("*/*/lesson_*.json")):
-        if import_lesson(db, path):
+    for folder in sorted(LESSONS_DIR.glob("*/*/lesson_*")):
+        if not folder.is_dir():
+            continue
+        if not (folder / "teaching.json").exists() or not (folder / "practice.json").exists():
+            continue
+        if import_lesson(db, folder):
             imported += 1
     return imported
 
@@ -240,7 +307,7 @@ def main() -> None:
         raise
     finally:
         db.close()
-    print(f"Imported {imported} lesson curriculum file(s).")
+    print(f"Imported {imported} lesson curriculum folder(s).")
 
 
 if __name__ == "__main__":
