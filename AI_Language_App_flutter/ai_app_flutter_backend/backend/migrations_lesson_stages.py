@@ -4,8 +4,8 @@ from database import engine
 
 
 def ensure_lesson_stage_progress() -> None:
-    """Create persistent per-user state for the three lesson stages."""
-    with engine.connect() as connection:
+    """Create persistent state for the two active lesson stages."""
+    with engine.begin() as connection:
         inspector = inspect(connection)
         tables = set(inspector.get_table_names())
 
@@ -18,11 +18,8 @@ def ensure_lesson_stage_progress() -> None:
                         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                         learning_profile_id INTEGER NOT NULL REFERENCES learning_profiles(id) ON DELETE CASCADE,
                         lesson_id INTEGER NOT NULL REFERENCES course_lessons(id) ON DELETE CASCADE,
-                        learn_status VARCHAR(20) NOT NULL DEFAULT 'available',
-                        teaching_status VARCHAR(20) NOT NULL DEFAULT 'locked',
+                        teaching_status VARCHAR(20) NOT NULL DEFAULT 'available',
                         practice_status VARCHAR(20) NOT NULL DEFAULT 'locked',
-                        learn_started_at TIMESTAMP,
-                        learn_completed_at TIMESTAMP,
                         teaching_started_at TIMESTAMP,
                         teaching_completed_at TIMESTAMP,
                         practice_started_at TIMESTAMP,
@@ -35,26 +32,22 @@ def ensure_lesson_stage_progress() -> None:
                     """
                 )
             )
-            connection.commit()
             return
 
         columns = {
             column["name"]
-            for column in inspector.get_columns("user_lesson_stage_progress")
+            for column in inspect(connection).get_columns("user_lesson_stage_progress")
         }
 
         additions = {
-            "learn_status": "VARCHAR(20) NOT NULL DEFAULT 'available'",
-            "teaching_status": "VARCHAR(20) NOT NULL DEFAULT 'locked'",
+            "teaching_status": "VARCHAR(20) NOT NULL DEFAULT 'available'",
             "practice_status": "VARCHAR(20) NOT NULL DEFAULT 'locked'",
-            "learn_started_at": "TIMESTAMP",
-            "learn_completed_at": "TIMESTAMP",
             "teaching_started_at": "TIMESTAMP",
             "teaching_completed_at": "TIMESTAMP",
             "practice_started_at": "TIMESTAMP",
             "practice_completed_at": "TIMESTAMP",
             "teaching_conversation_id": "VARCHAR(120)",
-            "practice_conversation_id": "VARCHAR(120)",
+            "practice_conversation_id": "VARCHAR(120)'",
             "updated_at": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
         }
 
@@ -67,7 +60,51 @@ def ensure_lesson_stage_progress() -> None:
                     )
                 )
 
-        connection.commit()
+        # The Learn stage was removed from the product. This migration also
+        # cleans it up for databases that were created by an older version.
+        if "learn_status" in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE user_lesson_stage_progress "
+                    "DROP COLUMN IF EXISTS learn_status"
+                )
+            )
+        if "learn_started_at" in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE user_lesson_stage_progress "
+                    "DROP COLUMN IF EXISTS learn_started_at"
+                )
+            )
+        if "learn_completed_at" in columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE user_lesson_stage_progress "
+                    "DROP COLUMN IF EXISTS learn_completed_at"
+                )
+            )
+
+        # Existing rows should begin directly with Teaching. Preserve any
+        # completed Teaching/Practice state already stored in the database.
+        connection.execute(
+            text(
+                """
+                UPDATE user_lesson_stage_progress
+                SET teaching_status = 'available'
+                WHERE teaching_status = 'locked'
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE user_lesson_stage_progress
+                SET practice_status = 'available'
+                WHERE teaching_status = 'completed'
+                  AND practice_status = 'locked'
+                """
+            )
+        )
 
 
 ensure_lesson_stage_progress()
