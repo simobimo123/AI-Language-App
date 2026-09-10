@@ -97,6 +97,10 @@ def _serialize(progress: UserLessonStageProgress) -> dict:
     }
 
 
+# The lesson-stage API intentionally exposes only Teaching and Practice.
+# The removed Learn stage must not be referenced here.
+
+
 def _get_lesson(db: Session, lesson_id: int) -> CourseLesson:
     lesson = db.get(CourseLesson, lesson_id)
     if lesson is None:
