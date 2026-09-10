@@ -7,265 +7,110 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import CourseLesson, LessonContent
-from models import LearningProfile, User
+from models import CourseLesson, LessonContent, LearningProfile, User
 from routers.auth import get_current_user
-from schemas.lesson_content import (
-    GenerateLessonContentRequest,
-    LessonContentResponse,
-)
+from schemas.lesson_content import GenerateLessonContentRequest, LessonContentResponse
 from services.ai.normalization import normalize_language
 
-router = APIRouter(
-    prefix="/lesson-content",
-    tags=["Lesson Content"],
-)
-
+router = APIRouter(prefix="/lesson-content", tags=["Lesson Content"])
 logger = logging.getLogger(__name__)
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-LESSONS_DIR = BASE_DIR / "data" / "lessons"
+LESSONS_DIR = Path(__file__).resolve().parent.parent / "data" / "lessons"
 
 
-def _language_fallbacks(language: str) -> list[str]:
-    language = normalize_language(language)
-    if language == "ar":
-        return ["ar"]
-    return [language, "ar"]
+def _load_json(path: Path) -> dict:
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Invalid lesson JSON: {path}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"Lesson JSON must contain an object: {path}")
+    return data
 
 
 def _load_canonical_lesson(lesson: CourseLesson) -> dict:
     language = normalize_language(lesson.language)
     level = str(lesson.level).upper()
-    lesson_path = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}.json"
-    if not lesson_path.exists():
-        raise FileNotFoundError(f"Canonical lesson file not found: {lesson_path}")
-    try:
-        with lesson_path.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid lesson JSON: {lesson_path}") from exc
-    if not isinstance(data, dict):
-        raise ValueError(f"Lesson JSON must contain an object: {lesson_path}")
-    return data
+    lesson_dir = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}"
+    legacy_path = LESSONS_DIR / language / level / f"lesson_{lesson.lesson_order:02d}.json"
 
+    if legacy_path.exists():
+        return _load_json(legacy_path)
 
-def _pick_translation(translations: dict | None, instruction_language: str) -> dict:
-    if not isinstance(translations, dict):
-        return {}
-    for language in _language_fallbacks(instruction_language):
-        value = translations.get(language)
-        if isinstance(value, dict):
-            return value
-    return {}
+    teaching_path = lesson_dir / "teaching.json"
+    practice_path = lesson_dir / "practice.json"
+    if not teaching_path.exists() or not practice_path.exists():
+        raise FileNotFoundError(f"Lesson source files not found: {lesson_dir}")
 
+    teaching = _load_json(teaching_path)
+    practice = _load_json(practice_path)
 
-def _materialize_section(section: dict, instruction_language: str) -> dict:
-    content = section.get("content")
-    if not isinstance(content, dict):
-        content = {}
-    translation = _pick_translation(section.get("translations"), instruction_language)
-    result = {
-        "id": section.get("id"),
-        "order": section.get("order"),
-        "type": section.get("type"),
-        "target_text": content.get("target_text", ""),
-        "pronunciation": content.get("pronunciation"),
-        "translation": translation.get("translation", ""),
-        "explanation": translation.get("explanation", ""),
-    }
-    examples = translation.get("examples")
-    if isinstance(examples, list):
-        result["examples"] = examples
-    return result
-
-
-def _materialize_vocabulary_item(item: dict, instruction_language: str) -> dict:
-    translation = _pick_translation(item.get("translations"), instruction_language)
-    return {
-        "word": item.get("word", ""),
-        "translation": translation.get("translation", ""),
-        "part_of_speech": item.get("part_of_speech"),
-        "pronunciation": item.get("pronunciation"),
-    }
-
-
-def _materialize_exercise(exercise: dict, instruction_language: str) -> dict:
-    translation = _pick_translation(exercise.get("translations"), instruction_language)
-    result = {
-        "id": exercise.get("id"),
-        "order": exercise.get("order"),
-        "type": exercise.get("type", "multiple_choice"),
-        "question": translation.get("question", ""),
-        "options": translation.get("options", []),
-        "answer": exercise.get("correct_answer", ""),
-        "correct_answer": exercise.get("correct_answer", ""),
-        "accepted_answers": exercise.get("accepted_answers", []),
-        "explanation": translation.get("explanation"),
-    }
-    return result
-
-
-def _materialize_review(review: dict, instruction_language: str) -> list[dict]:
-    items = review.get("items")
-    if not isinstance(items, list):
-        return []
-    result = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        translation = _pick_translation(item.get("translations"), instruction_language)
-        result.append({
-            "target_text": item.get("target_text", ""),
-            "translation": translation.get("translation", ""),
-            "pronunciation": item.get("pronunciation"),
-        })
-    return result
-
-
-def _materialize_end_test(end_test: dict, instruction_language: str) -> list[dict]:
-    questions = end_test.get("questions")
-    if not isinstance(questions, list):
-        return []
-    result = []
-    for question in questions:
-        if isinstance(question, dict):
-            result.append(_materialize_exercise(question, instruction_language))
-    return result
-
-
-def _materialize_lesson(canonical: dict, instruction_language: str) -> dict:
-    instruction_language = normalize_language(instruction_language)
-    metadata = canonical.get("metadata")
-    if not isinstance(metadata, dict):
-        metadata = {}
-    metadata_translation = _pick_translation(metadata.get("translations"), instruction_language)
-
-    sections = canonical.get("sections")
-    if not isinstance(sections, list):
-        sections = []
-    materialized_sections = [
-        _materialize_section(section, instruction_language)
-        for section in sections
-        if isinstance(section, dict)
-    ]
-
-    vocabulary = canonical.get("vocabulary")
-    if not isinstance(vocabulary, list):
-        vocabulary = []
-    materialized_vocabulary = [
-        _materialize_vocabulary_item(item, instruction_language)
-        for item in vocabulary
-        if isinstance(item, dict)
-    ]
-
-    exercises = canonical.get("exercises")
-    if not isinstance(exercises, list):
-        exercises = []
-    materialized_exercises = [
-        _materialize_exercise(exercise, instruction_language)
-        for exercise in exercises
-        if isinstance(exercise, dict)
-    ]
-
-    review = canonical.get("review")
-    if not isinstance(review, dict):
-        review = {}
-    review_items = _materialize_review(review, instruction_language)
-
-    end_test = canonical.get("end_test")
-    if not isinstance(end_test, dict):
-        end_test = {}
-    end_test_items = _materialize_end_test(end_test, instruction_language)
-
-    introduction = ""
-    explanation = ""
-    examples = []
-    dialogue = []
-    for section in materialized_sections:
-        section_type = section.get("type")
-        if section_type == "explanation" and not explanation:
-            explanation = section.get("explanation", "")
-        if section_type == "micro_review" and not introduction:
-            introduction = section.get("translation", "")
-        section_examples = section.get("examples")
-        if isinstance(section_examples, list):
-            examples.extend([
-                {
-                    "target_text": item.get("target_text", ""),
-                    "translation": item.get("translation", ""),
-                }
-                for item in section_examples
-                if isinstance(item, dict)
-            ])
+    teaching_language = normalize_language(str(teaching.get("language", language)))
+    practice_language = normalize_language(str(practice.get("language", language)))
+    teaching_level = str(teaching.get("level", level)).upper()
+    practice_level = str(practice.get("level", level)).upper()
+    if teaching_language != practice_language or teaching_language != language:
+        raise ValueError(f"Teaching/practice language mismatch: {lesson_dir}")
+    if teaching_level != practice_level or teaching_level != level:
+        raise ValueError(f"Teaching/practice level mismatch: {lesson_dir}")
 
     return {
-        "title": metadata_translation.get("title", canonical.get("lesson_id", "")),
-        "objective": metadata_translation.get("objective", ""),
-        "introduction": introduction,
-        "explanation": explanation,
-        "vocabulary": materialized_vocabulary,
-        "examples": examples,
-        "dialogue": dialogue,
-        "exercises": materialized_exercises,
-        "sections": materialized_sections,
-        "review": review_items,
-        "end_test": {
-            "passing_score": end_test.get("passing_score", 80),
-            "question_count": end_test.get("question_count", len(end_test_items)),
-            "questions": end_test_items,
-        },
+        "format": "split_v1",
+        "lesson_id": f"{language}_{level.lower()}_lesson_{lesson.lesson_order:02d}",
+        "language": language,
+        "level": level,
+        "lesson_order": lesson.lesson_order,
+        "teaching": teaching,
+        "practice": practice,
     }
 
 
-def _content_matches_canonical(content: LessonContent, canonical: dict) -> bool:
-    """Detect stale cached LessonContent after the canonical JSON changes."""
-    if content.status != "READY" or not isinstance(content.content, dict):
-        return False
-    cached_exercises = content.content.get("exercises")
-    cached_sections = content.content.get("sections")
-    canonical_exercises = canonical.get("exercises")
-    canonical_sections = canonical.get("sections")
-    if not isinstance(cached_exercises, list) or not isinstance(canonical_exercises, list):
-        return False
-    if not isinstance(cached_sections, list) or not isinstance(canonical_sections, list):
-        return False
-    cached_exercise_ids = [x.get("id") for x in cached_exercises if isinstance(x, dict)]
-    canonical_exercise_ids = [x.get("id") for x in canonical_exercises if isinstance(x, dict)]
-    cached_section_ids = [x.get("id") for x in cached_sections if isinstance(x, dict)]
-    canonical_section_ids = [x.get("id") for x in canonical_sections if isinstance(x, dict)]
-    if cached_exercise_ids != canonical_exercise_ids:
-        return False
-    if cached_section_ids != canonical_section_ids:
-        return False
-    for cached, canonical_exercise in zip(cached_exercises, canonical_exercises):
-        if not isinstance(cached, dict) or not isinstance(canonical_exercise, dict):
-            return False
-        if cached.get("correct_answer", cached.get("answer", "")) != canonical_exercise.get("correct_answer", ""):
-            return False
-        cached_accepted = cached.get("accepted_answers", [])
-        canonical_accepted = canonical_exercise.get("accepted_answers", [])
-        if cached_accepted != canonical_accepted:
-            return False
-    return True
+def _materialize_lesson(canonical: dict) -> dict:
+    if canonical.get("format") == "split_v1":
+        teaching = canonical.get("teaching")
+        practice = canonical.get("practice")
+        if not isinstance(teaching, dict) or not isinstance(practice, dict):
+            raise ValueError("Split lesson must contain teaching and practice objects.")
+        return {
+            "format": "split_v1",
+            "lesson_id": canonical.get("lesson_id", ""),
+            "language": canonical.get("language", ""),
+            "level": canonical.get("level", ""),
+            "lesson_order": canonical.get("lesson_order"),
+            "teaching": teaching,
+            "practice": practice,
+            "targets": teaching.get("targets", []),
+            "sections": [],
+            "exercises": [],
+            "review": [],
+            "end_test": {},
+        }
+
+    return canonical
 
 
-def _create_or_update_lesson_content(db: Session, lesson: CourseLesson, instruction_language: str) -> LessonContent:
-    instruction_language = normalize_language(instruction_language)
+def _create_or_update_lesson_content(
+    db: Session,
+    lesson: CourseLesson,
+    instruction_language: str,
+) -> LessonContent:
+    del instruction_language  # Split lesson JSON is language-neutral runtime data.
     canonical = _load_canonical_lesson(lesson)
-    materialized_content = _materialize_lesson(canonical, instruction_language)
+    materialized_content = _materialize_lesson(canonical)
+
     existing = (
         db.query(LessonContent)
         .filter(
             LessonContent.lesson_id == lesson.id,
-            LessonContent.instruction_language == instruction_language,
+            LessonContent.instruction_language == "ar",
         )
         .first()
     )
+
     if existing is None:
         existing = LessonContent(
             lesson_id=lesson.id,
-            instruction_language=instruction_language,
+            instruction_language="ar",
             status="READY",
             content=materialized_content,
             generator_model="canonical-json",
@@ -279,6 +124,7 @@ def _create_or_update_lesson_content(db: Session, lesson: CourseLesson, instruct
         existing.generator_model = "canonical-json"
         existing.generation_error = None
         existing.version = (existing.version or 0) + 1
+
     db.commit()
     db.refresh(existing)
     return existing
@@ -315,47 +161,22 @@ def get_lesson_content(
             detail="This lesson is not part of your current learning level.",
         )
 
-    instruction_language = normalize_language(current_user.native_language)
-    content = (
-        db.query(LessonContent)
-        .filter(
-            LessonContent.lesson_id == lesson.id,
-            LessonContent.instruction_language == instruction_language,
-            LessonContent.status == "READY",
-        )
-        .first()
-    )
-
     try:
-        # Always compare the cached materialization with the canonical source.
-        # This is important because lesson JSON can evolve after LessonContent
-        # was first generated. We only write to the DB when it is stale.
-        canonical = _load_canonical_lesson(lesson)
-        if content is None or not _content_matches_canonical(content, canonical):
-            content = _create_or_update_lesson_content(
-                db=db,
-                lesson=lesson,
-                instruction_language=instruction_language,
-            )
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Lesson content source file was not found.",
+        content = _create_or_update_lesson_content(
+            db=db,
+            lesson=lesson,
+            instruction_language=normalize_language(current_user.native_language),
         )
+        return content
+    except FileNotFoundError as exc:
+        logger.exception("Lesson source missing lesson_id=%s", lesson.id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson content source was not found.") from exc
     except ValueError as exc:
-        logger.exception("Invalid canonical lesson lesson_id=%s", lesson.id)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(exc),
-        ) from exc
+        logger.exception("Invalid lesson source lesson_id=%s", lesson.id)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
     except Exception as exc:
-        logger.exception("Failed to materialize lesson lesson_id=%s: %s", lesson.id, exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to prepare lesson content.",
-        ) from exc
-
-    return content
+        logger.exception("Failed to materialize lesson lesson_id=%s", lesson.id)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to prepare lesson content.") from exc
 
 
 @router.post("/generate", response_model=LessonContentResponse)
@@ -366,52 +187,32 @@ def generate_lesson(
 ):
     expected_token = os.getenv("LESSON_GENERATOR_TOKEN")
     if not expected_token:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Lesson generator is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Lesson generator is not configured.",
+        )
     if x_lesson_generator_token != expected_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid lesson generator token.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid lesson generator token.",
+        )
 
     lesson = db.get(CourseLesson, request.lesson_id)
     if lesson is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found.")
 
-    instruction_language = normalize_language(request.instruction_language)
-    existing = (
-        db.query(LessonContent)
-        .filter(
-            LessonContent.lesson_id == lesson.id,
-            LessonContent.instruction_language == instruction_language,
-        )
-        .first()
-    )
-    if existing is not None and existing.status == "READY" and not request.force_regenerate:
-        try:
-            canonical = _load_canonical_lesson(lesson)
-            if _content_matches_canonical(existing, canonical):
-                return existing
-        except Exception:
-            pass
-
     try:
-        content = _create_or_update_lesson_content(
+        return _create_or_update_lesson_content(
             db=db,
             lesson=lesson,
-            instruction_language=instruction_language,
+            instruction_language=normalize_language(request.instruction_language),
         )
-        logger.info(
-            "Lesson materialized from canonical JSON lesson_id=%s language=%s level=%s topic=%s instruction_language=%s",
-            lesson.id,
-            lesson.language,
-            lesson.level,
-            lesson.topic_key,
-            instruction_language,
-        )
-        return content
     except FileNotFoundError as exc:
-        logger.exception("Canonical lesson source missing lesson_id=%s", lesson.id)
+        logger.exception("Lesson source missing lesson_id=%s", lesson.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Canonical lesson content was not found.") from exc
     except ValueError as exc:
-        logger.exception("Invalid canonical lesson lesson_id=%s", lesson.id)
+        logger.exception("Invalid lesson source lesson_id=%s", lesson.id)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
     except Exception as exc:
-        logger.exception("Lesson materialization failed lesson_id=%s: %s", lesson.id, exc)
+        logger.exception("Lesson materialization failed lesson_id=%s", lesson.id)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Lesson content preparation failed.") from exc
