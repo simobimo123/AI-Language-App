@@ -1,0 +1,71 @@
+{
+  "language": "de",
+  "level": "A1",
+  "targets": [
+    {
+      "order": 1,
+      "id": "introduce_name",
+      "goal": "Teach the learner how to introduce their own name.",
+      "patterns": [
+        "Ich heiße {name}"
+      ],
+      "suggestion": "Ich heiße {name}"
+    },
+    {
+      "order": 2,
+      "id": "ask_name",
+      "goal": "Teach the learner how to ask someone for their name.",
+      "patterns": [
+        "Wie heißt du?"
+      ],
+      "suggestion": "Wie heißt du?"
+    },
+    {
+      "order": 3,
+      "id": "describe_male",
+      "goal": "Teach the learner how to talk about a male person's name or where he lives.",
+      "patterns": [
+        "Er heißt {name}",
+        "Er wohnt in {city}"
+      ],
+      "suggestion": "Er heißt Thomas."
+    },
+    {
+      "order": 4,
+      "id": "describe_female",
+      "goal": "Teach the learner how to talk about a female person's name or where she lives.",
+      "patterns": [
+        "Sie heißt {name}",
+        "Sie wohnt in {city}"
+      ],
+      "suggestion": "Sie heißt Sarah."
+    },
+    {
+      "order": 5,
+      "id": "say_where_live",
+      "goal": "Teach the learner how to say where they live.",
+      "patterns": [
+        "Ich wohne in {city}"
+      ],
+      "suggestion": "Ich wohne in {city}"
+    },
+    {
+      "order": 6,
+      "id": "ask_where",
+      "goal": "Teach the learner how to ask where someone lives.",
+      "patterns": [
+        "Wo wohnt er?",
+        "Wo wohnt sie?"
+      ],
+      "suggestion": "Wo wohnt er?"
+    }
+  ],
+  "behavior": {
+    "strict_order": true,
+    "one_question_at_a_time": true,
+    "short_corrections": true,
+    "no_grammar_lecture": true,
+    "accept_correct_alternatives": true,
+    "suggestion_is_intended_answer": true
+  }
+}

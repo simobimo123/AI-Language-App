@@ -1,0 +1,88 @@
+{
+  "language": "de",
+  "level": "A1",
+  "targets": [
+    {
+      "order": 1,
+      "id": "introduce_name",
+      "goal": "Learner introduces their name.",
+      "patterns": [
+        "Ich heiße {name}"
+      ]
+    },
+    {
+      "order": 2,
+      "id": "ask_name",
+      "goal": "Learner asks someone's name.",
+      "patterns": [
+        "Wie heißt du?"
+      ]
+    },
+    {
+      "order": 3,
+      "id": "describe_male",
+      "goal": "Learner talks about a male person.",
+      "patterns": [
+        "Er heißt {name}",
+        "Er wohnt in {city}"
+      ]
+    },
+    {
+      "order": 4,
+      "id": "describe_female",
+      "goal": "Learner talks about a female person.",
+      "patterns": [
+        "Sie heißt {name}",
+        "Sie wohnt in {city}"
+      ]
+    },
+    {
+      "order": 5,
+      "id": "say_where_live",
+      "goal": "Learner says where they live.",
+      "patterns": [
+        "Ich wohne in {city}"
+      ]
+    },
+    {
+      "order": 6,
+      "id": "ask_where",
+      "goal": "Learner asks where someone lives.",
+      "patterns": [
+        "Wo wohnt er?",
+        "Wo wohnt sie?"
+      ]
+    }
+  ],
+  "conversation": {
+    "mode": "guided_natural",
+    "participants": [
+      "tutor",
+      "learner"
+    ],
+    "entities": [
+      {
+        "id": "thomas",
+        "name": "Thomas",
+        "type": "person",
+        "gender": "male"
+      },
+      {
+        "id": "sarah",
+        "name": "Sarah",
+        "type": "person",
+        "gender": "female"
+      }
+    ],
+    "rule": "Only tutor and learner speak. Entities never speak."
+  },
+  "behavior": {
+    "strict_order": false,
+    "natural_wording": true,
+    "one_question_at_a_time": true,
+    "accept_correct_alternatives": true,
+    "short_corrections": true,
+    "no_grammar_lecture": true,
+    "no_goodbye_loop": true
+  }
+}
