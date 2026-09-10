@@ -47,7 +47,7 @@ def ensure_lesson_stage_progress() -> None:
             "practice_started_at": "TIMESTAMP",
             "practice_completed_at": "TIMESTAMP",
             "teaching_conversation_id": "VARCHAR(120)",
-            "practice_conversation_id": "VARCHAR(120)'",
+            "practice_conversation_id": "VARCHAR(120)",
             "updated_at": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
         }
 
@@ -62,27 +62,18 @@ def ensure_lesson_stage_progress() -> None:
 
         # The Learn stage was removed from the product. This migration also
         # cleans it up for databases that were created by an older version.
-        if "learn_status" in columns:
-            connection.execute(
-                text(
-                    "ALTER TABLE user_lesson_stage_progress "
-                    "DROP COLUMN IF EXISTS learn_status"
+        for column in (
+            "learn_status",
+            "learn_started_at",
+            "learn_completed_at",
+        ):
+            if column in columns:
+                connection.execute(
+                    text(
+                        f"ALTER TABLE user_lesson_stage_progress "
+                        f"DROP COLUMN IF EXISTS {column}"
+                    )
                 )
-            )
-        if "learn_started_at" in columns:
-            connection.execute(
-                text(
-                    "ALTER TABLE user_lesson_stage_progress "
-                    "DROP COLUMN IF EXISTS learn_started_at"
-                )
-            )
-        if "learn_completed_at" in columns:
-            connection.execute(
-                text(
-                    "ALTER TABLE user_lesson_stage_progress "
-                    "DROP COLUMN IF EXISTS learn_completed_at"
-                )
-            )
 
         # Existing rows should begin directly with Teaching. Preserve any
         # completed Teaching/Practice state already stored in the database.
