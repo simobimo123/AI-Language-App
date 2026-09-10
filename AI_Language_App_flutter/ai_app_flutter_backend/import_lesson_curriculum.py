@@ -145,16 +145,47 @@ def _upsert_target(db: Session, lesson: CourseLesson, target_data: dict) -> Less
 
 
 def _upsert_patterns(db: Session, target: LessonTarget, target_data: dict) -> None:
+    """Upsert target patterns without ever staging duplicates in one flush."""
     patterns = target_data.get("patterns", [])
     if not isinstance(patterns, list):
         patterns = []
 
-    values = [str(pattern).strip() for pattern in patterns if str(pattern).strip()]
     suggestion = str(target_data.get("suggestion", "")).strip()
-    if suggestion and suggestion not in values:
+
+    # Deduplicate the JSON values before querying/inserting. This is important
+    # because SQLAlchemy can batch pending INSERTs in one flush, so querying the
+    # database alone does not reliably protect us from duplicates that are both
+    # present in the same JSON array or added earlier in the same transaction.
+    values: list[str] = []
+    seen: set[str] = set()
+
+    for raw_pattern in patterns:
+        value = str(raw_pattern).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        values.append(value)
+
+    if suggestion and suggestion not in seen:
+        seen.add(suggestion)
         values.append(suggestion)
 
+    # Keep track of patterns already staged for this target during the current
+    # SQLAlchemy session. This prevents teaching/practice data from attempting
+    # to insert the same target/pattern pair twice before the first INSERT has
+    # necessarily been flushed to PostgreSQL.
+    pending_patterns = {
+        row.pattern
+        for row in db.new
+        if isinstance(row, LessonTargetPattern)
+        and row.target_id == target.id
+        and row.pattern
+    }
+
     for value in values:
+        if value in pending_patterns:
+            continue
+
         row = db.scalar(
             select(LessonTargetPattern).where(
                 LessonTargetPattern.target_id == target.id,
@@ -169,6 +200,9 @@ def _upsert_patterns(db: Session, target: LessonTarget, target_data: dict) -> No
                     pattern_type="suggestion" if value == suggestion else "expected",
                 )
             )
+            pending_patterns.add(value)
+        else:
+            pending_patterns.add(value)
 
 
 def _upsert_scenarios(
