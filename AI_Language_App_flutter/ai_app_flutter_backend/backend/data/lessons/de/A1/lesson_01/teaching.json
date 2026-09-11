@@ -5,59 +5,53 @@
     {
       "order": 1,
       "id": "introduce_name",
-      "goal": "Teach the learner how to introduce their own name.",
+      "goal": "The learner can say their own name.",
       "patterns": [
-        "Ich heiße {name}"
-      ],
-      "suggestion": "Ich heiße {name}"
+        "Ich heiße + Name"
+      ]
     },
     {
       "order": 2,
       "id": "ask_name",
-      "goal": "Teach the learner how to ask someone for their name.",
+      "goal": "The learner can ask another person for their name.",
       "patterns": [
         "Wie heißt du?"
-      ],
-      "suggestion": "Wie heißt du?"
+      ]
     },
     {
       "order": 3,
       "id": "describe_male",
-      "goal": "Teach the learner how to talk about a male person's name or where he lives.",
+      "goal": "The learner can say a male person's name or where he lives.",
       "patterns": [
-        "Er heißt {name}",
-        "Er wohnt in {city}"
-      ],
-      "suggestion": "Er heißt Thomas."
+        "Er heißt + Name",
+        "Er wohnt in + Ort"
+      ]
     },
     {
       "order": 4,
       "id": "describe_female",
-      "goal": "Teach the learner how to talk about a female person's name or where she lives.",
+      "goal": "The learner can say a female person's name or where she lives.",
       "patterns": [
-        "Sie heißt {name}",
-        "Sie wohnt in {city}"
-      ],
-      "suggestion": "Sie heißt Sarah."
+        "Sie heißt + Name",
+        "Sie wohnt in + Ort"
+      ]
     },
     {
       "order": 5,
       "id": "say_where_live",
-      "goal": "Teach the learner how to say where they live.",
+      "goal": "The learner can say where they live.",
       "patterns": [
-        "Ich wohne in {city}"
-      ],
-      "suggestion": "Ich wohne in {city}"
+        "Ich wohne in + Ort"
+      ]
     },
     {
       "order": 6,
       "id": "ask_where",
-      "goal": "Teach the learner how to ask where someone lives.",
+      "goal": "The learner can ask where another person lives.",
       "patterns": [
         "Wo wohnt er?",
         "Wo wohnt sie?"
-      ],
-      "suggestion": "Wo wohnt er?"
+      ]
     }
   ],
   "behavior": {
@@ -65,7 +59,6 @@
     "one_question_at_a_time": true,
     "short_corrections": true,
     "no_grammar_lecture": true,
-    "accept_correct_alternatives": true,
-    "suggestion_is_intended_answer": true
+    "accept_correct_alternatives": true
   }
 }
