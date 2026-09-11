@@ -272,6 +272,62 @@ def _remove_control_markers(text: str) -> str:
     return cleaned.strip()
 
 
+def _normalize_for_repetition(text: str) -> str:
+    value = _remove_control_markers(text)
+    value = re.sub(r"\s+", " ", value).strip().lower()
+    value = re.sub(r"[^\w\s\u00C0-\uFFFF]", "", value)
+    return value
+
+
+def _deduplicate_adjacent_sentences(text: str) -> str:
+    cleaned = _remove_control_markers(text)
+    if not cleaned:
+        return cleaned
+
+    parts = re.split(r"(?<=[.!?。！？])\s+", cleaned)
+    result: list[str] = []
+    previous_key = ""
+
+    for part in parts:
+        piece = part.strip()
+        if not piece:
+            continue
+
+        key = _normalize_for_repetition(piece)
+        if key and key == previous_key:
+            continue
+
+        result.append(piece)
+        previous_key = key
+
+    return " ".join(result).strip()
+
+
+def _is_repeated_assistant_reply(
+    reply: str,
+    history,
+) -> bool:
+    reply_key = _normalize_for_repetition(reply)
+    if not reply_key:
+        return False
+
+    recent_assistant = [
+        item
+        for item in history
+        if item.role in {"assistant", "model"}
+        and str(item.content or "").strip()
+    ]
+
+    if not recent_assistant:
+        return False
+
+    last_key = _normalize_for_repetition(
+        recent_assistant[-1].content
+    )
+
+    return bool(last_key and reply_key == last_key)
+
+
 def _history_messages(history) -> list[dict[str, str]]:
     result: list[dict[str, str]] = []
 
@@ -635,11 +691,7 @@ Keep visible responses short, clear, direct, and level-appropriate.
 
 Usually use only one or two short sentences before asking the learner to respond.
 
-Before every reply, check the recent teacher messages. Do not repeat the same or nearly identical sentence, question, example, correction, or explanation unless repetition is intentionally needed for practice.
-
-Keep one response focused on one purpose and one question or task at a time. Use a longer explanation only when it is genuinely necessary.
-
-After an example or correction, wait for the learner's attempt instead of continuing with more explanation.
+Before every reply, check recent teacher messages. Do not repeat the same or nearly identical sentence, question, example, correction, or explanation unless repetition is intentionally needed for practice.
 
 The internal completion marker is invisible to the learner.
 
@@ -969,17 +1021,19 @@ def _stream_stage_response(
             else None
         )
 
+        system_prompt = _system_prompt(
+            stage=request.stage,
+            lesson=lesson,
+            targets=targets,
+            scenario=scenario,
+            current_target_order=current_target_order,
+            is_start=is_control_message,
+        )
+
         response = provider.generate_text(
             model=AI_MODEL,
             prompt=messages,
-            system_instruction=_system_prompt(
-                stage=request.stage,
-                lesson=lesson,
-                targets=targets,
-                scenario=scenario,
-                current_target_order=current_target_order,
-                is_start=is_control_message,
-            ),
+            system_instruction=system_prompt,
             max_output_tokens=MAX_OUTPUT_TOKENS,
         )
 
@@ -991,6 +1045,38 @@ def _stream_stage_response(
             raise RuntimeError(
                 "AI tutor returned an empty response."
             )
+
+        raw_reply = _deduplicate_adjacent_sentences(raw_reply)
+
+        if (
+            request.stage == "teaching"
+            and not is_control_message
+            and _is_repeated_assistant_reply(raw_reply, history)
+        ):
+            retry_prompt = (
+                f"{system_prompt}\n\n"
+                "IMPORTANT: Your candidate response repeated the previous teacher response. "
+                "Generate a different concise response that directly reacts to the learner's latest answer. "
+                "Do not repeat the previous wording unless deliberate repetition is necessary for practice."
+            )
+
+            response = provider.generate_text(
+                model=AI_MODEL,
+                prompt=messages,
+                system_instruction=retry_prompt,
+                max_output_tokens=MAX_OUTPUT_TOKENS,
+            )
+
+            raw_reply = str(
+                response.text or ""
+            ).strip()
+
+            if not raw_reply:
+                raise RuntimeError(
+                    "AI tutor returned an empty response."
+                )
+
+            raw_reply = _deduplicate_adjacent_sentences(raw_reply)
 
         (
             reply,
