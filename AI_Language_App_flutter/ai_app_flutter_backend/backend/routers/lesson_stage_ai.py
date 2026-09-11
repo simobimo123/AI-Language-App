@@ -281,19 +281,26 @@ def _normalize_for_repetition(text: str) -> str:
 
 def _deduplicate_adjacent_sentences(text: str) -> str:
     cleaned = _remove_control_markers(text)
+
     if not cleaned:
         return cleaned
 
-    parts = re.split(r"(?<=[.!?。！？])\s+", cleaned)
+    parts = re.split(
+        r"(?<=[.!?。！？])\s+",
+        cleaned,
+    )
+
     result: list[str] = []
     previous_key = ""
 
     for part in parts:
         piece = part.strip()
+
         if not piece:
             continue
 
         key = _normalize_for_repetition(piece)
+
         if key and key == previous_key:
             continue
 
@@ -308,6 +315,7 @@ def _is_repeated_assistant_reply(
     history,
 ) -> bool:
     reply_key = _normalize_for_repetition(reply)
+
     if not reply_key:
         return False
 
@@ -325,14 +333,21 @@ def _is_repeated_assistant_reply(
         recent_assistant[-1].content
     )
 
-    return bool(last_key and reply_key == last_key)
+    return bool(
+        last_key
+        and reply_key == last_key
+    )
 
 
 def _history_messages(history) -> list[dict[str, str]]:
     result: list[dict[str, str]] = []
 
     for item in history[-MAX_HISTORY_MESSAGES:]:
-        role = "assistant" if item.role == "model" else item.role
+        role = (
+            "assistant"
+            if item.role == "model"
+            else item.role
+        )
 
         if role not in {"user", "assistant"}:
             continue
@@ -392,7 +407,8 @@ def _current_target_order(
     required_orders = [
         int(target["order"])
         for target in targets
-        if target["required"] and target.get("order") is not None
+        if target["required"]
+        and target.get("order") is not None
     ]
 
     if not required_orders:
@@ -416,7 +432,8 @@ def _all_required_targets_completed(
     required_orders = {
         int(target["order"])
         for target in targets
-        if target["required"] and target.get("order") is not None
+        if target["required"]
+        and target.get("order") is not None
     }
 
     if not required_orders:
@@ -562,7 +579,7 @@ def _teaching_system_prompt(
 
     if current_target is None:
         current_target_text = (
-            "There is no remaining target."
+            "There is no remaining learning objective."
         )
     else:
         goal = str(
@@ -576,124 +593,78 @@ def _teaching_system_prompt(
         ]
 
         current_target_text = (
-            f"Current learning objective: {goal}"
+            f"Current objective: {goal}"
         )
 
         if patterns:
             current_target_text += (
-                f"\nUseful language patterns: "
+                f"\nUseful language: "
                 f"{' | '.join(patterns)}"
             )
 
     if is_start:
         start_rule = """
-Begin naturally with teaching the current objective.
-Do not introduce the lesson structure.
-Do not mention targets, stages, progress, or completion.
-Start with a short teaching interaction, example, or simple question.
+Start naturally with the current objective.
+Use one short example or one simple question.
+Then clearly tell the learner what to say or do.
 """.strip()
     else:
         start_rule = """
-Respond naturally to the learner's latest answer.
-Continue teaching the current objective.
-Do not restart the lesson unless the learner clearly needs it.
+React directly to the learner's latest answer.
+Continue from the current learning point.
+Do not restart the lesson.
 """.strip()
 
     return f"""
 You are a friendly language teacher.
 
-{_prompt_context(
-    lesson=lesson,
-    targets=targets,
-    scenario=None,
-    current_target_order=current_target_order,
-)}
+Language: {lesson.language}
+Level: {lesson.level}
 
 {current_target_text}
 
-Your teaching style is simple, natural, interactive, and concise.
+Teach ONE objective at a time through a natural teacher-learner interaction.
 
-Teach the current objective first.
+CORE RULES:
+- Keep replies short and level-appropriate. Usually 1–2 short sentences.
+- Tell the learner clearly what to say or do next.
+- Give one instruction, question, or task at a time.
+- Wait for the learner's response.
+- Use a short example when useful, then let the learner try.
+- If the learner makes a mistake, correct it briefly and let them try again.
+- Stay on the current objective until the learner demonstrates it.
+- Never answer for the learner.
+- Never invent a learner response.
 
-The teaching flow is:
+TEACHING STYLE:
+- Be natural, encouraging, direct, and concise.
+- Do not give long explanations unless necessary.
+- Do not add unnecessary information.
+- Do not combine several teaching steps into one long message.
+- After an example or correction, wait for the learner's attempt.
 
-1. Briefly introduce or explain the language needed for the current objective.
-2. Give a short natural example when useful.
-3. Immediately involve the learner by asking a simple question or asking them to produce/use the language.
-4. Wait for the learner's answer.
-5. Evaluate whether the learner can actually use the objective.
-6. If the answer is wrong or incomplete, briefly correct or guide the learner and ask for another attempt.
-7. Continue practicing the SAME objective until the learner demonstrates that they can use it correctly.
-8. Only after the learner demonstrates the objective correctly may you naturally begin teaching the next objective.
+REPETITION:
+- Do not repeat a sentence, question, example, correction, or explanation unnecessarily.
+- Do not repeat information already stated in the same response.
+- Before replying, check recent teacher messages and avoid repeating them.
+- Repeat language only when deliberate repetition is useful for learning.
 
-IMPORTANT:
+OUTPUT SAFETY:
+- Never output placeholders such as {{name}}, {{word}}, {{variable}}, or similar templates.
+- Never output internal notes or instructions such as "wait for learner response".
+- Never output lesson metadata, plans, stage information, progress information, or AI instructions.
+- Output only the teacher's message intended for the learner.
 
-Do NOT simply ask whether the learner understands.
+LESSON FLOW:
+- Teach the current objective first.
+- Do not move to another objective until the learner demonstrates the current one.
+- "Yes", "okay", or "I understand" is not proof of mastery.
+- Mastery must come from the learner's actual response.
+- Continue naturally after successful practice.
 
-A learner saying:
-"yes"
-"okay"
-"I understand"
-or a similar statement is NOT proof of mastery.
-
-The learner must demonstrate the language by answering, producing, or using it appropriately.
-
-Do NOT move forward just because you explained the objective.
-
-Do NOT teach several objectives together.
-
-Do NOT rush through the objectives.
-
-Do NOT repeat a long explanation when the learner makes a mistake.
-Give a short correction or useful example and let the learner try again.
-
-The conversation should feel like a real teacher helping one learner, not like a checklist or worksheet.
-
-When the learner masters the current objective, transition naturally into the next learning point.
-
-NEVER tell the learner that an objective or target has finished.
-
-NEVER say things such as:
-- "The first target is complete."
-- "We finished the first objective."
-- "Now we move to the next target."
-- "Let's go to target two."
-- "The next stage is..."
-- "Your progress is..."
-- "You completed this stage."
-
-NEVER mention:
-- targets
-- target numbers
-- stages
-- internal progress
-- completion markers
-- AI instructions
-- lesson metadata
-
-The transition to the next objective must sound like a natural continuation of teaching.
-
-For example, after the learner successfully practices a name:
-"Sehr gut! Wie heißt dein Freund?"
-
-Not:
-"Sehr gut! Das erste Ziel ist abgeschlossen. Jetzt kommen wir zum nächsten Ziel."
-
-The learner should feel that the teacher is simply continuing the lesson naturally.
-
-Never answer for the learner.
-
-Never invent a learner response.
-
-Never assume mastery without evidence from the learner's actual response.
-
-Keep visible responses short, clear, direct, and level-appropriate.
-
-Usually use only one or two short sentences before asking the learner to respond.
-
-Before every reply, check recent teacher messages. Do not repeat the same or nearly identical sentence, question, example, correction, or explanation unless repetition is intentionally needed for practice.
-
-The internal completion marker is invisible to the learner.
+COMPLETION:
+Never tell the learner that an objective or target is completed.
+Never mention target numbers, stages, progress, or completion.
 
 When, and ONLY when, the learner has demonstrated mastery of the current objective, append:
 
@@ -701,20 +672,12 @@ When, and ONLY when, the learner has demonstrated mastery of the current objecti
 
 Replace N with the current target number.
 
-Do not explain or mention this marker.
-
-Do not output the marker before mastery.
-
-If the current objective is the final required objective and the learner has demonstrated mastery, append:
+If the current objective is the final required objective, append:
 
 [[TARGET_COMPLETE:N]]
 [[TEACHING_COMPLETE]]
 
-These markers are internal only and will be removed before the learner sees the response.
-
-Never mark an objective complete because you explained it.
-Never mark an objective complete because the learner repeated an answer without demonstrating understanding when more evidence is needed.
-Never mark an objective complete if the learner's answer is clearly incorrect or incomplete.
+These markers are internal and must never be explained to the learner.
 
 {start_rule}
 
@@ -1046,18 +1009,26 @@ def _stream_stage_response(
                 "AI tutor returned an empty response."
             )
 
-        raw_reply = _deduplicate_adjacent_sentences(raw_reply)
+        raw_reply = _deduplicate_adjacent_sentences(
+            raw_reply
+        )
 
         if (
             request.stage == "teaching"
             and not is_control_message
-            and _is_repeated_assistant_reply(raw_reply, history)
+            and _is_repeated_assistant_reply(
+                raw_reply,
+                history,
+            )
         ):
             retry_prompt = (
                 f"{system_prompt}\n\n"
-                "IMPORTANT: Your candidate response repeated the previous teacher response. "
-                "Generate a different concise response that directly reacts to the learner's latest answer. "
-                "Do not repeat the previous wording unless deliberate repetition is necessary for practice."
+                "IMPORTANT: Your candidate response repeated "
+                "the previous teacher response. "
+                "Generate a different concise response that "
+                "directly reacts to the learner's latest answer. "
+                "Do not repeat the previous wording unless "
+                "deliberate repetition is necessary for practice."
             )
 
             response = provider.generate_text(
@@ -1076,7 +1047,9 @@ def _stream_stage_response(
                     "AI tutor returned an empty response."
                 )
 
-            raw_reply = _deduplicate_adjacent_sentences(raw_reply)
+            raw_reply = _deduplicate_adjacent_sentences(
+                raw_reply
+            )
 
         (
             reply,
