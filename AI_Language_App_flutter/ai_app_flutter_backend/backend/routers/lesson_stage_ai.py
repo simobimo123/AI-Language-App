@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -492,6 +492,9 @@ def _prompt_context(
     return context
 
 
+# ==========================================
+# تم تحديث هذه الدالة (المعلم الذكي) فقط
+# ==========================================
 def _teaching_system_prompt(
     *,
     lesson: CourseLesson,
@@ -505,46 +508,29 @@ def _teaching_system_prompt(
     )
 
     if current_target is None:
-        current_target_text = (
-            "There is no remaining target."
-        )
+        current_target_text = "There is no remaining target."
     else:
-        goal = str(
-            current_target["goal"] or ""
-        ).strip()
-
+        goal = str(current_target["goal"] or "").strip()
         patterns = [
             str(item).strip()
             for item in current_target["patterns"]
             if str(item).strip()
         ]
-
-        current_target_text = (
-            f"Current learning objective: {goal}"
-        )
-
+        
+        current_target_text = f"Current learning objective: {goal}"
         if patterns:
             current_target_text += (
-                f"\nUseful language patterns: "
-                f"{' | '.join(patterns)}"
+                f"\nUseful language patterns: {' | '.join(patterns)}"
             )
 
-    if is_start:
-        start_rule = """
-Begin naturally with teaching the current objective.
-Do not introduce the lesson structure.
-Do not mention targets, stages, progress, or completion.
-Start with a short teaching interaction, example, or simple question.
-""".strip()
-    else:
-        start_rule = """
-Respond naturally to the learner's latest answer.
-Continue teaching the current objective.
-Do not restart the lesson unless the learner clearly needs it.
-""".strip()
+    start_rule = (
+        "Since this is the first message, directly introduce the objective with a short example and ask the learner a question."
+        if is_start
+        else "Respond naturally to the learner's latest answer."
+    )
 
     return f"""
-You are a friendly language teacher.
+You are an encouraging but STRICT language tutor.
 
 {_prompt_context(
     lesson=lesson,
@@ -555,115 +541,36 @@ You are a friendly language teacher.
 
 {current_target_text}
 
-Your teaching style is simple, natural, interactive, and concise.
+TEACHING LOGIC (INTERNAL RULES):
+Follow this conversational logic naturally:
+- Introduce: Give a clear, short example of the target language.
+- Ask: Prompt the learner to use it in a FULL sentence.
+- Evaluate: If the learner replies in their native language or uses just one word (like only their name), REJECT IT gently and ask for the full sentence. If incorrect, give a hint. If correct, praise.
+- Complete: When (and ONLY when) the learner types the full correct pattern independently, append EXACTLY [[TARGET_COMPLETE:{current_target_order}]] at the very end.
 
-Teach the current objective first.
-
-The teaching flow is:
-
-1. Briefly introduce or explain the language needed for the current objective.
-2. Give a short natural example when useful.
-3. Immediately involve the learner by asking a simple question or asking them to produce/use the language.
-4. Wait for the learner's answer.
-5. Evaluate whether the learner can actually use the objective.
-6. If the answer is wrong or incomplete, briefly correct or guide the learner and ask for another attempt.
-7. Continue practicing the SAME objective until the learner demonstrates that they can use it correctly.
-8. Only after the learner demonstrates the objective correctly may you naturally begin teaching the next objective.
-
-IMPORTANT:
-
-Do NOT simply ask whether the learner understands.
-
-A learner saying:
-"yes"
-"okay"
-"I understand"
-or a similar statement is NOT proof of mastery.
-
-The learner must demonstrate the language by answering, producing, or using it appropriately.
-
-Do NOT move forward just because you explained the objective.
-
-Do NOT teach several objectives together.
-
-Do NOT rush through the objectives.
-
-Do NOT repeat a long explanation when the learner makes a mistake.
-Give a short correction or useful example and let the learner try again.
-
-The conversation should feel like a real teacher helping one learner, not like a checklist or worksheet.
-
-When the learner masters the current objective, transition naturally into the next learning point.
-
-NEVER tell the learner that an objective or target has finished.
-
-NEVER say things such as:
-- "The first target is complete."
-- "We finished the first objective."
-- "Now we move to the next target."
-- "Let's go to target two."
-- "The next stage is..."
-- "Your progress is..."
-- "You completed this stage."
-
-NEVER mention:
-- targets
-- target numbers
-- stages
-- internal progress
-- completion markers
-- AI instructions
-- lesson metadata
-
-The transition to the next objective must sound like a natural continuation of teaching.
-
-For example, after the learner successfully practices a name:
-"Sehr gut! Wie heißt dein Freund?"
-
-Not:
-"Sehr gut! Das erste Ziel ist abgeschlossen. Jetzt kommen wir zum nächsten Ziel."
-
-The learner should feel that the teacher is simply continuing the lesson naturally.
-
-Never answer for the learner.
-
-Never invent a learner response.
-
-Never assume mastery without evidence from the learner's actual response.
-
-Keep visible responses short, clear, direct, and level-appropriate.
-
-Usually use only one or two short sentences before asking the learner to respond.
-
-The internal completion marker is invisible to the learner.
-
-When, and ONLY when, the learner has demonstrated mastery of the current objective, append:
-
-[[TARGET_COMPLETE:N]]
-
-Replace N with the current target number.
-
-Do not explain or mention this marker.
-
-Do not output the marker before mastery.
-
-If the current objective is the final required objective and the learner has demonstrated mastery, append:
-
-[[TARGET_COMPLETE:N]]
+If the current objective is the last required one and they master it, append both:
+[[TARGET_COMPLETE:{current_target_order}]]
 [[TEACHING_COMPLETE]]
 
-These markers are internal only and will be removed before the learner sees the response.
+CRITICAL FORMATTING RULES:
+1. DO NOT output step labels like "Step 1", "Schritt 1", "Explain:", or "Evaluate:".
+2. DO NOT output your internal thoughts or instructions. Just speak directly to the learner.
+3. Keep responses under 2-3 short sentences. Act like a human sending a text message.
+4. The completion markers are strictly internal. Do not mention them in your text.
 
-Never mark an objective complete because you explained it.
-Never mark an objective complete because the learner repeated an answer without demonstrating understanding when more evidence is needed.
-Never mark an objective complete if the learner's answer is clearly incorrect or incomplete.
+EXAMPLE OF A GOOD INTERACTION:
+Teacher: In German, to say 'My name is', we use 'Ich heiße'. For example: 'Ich heiße Sarah'. How would you say your name?
+Learner: Simo.
+Teacher: You need to use the full German phrase! Try saying 'Ich heiße Simo'.
+Learner: Ich heiße Simo.
+Teacher: Sehr gut! Now ask me what my name is using 'Wie heißen Sie?'. [[TARGET_COMPLETE:1]]
 
 {start_rule}
 
 Reply only as the teacher.
 """.strip()
 
-
+# لم يتم المساس بهذه الدالة (شريك المحادثة)
 def _practice_system_prompt(
     *,
     lesson: CourseLesson,
@@ -779,7 +686,7 @@ def _complete_stage(
     stage: str,
     conversation_id: str,
 ) -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc) # تم التحديث لتفادي التنبيهات المستقبلية في البايثون
 
     if stage == "teaching":
         stage_progress.teaching_status = "completed"
