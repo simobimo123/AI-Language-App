@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/language/language_controller.dart';
+import '../core/storage/tutor_explanation_settings.dart';
 import '../models/learning_lesson_model.dart';
 import '../services/api/api_service.dart';
 import 'lesson_chat_page.dart';
@@ -74,8 +75,71 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
     await _loadStages();
   }
 
+  Future<bool> _ensureTeachingExplanationLanguage() async {
+    final existing = await tutorExplanationSettings.getMode();
+    if (existing != null) return true;
+    if (!mounted) return false;
+
+    final uiLanguage = widget.languageController.locale.languageCode;
+    final theme = Theme.of(context);
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      showDragHandle: true,
+      backgroundColor: theme.colorScheme.surface,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  TutorExplanationSettings.title(uiLanguage),
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  TutorExplanationSettings.question(uiLanguage),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.45),
+                ),
+                const SizedBox(height: 18),
+                ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  tileColor: theme.colorScheme.primaryContainer,
+                  leading: Icon(Icons.translate_rounded, color: theme.colorScheme.primary),
+                  title: Text(TutorExplanationSettings.nativeLabel(uiLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () => Navigator.pop(context, TutorExplanationSettings.nativeMode),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  tileColor: theme.colorScheme.surfaceContainerHighest,
+                  leading: Icon(Icons.school_rounded, color: theme.colorScheme.onSurfaceVariant),
+                  title: Text(TutorExplanationSettings.learningLabel(uiLanguage), style: const TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () => Navigator.pop(context, TutorExplanationSettings.learningMode),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected == null) return false;
+    await tutorExplanationSettings.setMode(selected);
+    return true;
+  }
+
   Future<void> _openTeaching() async {
     if (_teachingStatus == 'locked') return;
+
+    final ready = await _ensureTeachingExplanationLanguage();
+    if (!ready || !mounted) return;
+
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => LessonChatPage(
