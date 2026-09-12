@@ -36,8 +36,10 @@ class _LessonChatPageState extends State<LessonChatPage> {
   final ApiService _api = ApiService();
   final _input = TextEditingController();
   final _scroll = ScrollController();
+  final _focusNode = FocusNode();
   final List<_Message> _messages = [];
   final Map<int, String> _translations = {};
+  final Map<String, Map<String, dynamic>> _wordDetails = {};
 
   String? _conversationId;
   String? _error;
@@ -49,9 +51,11 @@ class _LessonChatPageState extends State<LessonChatPage> {
   String? _suggestionText;
   String? _suggestionTranslation;
   bool _suggestionCollapsed = false;
-
   bool _isFocused = false;
-  final FocusNode _focusNode = FocusNode();
+  String? _selectedWordKey;
+  String? _loadingWordKey;
+  int? _wordCardMessageIndex;
+  OverlayEntry? _wordActionOverlay;
 
   String _ui(String key) => lessonChatUiText(
         widget.languageController.locale.languageCode,
@@ -67,13 +71,186 @@ class _LessonChatPageState extends State<LessonChatPage> {
   String get _completionLabel =>
       widget.isTeaching ? _ui('continueStage3') : _ui('complete');
 
+  String _wordUi(String key) {
+    final language = widget.languageController.locale.languageCode
+        .toLowerCase()
+        .split('-')
+        .first;
+    const labels = <String, Map<String, String>>{
+      'ar': {
+        'explain': 'شرح',
+        'partOfSpeech': 'نوع الكلمة',
+        'pronunciation': 'النطق',
+        'example': 'مثال',
+        'exampleTranslation': 'ترجمة المثال',
+        'loading': 'جاري إنشاء البطاقة...',
+        'lookupError': 'تعذر شرح هذه الكلمة.',
+      },
+      'en': {
+        'explain': 'Explain',
+        'partOfSpeech': 'Part of speech',
+        'pronunciation': 'Pronunciation',
+        'example': 'Example',
+        'exampleTranslation': 'Example translation',
+        'loading': 'Creating the word card...',
+        'lookupError': 'Could not explain this word.',
+      },
+      'fr': {
+        'explain': 'Expliquer',
+        'partOfSpeech': 'Nature du mot',
+        'pronunciation': 'Prononciation',
+        'example': 'Exemple',
+        'exampleTranslation': "Traduction de l’exemple",
+        'loading': 'Création de la fiche...',
+        'lookupError': 'Impossible d’expliquer ce mot.',
+      },
+      'de': {
+        'explain': 'Erklären',
+        'partOfSpeech': 'Wortart',
+        'pronunciation': 'Aussprache',
+        'example': 'Beispiel',
+        'exampleTranslation': 'Beispielübersetzung',
+        'loading': 'Wortkarte wird erstellt...',
+        'lookupError': 'Dieses Wort konnte nicht erklärt werden.',
+      },
+      'es': {
+        'explain': 'Explicar',
+        'partOfSpeech': 'Tipo de palabra',
+        'pronunciation': 'Pronunciación',
+        'example': 'Ejemplo',
+        'exampleTranslation': 'Traducción del ejemplo',
+        'loading': 'Creando la ficha...',
+        'lookupError': 'No se pudo explicar esta palabra.',
+      },
+      'it': {
+        'explain': 'Spiega',
+        'partOfSpeech': 'Parte del discorso',
+        'pronunciation': 'Pronuncia',
+        'example': 'Esempio',
+        'exampleTranslation': "Traduzione dell’esempio",
+        'loading': 'Creazione della scheda...',
+        'lookupError': 'Impossibile spiegare questa parola.',
+      },
+      'pt': {
+        'explain': 'Explicar',
+        'partOfSpeech': 'Classe gramatical',
+        'pronunciation': 'Pronúncia',
+        'example': 'Exemplo',
+        'exampleTranslation': 'Tradução do exemplo',
+        'loading': 'Criando o cartão...',
+        'lookupError': 'Não foi possível explicar esta palavra.',
+      },
+      'tr': {
+        'explain': 'Açıkla',
+        'partOfSpeech': 'Sözcük türü',
+        'pronunciation': 'Telaffuz',
+        'example': 'Örnek',
+        'exampleTranslation': 'Örnek çevirisi',
+        'loading': 'Kelime kartı oluşturuluyor...',
+        'lookupError': 'Bu kelime açıklanamadı.',
+      },
+      'nl': {
+        'explain': 'Uitleg',
+        'partOfSpeech': 'Woordsoort',
+        'pronunciation': 'Uitspraak',
+        'example': 'Voorbeeld',
+        'exampleTranslation': 'Vertaling van voorbeeld',
+        'loading': 'Woordkaart wordt gemaakt...',
+        'lookupError': 'Dit woord kon niet worden uitgelegd.',
+      },
+      'pl': {
+        'explain': 'Wyjaśnij',
+        'partOfSpeech': 'Część mowy',
+        'pronunciation': 'Wymowa',
+        'example': 'Przykład',
+        'exampleTranslation': 'Tłumaczenie przykładu',
+        'loading': 'Tworzenie karty słowa...',
+        'lookupError': 'Nie można wyjaśnić tego słowa.',
+      },
+      'ru': {
+        'explain': 'Объяснить',
+        'partOfSpeech': 'Часть речи',
+        'pronunciation': 'Произношение',
+        'example': 'Пример',
+        'exampleTranslation': 'Перевод примера',
+        'loading': 'Создание карточки...',
+        'lookupError': 'Не удалось объяснить это слово.',
+      },
+      'uk': {
+        'explain': 'Пояснити',
+        'partOfSpeech': 'Частина мови',
+        'pronunciation': 'Вимова',
+        'example': 'Приклад',
+        'exampleTranslation': 'Переклад прикладу',
+        'loading': 'Створення картки слова...',
+        'lookupError': 'Не вдалося пояснити це слово.',
+      },
+      'id': {
+        'explain': 'Jelaskan',
+        'partOfSpeech': 'Kelas kata',
+        'pronunciation': 'Pengucapan',
+        'example': 'Contoh',
+        'exampleTranslation': 'Terjemahan contoh',
+        'loading': 'Membuat kartu kata...',
+        'lookupError': 'Kata ini tidak dapat dijelaskan.',
+      },
+      'ja': {
+        'explain': '説明',
+        'partOfSpeech': '品詞',
+        'pronunciation': '発音',
+        'example': '例文',
+        'exampleTranslation': '例文の翻訳',
+        'loading': '単語カードを作成中...',
+        'lookupError': 'この単語を説明できませんでした。',
+      },
+      'ko': {
+        'explain': '설명',
+        'partOfSpeech': '품사',
+        'pronunciation': '발음',
+        'example': '예문',
+        'exampleTranslation': '예문 번역',
+        'loading': '단어 카드를 만드는 중...',
+        'lookupError': '이 단어를 설명할 수 없습니다.',
+      },
+      'zh': {
+        'explain': '解释',
+        'partOfSpeech': '词性',
+        'pronunciation': '发音',
+        'example': '例句',
+        'exampleTranslation': '例句翻译',
+        'loading': '正在创建单词卡...',
+        'lookupError': '无法解释这个词。',
+      },
+      'th': {
+        'explain': 'อธิบาย',
+        'partOfSpeech': 'ชนิดของคำ',
+        'pronunciation': 'การออกเสียง',
+        'example': 'ตัวอย่าง',
+        'exampleTranslation': 'คำแปลตัวอย่าง',
+        'loading': 'กำลังสร้างการ์ดคำศัพท์...',
+        'lookupError': 'ไม่สามารถอธิบายคำนี้ได้',
+      },
+      'vi': {
+        'explain': 'Giải thích',
+        'partOfSpeech': 'Từ loại',
+        'pronunciation': 'Phát âm',
+        'example': 'Ví dụ',
+        'exampleTranslation': 'Dịch ví dụ',
+        'loading': 'Đang tạo thẻ từ...',
+        'lookupError': 'Không thể giải thích từ này.',
+      },
+    };
+    return labels[language]?[key] ?? labels['en']![key]!;
+  }
+
+  String _normalizeWord(String word) => word.trim().toLowerCase();
+
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
+      if (!mounted) return;
+      setState(() => _isFocused = _focusNode.hasFocus);
     });
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _send('START_STAGE', showUser: false));
@@ -81,6 +258,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
   @override
   void dispose() {
+    _removeWordActionOverlay();
     _input.dispose();
     _scroll.dispose();
     _focusNode.dispose();
@@ -244,41 +422,419 @@ class _LessonChatPageState extends State<LessonChatPage> {
     });
   }
 
-  InlineSpan _messageSpan(String text, TextStyle baseStyle, Color highlightColor) {
-    final pattern = RegExp(r'\*\*(.+?)\*\*', dotAll: true);
-    final matches = pattern.allMatches(text);
-    if (matches.isEmpty) {
-      return TextSpan(text: text, style: baseStyle);
+  void _removeWordActionOverlay() {
+    _wordActionOverlay?.remove();
+    _wordActionOverlay = null;
+  }
+
+  void _showWordAction({
+    required String word,
+    required Offset globalPosition,
+    required int messageIndex,
+  }) {
+    _removeWordActionOverlay();
+    final key = _normalizeWord(word);
+    if (key.isEmpty) return;
+
+    setState(() {
+      _selectedWordKey = key;
+      _wordCardMessageIndex = messageIndex;
+    });
+
+    final overlay = Overlay.of(context);
+    final size = MediaQuery.of(context).size;
+    const popupWidth = 112.0;
+    const popupHeight = 46.0;
+    final left = (globalPosition.dx - popupWidth / 2)
+        .clamp(12.0, size.width - popupWidth - 12.0);
+    final top = (globalPosition.dy - popupHeight - 10)
+        .clamp(MediaQuery.of(context).padding.top + 8, size.height - popupHeight - 12);
+
+    _wordActionOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        left: left,
+        top: top,
+        width: popupWidth,
+        height: popupHeight,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Material(
+              color: Theme.of(context).colorScheme.inverseSurface,
+              borderRadius: BorderRadius.circular(14),
+              elevation: 8,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () {
+                  _removeWordActionOverlay();
+                  _lookupWord(word, messageIndex);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.menu_book_rounded,
+                        size: 17,
+                        color: Theme.of(context).colorScheme.onInverseSurface,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _wordUi('explain'),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onInverseSurface,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(_wordActionOverlay!);
+  }
+
+  Future<void> _lookupWord(String word, int messageIndex) async {
+    final cleanWord = word.trim();
+    final key = _normalizeWord(cleanWord);
+    if (key.isEmpty) return;
+
+    setState(() {
+      _selectedWordKey = key;
+      _wordCardMessageIndex = messageIndex;
+      _error = null;
+    });
+
+    final cached = _wordDetails[key];
+    if (cached != null) {
+      _scrollToEnd();
+      return;
     }
 
-    final spans = <InlineSpan>[];
-    var cursor = 0;
-    for (final match in matches) {
-      if (match.start > cursor) {
-        spans.add(TextSpan(
-          text: text.substring(cursor, match.start),
-          style: baseStyle,
-        ));
-      }
-      final highlightedText = match.group(1);
-      if (highlightedText != null) {
-        spans.add(TextSpan(
-          text: highlightedText,
-          style: baseStyle.copyWith(
-            color: highlightColor,
-            fontWeight: FontWeight.w800,
+    setState(() => _loadingWordKey = key);
+
+    try {
+      final result = await _api.lookupWord(word: cleanWord);
+      if (!mounted) return;
+      setState(() {
+        _wordDetails[key] = result;
+        _selectedWordKey = key;
+        _wordCardMessageIndex = messageIndex;
+      });
+      _scrollToEnd();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = _wordUi('lookupError'));
+    } finally {
+      if (mounted) setState(() => _loadingWordKey = null);
+    }
+  }
+
+  String _plainMessageText(String text) =>
+      text.replaceAll('**', '');
+
+  String? _wordAtOffset({
+    required String text,
+    required TextStyle style,
+    required TextDirection direction,
+    required double maxWidth,
+    required Offset localPosition,
+  }) {
+    final displayText = _plainMessageText(text);
+    if (displayText.trim().isEmpty) return null;
+
+    final painter = TextPainter(
+      text: TextSpan(text: displayText, style: style),
+      textDirection: direction,
+      textAlign: TextAlign.start,
+      maxLines: null,
+    )..layout(maxWidth: maxWidth);
+
+    final position = painter.getPositionForOffset(localPosition);
+    final offset = position.offset.clamp(0, displayText.length);
+
+    var start = offset;
+    while (start > 0 && !RegExp(r'\s').hasMatch(displayText[start - 1])) {
+      start--;
+    }
+    var end = offset;
+    while (end < displayText.length && !RegExp(r'\s').hasMatch(displayText[end])) {
+      end++;
+    }
+
+    if (start >= end) return null;
+    final raw = displayText.substring(start, end);
+    final word = raw.replaceAll(RegExp(r'^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$', unicode: true), '');
+    if (word.isEmpty || word.length > 80) return null;
+    return word;
+  }
+
+  Widget _buildClickableMessageText(
+    BuildContext context, {
+    required String text,
+    required TextStyle style,
+    required TextDirection direction,
+    required bool isUser,
+    required int messageIndex,
+  }) {
+    final displayText = _plainMessageText(text);
+    final maxWidth = MediaQuery.of(context).size.width * 0.8 - 36;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: isUser
+          ? null
+          : (details) {
+              final word = _wordAtOffset(
+                text: text,
+                style: style,
+                direction: direction,
+                maxWidth: maxWidth,
+                localPosition: details.localPosition,
+              );
+              if (word == null) return;
+              _showWordAction(
+                word: word,
+                globalPosition: (context.findRenderObject() as RenderBox)
+                    .localToGlobal(details.localPosition),
+                messageIndex: messageIndex,
+              );
+            },
+      child: Text(
+        displayText,
+        textDirection: direction,
+        style: style,
+      ),
+    );
+  }
+
+  Widget _buildWordCard(BuildContext context, int messageIndex) {
+    final theme = Theme.of(context);
+    final key = _selectedWordKey;
+    if (key == null || _wordCardMessageIndex != messageIndex) {
+      return const SizedBox.shrink();
+    }
+
+    final data = _wordDetails[key];
+    final loading = _loadingWordKey == key;
+    if (data == null && !loading) return const SizedBox.shrink();
+
+    String value(String field) => (data?[field] ?? '').toString().trim();
+    final word = value('word').isNotEmpty ? value('word') : key;
+    final translation = value('translation');
+    final partOfSpeech = value('part_of_speech');
+    final pronunciation = value('pronunciation');
+    final example = value('example_sentence');
+    final exampleTranslation = value('example_translation');
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      child: Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.16),
           ),
-        ));
-      }
-      cursor = match.end;
-    }
-    if (cursor < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(cursor),
-        style: baseStyle,
-      ));
-    }
-    return TextSpan(children: spans);
+        ),
+        child: loading
+            ? Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.3,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _wordUi('loading'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Directionality(
+                          textDirection: _learningDirection,
+                          child: Text(
+                            word,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => setState(() {
+                          _selectedWordKey = null;
+                          _wordCardMessageIndex = null;
+                        }),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 19,
+                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.65),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (translation.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _wordInfoRow(
+                      context,
+                      icon: Icons.translate_rounded,
+                      value: translation,
+                      strong: true,
+                      direction: directionForText(translation),
+                    ),
+                  ],
+                  if (partOfSpeech.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _wordInfoRow(
+                      context,
+                      icon: Icons.category_outlined,
+                      label: _wordUi('partOfSpeech'),
+                      value: partOfSpeech,
+                      direction: directionForText(partOfSpeech, fallback: _learningDirection),
+                    ),
+                  ],
+                  if (pronunciation.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _wordInfoRow(
+                      context,
+                      icon: Icons.record_voice_over_outlined,
+                      label: _wordUi('pronunciation'),
+                      value: pronunciation,
+                      direction: TextDirection.ltr,
+                    ),
+                  ],
+                  if (example.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _wordSection(
+                      context,
+                      label: _wordUi('example'),
+                      value: example,
+                      direction: _learningDirection,
+                    ),
+                  ],
+                  if (exampleTranslation.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _wordSection(
+                      context,
+                      label: _wordUi('exampleTranslation'),
+                      value: exampleTranslation,
+                      direction: directionForText(exampleTranslation),
+                    ),
+                  ],
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _wordInfoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String value,
+    required TextDirection direction,
+    String? label,
+    bool strong = false,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 17, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        if (label != null) ...[
+          Text(
+            '$label: ',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+        Expanded(
+          child: Directionality(
+            textDirection: direction,
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+                color: theme.colorScheme.onPrimaryContainer,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _wordSection(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required TextDirection direction,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Directionality(
+            textDirection: direction,
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildMessageActions(BuildContext context, int index) {
@@ -331,58 +887,39 @@ class _LessonChatPageState extends State<LessonChatPage> {
             ),
           ),
           if (translation != null)
-            AnimatedOpacity(
-              opacity: 1.0,
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.g_translate_rounded, size: 16, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Directionality(
+                      textDirection: directionForText(translation),
+                      child: Text(
+                        translation,
+                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                      ),
+                    ),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.g_translate_rounded,
-                      size: 16,
-                      color: theme.colorScheme.primary,
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => setState(() => _translations.remove(index)),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.close_rounded, size: 14),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Directionality(
-                        textDirection: directionForText(translation),
-                        child: Text(
-                          translation,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => setState(() => _translations.remove(index)),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -394,18 +931,20 @@ class _LessonChatPageState extends State<LessonChatPage> {
     final theme = Theme.of(context);
     final message = _messages[index];
     final isUser = message.isUser;
-
     final bubbleColor = isUser
         ? theme.colorScheme.primary
         : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
     final foregroundColor = isUser
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface;
-
     final messageDirection = isUser
         ? directionForText(message.text, fallback: _learningDirection)
         : _learningDirection;
-
+    final textStyle = theme.textTheme.bodyLarge!.copyWith(
+      color: foregroundColor,
+      height: 1.5,
+      letterSpacing: 0.2,
+    );
     final borderRadius = BorderRadius.only(
       topLeft: const Radius.circular(24),
       topRight: const Radius.circular(24),
@@ -416,11 +955,10 @@ class _LessonChatPageState extends State<LessonChatPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser) ...[
+          if (!isUser)
             Container(
               width: 34,
               height: 34,
@@ -435,72 +973,37 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Icon(
-                Icons.smart_toy_rounded,
-                size: 18,
-                color: theme.colorScheme.onPrimary,
-              ),
+              child: Icon(Icons.smart_toy_rounded, size: 18, color: theme.colorScheme.onPrimary),
             ),
-          ],
           Flexible(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-              ),
+              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
               child: Column(
-                crossAxisAlignment:
-                    isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                     decoration: BoxDecoration(
                       color: bubbleColor,
                       borderRadius: borderRadius,
-                      boxShadow: [
-                        if (isUser)
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          )
-                        else
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                      ],
                     ),
                     child: Directionality(
                       textDirection: messageDirection,
-                      child: RichText(
-                        textAlign: TextAlign.start,
-                        text: _messageSpan(
-                          message.text,
-                          theme.textTheme.bodyLarge!.copyWith(
-                            color: foregroundColor,
-                            height: 1.5,
-                            letterSpacing: 0.2,
-                          ),
-                          isUser
-                              ? theme.colorScheme.onPrimaryContainer
-                              : theme.colorScheme.primary,
-                        ),
+                      child: _buildClickableMessageText(
+                        context,
+                        text: message.text,
+                        style: textStyle,
+                        direction: messageDirection,
+                        isUser: isUser,
+                        messageIndex: index,
                       ),
                     ),
                   ),
-                  if (!isUser) _buildMessageActions(context, index),
+                  if (!isUser) ...[
+                    _buildMessageActions(context, index),
+                    _buildWordCard(context, index),
+                  ],
                 ],
               ),
             ),
@@ -543,11 +1046,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                Icons.lightbulb_rounded,
-                size: 20,
-                color: theme.colorScheme.secondary,
-              ),
+              Icon(Icons.lightbulb_rounded, size: 20, color: theme.colorScheme.secondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -558,18 +1057,15 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   ),
                 ),
               ),
-              // زر الإظهار (السهم) يأتي أولاً
-              _buildIconButton(
-                icon: Icons.keyboard_arrow_up_rounded,
+              IconButton(
                 onPressed: () => setState(() => _suggestionCollapsed = false),
-                theme: theme,
+                icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                iconSize: 20,
               ),
-              const SizedBox(width: 4),
-              // زر الإزالة (X) أصبح في أقصى اليسار
-              _buildIconButton(
-                icon: Icons.close_rounded,
+              IconButton(
                 onPressed: _clearSuggestion,
-                theme: theme,
+                icon: const Icon(Icons.close_rounded),
+                iconSize: 20,
               ),
             ],
           ),
@@ -584,9 +1080,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
       decoration: BoxDecoration(
         color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.secondary.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.15)),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -594,77 +1088,38 @@ class _LessonChatPageState extends State<LessonChatPage> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondary.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.lightbulb_rounded,
-                  size: 16,
-                  color: theme.colorScheme.secondary,
-                ),
-              ),
+              Icon(Icons.lightbulb_rounded, size: 20, color: theme.colorScheme.secondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   _ui('replySuggestion'),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                  ),
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
-              // زر الإخفاء (سهم للأسفل) يأتي أولاً
-              _buildIconButton(
-                icon: Icons.keyboard_arrow_down_rounded,
+              IconButton(
                 onPressed: () => setState(() => _suggestionCollapsed = true),
-                theme: theme,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                iconSize: 20,
               ),
-              const SizedBox(width: 4),
-              // زر الإزالة (X) أصبح في أقصى اليسار
-              _buildIconButton(
-                icon: Icons.close_rounded,
+              IconButton(
                 onPressed: _clearSuggestion,
-                theme: theme,
+                icon: const Icon(Icons.close_rounded),
+                iconSize: 20,
               ),
             ],
           ),
           const SizedBox(height: 12),
           Directionality(
             textDirection: _learningDirection,
-            child: Text(
-              _suggestionText!,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
-                height: 1.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text(_suggestionText!, style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
           ),
-          if (_suggestionTranslation != null &&
-              _suggestionTranslation!.trim().isNotEmpty) ...[
+          if (_suggestionTranslation != null && _suggestionTranslation!.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-                  ),
-                ),
-              ),
-              child: Directionality(
-                textDirection: directionForText(_suggestionTranslation!),
-                child: Text(
-                  _suggestionTranslation!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
-                    height: 1.4,
-                  ),
-                ),
+            Directionality(
+              textDirection: directionForText(_suggestionTranslation!),
+              child: Text(
+                _suggestionTranslation!,
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
               ),
             ),
           ],
@@ -673,32 +1128,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
     );
   }
 
-  Widget _buildIconButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    required ThemeData theme,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(
-            icon,
-            size: 20,
-            color: theme.colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildComposer(BuildContext context) {
     final theme = Theme.of(context);
-
     return Container(
       padding: EdgeInsets.only(
         left: 16,
@@ -724,9 +1155,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                ),
+                border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -740,90 +1169,52 @@ class _LessonChatPageState extends State<LessonChatPage> {
                       maxLines: 5,
                       textDirection: _learningDirection,
                       textInputAction: TextInputAction.newline,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                      ),
+                      style: theme.textTheme.bodyLarge,
                       decoration: InputDecoration(
-                        hintText: (!_isFocused && _input.text.isEmpty) ? "اضغط هنا للكتابة" : null,
-                        hintStyle: TextStyle(
-                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
+                        hintText: (!_isFocused && _input.text.isEmpty) ? 'اضغط هنا للكتابة' : null,
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                       ),
-                      onChanged: (text) {
-                        setState(() {});
-                      },
+                      onChanged: (_) => setState(() {}),
                       onSubmitted: (_) => _sendCurrent(),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4, right: 4, left: 4),
-                    child: IconButton(
-                      onPressed: _sending || _completed ? null : _suggestReply,
-                      icon: _suggesting
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: theme.colorScheme.primary,
-                              ),
-                            )
-                          : Icon(
-                              Icons.lightbulb_outline_rounded,
+                  IconButton(
+                    onPressed: _sending || _completed ? null : _suggestReply,
+                    icon: _suggesting
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
                               color: theme.colorScheme.primary,
                             ),
-                      tooltip: _ui('suggest'),
-                    ),
+                          )
+                        : Icon(Icons.lightbulb_outline_rounded, color: theme.colorScheme.primary),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: 10),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 2),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              decoration: BoxDecoration(
-                color: _sending || _completed
-                    ? theme.colorScheme.surfaceContainerHighest
-                    : theme.colorScheme.primary,
-                shape: BoxShape.circle,
-                boxShadow: _sending || _completed
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              child: IconButton(
-                onPressed: _sending || _completed ? null : _sendCurrent,
-                icon: _sending
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      )
-                    : Icon(
-                        Icons.send_rounded,
-                        color: theme.colorScheme.onPrimary,
-                        size: 20,
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: _sending || _completed
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.primary,
+            child: IconButton(
+              onPressed: _sending || _completed ? null : _sendCurrent,
+              icon: _sending
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                tooltip: _ui('send'),
-              ),
+                    )
+                  : Icon(Icons.send_rounded, color: theme.colorScheme.onPrimary, size: 20),
             ),
           ),
         ],
@@ -840,16 +1231,11 @@ class _LessonChatPageState extends State<LessonChatPage> {
       appBar: AppBar(
         title: Text(
           _stageLabel,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            letterSpacing: 0.5,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: 0.5),
         ),
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.1),
         backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.9),
         surfaceTintColor: Colors.transparent,
       ),
@@ -861,10 +1247,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(
-                          color: theme.colorScheme.primary,
-                          strokeWidth: 3,
-                        ),
+                        CircularProgressIndicator(color: theme.colorScheme.primary, strokeWidth: 3),
                         const SizedBox(height: 16),
                         Text(
                           'جاري بدء المحادثة...',
@@ -883,30 +1266,19 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   ),
           ),
           if (_error != null)
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline_rounded, color: theme.colorScheme.error, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onErrorContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline_rounded, color: theme.colorScheme.error, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_error!)),
+                ],
               ),
             ),
           if (_completed)
@@ -919,22 +1291,13 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
                     onPressed: () => Navigator.pop(context, true),
-                    icon: Icon(
-                      widget.isTeaching ? Icons.arrow_forward_rounded : Icons.check_rounded,
-                    ),
+                    icon: Icon(widget.isTeaching ? Icons.arrow_forward_rounded : Icons.check_rounded),
                     label: Text(
                       _completionLabel,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),
