@@ -10,6 +10,9 @@ from services.ai.client import (
     chat_completion,
     stream_chat_completion,
 )
+from services.ai.explanation_language_context import (
+    get_explanation_language_context,
+)
 
 load_dotenv()
 
@@ -64,6 +67,47 @@ class AIProvider:
 class OpenRouterProvider(AIProvider):
     name = "openrouter"
 
+    @staticmethod
+    def _apply_teaching_explanation_language(
+        system_instruction: str | None,
+    ) -> str | None:
+        if not system_instruction:
+            return system_instruction
+
+        if "You are the **TEACHING AI**" not in system_instruction:
+            return system_instruction
+
+        context = get_explanation_language_context()
+
+        if context is None:
+            return system_instruction
+
+        mode, native_language, learning_language = context
+
+        explanation_language = (
+            native_language
+            if mode == "native"
+            else learning_language
+        )
+
+        language_source = (
+            "the learner's native language"
+            if mode == "native"
+            else "the learner's language of study"
+        )
+
+        return (
+            f"{system_instruction}\n\n"
+            "**EXPLANATION LANGUAGE**:\n\n"
+            f"Use **{explanation_language}** for all teacher explanations, "
+            f"corrections, grammar notes, and instructional guidance. "
+            f"The selected source is {language_source}.\n\n"
+            f"**LEARNING LANGUAGE**: {learning_language}\n"
+            "Keep example sentences, model answers, and practice output "
+            "in the learning language unless a brief explanation in the "
+            "selected explanation language is required."
+        )
+
     @classmethod
     def _messages(
         cls,
@@ -76,7 +120,9 @@ class OpenRouterProvider(AIProvider):
             messages.append(
                 {
                     "role": "system",
-                    "content": system_instruction,
+                    "content": cls._apply_teaching_explanation_language(
+                        system_instruction
+                    ) or system_instruction,
                 }
             )
 
