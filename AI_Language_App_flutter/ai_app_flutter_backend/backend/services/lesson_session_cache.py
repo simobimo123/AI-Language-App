@@ -51,12 +51,15 @@ class LessonChatSession:
 class LessonSessionCache:
     """Process-local cache for lesson chat sessions.
 
-    The cache key includes the user, lesson, and stage, so Teaching and
+    The normal cache key includes the user, lesson, and stage, so Teaching and
     Practice can never accidentally share the same temporary conversation.
+    A second conversation-ID index is kept so the existing lesson routes can
+    retrieve the same temporary history without writing messages to the DB.
     """
 
     def __init__(self) -> None:
         self._sessions: dict[tuple[int, int, str], LessonChatSession] = {}
+        self._conversation_index: dict[tuple[int, str], LessonChatSession] = {}
         self._lock = RLock()
 
     @staticmethod
@@ -108,7 +111,63 @@ class LessonSessionCache:
                 stage=key[2],
             )
             self._sessions[key] = session
+            self._conversation_index[
+                (user_id, session.conversation_id)
+            ] = session
             return session, True
+
+    def register_conversation(
+        self,
+        user_id: int,
+        lesson_id: int,
+        stage: str,
+        conversation_id: str,
+    ) -> LessonChatSession:
+        """Register an externally created lesson conversation ID."""
+        key = self._key(user_id, lesson_id, stage)
+        conversation_id = conversation_id.strip()
+
+        if not conversation_id:
+            raise ValueError("Conversation ID cannot be empty.")
+
+        with self._lock:
+            session = self._sessions.get(key)
+
+            if session is not None:
+                old_key = (user_id, session.conversation_id)
+                if old_key != (user_id, conversation_id):
+                    self._conversation_index.pop(old_key, None)
+                session.conversation_id = conversation_id
+                session.updated_at = datetime.now(timezone.utc)
+            else:
+                session = LessonChatSession(
+                    user_id=user_id,
+                    lesson_id=lesson_id,
+                    stage=key[2],
+                    conversation_id=conversation_id,
+                )
+                self._sessions[key] = session
+
+            self._conversation_index[
+                (user_id, conversation_id)
+            ] = session
+            return session
+
+    def get_by_conversation_id(
+        self,
+        user_id: int,
+        conversation_id: str,
+    ) -> LessonChatSession | None:
+        """Return a temporary lesson session by its conversation ID."""
+        conversation_id = conversation_id.strip()
+
+        if not conversation_id:
+            return None
+
+        with self._lock:
+            return self._conversation_index.get(
+                (user_id, conversation_id)
+            )
 
     def add_message(
         self,
@@ -126,6 +185,47 @@ class LessonSessionCache:
         )
 
         with self._lock:
+            session.add_message(role=role, content=content)
+            return session
+
+    def add_message_by_conversation_id(
+        self,
+        user_id: int,
+        conversation_id: str,
+        role: str,
+        content: str,
+    ) -> LessonChatSession:
+        """Append to an existing temporary lesson conversation.
+
+        This fallback also supports the current lesson route while it still
+        generates the conversation ID itself. No lesson message is persisted.
+        """
+        conversation_id = conversation_id.strip()
+
+        if not conversation_id.startswith("lesson_"):
+            raise ValueError("Not a lesson conversation ID.")
+
+        with self._lock:
+            session = self._conversation_index.get(
+                (user_id, conversation_id)
+            )
+
+            if session is None:
+                stage = (
+                    "practice"
+                    if conversation_id.startswith("lesson_practice_")
+                    else "teaching"
+                )
+                session = LessonChatSession(
+                    user_id=user_id,
+                    lesson_id=0,
+                    stage=stage,
+                    conversation_id=conversation_id,
+                )
+                self._conversation_index[
+                    (user_id, conversation_id)
+                ] = session
+
             session.add_message(role=role, content=content)
             return session
 
@@ -158,7 +258,15 @@ class LessonSessionCache:
         key = self._key(user_id, lesson_id, stage)
 
         with self._lock:
-            return self._sessions.pop(key, None) is not None
+            session = self._sessions.pop(key, None)
+            if session is None:
+                return False
+
+            self._conversation_index.pop(
+                (user_id, session.conversation_id),
+                None,
+            )
+            return True
 
     def clear_user(self, user_id: int) -> int:
         """Remove all temporary lesson sessions belonging to one user."""
@@ -170,7 +278,11 @@ class LessonSessionCache:
             ]
 
             for key in keys:
-                self._sessions.pop(key, None)
+                session = self._sessions.pop(key)
+                self._conversation_index.pop(
+                    (user_id, session.conversation_id),
+                    None,
+                )
 
             return len(keys)
 
