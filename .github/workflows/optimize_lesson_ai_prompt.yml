@@ -1,0 +1,66 @@
+name: Optimize lesson AI prompt context
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reduce lesson AI prompt context
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py")
+          text = path.read_text(encoding="utf-8")
+
+          old = '''MAX_HISTORY_MESSAGES = 40\nMAX_HISTORY_CHARS_PER_MESSAGE = 1800\nMAX_LEARNER_MESSAGE_CHARS = 800\nMAX_OUTPUT_TOKENS = 420'''
+          new = '''MAX_HISTORY_MESSAGES = 40\nMAX_CONTEXT_MESSAGES = 8\nMAX_HISTORY_CHARS_PER_MESSAGE = 1400\nMAX_LEARNER_MESSAGE_CHARS = 800\nMAX_OUTPUT_TOKENS = 420'''
+          assert old in text, "history constants block not found"
+          text = text.replace(old, new, 1)
+
+          old = '''    for item in history[-MAX_HISTORY_MESSAGES:]:'''
+          new = '''    for item in history[-MAX_CONTEXT_MESSAGES:]:'''
+          assert old in text, "history context slice not found"
+          text = text.replace(old, new, 1)
+
+          old = '''def _compact_goals(\n    targets: list[dict],\n) -> str:\n'''
+          new = '''def _compact_target_goals(\n    targets: list[dict],\n) -> str:\n    lines: list[str] = []\n\n    for target in targets:\n        if not target["required"]:\n            continue\n\n        goal = str(target.get("goal", "") or "").strip()\n        if not goal:\n            continue\n\n        order = target.get("order")\n        prefix = f"{order}. " if order is not None else "- "\n        lines.append(f"{prefix}{goal}")\n\n    return "\\n".join(lines) or "- Follow the lesson objectives."\n\n\ndef _compact_goals(\n    targets: list[dict],\n) -> str:\n'''
+          assert old in text, "compact goals function not found"
+          text = text.replace(old, new, 1)
+
+          old = '''    context = (\n        f"**LANGUAGE**: {lesson.language}\\n"\n        f"**LEVEL**: {lesson.level}\\n"\n        f"**LESSON TARGETS**:\\n"\n        f"{_compact_goals(targets)}"\n    )'''
+          new = '''    context = (\n        f"**LANGUAGE**: {lesson.language}\\n"\n        f"**LEVEL**: {lesson.level}"\n    )'''
+          assert old in text, "prompt context block not found"
+          text = text.replace(old, new, 1)
+
+          old = '''    return f"""\nYou are the **PRACTICE AI** in a language-learning lesson.\n\nYou are a natural conversation partner helping the learner\nuse what they learned in the Teaching stage.'''
+          new = '''    return f"""\nYou are the **PRACTICE AI** in a language-learning lesson.\n\nYou are a natural conversation partner helping the learner\nuse what they learned in the Teaching stage.'''
+          assert old in text, "practice prompt header not found"
+
+          old = '''{_prompt_context(\n    lesson=lesson,\n    targets=targets,\n    scenario=scenario,\n)}\n\n**MAIN OBJECTIVE**:'''
+          new = '''{_prompt_context(\n    lesson=lesson,\n    targets=targets,\n    scenario=scenario,\n)}\n\n**LESSON TARGETS**:\n{_compact_target_goals(targets)}\n\n**MAIN OBJECTIVE**:'''
+          assert old in text, "practice target insertion point not found"
+          text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8")
+          print("Updated lesson_stage_ai.py")
+
+      - name: Commit optimized file
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
+          git diff --cached --quiet && exit 0
+          git commit -m "Reduce lesson AI prompt context"
+          git push
