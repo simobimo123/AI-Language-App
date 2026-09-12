@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/language/language_controller.dart';
 import '../models/learning_lesson_model.dart';
 import '../services/api/api_service.dart';
-import 'lesson_practice_page.dart';
-import 'lesson_teaching_page.dart';
+import 'lesson_chat_page.dart';
 
 class LessonJourneyPage extends StatefulWidget {
   final LearningLessonModel lesson;
@@ -78,7 +77,13 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
   Future<void> _openTeaching() async {
     if (_teachingStatus == 'locked') return;
     final completed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => LessonTeachingPage(lesson: widget.lesson, languageController: widget.languageController)),
+      MaterialPageRoute(
+        builder: (_) => LessonChatPage(
+          lesson: widget.lesson,
+          languageController: widget.languageController,
+          stage: 'teaching',
+        ),
+      ),
     );
     if (!mounted || completed != true) return;
     try {
@@ -91,7 +96,13 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
   Future<void> _openPractice() async {
     if (!_teachingCompleted) return;
     final completed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => LessonPracticePage(lesson: widget.lesson, languageController: widget.languageController)),
+      MaterialPageRoute(
+        builder: (_) => LessonChatPage(
+          lesson: widget.lesson,
+          languageController: widget.languageController,
+          stage: 'practice',
+        ),
+      ),
     );
     if (!mounted || completed != true) return;
     try {
