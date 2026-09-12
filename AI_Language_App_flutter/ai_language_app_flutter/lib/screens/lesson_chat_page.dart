@@ -248,13 +248,16 @@ class _LessonChatPageState extends State<LessonChatPage> {
           style: baseStyle,
         ));
       }
-      spans.add(TextSpan(
-        text: match.group(1),
-        style: baseStyle.copyWith(
-          color: highlightColor,
-          fontWeight: FontWeight.w700,
-        ),
-      ));
+      final highlightedText = match.group(1);
+      if (highlightedText != null) {
+        spans.add(TextSpan(
+          text: highlightedText,
+          style: baseStyle.copyWith(
+            color: highlightColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ));
+      }
       cursor = match.end;
     }
     if (cursor < text.length) {
@@ -365,7 +368,12 @@ class _LessonChatPageState extends State<LessonChatPage> {
   }
 
   Widget _suggestionPanel(BuildContext context) {
-    if (_suggestionText == null) return const SizedBox.shrink();
+    final suggestionText = _suggestionText;
+    if (suggestionText == null || suggestionText.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final suggestionTranslation = _suggestionTranslation;
     final theme = Theme.of(context);
 
     if (_suggestionCollapsed) {
@@ -458,7 +466,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
               Directionality(
                 textDirection: _learningDirection,
                 child: Text(
-                  _suggestionText!,
+                  suggestionText,
                   textAlign: TextAlign.start,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSecondaryContainer,
@@ -467,13 +475,13 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   ),
                 ),
               ),
-              if (_suggestionTranslation != null &&
-                  _suggestionTranslation!.trim().isNotEmpty) ...[
+              if (suggestionTranslation != null &&
+                  suggestionTranslation.trim().isNotEmpty) ...[
                 const SizedBox(height: 7),
                 Directionality(
-                  textDirection: directionForText(_suggestionTranslation!),
+                  textDirection: directionForText(suggestionTranslation),
                   child: Text(
-                    _suggestionTranslation!,
+                    suggestionTranslation,
                     textAlign: TextAlign.start,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSecondaryContainer
