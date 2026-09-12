@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../controllers/profile_controller.dart';
+import '../../core/storage/tutor_explanation_settings.dart';
 
 class ProfileDialogs {
   static Future<void> showAppLanguages(
@@ -131,6 +132,91 @@ class ProfileDialogs {
     } else {
       await controller.changeLearningLanguage(context, selected);
     }
+  }
+
+  static Future<void> showExplanationLanguage(
+    BuildContext context,
+    ProfileController controller,
+  ) async {
+    final uiLanguage = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: theme.colorScheme.surface,
+      builder: (context) {
+        final current = controller.explanationLanguageMode;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  TutorExplanationSettings.title(uiLanguage),
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  TutorExplanationSettings.question(uiLanguage),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 18),
+                _explanationChoice(
+                  context,
+                  mode: TutorExplanationSettings.nativeMode,
+                  title: TutorExplanationSettings.nativeLabel(uiLanguage),
+                  selected: current == TutorExplanationSettings.nativeMode,
+                ),
+                const SizedBox(height: 8),
+                _explanationChoice(
+                  context,
+                  mode: TutorExplanationSettings.learningMode,
+                  title: TutorExplanationSettings.learningLabel(uiLanguage),
+                  selected: current == TutorExplanationSettings.learningMode,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null && context.mounted) {
+      await controller.changeExplanationLanguageMode(selected);
+    }
+  }
+
+  static Widget _explanationChoice(
+    BuildContext context, {
+    required String mode,
+    required String title,
+    required bool selected,
+  }) {
+    final theme = Theme.of(context);
+
+    return ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      tileColor: selected
+          ? theme.colorScheme.primaryContainer
+          : theme.colorScheme.surfaceContainerHighest,
+      leading: Icon(
+        selected ? Icons.check_circle_rounded : Icons.school_outlined,
+        color: selected
+            ? theme.colorScheme.primary
+            : theme.colorScheme.onSurfaceVariant,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.w500),
+      ),
+      trailing: selected
+          ? Icon(Icons.check_rounded, color: theme.colorScheme.primary)
+          : null,
+      onTap: () => Navigator.pop(context, mode),
+    );
   }
 
   static Future<void> showAddLanguage(BuildContext context, ProfileController controller) async {
