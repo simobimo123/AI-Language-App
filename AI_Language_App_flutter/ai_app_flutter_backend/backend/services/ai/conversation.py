@@ -2,6 +2,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from models import AIConversationMessage
+from services.lesson_session_cache import lesson_session_cache
 
 LESSON_CONVERSATION_PREFIX = "lesson_"
 
@@ -11,30 +12,32 @@ def get_conversation_history(
     conversation_id: str | None,
     max_messages: int,
     db: Session,
-) -> list[AIConversationMessage]:
-    """Return conversation history needed for the current AI request."""
-    query = select(AIConversationMessage).where(
-        AIConversationMessage.user_id == user_id,
+) -> list:
+    """Return conversation history, using RAM-only storage for lesson chats."""
+    is_lesson_conversation = bool(
+        conversation_id
+        and conversation_id.startswith(LESSON_CONVERSATION_PREFIX)
     )
 
-    is_lesson_conversation = bool(
-        conversation_id and conversation_id.startswith(LESSON_CONVERSATION_PREFIX)
+    if is_lesson_conversation:
+        session = lesson_session_cache.get_by_conversation_id(
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
+
+        if session is None:
+            return []
+
+        return list(session.messages)
+
+    query = select(AIConversationMessage).where(
+        AIConversationMessage.user_id == user_id,
     )
 
     if conversation_id:
         query = query.where(
             AIConversationMessage.conversation_id == conversation_id
         )
-
-    if is_lesson_conversation:
-        # Lesson conversations are intentionally kept as a complete transcript.
-        # The lesson tutor needs the full short conversation to preserve natural
-        # continuity instead of restarting after only a few messages.
-        query = query.order_by(
-            AIConversationMessage.created_at.asc(),
-            AIConversationMessage.id.asc(),
-        )
-        return db.execute(query).scalars().all()
 
     query = query.order_by(
         AIConversationMessage.created_at.asc(),
@@ -49,7 +52,7 @@ def build_chat_messages(
     current_message: str,
     vocabulary_context: str | None,
 ) -> list[dict[str, str]]:
-    """Convert database conversation rows to OpenAI-compatible messages."""
+    """Convert conversation rows to OpenAI-compatible messages."""
     messages: list[dict[str, str]] = []
 
     for message in history:
@@ -92,6 +95,16 @@ def save_conversation_message(
     content: str,
     db: Session,
 ) -> None:
+    """Store lesson messages in RAM and all other chats in the DB."""
+    if conversation_id and conversation_id.startswith(LESSON_CONVERSATION_PREFIX):
+        lesson_session_cache.add_message_by_conversation_id(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            role=role,
+            content=content,
+        )
+        return
+
     db.add(
         AIConversationMessage(
             user_id=user_id,
@@ -108,7 +121,7 @@ def cleanup_old_conversation_messages(
     max_messages: int,
     db: Session,
 ) -> None:
-    """Trim non-lesson chats; lesson history is retained for continuity."""
+    """Trim non-lesson chats; lesson chats are RAM-only and need no cleanup."""
     if conversation_id and conversation_id.startswith(LESSON_CONVERSATION_PREFIX):
         return
 
