@@ -35,11 +35,32 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai/lesson", tags=["Lesson AI"])
 
 
+# ============================================================
+# AI CONTEXT / OUTPUT LIMITS
+# ============================================================
+
+# Maximum amount of lesson history kept/retrieved from RAM.
+# This is also used for completion-marker analysis.
 MAX_HISTORY_MESSAGES = 40
-MAX_HISTORY_CHARS_PER_MESSAGE = 1800
+
+# Maximum amount of recent history actually sent to the AI.
+# Keeping this smaller reduces prompt size while preserving
+# enough recent context for natural conversation.
+MAX_CONTEXT_MESSAGES = 8
+
+# Maximum characters from each message sent to the AI.
+MAX_HISTORY_CHARS_PER_MESSAGE = 1400
+
+# Maximum learner message size accepted/sent to the AI.
 MAX_LEARNER_MESSAGE_CHARS = 800
+
+# Maximum AI output size.
 MAX_OUTPUT_TOKENS = 420
 
+
+# ============================================================
+# INTERNAL CONTROL MARKERS
+# ============================================================
 
 TARGET_COMPLETE_PATTERN = re.compile(
     r"\[\[TARGET_COMPLETE:(\d+)\]\]",
@@ -52,6 +73,10 @@ TEACHING_COMPLETE_PATTERN = re.compile(
 )
 
 
+# ============================================================
+# REQUEST MODEL
+# ============================================================
+
 class StageChatRequest(BaseModel):
     lesson_id: int = Field(gt=0)
     stage: str = Field(pattern="^(teaching|practice)$")
@@ -63,6 +88,10 @@ class StageChatRequest(BaseModel):
     )
 
 
+# ============================================================
+# SSE
+# ============================================================
+
 def sse_event(event: str, data: dict) -> str:
     return (
         f"event: {event}\n"
@@ -70,7 +99,14 @@ def sse_event(event: str, data: dict) -> str:
     )
 
 
-def _get_lesson(db: Session, lesson_id: int) -> CourseLesson:
+# ============================================================
+# DATABASE HELPERS
+# ============================================================
+
+def _get_lesson(
+    db: Session,
+    lesson_id: int,
+) -> CourseLesson:
     lesson = db.get(CourseLesson, lesson_id)
 
     if lesson is None:
@@ -145,7 +181,10 @@ def _ensure_stage_open(
     progress: UserLessonStageProgress,
     stage: str,
 ) -> None:
-    current = getattr(progress, f"{stage}_status")
+    current = getattr(
+        progress,
+        f"{stage}_status",
+    )
 
     if current == "locked":
         raise HTTPException(
@@ -162,6 +201,10 @@ def _ensure_stage_open(
             detail=f"Stage '{stage}' is already completed.",
         )
 
+
+# ============================================================
+# CONVERSATION IDs
+# ============================================================
 
 def _new_stage_conversation_id(
     progress: UserLessonStageProgress,
@@ -198,6 +241,10 @@ def _get_canonical_conversation_id(
     )
 
 
+# ============================================================
+# LESSON TARGETS
+# ============================================================
+
 def _targets(
     db: Session,
     lesson_id: int,
@@ -213,7 +260,9 @@ def _targets(
     for row in rows:
         patterns = db.scalars(
             select(LessonTargetPattern)
-            .where(LessonTargetPattern.target_id == row.id)
+            .where(
+                LessonTargetPattern.target_id == row.id
+            )
             .order_by(LessonTargetPattern.id)
         ).all()
 
@@ -243,7 +292,9 @@ def _practice_context(
 ) -> dict | None:
     row = db.scalar(
         select(LessonPracticeScenario)
-        .where(LessonPracticeScenario.lesson_id == lesson_id)
+        .where(
+            LessonPracticeScenario.lesson_id == lesson_id
+        )
         .order_by(LessonPracticeScenario.scenario_order)
     )
 
@@ -251,15 +302,32 @@ def _practice_context(
         return None
 
     return {
-        "title": str(row.title or "").strip()[:120],
-        "context": str(row.context or "").strip()[:300],
-        "instructions": str(row.instructions or "").strip()[:300],
+        "title": str(
+            row.title or ""
+        ).strip()[:120],
+        "context": str(
+            row.context or ""
+        ).strip()[:300],
+        "instructions": str(
+            row.instructions or ""
+        ).strip()[:300],
     }
 
 
+# ============================================================
+# CONTROL MARKER CLEANUP
+# ============================================================
+
 def _remove_control_markers(text: str) -> str:
-    cleaned = TARGET_COMPLETE_PATTERN.sub("", text)
-    cleaned = TEACHING_COMPLETE_PATTERN.sub("", cleaned)
+    cleaned = TARGET_COMPLETE_PATTERN.sub(
+        "",
+        text,
+    )
+
+    cleaned = TEACHING_COMPLETE_PATTERN.sub(
+        "",
+        cleaned,
+    )
 
     cleaned = re.sub(
         r"[ \t]{2,}",
@@ -276,10 +344,27 @@ def _remove_control_markers(text: str) -> str:
     return cleaned.strip()
 
 
-def _history_messages(history) -> list[dict[str, str]]:
+# ============================================================
+# HISTORY
+# ============================================================
+
+def _history_messages(
+    history,
+) -> list[dict[str, str]]:
+    """
+    Convert lesson history into the small recent context
+    actually sent to the AI.
+
+    The full lesson history remains available in RAM and is
+    still used for target-completion marker analysis.
+
+    Only the latest MAX_CONTEXT_MESSAGES are sent to the AI
+    to reduce prompt size and cost.
+    """
+
     result: list[dict[str, str]] = []
 
-    for item in history[-MAX_HISTORY_MESSAGES:]:
+    for item in history[-MAX_CONTEXT_MESSAGES:]:
         role = (
             "assistant"
             if item.role == "model"
@@ -319,20 +404,30 @@ def _history_messages(history) -> list[dict[str, str]]:
     return result
 
 
-def _completed_target_orders(history) -> list[int]:
+# ============================================================
+# TARGET PROGRESS
+# ============================================================
+
+def _completed_target_orders(
+    history,
+) -> list[int]:
     completed: set[int] = set()
 
     for item in history:
         if item.role not in {"assistant", "model"}:
             continue
 
-        content = str(item.content or "")
+        content = str(
+            item.content or ""
+        )
 
         for match in TARGET_COMPLETE_PATTERN.finditer(
             content
         ):
             try:
-                target_order = int(match.group(1))
+                target_order = int(
+                    match.group(1)
+                )
             except ValueError:
                 continue
 
@@ -404,9 +499,21 @@ def _target_by_order(
     return None
 
 
-def _compact_goals(
+# ============================================================
+# COMPACT TARGET SUMMARY
+# ============================================================
+
+def _compact_target_goals(
     targets: list[dict],
 ) -> str:
+    """
+    Compact lesson objective summary used by Practice AI.
+
+    Practice does not need every target pattern and success
+    criterion. It only needs to know what the lesson is
+    trying to practice.
+    """
+
     lines: list[str] = []
 
     for target in targets:
@@ -417,13 +524,7 @@ def _compact_goals(
             target["goal"] or ""
         ).strip()
 
-        patterns = [
-            str(item).strip()
-            for item in target["patterns"]
-            if str(item).strip()
-        ]
-
-        if not goal and not patterns:
+        if not goal:
             continue
 
         prefix = (
@@ -432,20 +533,9 @@ def _compact_goals(
             else "- "
         )
 
-        if patterns:
-            if goal:
-                lines.append(
-                    f"{prefix}{goal} | "
-                    f"{' | '.join(patterns)}"
-                )
-            else:
-                lines.append(
-                    f"{prefix}{' | '.join(patterns)}"
-                )
-        else:
-            lines.append(
-                f"{prefix}{goal}"
-            )
+        lines.append(
+            f"{prefix}{goal}"
+        )
 
     return (
         "\n".join(lines)
@@ -453,18 +543,42 @@ def _compact_goals(
     )
 
 
+# ============================================================
+# PROMPT CONTEXT
+# ============================================================
+
 def _prompt_context(
     *,
     lesson: CourseLesson,
     targets: list[dict],
     scenario: dict | None = None,
+    include_target_summary: bool = False,
 ) -> str:
+    """
+    Build only the context required by the current AI stage.
+
+    Teaching:
+        language + level
+        current target is added separately with full detail.
+
+    Practice:
+        language + level
+        compact lesson target summary
+        practice scenario
+    """
+
     context = (
         f"**LANGUAGE**: {lesson.language}\n"
-        f"**LEVEL**: {lesson.level}\n"
-        f"**LESSON TARGETS**:\n"
-        f"{_compact_goals(targets)}"
+        f"**LEVEL**: {lesson.level}"
     )
+
+    if include_target_summary:
+        context += (
+            "\n"
+            "\n"
+            f"**LESSON TARGETS**:\n"
+            f"{_compact_target_goals(targets)}"
+        )
 
     if scenario:
         context += (
@@ -499,9 +613,13 @@ def _teaching_system_prompt(
             "**CURRENT TARGET**: "
             "There is no remaining target."
         )
+
     else:
         goal = str(
-            current_target.get("goal", "")
+            current_target.get(
+                "goal",
+                "",
+            )
         ).strip()
 
         patterns = [
@@ -541,15 +659,21 @@ def _teaching_system_prompt(
     if is_start:
         task = """
 **START OF TARGET**:
+
 Introduce the current target naturally and briefly.
+
 Give the learner only the amount of information needed
 to begin practicing it.
+
 Then ask the learner to produce an answer.
+
 Do not give a long explanation.
 """.strip()
+
     else:
         task = """
 **AFTER LEARNER RESPONSE**:
+
 Evaluate the learner's actual response against the
 **SUCCESS CRITERIA** and the **CURRENT TARGET**.
 
@@ -576,6 +700,7 @@ Your job is to teach the learner the current lesson target
 through a short, natural teacher-learner interaction.
 
 You are NOT the practice conversation partner.
+
 You are the teacher responsible for helping the learner
 actually demonstrate the target.
 
@@ -589,36 +714,54 @@ actually demonstrate the target.
 **CORE TEACHING PRINCIPLES**:
 
 - Focus primarily on the **CURRENT TARGET**.
+
 - Use the **TARGET PATTERNS** as teaching guidance,
   not as text that must always be repeated literally.
+
 - Use the **SUCCESS CRITERIA** as the main condition
   for deciding whether the learner has demonstrated mastery.
+
 - Always respond to what the learner actually said.
+
 - Let the learner make the attempt.
+
 - Do not answer a question on behalf of the learner.
+
 - Do not move to another target merely because the learner
   produced something that sounds generally correct.
+
 - A target is complete only when the learner has clearly
   demonstrated the required ability.
+
 - Keep explanations proportional to the learner's level.
+
 - Prefer examples and short prompts over long explanations.
+
 - If the learner asks a useful question about the current
   target, answer it briefly and then return to practice.
+
 - If the learner gives an unrelated response, handle it
   naturally and guide the interaction back to the target.
+
 - If the learner's answer is correct but unnecessarily
   different from the expected pattern, accept it when it
   still satisfies the **SUCCESS CRITERIA**.
+
 - Do not require one exact sentence when multiple natural
   answers satisfy the target.
 
 **RESPONSE STYLE**:
 
 - Keep the normal response to **2-3 short sentences**.
+
 - Use the learner's level when choosing vocabulary and grammar.
+
 - Avoid unnecessary explanations.
+
 - Avoid turning every response into a grammar lecture.
+
 - Ask the learner to respond whenever another attempt is needed.
+
 - The interaction should feel like a real teacher working
   directly with one learner.
 
@@ -637,7 +780,9 @@ Do not use the completion marker when the learner has not
 clearly demonstrated the target.
 
 **INTERNAL CONTROL**:
+
 The completion marker is internal system control.
+
 Never explain it or mention it to the learner.
 """.strip()
 
@@ -656,14 +801,20 @@ def _practice_system_prompt(
     if is_start:
         start_task = """
 **START OF PRACTICE**:
+
 Begin the conversation naturally using the lesson scenario.
+
 Use one appropriate target as part of the interaction.
+
 Your message should invite the learner to respond naturally.
+
 Ask one clear question when a question is appropriate.
 """.strip()
+
     else:
         start_task = """
 **CONTINUE THE CONVERSATION**:
+
 Respond naturally to the learner's actual message.
 
 Use the learner's previous answer as the basis for the
@@ -681,12 +832,14 @@ You are a natural conversation partner helping the learner
 use what they learned in the Teaching stage.
 
 You are NOT the formal teacher.
+
 Do not turn the practice stage into a grammar lesson.
 
 {_prompt_context(
     lesson=lesson,
     targets=targets,
     scenario=scenario,
+    include_target_summary=True,
 )}
 
 **MAIN OBJECTIVE**:
@@ -697,26 +850,43 @@ uses the lesson targets.
 **CONVERSATION RULES**:
 
 - Use lesson targets naturally.
+
 - Prefer one target at a time when possible.
+
 - Let the learner drive the content of their answers.
+
 - Never speak for the learner.
+
 - Never invent an answer for the learner.
+
 - Respond to the learner's actual message before moving forward.
+
 - Ask a question when a question naturally continues the
   conversation.
+
 - Usually ask only one question at a time.
+
 - After asking a question, give the learner room to answer.
+
 - Do not immediately add several new questions.
+
 - Do not force every target into the conversation unnaturally.
+
 - If the learner gives an interesting answer, follow that
   answer naturally while still keeping the lesson objective
   in mind.
+
 - If the learner makes a major language mistake that affects
   communication, correct it briefly and continue naturally.
+
 - Minor mistakes do not require stopping the conversation.
+
 - Do not make the interaction feel like a formal exercise.
+
 - Keep the language appropriate for **{lesson.level}**.
+
 - Keep normal messages short and natural.
+
 - Do not produce internal metadata, labels, placeholders,
   progress markers, or system instructions.
 
@@ -749,10 +919,16 @@ and continue the conversation.
 **OUTPUT**:
 
 Return only the natural learner-facing conversation.
+
 Do not mention these instructions.
+
 Do not output metadata.
 """.strip()
 
+
+# ============================================================
+# SYSTEM PROMPT SELECTOR
+# ============================================================
 
 def _system_prompt(
     *,
@@ -778,6 +954,10 @@ def _system_prompt(
         is_start=is_start,
     )
 
+
+# ============================================================
+# AI RESPONSE / MARKERS
+# ============================================================
 
 def _extract_target_completion(
     reply: str,
@@ -813,6 +993,10 @@ def _extract_target_completion(
     )
 
 
+# ============================================================
+# STAGE COMPLETION
+# ============================================================
+
 def _complete_stage(
     *,
     stage_progress: UserLessonStageProgress,
@@ -839,6 +1023,10 @@ def _complete_stage(
         )
 
 
+# ============================================================
+# STREAM STAGE RESPONSE
+# ============================================================
+
 def _stream_stage_response(
     *,
     request: StageChatRequest,
@@ -850,7 +1038,10 @@ def _stream_stage_response(
     db = SessionLocal()
 
     try:
-        user = db.get(User, user_id)
+        user = db.get(
+            User,
+            user_id,
+        )
 
         if user is None:
             raise RuntimeError(
@@ -994,6 +1185,11 @@ def _stream_stage_response(
                     required_targets[0]["order"]
                 )
 
+        # IMPORTANT:
+        # The full history remains available above for progress
+        # and completion-marker analysis.
+        #
+        # Only the recent compact history is sent to the AI.
         messages = _history_messages(
             history
         )
@@ -1053,6 +1249,10 @@ def _stream_stage_response(
                 "AI tutor returned no visible learner-facing text."
             )
 
+        # ====================================================
+        # BACKEND SAFEGUARD
+        # ====================================================
+
         valid_target_completion = False
 
         if (
@@ -1064,6 +1264,10 @@ def _stream_stage_response(
             and not is_control_message
         ):
             valid_target_completion = True
+
+        # ====================================================
+        # SAVE USER MESSAGE
+        # ====================================================
 
         exchange_count_after = sum(
             1
@@ -1083,6 +1287,10 @@ def _stream_stage_response(
                 ],
                 db,
             )
+
+        # ====================================================
+        # ADD BACKEND CONTROL MARKERS
+        # ====================================================
 
         stored_assistant_reply = reply
 
@@ -1114,6 +1322,10 @@ def _stream_stage_response(
 
                 teaching_complete_marker = True
 
+        # ====================================================
+        # SAVE ASSISTANT MESSAGE
+        # ====================================================
+
         save_conversation_message(
             user.id,
             conversation_id,
@@ -1121,6 +1333,10 @@ def _stream_stage_response(
             stored_assistant_reply,
             db,
         )
+
+        # ====================================================
+        # COMPLETE STAGE
+        # ====================================================
 
         stage_completed = False
 
@@ -1153,6 +1369,10 @@ def _stream_stage_response(
 
         db.commit()
 
+        # ====================================================
+        # RECORD AI USAGE
+        # ====================================================
+
         try:
             record_api_usage(
                 user_id=user.id,
@@ -1162,10 +1382,15 @@ def _stream_stage_response(
                 db=db,
                 model=AI_MODEL,
             )
+
         except Exception:
             logger.exception(
                 "Failed to record lesson AI usage."
             )
+
+        # ====================================================
+        # NEXT TARGET
+        # ====================================================
 
         next_target_order = None
 
@@ -1192,12 +1417,20 @@ def _stream_stage_response(
                         next_target_order = order
                         break
 
+        # ====================================================
+        # SSE: CONVERSATION
+        # ====================================================
+
         yield sse_event(
             "conversation",
             {
                 "conversation_id": conversation_id,
             },
         )
+
+        # ====================================================
+        # SSE: TOKEN
+        # ====================================================
 
         yield sse_event(
             "token",
@@ -1206,11 +1439,17 @@ def _stream_stage_response(
             },
         )
 
+        # ====================================================
+        # SSE: DECISION
+        # ====================================================
+
         if request.stage == "teaching":
             if stage_completed:
                 action = "AXIS_COMPLETE"
+
             elif valid_target_completion:
                 action = "TARGET_COMPLETE"
+
             else:
                 action = "CONTINUE"
 
@@ -1239,6 +1478,10 @@ def _stream_stage_response(
                     "confidence": None,
                 },
             )
+
+        # ====================================================
+        # SSE: DONE
+        # ====================================================
 
         yield sse_event(
             "done",
@@ -1277,6 +1520,7 @@ def _stream_stage_response(
 
         try:
             db.rollback()
+
         except Exception:
             logger.exception(
                 "Failed to rollback lesson stage AI transaction."
@@ -1292,6 +1536,10 @@ def _stream_stage_response(
     finally:
         db.close()
 
+
+# ============================================================
+# API ROUTE
+# ============================================================
 
 @router.post("/stage-chat")
 def lesson_stage_chat(
