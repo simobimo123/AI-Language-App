@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../services/api/api_service.dart';
 import '../core/language/language_controller.dart';
 import '../core/storage/storage_service.dart';
+import '../core/storage/tutor_explanation_settings.dart';
 import '../core/theme/theme_controller.dart';
 import '../services/learning_language_controller.dart';
 import '../screens/login_page.dart';
@@ -32,6 +33,7 @@ class ProfileController extends ChangeNotifier {
   String? nativeLanguageCode;
   String? currentLearningLanguageCode;
   String? currentLearningLevel;
+  String explanationLanguageMode = TutorExplanationSettings.nativeMode;
   List<dynamic> learningProfiles = [];
 
   bool isLoading = true;
@@ -71,6 +73,7 @@ class ProfileController extends ChangeNotifier {
     try {
       final user = await apiService.getCurrentUser();
       final profiles = await apiService.getLearningProfiles();
+      final savedExplanationMode = await tutorExplanationSettings.getMode();
       if (context.mounted) {
         final nativeCode = user['native_language']?.toString();
         final currentLanguage = user['learning_language']?.toString();
@@ -84,6 +87,7 @@ class ProfileController extends ChangeNotifier {
         nativeLanguage = languageName(nativeCode, l10n);
         currentLearningLanguageCode = currentLanguage;
         currentLearningLevel = profile?['level']?.toString();
+        explanationLanguageMode = savedExplanationMode ?? TutorExplanationSettings.nativeMode;
         learningProfiles = profiles;
         isLoading = false;
         notifyListeners();
@@ -139,6 +143,17 @@ class ProfileController extends ChangeNotifier {
   Future<void> changeAppLanguage(String code) async {
     if (languageController.locale.languageCode == code) return;
     await languageController.setLanguage(code);
+    notifyListeners();
+  }
+
+  Future<void> changeExplanationLanguageMode(String mode) async {
+    if (mode != TutorExplanationSettings.nativeMode &&
+        mode != TutorExplanationSettings.learningMode) {
+      return;
+    }
+
+    await tutorExplanationSettings.setMode(mode);
+    explanationLanguageMode = mode;
     notifyListeners();
   }
 
