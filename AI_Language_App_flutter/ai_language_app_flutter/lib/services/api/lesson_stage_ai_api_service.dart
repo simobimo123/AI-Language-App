@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/errors/api_exception.dart';
+import '../../core/storage/tutor_explanation_settings.dart';
 import 'api_client.dart';
 
 class LessonStageAiChunk {
@@ -57,6 +58,10 @@ class LessonStageAiApiService {
     String? conversationId,
   }) async* {
     final token = await _client.getToken();
+    final explanationMode =
+        await tutorExplanationSettings.getMode() ??
+        TutorExplanationSettings.nativeMode;
+
     final request = http.Request(
       'POST',
       Uri.parse('${ApiClient.baseUrl}/ai/lesson/stage-chat'),
@@ -66,6 +71,7 @@ class LessonStageAiApiService {
       ..._client.jsonHeaders,
       'Authorization': 'Bearer $token',
       'Accept': 'text/event-stream',
+      'X-Tutor-Explanation-Mode': explanationMode,
     });
     request.body = jsonEncode({
       'lesson_id': lessonId,
