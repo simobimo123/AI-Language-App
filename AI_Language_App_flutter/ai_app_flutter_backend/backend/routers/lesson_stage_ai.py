@@ -227,6 +227,8 @@ def _targets(
                     for pattern in patterns[:2]
                 ],
                 "required": row.required,
+                # التعديل: جلب معايير النجاح من قاعدة البيانات ليتم تمريرها لاحقاً
+                "success_criteria": getattr(row, "success_criteria", ""),
             }
         )
 
@@ -510,23 +512,28 @@ def _teaching_system_prompt(
     if current_target is None:
         current_target_text = "There is no remaining target."
     else:
-        goal = str(current_target["goal"] or "").strip()
+        goal = str(current_target.get("goal", "")).strip()
         patterns = [
             str(item).strip()
-            for item in current_target["patterns"]
+            for item in current_target.get("patterns", [])
             if str(item).strip()
         ]
+        success_criteria = str(current_target.get("success_criteria", "")).strip()
         
         current_target_text = f"Current learning objective: {goal}"
         if patterns:
             current_target_text += (
                 f"\nUseful language patterns: {' | '.join(patterns)}"
             )
+        if success_criteria:
+            current_target_text += (
+                f"\nSUCCESS CRITERIA: {success_criteria}"
+            )
 
     start_rule = (
         "Since this is the first message, directly introduce the objective with a short example and ask the learner a question."
         if is_start
-        else "Respond naturally to the learner's latest answer."
+        else "CRITICAL: You must analyze the learner's EXACT latest input. Acknowledge their specific mistake before asking them to try again."
     )
 
     return f"""
@@ -542,33 +549,29 @@ You are an encouraging but STRICT language tutor.
 {current_target_text}
 
 TEACHING LOGIC (INTERNAL RULES):
-Follow this conversational logic naturally:
-- Introduce: Give a clear, short example of the target language.
-- Ask: Prompt the learner to use it in a FULL sentence.
-- Evaluate: If the learner replies in their native language or uses just one word (like only their name), REJECT IT gently and ask for the full sentence. If incorrect, give a hint. If correct, praise.
-- Complete: When (and ONLY when) the learner types the full correct pattern independently, append EXACTLY [[TARGET_COMPLETE:{current_target_order}]] at the very end.
+1. EVALUATE: Look at the learner's most recent message. Does it fully meet the SUCCESS CRITERIA?
+2. IF INCORRECT OR INCOMPLETE (e.g., single words, native language, grammar errors):
+   - DO NOT repeat your previous message.
+   - You MUST explicitly point out what is missing or wrong in 1 short sentence (e.g., "Almost, but you need to use the full sentence", "Don't forget the verb").
+   - Provide the correct pattern and ask them to try again.
+3. IF COMPLETELY GIBBERISH (e.g., "dd", "ss"):
+   - Tell them you didn't understand.
+   - Remind them of the target pattern.
+4. IF CORRECT (Meets SUCCESS CRITERIA):
+   - Praise them briefly.
+   - Append EXACTLY [[TARGET_COMPLETE:{current_target_order}]] at the very end.
 
-If the current objective is the last required one and they master it, append both:
-[[TARGET_COMPLETE:{current_target_order}]]
-[[TEACHING_COMPLETE]]
-
-CRITICAL FORMATTING RULES:
-1. DO NOT output step labels like "Step 1", "Schritt 1", "Explain:", or "Evaluate:".
-2. DO NOT output your internal thoughts or instructions. Just speak directly to the learner.
-3. Keep responses under 2-3 short sentences. Act like a human sending a text message.
-4. The completion markers are strictly internal. Do not mention them in your text.
-
-EXAMPLE OF A GOOD INTERACTION:
-Teacher: In German, to say 'My name is', we use 'Ich heiße'. For example: 'Ich heiße Sarah'. How would you say your name?
-Learner: Simo.
-Teacher: You need to use the full German phrase! Try saying 'Ich heiße Simo'.
-Learner: Ich heiße Simo.
-Teacher: Sehr gut! Now ask me what my name is using 'Wie heißen Sie?'. [[TARGET_COMPLETE:1]]
+CRITICAL ANTI-LOOP RULES:
+- NEVER output the exact same message twice in a row.
+- If the user fails multiple times, change your hint. Explain the grammar simply.
+- Keep responses under 2-3 short sentences. Act like a human sending a text message.
+- Do not output step labels or internal markers (other than TARGET_COMPLETE).
 
 {start_rule}
 
 Reply only as the teacher.
 """.strip()
+
 
 # لم يتم المساس بهذه الدالة (شريك المحادثة)
 def _practice_system_prompt(

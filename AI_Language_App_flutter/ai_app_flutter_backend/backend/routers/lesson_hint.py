@@ -50,7 +50,7 @@ def _hint_prompt(
     native_language: str,
 ) -> str:
     return (
-        f"Give a short learner reply to the tutor in {target_language}. "
+        f"Give a short reply to the tutor in {target_language}. "
         f"Then translate the reply to {native_language}. "
         "Keep both very short. Do not explain. "
         "Your final answer must contain only these two lines:\n"

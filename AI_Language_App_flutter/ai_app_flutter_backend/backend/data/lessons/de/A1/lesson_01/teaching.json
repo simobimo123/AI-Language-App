@@ -5,60 +5,89 @@
     {
       "order": 1,
       "id": "introduce_name",
-      "goal": "The learner can say their own name.",
+      "goal": "Teach the learner how to introduce their own name.",
       "patterns": [
-        "Ich heiße + Name"
-      ]
+        "Ich heiße [Name]"
+      ],
+      "examples": [
+        "Ich heiße elex.",
+        "Ich heiße Anna."
+      ],
+      "success_criteria": "The learner MUST type the full sentence starting with 'Ich heiße'. Strictly reject single-word answers (like just their name)."
     },
     {
       "order": 2,
       "id": "ask_name",
-      "goal": "The learner can ask another person for their name.",
+      "goal": "Teach the learner to ask for the conversation partner's name.",
       "patterns": [
         "Wie heißt du?"
-      ]
+      ],
+      "examples": [
+        "Wie heißt du?"
+      ],
+      "success_criteria": "The learner must output the exact question 'Wie heißt du?' or a valid formal equivalent like 'Wie heißen Sie?'."
     },
     {
       "order": 3,
       "id": "describe_male",
-      "goal": "The learner can say a male person's name or where he lives.",
+      "goal": "Teach the learner to state a male person's name and where he lives.",
       "patterns": [
-        "Er heißt + Name",
-        "Er wohnt in + Ort"
-      ]
+        "Er heißt [Name]",
+        "Er wohnt in [Ort]"
+      ],
+      "examples": [
+        "Er heißt Thomas.",
+        "Er wohnt in Berlin."
+      ],
+      "success_criteria": "The learner must use the pronoun 'Er' correctly with the verbs 'heißt' and 'wohnt'."
     },
     {
       "order": 4,
       "id": "describe_female",
-      "goal": "The learner can say a female person's name or where she lives.",
+      "goal": "Teach the learner to state a female person's name and where she lives.",
       "patterns": [
-        "Sie heißt + Name",
-        "Sie wohnt in + Ort"
-      ]
+        "Sie heißt [Name]",
+        "Sie wohnt in [Ort]"
+      ],
+      "examples": [
+        "Sie heißt Maria.",
+        "Sie wohnt in München."
+      ],
+      "success_criteria": "The learner must use the pronoun 'Sie' correctly with the verbs 'heißt' and 'wohnt'."
     },
     {
       "order": 5,
       "id": "say_where_live",
-      "goal": "The learner can say where they live.",
+      "goal": "Teach the learner to say where they currently live.",
       "patterns": [
-        "Ich wohne in + Ort"
-      ]
+        "Ich wohne in [Ort]"
+      ],
+      "examples": [
+        "Ich wohne in Marokko.",
+        "Ich wohne in Oujda."
+      ],
+      "success_criteria": "The learner must type the full sentence starting with 'Ich wohne in'."
     },
     {
       "order": 6,
       "id": "ask_where",
-      "goal": "The learner can ask where another person lives.",
+      "goal": "Teach the learner to ask where a third person (male or female) lives.",
       "patterns": [
         "Wo wohnt er?",
         "Wo wohnt sie?"
-      ]
+      ],
+      "examples": [
+        "Wo wohnt er?",
+        "Wo wohnt sie?"
+      ],
+      "success_criteria": "The learner must form the correct question using 'Wo' and the correct verb conjugation."
     }
   ],
-  "behavior": {
-    "strict_order": true,
-    "one_question_at_a_time": true,
-    "short_corrections": true,
-    "no_grammar_lecture": true,
-    "accept_correct_alternatives": true
-  }
+  "behavior_directives": [
+    "TEACHING ORDER: You must teach one target at a time, strictly following the 'order' sequence.",
+    "PACING: Ask only ONE simple question per message and wait for the learner's response.",
+    "CORRECTIONS: If the learner makes a mistake, correct it briefly in one sentence. NEVER give long grammar lectures.",
+    "STRICTNESS: NEVER accept answers in the learner's native language or one-word answers. Demand the full target pattern.",
+    "FLEXIBILITY: Accept correct alternative phrasing if it accurately demonstrates the target grammar for the A1 level."
+  ]
 }
