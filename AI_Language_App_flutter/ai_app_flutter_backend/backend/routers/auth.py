@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
@@ -13,6 +13,9 @@ from sqlalchemy.orm import Session
 from schemas import UserLogin, GoogleLogin
 from models import User
 from database import get_db
+from services.ai.explanation_language_context import (
+    set_explanation_language_context,
+)
 
 
 load_dotenv()
@@ -78,6 +81,7 @@ def create_access_token(
 # =========================================================
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(
         security
     ),
@@ -119,6 +123,20 @@ def get_current_user(
             status_code=403,
             detail="User account is inactive"
         )
+
+    explanation_mode = request.headers.get(
+        "X-Tutor-Explanation-Mode",
+        "native",
+    ).strip().lower()
+
+    if explanation_mode not in {"native", "learning"}:
+        explanation_mode = "native"
+
+    set_explanation_language_context(
+        mode=explanation_mode,
+        native_language=user.native_language,
+        learning_language=user.learning_language,
+    )
 
     return user
 
