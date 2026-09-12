@@ -42,6 +42,14 @@ class _LessonChatPageState extends State<LessonChatPage> {
   final Map<int, String> _translations = {};
   final Map<String, Map<String, dynamic>> _wordDetails = {};
 
+  /// Message indexes whose cached translation is currently hidden.
+  ///
+  /// IMPORTANT:
+  /// This is only UI state. The actual translation remains in
+  /// [_translations] and therefore remains available in the temporary
+  /// session cache.
+  final Set<int> _hiddenTranslationIndexes = <int>{};
+
   late final LessonChatStoredSession _session;
 
   String? _conversationId;
@@ -291,9 +299,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
       ..clear()
       ..addAll(_session.translations);
 
-    _session.hiddenTranslations.removeWhere(
-      (index) => index < 0 || index >= _messages.length,
-    );
+    _hiddenTranslationIndexes.clear();
 
     _completed = _session.completed;
     _starting = _messages.isEmpty;
@@ -314,10 +320,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
     _session.translations
       ..clear()
       ..addAll(_translations);
-
-    _session.hiddenTranslations.removeWhere(
-      (index) => index < 0 || index >= _messages.length,
-    );
 
     _session.completed = _completed;
 
@@ -450,11 +452,11 @@ class _LessonChatPageState extends State<LessonChatPage> {
   Future<void> _translateMessage(int index) async {
     final cachedTranslation = _translations[index];
 
-    // Translation already exists in the temporary cache.
-    // Showing it again must NEVER call AI.
+    // The translation is already in the temporary cache.
+    // Re-opening it must NEVER call the API or AI.
     if (cachedTranslation != null && cachedTranslation.trim().isNotEmpty) {
       setState(() {
-        _session.hiddenTranslations.remove(index);
+        _hiddenTranslationIndexes.remove(index);
         _error = null;
       });
 
@@ -479,7 +481,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
       setState(() {
         _translations[index] = translation;
-        _session.hiddenTranslations.remove(index);
+        _hiddenTranslationIndexes.remove(index);
       });
 
       _saveSession();
@@ -495,30 +497,13 @@ class _LessonChatPageState extends State<LessonChatPage> {
     }
   }
 
-  void _hideTranslation(int index) {
-    if (!_translations.containsKey(index)) return;
-
-    setState(() {
-      _session.hiddenTranslations.add(index);
-    });
-
-    _saveSession();
-  }
-
-  void _showTranslation(int index) {
-    if (!_translations.containsKey(index)) return;
-
-    setState(() {
-      _session.hiddenTranslations.remove(index);
-    });
-
-    _saveSession();
-  }
-
   void _deleteTranslation(int index) {
+    if (!_translations.containsKey(index)) return;
+
     setState(() {
-      _translations.remove(index);
-      _session.hiddenTranslations.remove(index);
+      // Deliberately DO NOT remove the translation from [_translations].
+      // The translation stays in RAM cache and can be restored instantly.
+      _hiddenTranslationIndexes.add(index);
     });
 
     _saveSession();
@@ -1032,8 +1017,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
   Widget _buildMessageActions(BuildContext context, int index) {
     final theme = Theme.of(context);
     final translation = _translations[index];
-    final hasTranslation = translation != null && translation.trim().isNotEmpty;
-    final translationHidden = _session.hiddenTranslations.contains(index);
+    final hasTranslation =
+        translation != null && translation.trim().isNotEmpty;
+    final translationHidden = _hiddenTranslationIndexes.contains(index);
     final translating = _translatingIndex == index;
 
     return Padding(
@@ -1041,7 +1027,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!hasTranslation)
+          if (!hasTranslation || translationHidden)
             Material(
               color: theme.colorScheme.surfaceContainerHighest.withValues(
                 alpha: 0.4,
@@ -1130,81 +1116,14 @@ class _LessonChatPageState extends State<LessonChatPage> {
                       minWidth: 28,
                       minHeight: 28,
                     ),
-                    tooltip: 'Hide',
-                    onPressed: () => _hideTranslation(index),
-                    icon: const Icon(Icons.visibility_off_outlined, size: 18),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 28,
-                      minHeight: 28,
-                    ),
                     tooltip: 'Delete',
                     onPressed: () => _deleteTranslation(index),
-                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                    ),
                   ),
                 ],
-              ),
-            ),
-          if (hasTranslation && translationHidden)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Material(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.4,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                clipBehavior: Clip.antiAlias,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InkWell(
-                      onTap: () => _showTranslation(index),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.visibility_outlined,
-                              size: 16,
-                              color: theme.colorScheme.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              _ui('translate'),
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 20,
-                      color: theme.colorScheme.outline.withValues(alpha: 0.15),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 34,
-                        minHeight: 34,
-                      ),
-                      tooltip: 'Delete',
-                      onPressed: () => _deleteTranslation(index),
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                    ),
-                  ],
-                ),
               ),
             ),
         ],

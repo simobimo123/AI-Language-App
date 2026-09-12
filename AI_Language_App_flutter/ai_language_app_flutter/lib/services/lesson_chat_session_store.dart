@@ -14,7 +14,6 @@ class LessonChatStoredSession {
   String? conversationId;
   final List<LessonChatStoredMessage> messages;
   final Map<int, String> translations;
-  final Set<int> hiddenTranslations;
   bool completed;
 
   LessonChatStoredSession({
@@ -23,11 +22,9 @@ class LessonChatStoredSession {
     this.conversationId,
     List<LessonChatStoredMessage>? messages,
     Map<int, String>? translations,
-    Set<int>? hiddenTranslations,
     this.completed = false,
-  })  : messages = List<LessonChatStoredMessage>.from(messages ?? const []),
-        translations = Map<int, String>.from(translations ?? const {}),
-        hiddenTranslations = Set<int>.from(hiddenTranslations ?? const {});
+  }) : messages = List<LessonChatStoredMessage>.from(messages ?? const []),
+       translations = Map<int, String>.from(translations ?? const {});
 
   LessonChatStoredSession copy() {
     return LessonChatStoredSession(
@@ -36,7 +33,6 @@ class LessonChatStoredSession {
       conversationId: conversationId,
       messages: messages,
       translations: translations,
-      hiddenTranslations: hiddenTranslations,
       completed: completed,
     );
   }
@@ -64,6 +60,7 @@ class LessonChatSessionStore {
     required String stage,
   }) {
     final key = _key(lessonId, stage);
+
     return _sessions.putIfAbsent(
       key,
       () => LessonChatStoredSession(
@@ -85,7 +82,9 @@ class LessonChatSessionStore {
   }
 
   void clearLesson(int lessonId) {
-    _sessions.removeWhere((_, session) => session.lessonId == lessonId);
+    _sessions.removeWhere(
+      (_, session) => session.lessonId == lessonId,
+    );
   }
 
   void clearAll() {
