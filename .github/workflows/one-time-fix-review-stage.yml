@@ -3,8 +3,6 @@ name: One-time review stage fix
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/one-time-fix-review-stage.yml'
 
 permissions:
   contents: write
@@ -35,8 +33,8 @@ jobs:
 '''
 
           new = '''    # A completed stage may be opened again for review.
-          # Only locked stages remain blocked here. Reopening Teaching creates
-          # a fresh conversation while preserving the completed lesson state.
+    # Only locked stages remain blocked here. Reopening Teaching creates
+    # a fresh conversation while preserving the completed lesson state.
 '''
 
           if old not in text:
