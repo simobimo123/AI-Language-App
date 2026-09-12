@@ -108,13 +108,11 @@ def _get_lesson(
     lesson_id: int,
 ) -> CourseLesson:
     lesson = db.get(CourseLesson, lesson_id)
-
     if lesson is None:
         raise HTTPException(
             status_code=404,
             detail="Lesson not found.",
         )
-
     return lesson
 
 
@@ -129,13 +127,11 @@ def _get_profile(
             LearningProfile.language == lesson.language,
         )
     )
-
     if profile is None:
         raise HTTPException(
             status_code=400,
             detail="Learning profile not found for this lesson language.",
         )
-
     return profile
 
 
@@ -152,7 +148,6 @@ def _get_stage_progress(
             UserLessonStageProgress.lesson_id == lesson.id,
         )
     )
-
     if progress is None:
         progress = UserLessonStageProgress(
             user_id=user.id,
@@ -161,10 +156,8 @@ def _get_stage_progress(
             teaching_status="available",
             practice_status="locked",
         )
-
         db.add(progress)
         db.flush()
-
     elif progress.teaching_status == "locked":
         progress.teaching_status = "available"
 
@@ -195,11 +188,13 @@ def _ensure_stage_open(
             ),
         )
 
-    if current == "completed":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Stage '{stage}' is already completed.",
-        )
+    # A completed stage may be opened again for review.
+    #
+    # Important:
+    # - The completed status is preserved.
+    # - START_STAGE creates a new conversation ID.
+    # - Existing lesson progress is not reset.
+    # - Practice remains governed by its own existing rules.
 
 
 # ============================================================
@@ -211,13 +206,11 @@ def _new_stage_conversation_id(
     stage: str,
 ) -> str:
     conversation_id = f"lesson_{stage}_{uuid4()}"
-
     setattr(
         progress,
         f"{stage}_conversation_id",
         conversation_id,
     )
-
     return conversation_id
 
 
@@ -227,7 +220,6 @@ def _get_canonical_conversation_id(
 ) -> str:
     field_name = f"{stage}_conversation_id"
     prefix = f"lesson_{stage}_"
-
     current = str(
         getattr(progress, field_name, "") or ""
     ).strip()
@@ -361,7 +353,6 @@ def _history_messages(
     Only the latest MAX_CONTEXT_MESSAGES are sent to the AI
     to reduce prompt size and cost.
     """
-
     result: list[dict[str, str]] = []
 
     for item in history[-MAX_CONTEXT_MESSAGES:]:
@@ -511,9 +502,9 @@ def _compact_target_goals(
 
     Practice does not need every target pattern and success
     criterion. It only needs to know what the lesson is
+
     trying to practice.
     """
-
     lines: list[str] = []
 
     for target in targets:
@@ -566,7 +557,6 @@ def _prompt_context(
         compact lesson target summary
         practice scenario
     """
-
     context = (
         f"**LANGUAGE**: {lesson.language}\n"
         f"**LEVEL**: {lesson.level}"
@@ -613,7 +603,6 @@ def _teaching_system_prompt(
             "**CURRENT TARGET**: "
             "There is no remaining target."
         )
-
     else:
         goal = str(
             current_target.get(
@@ -669,7 +658,6 @@ Then ask the learner to produce an answer.
 
 Do not give a long explanation.
 """.strip()
-
     else:
         task = """
 **AFTER LEARNER RESPONSE**:
@@ -810,7 +798,6 @@ Your message should invite the learner to respond naturally.
 
 Ask one clear question when a question is appropriate.
 """.strip()
-
     else:
         start_task = """
 **CONTINUE THE CONVERSATION**:
@@ -896,11 +883,9 @@ The conversation should feel like two people talking,
 with the AI helping the learner practice the lesson language.
 
 Do not mechanically move from:
-
 question → answer → new unrelated question.
 
 Instead prefer:
-
 learner answer → natural reaction → relevant follow-up.
 
 The next question should have a reason to exist.
@@ -1086,9 +1071,7 @@ def _stream_stage_response(
                     request.stage,
                 )
             )
-
             history = []
-
         else:
             canonical_conversation_id = (
                 _get_canonical_conversation_id(
@@ -1178,7 +1161,6 @@ def _stream_stage_response(
                             "confidence": None,
                         },
                     )
-
                     return
 
                 current_target_order = int(
@@ -1190,6 +1172,7 @@ def _stream_stage_response(
         # and completion-marker analysis.
         #
         # Only the recent compact history is sent to the AI.
+
         messages = _history_messages(
             history
         )
@@ -1382,7 +1365,6 @@ def _stream_stage_response(
                 db=db,
                 model=AI_MODEL,
             )
-
         except Exception:
             logger.exception(
                 "Failed to record lesson AI usage."
@@ -1446,10 +1428,8 @@ def _stream_stage_response(
         if request.stage == "teaching":
             if stage_completed:
                 action = "AXIS_COMPLETE"
-
             elif valid_target_completion:
                 action = "TARGET_COMPLETE"
-
             else:
                 action = "CONTINUE"
 
@@ -1468,7 +1448,6 @@ def _stream_stage_response(
                     "confidence": None,
                 },
             )
-
         else:
             yield sse_event(
                 "decision",
@@ -1520,7 +1499,6 @@ def _stream_stage_response(
 
         try:
             db.rollback()
-
         except Exception:
             logger.exception(
                 "Failed to rollback lesson stage AI transaction."
