@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../core/storage/tutor_explanation_settings.dart';
 import '../../core/theme/theme_controller.dart';
 
 class ProfileView extends StatelessWidget {
@@ -14,9 +15,11 @@ class ProfileView extends StatelessWidget {
   final bool isChangingLanguage;
   final bool isAddingLanguage;
   final String currentAppLanguage;
+  final String explanationLanguage;
   final ThemeController themeController;
   final VoidCallback onLearningLanguageTap;
   final VoidCallback onAppLanguageTap;
+  final VoidCallback onExplanationLanguageTap;
   final VoidCallback onLogout;
 
   const ProfileView({
@@ -31,9 +34,11 @@ class ProfileView extends StatelessWidget {
     required this.isChangingLanguage,
     required this.isAddingLanguage,
     required this.currentAppLanguage,
+    required this.explanationLanguage,
     required this.themeController,
     required this.onLearningLanguageTap,
     required this.onAppLanguageTap,
+    required this.onExplanationLanguageTap,
     required this.onLogout,
   });
 
@@ -41,6 +46,7 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final appLanguageCode = Localizations.localeOf(context).languageCode;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -100,6 +106,16 @@ class ProfileView extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
+          TutorExplanationSettings.title(appLanguageCode),
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        ExplanationLanguageCard(
+          language: explanationLanguage,
+          onTap: onExplanationLanguageTap,
+        ),
+        const SizedBox(height: 28),
+        Text(
           l10n.appLanguage,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
@@ -130,6 +146,66 @@ class ProfileView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class ExplanationLanguageCard extends StatelessWidget {
+  final String language;
+  final VoidCallback onTap;
+
+  const ExplanationLanguageCard({
+    super.key,
+    required this.language,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(Icons.school_rounded, color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    language,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Tap to change',
+                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_left_rounded, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
     );
   }
 }
