@@ -60,10 +60,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
   int? _wordCardMessageIndex;
   OverlayEntry? _wordActionOverlay;
 
-  String _ui(String key) => lessonChatUiText(
-        widget.languageController.locale.languageCode,
-        key,
-      );
+  String _ui(String key) =>
+      lessonChatUiText(widget.languageController.locale.languageCode, key);
 
   TextDirection get _learningDirection =>
       directionForLanguage(widget.lesson.language);
@@ -285,10 +283,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
       ..clear()
       ..addAll(
         _session.messages.map(
-          (message) => _Message(
-            role: message.role,
-            text: message.text,
-          ),
+          (message) => _Message(role: message.role, text: message.text),
         ),
       );
 
@@ -311,10 +306,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
       ..clear()
       ..addAll(
         _messages.map(
-          (message) => LessonChatStoredMessage(
-            role: message.role,
-            text: message.text,
-          ),
+          (message) =>
+              LessonChatStoredMessage(role: message.role, text: message.text),
         ),
       );
 
@@ -392,8 +385,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
       )) {
         if (!mounted) return;
 
-        if (chunk.conversationId != null &&
-            chunk.conversationId!.isNotEmpty) {
+        if (chunk.conversationId != null && chunk.conversationId!.isNotEmpty) {
           _conversationId = chunk.conversationId;
           _saveSession();
         }
@@ -403,12 +395,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
           if (part.isEmpty) continue;
 
           if (assistantIndex == -1) {
-            _messages.add(
-              const _Message(
-                role: 'assistant',
-                text: '',
-              ),
-            );
+            _messages.add(const _Message(role: 'assistant', text: ''));
 
             assistantIndex = _messages.length - 1;
           }
@@ -465,8 +452,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
     // Translation already exists in the temporary cache.
     // Showing it again must NEVER call AI.
-    if (cachedTranslation != null &&
-        cachedTranslation.trim().isNotEmpty) {
+    if (cachedTranslation != null && cachedTranslation.trim().isNotEmpty) {
       setState(() {
         _session.hiddenTranslations.remove(index);
         _error = null;
@@ -539,10 +525,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
   }
 
   Future<void> _suggestReply() async {
-    if (_conversationId == null ||
-        _suggesting ||
-        _sending ||
-        _completed) {
+    if (_conversationId == null || _suggesting || _sending || _completed) {
       return;
     }
 
@@ -655,17 +638,13 @@ class _LessonChatPageState extends State<LessonChatPage> {
                       Icon(
                         Icons.menu_book_rounded,
                         size: 17,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onInverseSurface,
+                        color: Theme.of(context).colorScheme.onInverseSurface,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         _wordUi('explain'),
                         style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onInverseSurface,
+                          color: Theme.of(context).colorScheme.onInverseSurface,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -740,10 +719,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
     if (displayText.trim().isEmpty) return null;
 
     final painter = TextPainter(
-      text: TextSpan(
-        text: displayText,
-        style: style,
-      ),
+      text: TextSpan(text: displayText, style: style),
       textDirection: direction,
       textAlign: TextAlign.start,
       maxLines: null,
@@ -754,16 +730,13 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
     var start = offset;
 
-    while (
-        start > 0 &&
-        !RegExp(r'\s').hasMatch(displayText[start - 1])) {
+    while (start > 0 && !RegExp(r'\s').hasMatch(displayText[start - 1])) {
       start--;
     }
 
     var end = offset;
 
-    while (
-        end < displayText.length &&
+    while (end < displayText.length &&
         !RegExp(r'\s').hasMatch(displayText[end])) {
       end++;
     }
@@ -773,10 +746,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
     final raw = displayText.substring(start, end);
 
     final word = raw.replaceAll(
-      RegExp(
-        r'^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$',
-        unicode: true,
-      ),
+      RegExp(r'^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$', unicode: true),
       '',
     );
 
@@ -813,17 +783,12 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
               _showWordAction(
                 word: word,
-                globalPosition:
-                    (context.findRenderObject() as RenderBox)
-                        .localToGlobal(details.localPosition),
+                globalPosition: (context.findRenderObject() as RenderBox)
+                    .localToGlobal(details.localPosition),
                 messageIndex: messageIndex,
               );
             },
-      child: Text(
-        displayText,
-        textDirection: direction,
-        style: style,
-      ),
+      child: Text(displayText, textDirection: direction, style: style),
     );
   }
 
@@ -842,8 +807,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
       return const SizedBox.shrink();
     }
 
-    String value(String field) =>
-        (data?[field] ?? '').toString().trim();
+    String value(String field) => (data?[field] ?? '').toString().trim();
 
     final word = value('word').isNotEmpty ? value('word') : key;
     final translation = value('translation');
@@ -917,9 +881,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                           child: Icon(
                             Icons.close_rounded,
                             size: 19,
-                            color: theme
-                                .colorScheme
-                                .onPrimaryContainer
+                            color: theme.colorScheme.onPrimaryContainer
                                 .withValues(alpha: 0.65),
                           ),
                         ),
@@ -996,19 +958,16 @@ class _LessonChatPageState extends State<LessonChatPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 17,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(icon, size: 17, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
         if (label != null) ...[
           Text(
             '$label: ',
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onPrimaryContainer
-                  .withValues(alpha: 0.7),
+              color: theme.colorScheme.onPrimaryContainer.withValues(
+                alpha: 0.7,
+              ),
             ),
           ),
         ],
@@ -1018,8 +977,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
             child: Text(
               value,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight:
-                    strong ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
                 color: theme.colorScheme.onPrimaryContainer,
                 height: 1.4,
               ),
@@ -1074,24 +1032,20 @@ class _LessonChatPageState extends State<LessonChatPage> {
   Widget _buildMessageActions(BuildContext context, int index) {
     final theme = Theme.of(context);
     final translation = _translations[index];
-    final hasTranslation =
-        translation != null && translation.trim().isNotEmpty;
-    final translationHidden =
-        _session.hiddenTranslations.contains(index);
+    final hasTranslation = translation != null && translation.trim().isNotEmpty;
+    final translationHidden = _session.hiddenTranslations.contains(index);
     final translating = _translatingIndex == index;
 
     return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        top: 8,
-        start: 8,
-      ),
+      padding: const EdgeInsetsDirectional.only(top: 8, start: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!hasTranslation)
             Material(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.4),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -1119,8 +1073,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
                         Icon(
                           Icons.translate_rounded,
                           size: 14,
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: 0.9),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.9,
+                          ),
                         ),
                       const SizedBox(width: 6),
                       Text(
@@ -1140,12 +1095,12 @@ class _LessonChatPageState extends State<LessonChatPage> {
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer
-                    .withValues(alpha: 0.4),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.4,
+                ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: theme.colorScheme.primary
-                      .withValues(alpha: 0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 ),
               ),
               child: Row(
@@ -1159,7 +1114,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Directionality(
-                      textDirection: directionForText(translation!),
+                      textDirection: directionForText(translation),
                       child: Text(
                         translation,
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -1177,10 +1132,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                     ),
                     tooltip: 'Hide',
                     onPressed: () => _hideTranslation(index),
-                    icon: const Icon(
-                      Icons.visibility_off_outlined,
-                      size: 18,
-                    ),
+                    icon: const Icon(Icons.visibility_off_outlined, size: 18),
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
@@ -1191,10 +1143,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                     ),
                     tooltip: 'Delete',
                     onPressed: () => _deleteTranslation(index),
-                    icon: const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 18,
-                    ),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
                   ),
                 ],
               ),
@@ -1203,8 +1152,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Material(
-                color: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.4),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
                 borderRadius: BorderRadius.circular(12),
                 clipBehavior: Clip.antiAlias,
                 child: Row(
@@ -1228,8 +1178,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                             const SizedBox(width: 6),
                             Text(
                               _ui('translate'),
-                              style:
-                                  theme.textTheme.labelMedium?.copyWith(
+                              style: theme.textTheme.labelMedium?.copyWith(
                                 color: theme.colorScheme.primary,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1241,8 +1190,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                     Container(
                       width: 1,
                       height: 20,
-                      color: theme.colorScheme.outline
-                          .withValues(alpha: 0.15),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.15),
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
@@ -1253,10 +1201,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                       ),
                       tooltip: 'Delete',
                       onPressed: () => _deleteTranslation(index),
-                      icon: const Icon(
-                        Icons.delete_outline_rounded,
-                        size: 18,
-                      ),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
                     ),
                   ],
                 ),
@@ -1274,18 +1219,14 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
     final bubbleColor = isUser
         ? theme.colorScheme.primary
-        : theme.colorScheme.surfaceContainerHighest
-            .withValues(alpha: 0.5);
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
 
     final foregroundColor = isUser
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface;
 
     final messageDirection = isUser
-        ? directionForText(
-            message.text,
-            fallback: _learningDirection,
-          )
+        ? directionForText(message.text, fallback: _learningDirection)
         : _learningDirection;
 
     final textStyle = theme.textTheme.bodyLarge!.copyWith(
@@ -1304,8 +1245,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser)
@@ -1317,8 +1259,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                 gradient: LinearGradient(
                   colors: [
                     theme.colorScheme.primary,
-                    theme.colorScheme.primary
-                        .withValues(alpha: 0.7),
+                    theme.colorScheme.primary.withValues(alpha: 0.7),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1334,8 +1275,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
           Flexible(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth:
-                    MediaQuery.of(context).size.width * 0.8,
+                maxWidth: MediaQuery.of(context).size.width * 0.8,
               ),
               child: Column(
                 crossAxisAlignment: isUser
@@ -1379,18 +1319,14 @@ class _LessonChatPageState extends State<LessonChatPage> {
   Widget _buildSuggestionPanel(BuildContext context) {
     final theme = Theme.of(context);
     final hasSuggestion =
-        _suggestionText != null &&
-            _suggestionText!.trim().isNotEmpty;
+        _suggestionText != null && _suggestionText!.trim().isNotEmpty;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
       child: hasSuggestion
           ? Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: _suggestionCollapsed
@@ -1405,18 +1341,13 @@ class _LessonChatPageState extends State<LessonChatPage> {
   Widget _buildCollapsedSuggestion(ThemeData theme) {
     return Material(
       key: const ValueKey('collapsed'),
-      color: theme.colorScheme.secondaryContainer
-          .withValues(alpha: 0.5),
+      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () =>
-            setState(() => _suggestionCollapsed = false),
+        onTap: () => setState(() => _suggestionCollapsed = false),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Icon(
@@ -1435,11 +1366,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
                 ),
               ),
               IconButton(
-                onPressed: () =>
-                    setState(() => _suggestionCollapsed = false),
-                icon: const Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                ),
+                onPressed: () => setState(() => _suggestionCollapsed = false),
+                icon: const Icon(Icons.keyboard_arrow_up_rounded),
                 iconSize: 20,
               ),
               IconButton(
@@ -1458,12 +1386,10 @@ class _LessonChatPageState extends State<LessonChatPage> {
     return Container(
       key: const ValueKey('expanded'),
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer
-            .withValues(alpha: 0.3),
+        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: theme.colorScheme.secondary
-              .withValues(alpha: 0.15),
+          color: theme.colorScheme.secondary.withValues(alpha: 0.15),
         ),
       ),
       padding: const EdgeInsets.all(16),
@@ -1487,11 +1413,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
                 ),
               ),
               IconButton(
-                onPressed: () =>
-                    setState(() => _suggestionCollapsed = true),
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                ),
+                onPressed: () => setState(() => _suggestionCollapsed = true),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
                 iconSize: 20,
               ),
               IconButton(
@@ -1506,22 +1429,17 @@ class _LessonChatPageState extends State<LessonChatPage> {
             textDirection: _learningDirection,
             child: Text(
               _suggestionText!,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                height: 1.5,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
             ),
           ),
           if (_suggestionTranslation != null &&
               _suggestionTranslation!.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Directionality(
-              textDirection:
-                  directionForText(_suggestionTranslation!),
+              textDirection: directionForText(_suggestionTranslation!),
               child: Text(
                 _suggestionTranslation!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  height: 1.4,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
               ),
             ),
           ],
@@ -1556,12 +1474,12 @@ class _LessonChatPageState extends State<LessonChatPage> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.4),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: theme.colorScheme.outline
-                      .withValues(alpha: 0.1),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
                 ),
               ),
               child: Row(
@@ -1578,14 +1496,12 @@ class _LessonChatPageState extends State<LessonChatPage> {
                       textInputAction: TextInputAction.newline,
                       style: theme.textTheme.bodyLarge,
                       decoration: InputDecoration(
-                        hintText:
-                            (!_isFocused && _input.text.isEmpty)
-                                ? 'اضغط هنا للكتابة'
-                                : null,
+                        hintText: (!_isFocused && _input.text.isEmpty)
+                            ? 'اضغط هنا للكتابة'
+                            : null,
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 14,
                         ),
@@ -1595,10 +1511,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                     ),
                   ),
                   IconButton(
-                    onPressed:
-                        _sending || _completed
-                            ? null
-                            : _suggestReply,
+                    onPressed: _sending || _completed ? null : _suggestReply,
                     icon: _suggesting
                         ? SizedBox(
                             width: 20,
@@ -1624,8 +1537,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                 ? theme.colorScheme.surfaceContainerHighest
                 : theme.colorScheme.primary,
             child: IconButton(
-              onPressed:
-                  _sending || _completed ? null : _sendCurrent,
+              onPressed: _sending || _completed ? null : _sendCurrent,
               icon: _sending
                   ? SizedBox(
                       width: 20,
@@ -1665,8 +1577,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 4,
-        backgroundColor:
-            theme.colorScheme.surface.withValues(alpha: 0.9),
+        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.9),
         surfaceTintColor: Colors.transparent,
       ),
       body: Column(
@@ -1675,8 +1586,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
             child: _starting && _messages.isEmpty
                 ? Center(
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(
                           color: theme.colorScheme.primary,
@@ -1685,11 +1595,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
                         const SizedBox(height: 16),
                         Text(
                           'جاري بدء المحادثة...',
-                          style:
-                              theme.textTheme.bodyMedium?.copyWith(
-                            color: theme
-                                .colorScheme
-                                .onSurfaceVariant,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -1707,10 +1614,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
           ),
           if (_error != null)
             Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer,
@@ -1724,9 +1628,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(_error!),
-                  ),
+                  Expanded(child: Text(_error!)),
                 ],
               ),
             ),
@@ -1739,15 +1641,12 @@ class _LessonChatPageState extends State<LessonChatPage> {
                   width: double.infinity,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    onPressed: () =>
-                        Navigator.pop(context, true),
+                    onPressed: () => Navigator.pop(context, true),
                     icon: Icon(
                       widget.isTeaching
                           ? Icons.arrow_forward_rounded
