@@ -64,8 +64,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
   String get _completionLabel =>
       widget.isTeaching ? _ui('continueStage3') : _ui('complete');
 
-  IconData get _completionIcon =>
-      widget.isTeaching ? Icons.arrow_forward_rounded : Icons.check_rounded;
+  Widget get _completionIcon => Icon(
+        widget.isTeaching ? Icons.arrow_forward_rounded : Icons.check_rounded,
+      );
 
   @override
   void initState() {
@@ -537,191 +538,44 @@ class _LessonChatPageState extends State<LessonChatPage> {
             ],
             Flexible(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 650),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(15, 12, 15, 11),
-                  decoration: BoxDecoration(
-                    color: bubbleColor,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(20),
-                      topRight: const Radius.circular(20),
-                      bottomLeft: Radius.circular(isUser ? 20 : 5),
-                      bottomRight: Radius.circular(isUser ? 5 : 20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: .04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Column(
+                  crossAxisAlignment: isUser
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 12,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Directionality(
+                      decoration: BoxDecoration(
+                        color: bubbleColor,
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(20),
+                          topRight: const Radius.circular(20),
+                          bottomLeft: Radius.circular(isUser ? 20 : 6),
+                          bottomRight: Radius.circular(isUser ? 6 : 20),
+                        ),
+                      ),
+                      child: Directionality(
                         textDirection: messageDirection,
                         child: RichText(
                           textAlign: TextAlign.start,
                           text: _messageSpan(
                             message.text,
                             baseTextStyle,
-                            isUser ? foregroundColor : Colors.red.shade700,
+                            isUser
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.primary,
                           ),
                         ),
                       ),
-                      if (!isUser && message.text.trim().isNotEmpty)
-                        _messageActions(context, index),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (isUser)
-              Container(
-                width: 34,
-                height: 34,
-                margin: const EdgeInsetsDirectional.only(start: 8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person_rounded,
-                  size: 18,
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _typingIndicator(BuildContext context) {
-    final theme = Theme.of(context);
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              margin: const EdgeInsetsDirectional.only(end: 8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                size: 18,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-            _AnimatedTypingBubble(
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              dotColor: theme.colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComposer(BuildContext context) {
-    final theme = Theme.of(context);
-    final canSuggest = _conversationId != null &&
-        !_suggesting && !_sending && !_completed;
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 5, 12, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Tooltip(
-              message: _ui('suggestReply'),
-              child: Material(
-                color: theme.colorScheme.secondaryContainer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: canSuggest ? _suggestReply : null,
-                  child: SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: Center(
-                      child: _suggesting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(
-                              Icons.lightbulb_outline_rounded,
-                              color: canSuggest
-                                  ? theme.colorScheme.onSecondaryContainer
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
                     ),
-                  ),
+                    if (!isUser) _messageActions(context, index),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _input,
-                enabled: !_sending && !_completed,
-                minLines: 1,
-                maxLines: 5,
-                textDirection: _learningDirection,
-                textAlign: TextAlign.start,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendCurrent(),
-                decoration: InputDecoration(
-                  hintText: _ui('writeReply'),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 17,
-                    vertical: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: .08),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 1.4,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              tooltip: _ui('send'),
-              onPressed: _sending || _completed ? null : _sendCurrent,
-              style: IconButton.styleFrom(
-                minimumSize: const Size(50, 50),
-                maximumSize: const Size(50, 50),
-              ),
-              icon: const Icon(Icons.arrow_upward_rounded),
             ),
           ],
         ),
@@ -740,135 +594,86 @@ class _LessonChatPageState extends State<LessonChatPage> {
     });
   }
 
+  Widget _buildComposer(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+        child: Material(
+          color: theme.colorScheme.surface,
+          elevation: 4,
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 7, 7, 7),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _input,
+                    enabled: !_sending && !_completed,
+                    minLines: 1,
+                    maxLines: 5,
+                    textDirection: _learningDirection,
+                    textInputAction: TextInputAction.newline,
+                    decoration: InputDecoration(
+                      hintText: _ui('inputHint'),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => _sendCurrent(),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                IconButton.filled(
+                  onPressed: _sending || _completed ? null : _sendCurrent,
+                  icon: _sending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.arrow_upward_rounded),
+                  tooltip: _ui('send'),
+                ),
+                IconButton(
+                  onPressed: _sending || _completed ? null : _suggestReply,
+                  icon: _suggesting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.lightbulb_outline_rounded),
+                  tooltip: _ui('suggest'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showTyping = _sending &&
-        !_starting &&
-        !_completed &&
-        (_messages.isEmpty || _messages.last.isUser);
 
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                size: 20,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _ui('aiTutor'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    _stageLabel,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (_completed)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 10),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        _ui('complete'),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
+        title: Text(_stageLabel),
       ),
       body: Column(
         children: [
           Expanded(
             child: _starting && _messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(18),
-                            child: CircularProgressIndicator(strokeWidth: 2.4),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          _ui('starting'),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
                     controller: _scroll,
-                    padding: const EdgeInsets.fromLTRB(14, 18, 14, 10),
-                    itemCount: _messages.length + (showTyping ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (showTyping && index == _messages.length) {
-                        return _typingIndicator(context);
-                      }
-                      return _buildMessage(context, index);
-                    },
+                    padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
+                    itemCount: _messages.length,
+                    itemBuilder: _buildMessage,
                   ),
           ),
           if (_error != null)
@@ -876,10 +681,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 9,
-                ),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(12),
@@ -917,90 +719,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
               ],
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _AnimatedTypingBubble extends StatefulWidget {
-  final Color backgroundColor;
-  final Color dotColor;
-
-  const _AnimatedTypingBubble({
-    required this.backgroundColor,
-    required this.dotColor,
-  });
-
-  @override
-  State<_AnimatedTypingBubble> createState() => _AnimatedTypingBubbleState();
-}
-
-class _AnimatedTypingBubbleState extends State<_AnimatedTypingBubble>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  double _valueForDot(int index) {
-    final phase = (_controller.value - index * 0.18) % 1.0;
-    return phase < 0.5 ? phase * 2 : (1.0 - phase) * 2;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
-      decoration: BoxDecoration(
-        color: widget.backgroundColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-          bottomLeft: Radius.circular(5),
-        ),
-      ),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return SizedBox(
-            width: 34,
-            height: 12,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: List.generate(3, (index) {
-                final value = _valueForDot(index);
-                return Transform.translate(
-                  offset: Offset(0, -3 * value),
-                  child: Opacity(
-                    opacity: 0.35 + 0.65 * value,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: widget.dotColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          );
-        },
       ),
     );
   }
