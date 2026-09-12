@@ -4,6 +4,7 @@ import '../controllers/profile_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/language/language_controller.dart';
+import '../core/storage/tutor_explanation_settings.dart';
 import '../widgets/profile/profile_dialogs.dart';
 import '../widgets/profile/profile_view.dart';
 
@@ -83,11 +84,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     appLanguageCode,
                     l10n,
                   ),
+                  explanationLanguage: controller.explanationLanguageMode ==
+                          TutorExplanationSettings.nativeMode
+                      ? TutorExplanationSettings.nativeLabel(appLanguageCode)
+                      : TutorExplanationSettings.learningLabel(appLanguageCode),
                   themeController: widget.themeController,
                   onLearningLanguageTap: () =>
                       ProfileDialogs.showLearningLanguages(context, controller),
                   onAppLanguageTap: () =>
                       ProfileDialogs.showAppLanguages(context, controller),
+                  onExplanationLanguageTap: () =>
+                      ProfileDialogs.showExplanationLanguage(context, controller),
                   onLogout: () => controller.logout(context),
                 ),
         );
