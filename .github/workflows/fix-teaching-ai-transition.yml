@@ -1,0 +1,65 @@
+name: Fix Teaching AI transition and input language
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event.head_commit.message != 'Fix Teaching AI language input and target transition'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch Teaching AI
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''**LANGUAGE RULES**:\n- The learner is learning the lesson **LANGUAGE** shown above.\n- The selected explanation language is supplied separately by the backend and is authoritative.\n- ALL teacher explanations, corrections, grammar notes, meanings, instructions, feedback, praise, transitions, and ordinary conversational prose in `reply` MUST use the selected explanation language.\n- Do NOT use the learning language for teacher prose just because it is the language being learned.\n- The learning language may appear in `reply` ONLY when it is the actual target sentence, example sentence, model answer, or learner practice content that must be produced in the learning language.\n- Never write teacher feedback such as a learning-language equivalent of "very good", "now", "try again", or "correct" unless that language is also the selected explanation language.\n- If the selected explanation language is Arabic, teacher prose must be Arabic; German target sentences may remain German when they are the learning content.\n- If the selected explanation language is the same as the learning language, all of the reply may naturally be in the learning language.\n'''
+
+          new = '''**LANGUAGE RULES**:\n- The learner is learning the lesson **LANGUAGE** shown above.\n- The selected explanation language is supplied separately by the backend and is authoritative.\n- ALL teacher explanations, corrections, grammar notes, meanings, instructions, feedback, praise, transitions, and ordinary conversational prose in `reply` MUST use the selected explanation language.\n- The learner MAY speak to you in the selected explanation language, in the learning language, or in a mixture of both. You MUST understand and respond to the learner's meaning; never say that you do not understand merely because the learner used the explanation/native language.\n- A learner message in the explanation language is NOT automatically wrong and is NOT a reason to force the learner to switch languages. Only judge whether the message satisfies the CURRENT TARGET.\n- If the learner uses the explanation language to ask a question, comment, clarify something, or communicate with the teacher, answer that communication briefly in the explanation language and then return to the current target.\n- Do NOT use the learning language for teacher prose just because it is the language being learned.\n- The learning language may appear in `reply` ONLY when it is the actual target sentence, example sentence, model answer, or learner practice content that must be produced in the learning language.\n- Never write teacher feedback such as a learning-language equivalent of "very good", "now", "try again", or "correct" unless that language is also the selected explanation language.\n- If the selected explanation language is Arabic, teacher prose must be Arabic; German target sentences may remain German when they are the learning content.\n- If the selected explanation language is the same as the learning language, all of the reply may naturally be in the learning language.\n'''
+
+          if old not in text:
+              raise SystemExit('Expected LANGUAGE RULES block not found')
+          text = text.replace(old, new, 1)
+
+          old2 = '''- When `target_completed` is true and a next target exists, the learner-facing reply must briefly acknowledge success and immediately give ONE simple prompt for the **NEXT TARGET**.\n'''
+          new2 = '''- When `target_completed` is true and a next target exists, the learner-facing reply MUST NOT stop after praise or confirmation. It MUST immediately continue into the **NEXT TARGET** in the SAME response.\n- The completion response MUST contain both: (1) brief success feedback in the selected explanation language, and (2) ONE concrete prompt that makes the learner perform the **NEXT TARGET**.\n- Never end a completed-target response with only "good", "correct", "excellent", or another acknowledgement. The next-target prompt is mandatory.\n'''
+          if old2 not in text:
+              raise SystemExit('Expected target transition rule not found')
+          text = text.replace(old2, new2, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+          p2 = Path('AI_Language_App_flutter/ai_app_flutter_backend/backend/services/ai/provider.py')
+          provider = p2.read_text(encoding='utf-8')
+          old3 = '''f"When correcting an answer, explain the correction in "\n            f"**{explanation_language}**, while keeping the corrected/model "\n            f"sentence itself in **{learning_language_name}**.\\n\\n"\n'''
+          new3 = '''f"When correcting an answer, explain the correction in "\n            f"**{explanation_language}**, while keeping the corrected/model "\n            f"sentence itself in **{learning_language_name}**.\\n\\n"\n            f"The learner is allowed to communicate with you in **{explanation_language}**, "\n            f"in **{learning_language_name}**, or in both. You MUST understand the learner's "\n            "message regardless of which of these languages they use. Never claim that you "\n            f"do not understand simply because the learner used **{explanation_language}**. "\n            "Do not force the learner to use the learning language for communication with "\n            "the teacher; require the learning language only when the CURRENT TARGET requires "\n            "the learner to produce it.\\n\\n"\n'''
+          if old3 not in provider:
+              raise SystemExit('Expected provider language block not found')
+          provider = provider.replace(old3, new3, 1)
+          p2.write_text(provider, encoding='utf-8')
+          PY
+
+      - name: Verify Python syntax
+        run: |
+          python -m py_compile AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
+          python -m py_compile AI_Language_App_flutter/ai_app_flutter_backend/backend/services/ai/provider.py
+
+      - name: Commit and remove workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py AI_Language_App_flutter/ai_app_flutter_backend/backend/services/ai/provider.py .github/workflows/fix-teaching-ai-transition.yml
+          git commit -m 'Fix Teaching AI language input and target transition'
+          git push
