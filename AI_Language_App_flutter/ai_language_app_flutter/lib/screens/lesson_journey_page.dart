@@ -70,11 +70,6 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
     _loadStages();
   }
 
-  Future<void> _saveStage(String stage, {String? conversationId}) async {
-    await _api.completeLessonStage(lessonId: widget.lesson.id, stage: stage, conversationId: conversationId);
-    await _loadStages();
-  }
-
   Future<bool> _ensureTeachingExplanationLanguage() async {
     final existing = await tutorExplanationSettings.getMode();
     if (existing != null) return true;
@@ -89,44 +84,36 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
       enableDrag: false,
       showDragHandle: true,
       backgroundColor: theme.colorScheme.surface,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  TutorExplanationSettings.title(uiLanguage),
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  TutorExplanationSettings.question(uiLanguage),
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.45),
-                ),
-                const SizedBox(height: 18),
-                ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  tileColor: theme.colorScheme.primaryContainer,
-                  leading: Icon(Icons.translate_rounded, color: theme.colorScheme.primary),
-                  title: Text(TutorExplanationSettings.nativeLabel(uiLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
-                  onTap: () => Navigator.pop(context, TutorExplanationSettings.nativeMode),
-                ),
-                const SizedBox(height: 8),
-                ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  tileColor: theme.colorScheme.surfaceContainerHighest,
-                  leading: Icon(Icons.school_rounded, color: theme.colorScheme.onSurfaceVariant),
-                  title: Text(TutorExplanationSettings.learningLabel(uiLanguage), style: const TextStyle(fontWeight: FontWeight.w500)),
-                  onTap: () => Navigator.pop(context, TutorExplanationSettings.learningMode),
-                ),
-              ],
-            ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(TutorExplanationSettings.title(uiLanguage), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Text(TutorExplanationSettings.question(uiLanguage), style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.45)),
+              const SizedBox(height: 18),
+              ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: theme.colorScheme.primaryContainer,
+                leading: Icon(Icons.translate_rounded, color: theme.colorScheme.primary),
+                title: Text(TutorExplanationSettings.nativeLabel(uiLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () => Navigator.pop(context, TutorExplanationSettings.nativeMode),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: theme.colorScheme.surfaceContainerHighest,
+                leading: Icon(Icons.school_rounded, color: theme.colorScheme.onSurfaceVariant),
+                title: Text(TutorExplanationSettings.learningLabel(uiLanguage), style: const TextStyle(fontWeight: FontWeight.w500)),
+                onTap: () => Navigator.pop(context, TutorExplanationSettings.learningMode),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
 
     if (selected == null) return false;
@@ -136,53 +123,42 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
 
   Future<void> _openTeaching() async {
     if (_teachingStatus == 'locked') return;
-
     final ready = await _ensureTeachingExplanationLanguage();
     if (!ready || !mounted) return;
 
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => LessonChatPage(
-          lesson: widget.lesson,
-          languageController: widget.languageController,
-          stage: 'teaching',
-        ),
+        builder: (_) => LessonChatPage(lesson: widget.lesson, languageController: widget.languageController, stage: 'teaching'),
       ),
     );
-    if (!mounted || completed != true) return;
-    try {
-      await _saveStage('teaching');
-    } catch (_) {
-      if (mounted) _showSaveError();
+    if (!mounted) return;
+    await _loadStages();
+    if (completed == true && mounted && !_teachingCompleted) {
+      _showSaveError();
     }
   }
 
   Future<void> _openPractice() async {
-    if (!_teachingCompleted) return;
+    if (!_teachingCompleted || _practiceCompleted) return;
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => LessonChatPage(
-          lesson: widget.lesson,
-          languageController: widget.languageController,
-          stage: 'practice',
-        ),
+        builder: (_) => LessonChatPage(lesson: widget.lesson, languageController: widget.languageController, stage: 'practice'),
       ),
     );
-    if (!mounted || completed != true) return;
-    try {
-      await _saveStage('practice');
-      if (mounted && _practiceCompleted) {
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-        if (mounted) Navigator.of(context).pop(true);
-      }
-    } catch (_) {
-      if (mounted) _showSaveError();
+    if (!mounted) return;
+    await _loadStages();
+    if (completed == true && mounted && !_practiceCompleted) {
+      _showSaveError();
+    }
+    if (_practiceCompleted && mounted) {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (mounted) Navigator.of(context).pop(true);
     }
   }
 
   void _showSaveError() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_t(ar: 'تعذر حفظ حالة المرحلة على الخادم.', en: 'Could not save the stage status on the server.'))),
+      SnackBar(content: Text(_t(ar: 'تعذر تأكيد حالة المرحلة على الخادم.', en: 'Could not confirm the stage status on the server.'))),
     );
   }
 
@@ -216,10 +192,7 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    _t(ar: 'الدرس ${widget.lesson.lessonOrder}', en: 'Lesson ${widget.lesson.lessonOrder}', fr: 'Leçon ${widget.lesson.lessonOrder}', es: 'Lección ${widget.lesson.lessonOrder}', de: 'Lektion ${widget.lesson.lessonOrder}'),
-                                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w900),
-                                  ),
+                                  Text(_t(ar: 'الدرس ${widget.lesson.lessonOrder}', en: 'Lesson ${widget.lesson.lessonOrder}', fr: 'Leçon ${widget.lesson.lessonOrder}', es: 'Lección ${widget.lesson.lessonOrder}', de: 'Lektion ${widget.lesson.lessonOrder}'), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w900)),
                                   const SizedBox(height: 3),
                                   Text(widget.lesson.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
                                 ],
@@ -231,53 +204,21 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
                       ),
                     ),
                     if (_error != null)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                          child: Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
-                        ),
-                      ),
+                      SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 8, 20, 0), child: Text(_error!, style: TextStyle(color: theme.colorScheme.error)))),
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
                         child: Container(
                           padding: const EdgeInsets.all(22),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            color: theme.colorScheme.primary,
-                            boxShadow: [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .22), blurRadius: 28, offset: const Offset(0, 13))],
-                          ),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), color: theme.colorScheme.primary, boxShadow: [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .22), blurRadius: 28, offset: const Offset(0, 13))]),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.route_rounded, color: Colors.white, size: 30),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Text(
-                                      _t(ar: 'مسار الدرس', en: 'Lesson journey', fr: 'Parcours de la leçon', es: 'Ruta de la lección', de: 'Lernweg der Lektion'),
-                                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                  Text('$completedCount/2', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                                ],
-                              ),
+                              Row(children: [const Icon(Icons.route_rounded, color: Colors.white, size: 30), const SizedBox(width: 14), Expanded(child: Text(_t(ar: 'مسار الدرس', en: 'Lesson journey', fr: 'Parcours de la leçon', es: 'Ruta de la lección', de: 'Lernweg der Lektion'), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900))), Text('$completedCount/2', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900))]),
                               const SizedBox(height: 16),
-                              Text(
-                                _t(ar: 'أكمل المرحلتين بالترتيب. حالة كل مرحلة محفوظة على الخادم.', en: 'Complete the two stages in order. Each stage is saved on the server.'),
-                                style: const TextStyle(color: Colors.white70, height: 1.45),
-                              ),
+                              Text(_t(ar: 'أكمل المرحلتين بالترتيب. حالة كل مرحلة محفوظة على الخادم.', en: 'Complete the two stages in order. Each stage is saved on the server.'), style: const TextStyle(color: Colors.white70, height: 1.45)),
                               const SizedBox(height: 18),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(99),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  minHeight: 9,
-                                  backgroundColor: Colors.white.withValues(alpha: .18),
-                                  valueColor: const AlwaysStoppedAnimation(Colors.white),
-                                ),
-                              ),
+                              ClipRRect(borderRadius: BorderRadius.circular(99), child: LinearProgressIndicator(value: progress, minHeight: 9, backgroundColor: Colors.white.withValues(alpha: .18), valueColor: const AlwaysStoppedAnimation(Colors.white))),
                               const SizedBox(height: 8),
                               Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w800)),
                             ],
@@ -289,28 +230,9 @@ class _LessonJourneyPageState extends State<LessonJourneyPage> {
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 34),
                       sliver: SliverList.list(
                         children: [
-                          _StageCard(
-                            number: '01',
-                            icon: Icons.psychology_rounded,
-                            color: const Color(0xFF7C4DFF),
-                            title: _t(ar: 'التعليم مع الذكاء الاصطناعي', en: 'AI teaching', fr: 'Enseignement avec l’IA', es: 'Enseñanza con IA', de: 'Lernen mit KI'),
-                            description: _t(ar: 'مدرّس ذكي يشرح، يصحح، يعطي تلميحات ويقيّم إتقانك للأهداف.', en: 'An AI tutor teaches, corrects, gives hints, and evaluates mastery of the lesson goals.'),
-                            status: _teachingStatus,
-                            action: _teachingCompleted ? _t(ar: 'مراجعة المرحلة', en: 'Review stage') : _t(ar: 'ابدأ المرحلة 1', en: 'Start stage 1'),
-                            onTap: _openTeaching,
-                          ),
+                          _StageCard(number: '01', icon: Icons.psychology_rounded, color: const Color(0xFF7C4DFF), title: _t(ar: 'التعليم مع الذكاء الاصطناعي', en: 'AI teaching', fr: 'Enseignement avec l’IA', es: 'Enseñanza con IA', de: 'Lernen mit KI'), description: _t(ar: 'مدرّس ذكي يشرح، يصحح، يعطي تلميحات ويقيّم إتقانك للأهداف.', en: 'An AI tutor teaches, corrects, gives hints, and evaluates mastery of the lesson goals.'), status: _teachingStatus, action: _teachingCompleted ? _t(ar: 'مراجعة المرحلة', en: 'Review stage') : _t(ar: 'ابدأ المرحلة 1', en: 'Start stage 1'), onTap: _openTeaching),
                           _Connector(completed: _teachingCompleted),
-                          _StageCard(
-                            number: '02',
-                            icon: Icons.forum_rounded,
-                            color: const Color(0xFF00A88F),
-                            title: _t(ar: 'الممارسة التفاعلية', en: 'Interactive practice', fr: 'Pratique interactive', es: 'Práctica interactiva', de: 'Interaktives Üben'),
-                            description: _t(ar: 'استخدم أهداف الدرس في محادثة طبيعية مع الذكاء الاصطناعي.', en: 'Use the lesson goals in a natural conversation with AI.'),
-                            status: _practiceStatus,
-                            action: _practiceCompleted ? _t(ar: 'مكتملة', en: 'Completed') : _t(ar: 'ابدأ المرحلة 2', en: 'Start stage 2'),
-                            lockedText: _t(ar: 'أكمل المرحلة 1 لفتح هذه المرحلة', en: 'Complete stage 1 to unlock this stage'),
-                            onTap: _openPractice,
-                          ),
+                          _StageCard(number: '02', icon: Icons.forum_rounded, color: const Color(0xFF00A88F), title: _t(ar: 'الممارسة التفاعلية', en: 'Interactive practice', fr: 'Pratique interactive', es: 'Práctica interactiva', de: 'Interaktives Üben'), description: _t(ar: 'استخدم أهداف الدرس في محادثة طبيعية مع الذكاء الاصطناعي.', en: 'Use the lesson goals in a natural conversation with AI.'), status: _practiceStatus, action: _practiceCompleted ? _t(ar: 'مكتملة', en: 'Completed') : _t(ar: 'ابدأ المرحلة 2', en: 'Start stage 2'), lockedText: _t(ar: 'أكمل المرحلة 1 لفتح هذه المرحلة', en: 'Complete stage 1 to unlock this stage'), onTap: _openPractice),
                         ],
                       ),
                     ),
@@ -327,20 +249,7 @@ class _Connector extends StatelessWidget {
   const _Connector({required this.completed});
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 28,
-        child: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Container(
-            width: 3,
-            margin: const EdgeInsetsDirectional.only(start: 39),
-            decoration: BoxDecoration(
-              color: completed ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
-              borderRadius: BorderRadius.circular(99),
-            ),
-          ),
-        ),
-      );
+  Widget build(BuildContext context) => SizedBox(height: 28, child: Align(alignment: AlignmentDirectional.centerStart, child: Container(width: 3, margin: const EdgeInsetsDirectional.only(start: 39), decoration: BoxDecoration(color: completed ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(99)))));
 }
 
 class _StageCard extends StatelessWidget {
@@ -359,54 +268,20 @@ class _StageCard extends StatelessWidget {
     final completed = status == 'completed';
     final borderColor = enabled ? color.withValues(alpha: .28) : theme.colorScheme.outlineVariant.withValues(alpha: .75);
 
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity: enabled ? 1 : .58,
-      child: Material(
-        color: theme.colorScheme.surface,
-        elevation: enabled ? 1.5 : 0,
-        borderRadius: BorderRadius.circular(26),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(26),
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(26), border: Border.all(color: borderColor)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(color: color.withValues(alpha: .12), borderRadius: BorderRadius.circular(21)),
-                  child: Icon(completed ? Icons.check_rounded : enabled ? icon : Icons.lock_rounded, color: color, size: 29),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(number, style: TextStyle(color: color, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-                          const SizedBox(width: 9),
-                          Expanded(child: Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900))),
-                        ],
-                      ),
-                      const SizedBox(height: 7),
-                      Text(description, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: .68), height: 1.4)),
-                      const SizedBox(height: 13),
-                      if (!enabled && lockedText != null)
-                        Text(lockedText!, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: .58), fontWeight: FontWeight.w700))
-                      else
-                        FilledButton.tonal(onPressed: onTap, child: Text(action)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: theme.colorScheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: borderColor), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .04), blurRadius: 18, offset: const Offset(0, 8))]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [Container(width: 44, height: 44, decoration: BoxDecoration(color: enabled ? color.withValues(alpha: .12) : theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)), child: Icon(completed ? Icons.check_rounded : icon, color: enabled ? color : theme.colorScheme.outline, size: 24)), const SizedBox(width: 12), Expanded(child: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900))), Text(number, style: TextStyle(color: theme.colorScheme.outline, fontWeight: FontWeight.w900))]),
+          const SizedBox(height: 12),
+          Text(description, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.45)),
+          if (!enabled && lockedText != null) ...[const SizedBox(height: 8), Text(lockedText!, style: TextStyle(color: theme.colorScheme.outline, fontSize: 12, fontWeight: FontWeight.w700))],
+          const SizedBox(height: 16),
+          SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: enabled ? onTap : null, icon: Icon(completed ? Icons.visibility_rounded : Icons.arrow_forward_rounded), label: Text(action))),
+        ],
       ),
     );
   }
