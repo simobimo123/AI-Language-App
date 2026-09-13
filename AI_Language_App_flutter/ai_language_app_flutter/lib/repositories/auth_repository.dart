@@ -11,11 +11,13 @@ class AuthRepository {
     required String name,
     required String email,
     required String password,
+    String tutorExplanationLanguageMode = 'native',
   }) {
     return apiService.register(
       name: name,
       email: email,
       password: password,
+      tutorExplanationLanguageMode: tutorExplanationLanguageMode,
     );
   }
 
@@ -46,12 +48,14 @@ class AuthRepository {
     required String email,
     required String nativeLanguage,
     required String learningLanguage,
+    String tutorExplanationLanguageMode = 'native',
   }) {
     return apiService.updateCurrentUser(
       name: name,
       email: email,
       nativeLanguage: nativeLanguage,
       learningLanguage: learningLanguage,
+      tutorExplanationLanguageMode: tutorExplanationLanguageMode,
     );
   }
 }
