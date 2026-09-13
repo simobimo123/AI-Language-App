@@ -111,19 +111,24 @@ class AuthApiService {
     required String email,
     required String nativeLanguage,
     required String learningLanguage,
-    required String tutorExplanationLanguageMode,
+    String? tutorExplanationLanguageMode,
   }) async {
+    final body = <String, dynamic>{
+      'name': name,
+      'email': email,
+      'native_language': nativeLanguage,
+      'learning_language': learningLanguage,
+    };
+
+    if (tutorExplanationLanguageMode != null) {
+      body['tutor_explanation_language_mode'] = tutorExplanationLanguageMode;
+    }
+
     final response = await client.put(
       '/users/me',
       authenticated: true,
       headers: client.jsonHeaders,
-      body: jsonEncode({
-        'name': name,
-        'email': email,
-        'native_language': nativeLanguage,
-        'learning_language': learningLanguage,
-        'tutor_explanation_language_mode': tutorExplanationLanguageMode,
-      }),
+      body: jsonEncode(body),
     );
 
     final data = client.decodeResponse(response);
@@ -135,6 +140,29 @@ class AuthApiService {
     throw client.apiException(
       data,
       'Failed to update current user',
+      statusCode: response.statusCode,
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTutorExplanationLanguage({
+    required String mode,
+  }) async {
+    final response = await client.patch(
+      '/users/me/tutor-explanation-language',
+      authenticated: true,
+      headers: client.jsonHeaders,
+      body: jsonEncode({'mode': mode}),
+    );
+
+    final data = client.decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data as Map);
+    }
+
+    throw client.apiException(
+      data,
+      'Failed to update tutor explanation language',
       statusCode: response.statusCode,
     );
   }
