@@ -5,6 +5,7 @@ import '../services/api/api_service.dart';
 import '../services/google_auth_service.dart';
 import '../core/language/language_controller.dart';
 import '../core/storage/storage_service.dart';
+import '../core/storage/tutor_explanation_settings.dart';
 import '../core/theme/theme_controller.dart';
 import 'register_page.dart';
 import 'splash_page.dart';
@@ -41,9 +42,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context)!;
 
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
@@ -58,6 +57,13 @@ class _LoginPageState extends State<LoginPage> {
 
       await _storageService.saveToken(result['access_token'] as String);
 
+      final serverMode = result['tutor_explanation_language_mode']?.toString();
+      await tutorExplanationSettings.setMode(
+        serverMode == TutorExplanationSettings.learningMode
+            ? TutorExplanationSettings.learningMode
+            : TutorExplanationSettings.nativeMode,
+      );
+
       if (!mounted) return;
 
       Navigator.pushReplacement(
@@ -71,17 +77,72 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (_) {
       if (!mounted) return;
-
-      setState(() {
-        _errorMessage = l10n.loginError;
-      });
+      setState(() => _errorMessage = l10n.loginError);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<String?> _askGoogleExplanationLanguage() async {
+    final uiLanguage = widget.languageController.locale.languageCode;
+    var selected = TutorExplanationSettings.nativeMode;
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(TutorExplanationSettings.title(uiLanguage)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    TutorExplanationSettings.question(uiLanguage),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  RadioListTile<String>(
+                    value: TutorExplanationSettings.nativeMode,
+                    groupValue: selected,
+                    title: Text(
+                      TutorExplanationSettings.nativeLabel(uiLanguage),
+                    ),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => selected = value);
+                    },
+                  ),
+                  RadioListTile<String>(
+                    value: TutorExplanationSettings.learningMode,
+                    groupValue: selected,
+                    title: Text(
+                      TutorExplanationSettings.learningLabel(uiLanguage),
+                    ),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => selected = value);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, selected),
+                  child: Text(
+                    MaterialLocalizations.of(dialogContext).continueButtonLabel,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _loginWithGoogle() async {
@@ -94,14 +155,40 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final idToken = await _googleAuthService.signInAndGetIdToken();
-
       if (idToken == null || idToken.isEmpty) {
         throw Exception('Google ID token is missing');
       }
 
       final result = await _apiService.loginWithGoogle(idToken: idToken);
-
       await _storageService.saveToken(result['access_token'] as String);
+
+      final isNewUser = result['is_new_user'] == true;
+      String mode = result['tutor_explanation_language_mode']?.toString() ??
+          TutorExplanationSettings.nativeMode;
+
+      if (isNewUser) {
+        final selectedMode = await _askGoogleExplanationLanguage();
+        if (selectedMode == null) {
+          throw Exception('Tutor explanation language was not selected');
+        }
+        mode = selectedMode;
+
+        await _apiService.updateCurrentUser(
+          name: result['name']?.toString() ?? 'Learner',
+          email: result['email']?.toString() ?? '',
+          nativeLanguage:
+              result['native_language']?.toString() ?? 'ar',
+          learningLanguage:
+              result['learning_language']?.toString() ?? 'en',
+          tutorExplanationLanguageMode: mode,
+        );
+      }
+
+      await tutorExplanationSettings.setMode(
+        mode == TutorExplanationSettings.learningMode
+            ? TutorExplanationSettings.learningMode
+            : TutorExplanationSettings.nativeMode,
+      );
 
       if (!mounted) return;
 
@@ -116,16 +203,9 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (_) {
       if (!mounted) return;
-
-      setState(() {
-        _errorMessage = l10n.loginError;
-      });
+      setState(() => _errorMessage = l10n.loginError);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isGoogleLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -141,9 +221,7 @@ class _LoginPageState extends State<LoginPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
-
     final isDark = theme.brightness == Brightness.dark;
-
     final isAnyLoading = _isLoading || _isGoogleLoading;
 
     return Scaffold(
@@ -200,9 +278,7 @@ class _LoginPageState extends State<LoginPage> {
                               ? null
                               : () {
                                   widget.themeController.setThemeMode(
-                                    isDark
-                                        ? ThemeMode.light
-                                        : ThemeMode.dark,
+                                    isDark ? ThemeMode.light : ThemeMode.dark,
                                   );
                                 },
                           icon: AnimatedSwitcher(
@@ -302,17 +378,13 @@ class _LoginPageState extends State<LoginPage> {
                                     TextFormField(
                                       controller: _emailController,
                                       enabled: !isAnyLoading,
-                                      keyboardType:
-                                          TextInputType.emailAddress,
+                                      keyboardType: TextInputType.emailAddress,
                                       textInputAction: TextInputAction.next,
-                                      autofillHints: const [
-                                        AutofillHints.email,
-                                      ],
+                                      autofillHints: const [AutofillHints.email],
                                       decoration: InputDecoration(
                                         labelText: l10n.email,
-                                        prefixIcon: const Icon(
-                                          Icons.email_outlined,
-                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.email_outlined),
                                         filled: true,
                                         fillColor: colorScheme
                                             .surfaceContainerHighest
@@ -344,7 +416,6 @@ class _LoginPageState extends State<LoginPage> {
                                             !value.contains('@')) {
                                           return l10n.enterEmail;
                                         }
-
                                         return null;
                                       },
                                     ),
@@ -354,9 +425,7 @@ class _LoginPageState extends State<LoginPage> {
                                       enabled: !isAnyLoading,
                                       obscureText: !_isPasswordVisible,
                                       textInputAction: TextInputAction.done,
-                                      autofillHints: const [
-                                        AutofillHints.password,
-                                      ],
+                                      autofillHints: const [AutofillHints.password],
                                       onFieldSubmitted: (_) => _login(),
                                       decoration: InputDecoration(
                                         labelText: l10n.password,
@@ -376,15 +445,12 @@ class _LoginPageState extends State<LoginPage> {
                                                   });
                                                 },
                                           icon: AnimatedSwitcher(
-                                            duration: const Duration(
-                                              milliseconds: 200,
-                                            ),
+                                            duration:
+                                                const Duration(milliseconds: 200),
                                             child: Icon(
                                               _isPasswordVisible
-                                                  ? Icons
-                                                      .visibility_off_outlined
-                                                  : Icons
-                                                      .visibility_outlined,
+                                                  ? Icons.visibility_off_outlined
+                                                  : Icons.visibility_outlined,
                                               key: ValueKey(
                                                 _isPasswordVisible,
                                               ),
@@ -421,15 +487,12 @@ class _LoginPageState extends State<LoginPage> {
                                         if (value == null || value.isEmpty) {
                                           return l10n.enterPassword;
                                         }
-
                                         return null;
                                       },
                                     ),
                                     if (_errorMessage != null) ...[
                                       const SizedBox(height: 16),
-                                      _ErrorMessage(
-                                        message: _errorMessage!,
-                                      ),
+                                      _ErrorMessage(message: _errorMessage!),
                                     ],
                                     const SizedBox(height: 22),
                                     SizedBox(
@@ -445,14 +508,11 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                         child: AnimatedSwitcher(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
+                                          duration:
+                                              const Duration(milliseconds: 200),
                                           child: _isLoading
                                               ? const SizedBox(
-                                                  key: ValueKey(
-                                                    'login-loading',
-                                                  ),
+                                                  key: ValueKey('login-loading'),
                                                   width: 23,
                                                   height: 23,
                                                   child:
@@ -478,8 +538,7 @@ class _LoginPageState extends State<LoginPage> {
                                                     ),
                                                     const SizedBox(width: 8),
                                                     const Icon(
-                                                      Icons
-                                                          .arrow_forward_rounded,
+                                                      Icons.arrow_forward_rounded,
                                                       size: 20,
                                                     ),
                                                   ],
@@ -527,15 +586,13 @@ class _LoginPageState extends State<LoginPage> {
                                             ? null
                                             : _loginWithGoogle,
                                         style: OutlinedButton.styleFrom(
-                                          backgroundColor:
-                                              colorScheme.surface,
+                                          backgroundColor: colorScheme.surface,
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(16),
                                           ),
                                           side: BorderSide(
-                                            color:
-                                                colorScheme.outlineVariant,
+                                            color: colorScheme.outlineVariant,
                                           ),
                                         ),
                                         child: _isGoogleLoading
@@ -585,8 +642,7 @@ class _LoginPageState extends State<LoginPage> {
                                     Text(
                                       l10n.noAccount,
                                       style: TextStyle(
-                                        color:
-                                            colorScheme.onSurfaceVariant,
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                     TextButton(
@@ -596,12 +652,11 @@ class _LoginPageState extends State<LoginPage> {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      RegisterPage(
+                                                  builder: (_) => RegisterPage(
                                                     themeController:
                                                         widget.themeController,
-                                                    languageController: widget
-                                                        .languageController,
+                                                    languageController:
+                                                        widget.languageController,
                                                   ),
                                                 ),
                                               );
@@ -637,10 +692,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// =============================================================
-// Google icon
-// =============================================================
-
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon();
 
@@ -661,10 +712,6 @@ class _GoogleIcon extends StatelessWidget {
     );
   }
 }
-
-// =============================================================
-// App logo
-// =============================================================
 
 class _AppLogo extends StatelessWidget {
   final Color primaryColor;
@@ -704,10 +751,6 @@ class _AppLogo extends StatelessWidget {
   }
 }
 
-// =============================================================
-// Background circle
-// =============================================================
-
 class _BackgroundCircle extends StatelessWidget {
   final double size;
   final Color color;
@@ -731,10 +774,6 @@ class _BackgroundCircle extends StatelessWidget {
     );
   }
 }
-
-// =============================================================
-// Error message
-// =============================================================
 
 class _ErrorMessage extends StatelessWidget {
   final String message;
