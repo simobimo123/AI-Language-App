@@ -46,6 +46,12 @@ class UserCreate(BaseModel):
         pattern=LEVEL_PATTERN,
     )
 
+    tutor_explanation_language_mode: str = Field(
+        default="native",
+        min_length=6,
+        max_length=8,
+    )
+
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -86,6 +92,12 @@ class UserUpdate(BaseModel):
         pattern=LANGUAGE_CODE_PATTERN,
     )
 
+    tutor_explanation_language_mode: str = Field(
+        default="native",
+        min_length=6,
+        max_length=8,
+    )
+
 
 class UserResponse(BaseModel):
     id: int
@@ -94,6 +106,7 @@ class UserResponse(BaseModel):
     is_active: bool
     native_language: str
     learning_language: str
+    tutor_explanation_language_mode: str
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -103,4 +116,3 @@ class UserResponse(BaseModel):
 # =========================================================
 # Learning Profile
 # =========================================================
-
