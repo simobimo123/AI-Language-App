@@ -123,27 +123,70 @@ def _get_lesson(db: Session, lesson_id: int) -> CourseLesson:
     return lesson
 
 
+def _get_lesson_session(
+    user: User,
+    lesson_id: int,
+    stage: str,
+    conversation_id: str | None,
+):
+    """Return the verified RAM lesson session for a stage completion request."""
+    if not conversation_id:
+        return None
+
+    session = lesson_session_cache.get_by_conversation_id(
+        user_id=user.id,
+        conversation_id=conversation_id,
+    )
+    if session is None:
+        return None
+    if session.lesson_id not in {0, lesson_id}:
+        return None
+    if session.stage != stage:
+        return None
+    return session
+
+
 def _has_verified_teaching_completion(
     user: User,
     lesson_id: int,
     conversation_id: str | None,
 ) -> bool:
     """Verify the backend-generated final Teaching marker in the lesson session."""
-    if not conversation_id:
-        return False
-
-    session = lesson_session_cache.get_by_conversation_id(
-        user_id=user.id,
+    session = _get_lesson_session(
+        user=user,
+        lesson_id=lesson_id,
+        stage="teaching",
         conversation_id=conversation_id,
     )
-    if session is None or session.lesson_id not in {0, lesson_id}:
-        return False
-    if session.stage != "teaching":
+    if session is None:
         return False
 
     return any(
         message.role == "assistant"
         and TEACHING_COMPLETE_PATTERN.search(message.content or "")
+        for message in session.messages
+    )
+
+
+def _has_practice_participation(
+    user: User,
+    lesson_id: int,
+    conversation_id: str | None,
+) -> bool:
+    """Require at least one real learner turn before Practice can be completed."""
+    session = _get_lesson_session(
+        user=user,
+        lesson_id=lesson_id,
+        stage="practice",
+        conversation_id=conversation_id,
+    )
+    if session is None:
+        return False
+
+    return any(
+        message.role == "user"
+        and bool((message.content or "").strip())
+        and message.content.strip() != "START_STAGE"
         for message in session.messages
     )
 
@@ -217,20 +260,30 @@ def complete_lesson_stage(
             ),
         )
 
-    # Practice remains an explicitly user-finished stage. It can never change
-    # Teaching state and it can never be completed while Teaching is locked.
+    # Practice is explicitly finished by the learner after real participation.
+    # The backend verifies that the submitted conversation belongs to this user,
+    # lesson, and Practice stage and contains at least one learner turn.
     if progress.teaching_status != STATUS_COMPLETED:
         raise HTTPException(
             status_code=409,
             detail="Practice cannot be completed before AI teaching.",
         )
 
+    if not _has_practice_participation(
+        user=current_user,
+        lesson_id=lesson.id,
+        conversation_id=payload.conversation_id,
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Practice cannot be completed before you participate in the conversation.",
+        )
+
     if progress.practice_started_at is None:
         progress.practice_started_at = now
     progress.practice_status = STATUS_COMPLETED
     progress.practice_completed_at = now
-    if payload.conversation_id:
-        progress.practice_conversation_id = payload.conversation_id
+    progress.practice_conversation_id = payload.conversation_id
 
     lesson_progress = db.scalar(
         select(UserLessonProgress).where(
