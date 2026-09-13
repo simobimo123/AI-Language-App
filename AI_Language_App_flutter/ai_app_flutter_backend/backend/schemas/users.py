@@ -17,49 +17,18 @@ TutorExplanationLanguageMode = Literal["native", "learning"]
 
 
 class UserCreate(BaseModel):
-    name: str = Field(
-        min_length=2,
-        max_length=100,
-    )
-
+    name: str = Field(min_length=2, max_length=100)
     email: EmailStr
-
-    password: str = Field(
-        min_length=8,
-        max_length=128,
-    )
-
-    native_language: str = Field(
-        default="ar",
-        min_length=2,
-        max_length=10,
-        pattern=LANGUAGE_CODE_PATTERN,
-    )
-
-    learning_language: str = Field(
-        default="en",
-        min_length=2,
-        max_length=10,
-        pattern=LANGUAGE_CODE_PATTERN,
-    )
-
-    learning_level: str = Field(
-        default="A1",
-        min_length=2,
-        max_length=10,
-        pattern=LEVEL_PATTERN,
-    )
-
+    password: str = Field(min_length=8, max_length=128)
+    native_language: str = Field(default="ar", min_length=2, max_length=10, pattern=LANGUAGE_CODE_PATTERN)
+    learning_language: str = Field(default="en", min_length=2, max_length=10, pattern=LANGUAGE_CODE_PATTERN)
+    learning_level: str = Field(default="A1", min_length=2, max_length=10, pattern=LEVEL_PATTERN)
     tutor_explanation_language_mode: TutorExplanationLanguageMode = "native"
 
 
 class UserLogin(BaseModel):
     email: EmailStr
-
-    password: str = Field(
-        min_length=1,
-        max_length=128,
-    )
+    password: str = Field(min_length=1, max_length=128)
 
 
 # =========================================================
@@ -67,32 +36,20 @@ class UserLogin(BaseModel):
 # =========================================================
 
 class GoogleLogin(BaseModel):
-    id_token: str = Field(
-        min_length=1,
-    )
+    id_token: str = Field(min_length=1)
 
 
 class UserUpdate(BaseModel):
-    name: str = Field(
-        min_length=2,
-        max_length=100,
-    )
-
+    name: str = Field(min_length=2, max_length=100)
     email: EmailStr
+    native_language: str = Field(min_length=2, max_length=10, pattern=LANGUAGE_CODE_PATTERN)
+    learning_language: str = Field(min_length=2, max_length=10, pattern=LANGUAGE_CODE_PATTERN)
+    # Optional so unrelated profile updates can never reset this preference.
+    tutor_explanation_language_mode: TutorExplanationLanguageMode | None = None
 
-    native_language: str = Field(
-        min_length=2,
-        max_length=10,
-        pattern=LANGUAGE_CODE_PATTERN,
-    )
 
-    learning_language: str = Field(
-        min_length=2,
-        max_length=10,
-        pattern=LANGUAGE_CODE_PATTERN,
-    )
-
-    tutor_explanation_language_mode: TutorExplanationLanguageMode = "native"
+class TutorExplanationLanguageUpdate(BaseModel):
+    mode: TutorExplanationLanguageMode
 
 
 class UserResponse(BaseModel):
@@ -104,9 +61,7 @@ class UserResponse(BaseModel):
     learning_language: str
     tutor_explanation_language_mode: TutorExplanationLanguageMode
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 # =========================================================
