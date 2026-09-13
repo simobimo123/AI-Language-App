@@ -1,8 +1,7 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
-    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -13,12 +12,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-)
-
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -67,6 +61,12 @@ class User(Base):
     learning_language: Mapped[str] = mapped_column(
         String(10),
         default="en",
+        nullable=False
+    )
+
+    tutor_explanation_language_mode: Mapped[str] = mapped_column(
+        String(20),
+        default="native",
         nullable=False
     )
 
@@ -164,4 +164,3 @@ class LearningProfile(Base):
 # The entry is connected to senses, forms, relations,
 # translations and examples.
 # =========================================================
-
