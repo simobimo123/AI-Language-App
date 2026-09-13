@@ -127,12 +127,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
     required TextStyle style,
   }) {
     final tokens = text.split(RegExp(r'(\s+)'));
-    final theme = Theme.of(context);
-
-    final clickableColor = Color.alphaBlend(
-      theme.colorScheme.primary.withValues(alpha: 0.78),
-      style.color ?? theme.colorScheme.onSurface,
-    );
 
     return tokens.map((token) {
       if (token.isEmpty) {
@@ -164,18 +158,222 @@ class _LessonChatPageState extends State<LessonChatPage> {
             child: Text(
               token,
               textDirection: _learningDirection,
-              style: style.copyWith(
-                color: clickableColor,
-                decoration: TextDecoration.underline,
-                decorationColor:
-                    clickableColor.withValues(alpha: 0.45),
-                decorationThickness: 1.1,
-              ),
+              style: style,
             ),
           ),
         ),
       );
     }).toList();
+  }
+
+  List<Widget> _buildFormattedMessageWidgets(
+    BuildContext context, {
+    required String text,
+    required TextStyle style,
+  }) {
+    final widgets = <Widget>[];
+
+    int index = 0;
+
+    while (index < text.length) {
+      final current = text[index];
+
+      // ------------------------------------------------------------
+      // **text**
+      // Remove the ** markers and display the content normally.
+      // ------------------------------------------------------------
+      if (current == '*' &&
+          index + 1 < text.length &&
+          text[index + 1] == '*') {
+        final closingIndex = text.indexOf(
+          '**',
+          index + 2,
+        );
+
+        if (closingIndex != -1) {
+          final content = text.substring(
+            index + 2,
+            closingIndex,
+          );
+
+          if (content.isNotEmpty) {
+            widgets.addAll(
+              _buildClickableWordWidgets(
+                context,
+                text: content,
+                style: style,
+              ),
+            );
+          }
+
+          index = closingIndex + 2;
+          continue;
+        }
+      }
+
+      // ------------------------------------------------------------
+      // "text"
+      // Double quotes are UI markers for RED text.
+      // The quote characters themselves are hidden.
+      // ------------------------------------------------------------
+      if (current == '"') {
+        final closingIndex = text.indexOf(
+          '"',
+          index + 1,
+        );
+
+        if (closingIndex != -1) {
+          final content = text.substring(
+            index + 1,
+            closingIndex,
+          );
+
+          if (content.isNotEmpty) {
+            widgets.add(
+              Text(
+                content,
+                textDirection: _learningDirection,
+                style: style.copyWith(
+                  color: Colors.red,
+                ),
+              ),
+            );
+          }
+
+          index = closingIndex + 1;
+          continue;
+        }
+      }
+
+      // ------------------------------------------------------------
+      // *text*
+      // Single asterisks are UI markers for GREEN text.
+      // The asterisk characters themselves are hidden.
+      // ------------------------------------------------------------
+      if (current == '*' &&
+          (index == 0 || text[index - 1] != '*')) {
+        final closingIndex = text.indexOf(
+          '*',
+          index + 1,
+        );
+
+        if (closingIndex != -1 &&
+            (closingIndex + 1 >= text.length ||
+                text[closingIndex + 1] != '*')) {
+          final content = text.substring(
+            index + 1,
+            closingIndex,
+          );
+
+          if (content.isNotEmpty) {
+            widgets.add(
+              Text(
+                content,
+                textDirection: _learningDirection,
+                style: style.copyWith(
+                  color: Colors.green,
+                ),
+              ),
+            );
+          }
+
+          index = closingIndex + 1;
+          continue;
+        }
+      }
+
+      // ------------------------------------------------------------
+      // Normal text.
+      //
+      // Find the next formatting marker.
+      // ------------------------------------------------------------
+      int nextMarker = text.length;
+
+      final doubleQuoteIndex = text.indexOf(
+        '"',
+        index,
+      );
+
+      final boldIndex = text.indexOf(
+        '**',
+        index,
+      );
+
+      final singleStarIndex = _findSingleStarMarker(
+        text,
+        index,
+      );
+
+      if (doubleQuoteIndex != -1 &&
+          doubleQuoteIndex < nextMarker) {
+        nextMarker = doubleQuoteIndex;
+      }
+
+      if (boldIndex != -1 &&
+          boldIndex < nextMarker) {
+        nextMarker = boldIndex;
+      }
+
+      if (singleStarIndex != -1 &&
+          singleStarIndex < nextMarker) {
+        nextMarker = singleStarIndex;
+      }
+
+      if (nextMarker == index) {
+        widgets.addAll(
+          _buildClickableWordWidgets(
+            context,
+            text: current,
+            style: style,
+          ),
+        );
+
+        index++;
+        continue;
+      }
+
+      final normalText = text.substring(
+        index,
+        nextMarker,
+      );
+
+      if (normalText.isNotEmpty) {
+        widgets.addAll(
+          _buildClickableWordWidgets(
+            context,
+            text: normalText,
+            style: style,
+          ),
+        );
+      }
+
+      index = nextMarker;
+    }
+
+    return widgets;
+  }
+
+  int _findSingleStarMarker(
+    String text,
+    int start,
+  ) {
+    for (int i = start; i < text.length; i++) {
+      if (text[i] != '*') {
+        continue;
+      }
+
+      final isDoubleStarBefore =
+          i + 1 < text.length && text[i + 1] == '*';
+
+      final isDoubleStarAfter =
+          i > 0 && text[i - 1] == '*';
+
+      if (!isDoubleStarBefore && !isDoubleStarAfter) {
+        return i;
+      }
+    }
+
+    return -1;
   }
 
   Widget _buildClickableMessageText(
@@ -186,11 +384,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
     required bool isUser,
     required int messageIndex,
   }) {
-    final displayText = text.replaceAll('**', '');
-
-    if (isUser || displayText.trim().isEmpty) {
+    if (isUser || text.trim().isEmpty) {
       return Text(
-        displayText,
+        text.replaceAll('**', ''),
         textDirection: direction,
         style: style,
       );
@@ -199,9 +395,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
     return Wrap(
       alignment: WrapAlignment.start,
       crossAxisAlignment: WrapCrossAlignment.center,
-      children: _buildClickableWordWidgets(
+      children: _buildFormattedMessageWidgets(
         context,
-        text: displayText,
+        text: text,
         style: style,
       ),
     );
@@ -419,11 +615,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
         }
 
         if (chunk.type == 'done' && chunk.axisCompleted) {
-          // Teaching is completed by the backend after all required
-          // teaching targets have been mastered.
-          //
-          // Practice is completed through the explicit validated
-          // finish action below.
           if (widget.isTeaching) {
             setState(() {
               _completed = true;
@@ -435,8 +626,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
         if (chunk.type == 'error') {
           setState(() {
-            _error =
-                chunk.message ?? _ui('connectionError');
+            _error = chunk.message ?? _ui('connectionError');
           });
 
           _saveSession();
