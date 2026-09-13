@@ -3,8 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class TutorExplanationSettings {
   TutorExplanationSettings._();
 
-  static final TutorExplanationSettings instance =
-      TutorExplanationSettings._();
+  static final TutorExplanationSettings instance = TutorExplanationSettings._();
 
   static const String key = 'tutor_explanation_language_mode';
   static const String nativeMode = 'native';
@@ -15,7 +14,7 @@ class TutorExplanationSettings {
   Future<String?> getMode() async {
     final value = await _storage.read(key: key);
     if (value == nativeMode || value == learningMode) return value;
-    return null;
+    return nativeMode;
   }
 
   Future<void> setMode(String mode) async {
