@@ -15,8 +15,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Compact lesson prompts
-        env:
-          FILE: AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -25,36 +23,26 @@ jobs:
           path = Path("AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py")
           text = path.read_text(encoding="utf-8")
 
-          teaching = '''def _teaching_system_prompt(
+          teaching = r'''def _teaching_system_prompt(
               *,
               lesson: CourseLesson,
               targets: list[dict],
               current_target_order: int | None,
               is_start: bool,
           ) -> str:
-              current_target = _target_by_order(
-                  targets,
-                  current_target_order,
-              )
+              current_target = _target_by_order(targets, current_target_order)
 
               if current_target is None:
                   current_target_text = "**CURRENT TARGET**: There is no remaining target."
               else:
                   goal = str(current_target.get("goal", "")).strip()
-                  patterns = [
-                      str(item).strip()
-                      for item in current_target.get("patterns", [])
-                      if str(item).strip()
-                  ]
-                  success_criteria = str(
-                      current_target.get("success_criteria", "")
-                  ).strip()
-
+                  patterns = [str(item).strip() for item in current_target.get("patterns", []) if str(item).strip()]
+                  success_criteria = str(current_target.get("success_criteria", "")).strip()
                   current_target_text = f"**CURRENT TARGET**: {goal}"
                   if patterns:
-                      current_target_text += f"\\n**TARGET PATTERNS**: {' | '.join(patterns)}"
+                      current_target_text += f"\n**TARGET PATTERNS**: {' | '.join(patterns)}"
                   if success_criteria:
-                      current_target_text += f"\\n**SUCCESS CRITERIA**: {success_criteria}"
+                      current_target_text += f"\n**SUCCESS CRITERIA**: {success_criteria}"
 
               task = (
                   "**START**: Briefly introduce the target, then ask the learner to produce it."
@@ -66,9 +54,7 @@ jobs:
 
               return f"""
           You are the **TEACHING AI** for a {lesson.level} language lesson.
-
-          Teach only the **CURRENT TARGET** through a short teacher-learner exchange.
-          You are the teacher, not the practice partner.
+          Teach the **CURRENT TARGET** through a short teacher-learner exchange. You are the teacher, not the practice partner.
 
           {_prompt_context(lesson=lesson, targets=targets)}
 
@@ -77,10 +63,9 @@ jobs:
           **RULES**:
           - Focus on the current target and its **SUCCESS CRITERIA**.
           - **TARGET PATTERNS** guide teaching; they are not exact required sentences.
-          - Respond to what the learner actually says and let them attempt.
-          - Never answer for the learner.
+          - Respond to what the learner actually says and let them attempt; never answer for them.
           - Keep explanations brief and level-appropriate; prefer short examples/prompts.
-          - If incorrect or incomplete, give the smallest useful correction/model and ask them to try again.
+          - If incorrect or incomplete, give the smallest useful correction/model and ask for another attempt.
           - Do not move on until the success criteria are clearly met.
           - Accept natural alternatives that satisfy the criteria.
           - Answer useful target questions briefly, then return to practice.
@@ -96,7 +81,7 @@ jobs:
           """.strip()
           '''
 
-          practice = '''def _practice_system_prompt(
+          practice = r'''def _practice_system_prompt(
               *,
               lesson: CourseLesson,
               targets: list[dict],
@@ -121,11 +106,10 @@ jobs:
           )}
 
           **RULES**:
-          - Practice the lesson targets naturally, preferably one at a time; never force a checklist.
-          - Respond to the learner's actual message and let them drive the conversation.
-          - Never speak or invent an answer for the learner.
+          - Practice lesson targets naturally, preferably one at a time; never force a checklist.
+          - Respond to the learner's actual message and let them drive; never speak or invent an answer for them.
           - Ask at most one natural question at a time and give room to answer.
-          - Follow interesting answers with a relevant reaction/follow-up; every question needs a reason.
+          - Follow interesting answers naturally; every question needs a reason.
           - If the learner asks you something, answer naturally and continue.
           - Correct only meaningful errors, briefly; minor errors need not stop the conversation.
           - Keep language level-appropriate, short, and natural.
@@ -140,7 +124,7 @@ jobs:
               r"def _teaching_system_prompt\(.*?(?=\n\n# ============================================================\n# PRACTICE AI)",
               re.S,
           )
-          text, n1 = pattern_teaching.subn(teaching.rstrip(), text, count=1)
+          text, n1 = pattern_teaching.subn(lambda _: teaching.rstrip(), text, count=1)
           if n1 != 1:
               raise SystemExit(f"Teaching prompt replacement failed: {n1}")
 
@@ -148,7 +132,7 @@ jobs:
               r"def _practice_system_prompt\(.*?(?=\n\n# ============================================================\n# SYSTEM PROMPT SELECTOR)",
               re.S,
           )
-          text, n2 = pattern_practice.subn(practice.rstrip(), text, count=1)
+          text, n2 = pattern_practice.subn(lambda _: practice.rstrip(), text, count=1)
           if n2 != 1:
               raise SystemExit(f"Practice prompt replacement failed: {n2}")
 
