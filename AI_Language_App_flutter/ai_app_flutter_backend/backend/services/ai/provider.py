@@ -68,7 +68,33 @@ class OpenRouterProvider(AIProvider):
     name = "openrouter"
 
     @staticmethod
+    def _language_name(code: str) -> str:
+        names = {
+            "ar": "Arabic",
+            "de": "German",
+            "en": "English",
+            "es": "Spanish",
+            "fr": "French",
+            "id": "Indonesian",
+            "it": "Italian",
+            "ja": "Japanese",
+            "ko": "Korean",
+            "nl": "Dutch",
+            "pl": "Polish",
+            "pt": "Portuguese",
+            "ru": "Russian",
+            "th": "Thai",
+            "tr": "Turkish",
+            "uk": "Ukrainian",
+            "vi": "Vietnamese",
+            "zh": "Chinese",
+        }
+        normalized = code.strip().lower()
+        return names.get(normalized, normalized)
+
+    @classmethod
     def _apply_teaching_explanation_language(
+        cls,
         system_instruction: str | None,
     ) -> str | None:
         if not system_instruction:
@@ -84,10 +110,17 @@ class OpenRouterProvider(AIProvider):
 
         mode, native_language, learning_language = context
 
-        explanation_language = (
+        explanation_language_code = (
             native_language
             if mode == "native"
             else learning_language
+        )
+        explanation_language = cls._language_name(
+            explanation_language_code
+        )
+
+        learning_language_name = cls._language_name(
+            learning_language
         )
 
         language_source = (
@@ -98,14 +131,20 @@ class OpenRouterProvider(AIProvider):
 
         return (
             f"{system_instruction}\n\n"
-            "**EXPLANATION LANGUAGE**:\n\n"
-            f"Use **{explanation_language}** for all teacher explanations, "
-            f"corrections, grammar notes, and instructional guidance. "
-            f"The selected source is {language_source}.\n\n"
-            f"**LEARNING LANGUAGE**: {learning_language}\n"
-            "Keep example sentences, model answers, and practice output "
-            "in the learning language unless a brief explanation in the "
-            "selected explanation language is required."
+            "**EXPLANATION LANGUAGE — MANDATORY**:\n\n"
+            f"The teacher MUST use **{explanation_language}** "
+            f"(language code: **{explanation_language_code}**) for all "
+            "teacher explanations, corrections, grammar notes, and "
+            "instructional guidance. The selected source is "
+            f"{language_source}.\n\n"
+            f"**LEARNING LANGUAGE**: {learning_language_name} "
+            f"(language code: **{learning_language}**)\n"
+            "Keep example sentences, model answers, and learner-facing "
+            "practice output in the learning language. Only explanations, "
+            "corrections, grammar notes, and instructional guidance use the "
+            "selected explanation language.\n"
+            "Never silently switch the explanation language to English "
+            "unless English is the selected explanation language."
         )
 
     @classmethod
