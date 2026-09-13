@@ -54,11 +54,11 @@ class ApiService {
     throw _client.apiException(data, 'Failed to connect to backend', statusCode: response.statusCode);
   }
 
-  Future<Map<String, dynamic>> register({required String name, required String email, required String password}) => _auth.register(name: name, email: email, password: password);
+  Future<Map<String, dynamic>> register({required String name, required String email, required String password, String tutorExplanationLanguageMode = 'native'}) => _auth.register(name: name, email: email, password: password, tutorExplanationLanguageMode: tutorExplanationLanguageMode);
   Future<Map<String, dynamic>> login({required String email, required String password}) => _auth.login(email: email, password: password);
   Future<Map<String, dynamic>> loginWithGoogle({required String idToken}) => _auth.loginWithGoogle(idToken: idToken);
   Future<Map<String, dynamic>> getCurrentUser() => _auth.getCurrentUser();
-  Future<Map<String, dynamic>> updateCurrentUser({required String name, required String email, required String nativeLanguage, required String learningLanguage}) => _auth.updateCurrentUser(name: name, email: email, nativeLanguage: nativeLanguage, learningLanguage: learningLanguage);
+  Future<Map<String, dynamic>> updateCurrentUser({required String name, required String email, required String nativeLanguage, required String learningLanguage, required String tutorExplanationLanguageMode}) => _auth.updateCurrentUser(name: name, email: email, nativeLanguage: nativeLanguage, learningLanguage: learningLanguage, tutorExplanationLanguageMode: tutorExplanationLanguageMode);
 
   Future<List<dynamic>> getLearningProfiles() => _learning.getLearningProfiles();
   Future<Map<String, dynamic>> getCurrentLearningProfile() => _learning.getCurrentLearningProfile();
