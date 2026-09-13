@@ -27,6 +27,9 @@ from services.ai.conversation import (
     get_conversation_history,
     save_conversation_message,
 )
+from services.ai.explanation_language_context import (
+    set_explanation_language_context,
+)
 from services.ai.provider import AI_MODEL, provider
 from services.ai.usage import record_api_usage
 
@@ -37,18 +40,11 @@ router = APIRouter(prefix="/ai/lesson", tags=["Lesson AI"])
 # ============================================================
 # AI CONTEXT / OUTPUT LIMITS
 # ============================================================
-# Maximum amount of lesson history kept/retrieved from RAM.
-# This is also used for completion-marker analysis.
 MAX_HISTORY_MESSAGES = 40
-# Teaching needs one previous exchange; Practice keeps two.
-# Full history remains available for progress analysis.
 MAX_TEACHING_CONTEXT_MESSAGES = 2
 MAX_PRACTICE_CONTEXT_MESSAGES = 4
-# Maximum characters from each message sent to the AI.
 MAX_HISTORY_CHARS_PER_MESSAGE = 1400
-# Maximum learner message size accepted/sent to the AI.
 MAX_LEARNER_MESSAGE_CHARS = 800
-# Maximum AI output size.
 MAX_OUTPUT_TOKENS = 420
 
 
@@ -173,13 +169,6 @@ def _ensure_stage_open(
                 "stage is completed."
             ),
         )
-    # A completed stage may be opened again for review.
-    #
-    # Important:
-    # - The completed status is preserved.
-    # - START_STAGE creates a new conversation ID.
-    # - Existing lesson progress is not reset.
-    # - Practice remains governed by its own existing rules.
 
 
 # ============================================================
@@ -313,15 +302,6 @@ def _history_messages(
     history,
     max_messages: int,
 ) -> list[dict[str, str]]:
-    """
-    Convert lesson history into the small recent context
-    actually sent to the AI.
-
-    The full lesson history remains available in RAM and is
-    still used for target-completion marker analysis.
-
-    Teaching sends one previous exchange; Practice sends two.
-    """
     result: list[dict[str, str]] = []
     for item in history[-max_messages:]:
         role = (
@@ -442,12 +422,6 @@ def _target_by_order(
 def _compact_target_goals(
     targets: list[dict],
 ) -> str:
-    """
-    Compact lesson objective summary used by Practice AI.
-    Practice does not need every target pattern and success
-    criterion. It only needs to know what the lesson is
-    trying to practice.
-    """
     lines: list[str] = []
     for target in targets:
         if not target["required"]:
@@ -481,24 +455,13 @@ def _prompt_context(
     scenario: dict | None = None,
     include_target_summary: bool = False,
 ) -> str:
-    """
-    Build only the context required by the current AI stage.
-    Teaching:
-        language + level
-        current target is added separately with full detail.
-    Practice:
-        language + level
-        compact lesson target summary
-        practice scenario
-    """
     context = (
         f"**LANGUAGE**: {lesson.language}\n"
         f"**LEVEL**: {lesson.level}"
     )
     if include_target_summary:
         context += (
-            "\n"
-            "\n"
+            "\n\n"
             f"**LESSON TARGETS**:\n"
             f"{_compact_target_goals(targets)}"
         )
@@ -528,13 +491,23 @@ def _teaching_system_prompt(
         current_target_text = "**CURRENT TARGET**: There is no remaining target."
     else:
         goal = str(current_target.get("goal", "")).strip()
-        patterns = [str(item).strip() for item in current_target.get("patterns", []) if str(item).strip()]
-        success_criteria = str(current_target.get("success_criteria", "")).strip()
+        patterns = [
+            str(item).strip()
+            for item in current_target.get("patterns", [])
+            if str(item).strip()
+        ]
+        success_criteria = str(
+            current_target.get("success_criteria", "")
+        ).strip()
         current_target_text = f"**CURRENT TARGET**: {goal}"
         if patterns:
-            current_target_text += f"\n**TARGET PATTERNS**: {' | '.join(patterns)}"
+            current_target_text += (
+                f"\n**TARGET PATTERNS**: {' | '.join(patterns)}"
+            )
         if success_criteria:
-            current_target_text += f"\n**SUCCESS CRITERIA**: {success_criteria}"
+            current_target_text += (
+                f"\n**SUCCESS CRITERIA**: {success_criteria}"
+            )
     task = (
         "**START**: Briefly introduce the target, then ask the learner to produce it."
         if is_start
@@ -721,6 +694,23 @@ def _stream_stage_response(
             raise RuntimeError(
                 "User not found."
             )
+
+        # Re-establish the explanation-language context from the
+        # authoritative database user record inside the streaming
+        # generator. This guarantees that Teaching AI receives the
+        # selected native/learning explanation mode even when the
+        # StreamingResponse executes outside the request context.
+        explanation_mode = str(
+            user.tutor_explanation_language_mode or "native"
+        ).strip().lower()
+        if explanation_mode not in {"native", "learning"}:
+            explanation_mode = "native"
+        set_explanation_language_context(
+            mode=explanation_mode,
+            native_language=user.native_language,
+            learning_language=user.learning_language,
+        )
+
         lesson = _get_lesson(
             db,
             lesson_id,
@@ -835,9 +825,6 @@ def _stream_stage_response(
                 current_target_order = int(
                     required_targets[0]["order"]
                 )
-        # Full history remains available above for progress and
-        # completion-marker analysis. Only compact recent history
-        # is sent to the AI.
         context_message_limit = (
             MAX_TEACHING_CONTEXT_MESSAGES
             if request.stage == "teaching"
@@ -895,9 +882,6 @@ def _stream_stage_response(
             raise RuntimeError(
                 "AI tutor returned no visible learner-facing text."
             )
-        # ====================================================
-        # BACKEND SAFEGUARD
-        # ====================================================
         valid_target_completion = False
         if (
             request.stage == "teaching"
@@ -908,9 +892,6 @@ def _stream_stage_response(
             and not is_control_message
         ):
             valid_target_completion = True
-        # ====================================================
-        # SAVE USER MESSAGE
-        # ====================================================
         exchange_count_after = sum(
             1
             for item in history
@@ -927,9 +908,6 @@ def _stream_stage_response(
                 ],
                 db,
             )
-        # ====================================================
-        # ADD BACKEND CONTROL MARKERS
-        # ====================================================
         stored_assistant_reply = reply
         if valid_target_completion:
             stored_assistant_reply = (
@@ -954,9 +932,6 @@ def _stream_stage_response(
                     "\n[[TEACHING_COMPLETE]]"
                 )
                 teaching_complete_marker = True
-        # ====================================================
-        # SAVE ASSISTANT MESSAGE
-        # ====================================================
         save_conversation_message(
             user.id,
             conversation_id,
@@ -964,9 +939,6 @@ def _stream_stage_response(
             stored_assistant_reply,
             db,
         )
-        # ====================================================
-        # COMPLETE STAGE
-        # ====================================================
         stage_completed = False
         if request.stage == "teaching":
             completed_orders = set(
@@ -992,9 +964,6 @@ def _stream_stage_response(
                 )
                 stage_completed = True
         db.commit()
-        # ====================================================
-        # RECORD AI USAGE
-        # ====================================================
         try:
             record_api_usage(
                 user_id=user.id,
@@ -1008,9 +977,6 @@ def _stream_stage_response(
             logger.exception(
                 "Failed to record lesson AI usage."
             )
-        # ====================================================
-        # NEXT TARGET
-        # ====================================================
         next_target_order = None
         if request.stage == "teaching":
             completed_orders = set(
@@ -1031,27 +997,18 @@ def _stream_stage_response(
                     if order not in completed_orders:
                         next_target_order = order
                         break
-        # ====================================================
-        # SSE: CONVERSATION
-        # ====================================================
         yield sse_event(
             "conversation",
             {
                 "conversation_id": conversation_id,
             },
         )
-        # ====================================================
-        # SSE: TOKEN
-        # ====================================================
         yield sse_event(
             "token",
             {
                 "text": reply,
             },
         )
-        # ====================================================
-        # SSE: DECISION
-        # ====================================================
         if request.stage == "teaching":
             if stage_completed:
                 action = "AXIS_COMPLETE"
@@ -1068,9 +1025,7 @@ def _stream_stage_response(
                         if valid_target_completion
                         else None
                     ),
-                    "next_target_id": (
-                        next_target_order
-                    ),
+                    "next_target_id": next_target_order,
                     "confidence": None,
                 },
             )
@@ -1083,9 +1038,6 @@ def _stream_stage_response(
                     "confidence": None,
                 },
             )
-        # ====================================================
-        # SSE: DONE
-        # ====================================================
         yield sse_event(
             "done",
             {
