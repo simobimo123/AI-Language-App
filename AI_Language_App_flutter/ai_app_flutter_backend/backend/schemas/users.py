@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -11,6 +12,9 @@ from .common import (
 # =========================================================
 # User
 # =========================================================
+
+TutorExplanationLanguageMode = Literal["native", "learning"]
+
 
 class UserCreate(BaseModel):
     name: str = Field(
@@ -46,11 +50,7 @@ class UserCreate(BaseModel):
         pattern=LEVEL_PATTERN,
     )
 
-    tutor_explanation_language_mode: str = Field(
-        default="native",
-        min_length=6,
-        max_length=8,
-    )
+    tutor_explanation_language_mode: TutorExplanationLanguageMode = "native"
 
 
 class UserLogin(BaseModel):
@@ -92,11 +92,7 @@ class UserUpdate(BaseModel):
         pattern=LANGUAGE_CODE_PATTERN,
     )
 
-    tutor_explanation_language_mode: str = Field(
-        default="native",
-        min_length=6,
-        max_length=8,
-    )
+    tutor_explanation_language_mode: TutorExplanationLanguageMode = "native"
 
 
 class UserResponse(BaseModel):
@@ -106,7 +102,7 @@ class UserResponse(BaseModel):
     is_active: bool
     native_language: str
     learning_language: str
-    tutor_explanation_language_mode: str
+    tutor_explanation_language_mode: TutorExplanationLanguageMode
 
     model_config = ConfigDict(
         from_attributes=True,
