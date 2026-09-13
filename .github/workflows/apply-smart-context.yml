@@ -1,0 +1,102 @@
+name: Apply smart lesson AI context
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update lesson AI context
+        env:
+          FILE: AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py")
+          text = path.read_text(encoding="utf-8")
+
+          old = '''# Maximum amount of recent history actually sent to the AI.
+# Keeping this smaller reduces prompt size while preserving
+# enough recent context for natural conversation.
+MAX_CONTEXT_MESSAGES = 8
+'''
+          new = '''# Keep only the minimum recent history needed by each stage.
+# Teaching needs one previous exchange; Practice keeps two.
+MAX_TEACHING_CONTEXT_MESSAGES = 2
+MAX_PRACTICE_CONTEXT_MESSAGES = 4
+'''
+          if old not in text:
+              raise SystemExit("Expected context constants were not found.")
+          text = text.replace(old, new, 1)
+
+          old_sig = '''def _history_messages(
+    history,
+) -> list[dict[str, str]]:
+'''
+          new_sig = '''def _history_messages(
+    history,
+    max_messages: int,
+) -> list[dict[str, str]]:
+'''
+          if old_sig not in text:
+              raise SystemExit("Expected _history_messages signature was not found.")
+          text = text.replace(old_sig, new_sig, 1)
+
+          text = text.replace(
+              '''    for item in history[-MAX_CONTEXT_MESSAGES:]:
+''',
+              '''    for item in history[-max_messages:]:
+''',
+              1,
+          )
+
+          old_call = '''        messages = _history_messages(
+            history
+        )
+'''
+          new_call = '''        context_message_limit = (
+            MAX_TEACHING_CONTEXT_MESSAGES
+            if request.stage == "teaching"
+            else MAX_PRACTICE_CONTEXT_MESSAGES
+        )
+
+        messages = _history_messages(
+            history,
+            context_message_limit,
+        )
+'''
+          if old_call not in text:
+              raise SystemExit("Expected history call was not found.")
+          text = text.replace(old_call, new_call, 1)
+
+          old_doc = '''    Only the latest MAX_CONTEXT_MESSAGES are sent to the AI
+    to reduce prompt size and cost.
+'''
+          new_doc = '''    Only the latest stage-specific messages are sent to the AI.
+    Teaching uses one previous exchange; Practice uses two.
+'''
+          if old_doc not in text:
+              raise SystemExit("Expected history documentation was not found.")
+          text = text.replace(old_doc, new_doc, 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
+          git diff --cached --quiet && exit 0
+          git commit -m "Reduce lesson AI history context"
+          git push
