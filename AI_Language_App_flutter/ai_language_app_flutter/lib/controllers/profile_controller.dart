@@ -260,6 +260,7 @@ class ProfileController extends ChangeNotifier {
 
   Future<void> logout(BuildContext context) async {
     await storageService.deleteToken();
+    await tutorExplanationSettings.clear();
 
     if (!context.mounted) return;
 
