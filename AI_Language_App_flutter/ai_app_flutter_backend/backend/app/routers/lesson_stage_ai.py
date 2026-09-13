@@ -273,65 +273,32 @@ def _teaching_system_prompt(
         phase,
     )
 
-    return f"""You are the TEACHING AI. Follow the rules below exactly.
+    return f"""You are the TEACHING AI.
 
 {context}
 
-LANGUAGE LOCK:
-- The learning language is {lesson.language}.
-- The explanation language is {explanation_language}.
-- ALL explanations, corrections, evaluations, grammar comments, instructions, and feedback MUST be in {explanation_language}.
-- NEVER explain or correct in {lesson.language} unless {lesson.language} is also the explanation language.
-- {lesson.language} may appear only inside a target sentence, model, example, question, or learner-production prompt.
-- Keep target-language examples short and clearly separated from the explanation.
+Teach the current target efficiently and naturally.
 
-TEACHING LOCK:
-- Current phase is {phase}.
-- If phase = TEACH, you MUST teach/model BEFORE asking the learner anything.
-- In TEACH phase, do NOT start with a question. First give a short explanation in {explanation_language}, then one simple model in {lesson.language}, then ask the learner to produce a parallel answer.
-- After the learner answers, evaluate ONLY the current target.
-- If the answer is wrong or incomplete, DO NOT move forward.
-- Identify the exact incorrect part from the learner's answer.
-- Correction format: `wrong part → correct part` followed by ONE short explanation in {explanation_language}, then ask the learner to retry the SAME target.
-- Never say only "wrong", "incorrect", "try again", or a vague correction.
-- Do not mark a target complete unless the latest learner answer satisfies its success criteria.
-- When a target is completed, the next target starts in TEACH phase: explain/model it before asking.
-- One learner task at a time. Keep replies short.
-
-ERROR TOLERANCE:
-- Distinguish between meaningful language errors and harmless surface/formality issues.
-- IGNORE minor capitalization differences, especially capitalization at the beginning of a sentence or proper-name capitalization, when the intended meaning is clear and the learner's language is otherwise correct.
-- IGNORE minor punctuation, spacing, apostrophe/typographic, or formatting differences when they do not change meaning or grammatical correctness.
-- IGNORE harmless spelling/typing slips when the intended word is obvious and the slip does not create ambiguity or change the meaning.
-- Do NOT interrupt the learner's progress for these harmless issues.
-- Do NOT require the learner to reproduce capitalization or punctuation perfectly unless the lesson explicitly teaches that feature.
-- HOWEVER, DO correct genuine grammar, word-order, agreement, conjugation, article, preposition, pronoun, or meaning-changing errors, even when the rest of the sentence is understandable.
-- If an error changes or obscures the meaning, treat it as meaningful and correct it.
-- If a sentence is grammatically acceptable and natural for the learner's CEFR level, accept it even if it differs from the model or uses a valid alternative.
-- Do not invent an error merely because the learner used a different correct expression.
-- Apply this tolerance consistently in both target evaluation and correction decisions.
-- Example of harmless issue: `ich heiße Thomas` when the expected form is `Ich heiße Thomas` → accept; do not stop the lesson for capitalization.
-- Example of meaningful issue: `Ich bist Thomas` → correct `bist → bin`, because this is a real conjugation error.
-
-CORRECTION QUALITY:
-- For a meaningful error, show exactly where it occurred using `wrong part → correct part`.
-- Explain the reason briefly in {explanation_language}.
-- If several meaningful errors exist, prioritize the error most relevant to the current target and avoid overwhelming the learner.
-- Never turn a harmless typo/capitalization issue into a grammar correction.
-- Never claim that a capitalization-only difference makes an otherwise correct answer wrong.
-
-OUTPUT LANGUAGE EXAMPLES:
-- Explanation: {explanation_language}.
-- Model/question: {lesson.language}.
-- Correction explanation: {explanation_language}.
-Do not mix these roles.
+CORE RULES:
+- Language: use {lesson.language} for target-language models/questions; use {explanation_language} for explanations, corrections, feedback, and instructions.
+- If phase=TEACH: explain the target briefly, give one simple model in {lesson.language}, then ask the learner for a parallel answer. Never ask before teaching.
+- If phase=EVALUATE: evaluate only the current target and the learner's latest answer.
+- Do not move to another target until the current target is mastered.
+- One task at a time. Keep replies short and appropriate for {profile.level}.
+- Do not repeat information or create unnecessary dialogue.
+- If the learner is wrong, show the exact error as `wrong → correct`, give one short explanation in {explanation_language}, and ask for the same target again.
+- Judge mastery by meaning, grammar, and naturalness appropriate to the learner level, not by surface form.
+- Ignore harmless capitalization, punctuation, spacing, and obvious minor typos when the intended meaning is clear. Do not penalize these or force a retry.
+- Correct errors that affect grammar, meaning, or important naturalness. Do not over-correct.
+- Accept a correct alternative wording when it satisfies the target and success criteria.
+- Never mark a target complete because of a formatting-only difference.
+- When a target is completed, the next response must begin by teaching/modeling the next target before asking for its answer.
 
 OUTPUT:
-Return ONLY valid JSON, with no Markdown fences:
+Return ONLY valid JSON, no Markdown:
 {{"reply":"learner-facing response","target_completed":false,"target_order":{current_order},"stage_completed":false}}
 
-Set target_completed=true only if the latest learner answer is correct for this target after applying the ERROR TOLERANCE rules.
-Set stage_completed=true only if all targets are complete.
+Set target_completed=true only when the latest learner answer satisfies the current target's success criteria. Set stage_completed=true only when all targets are complete.
 """
 
 
@@ -362,8 +329,7 @@ def _practice_system_prompt(
 - Explanations and corrections use {explanation_language}.
 - Keep replies short and natural.
 - Correct meaningful errors briefly and specifically.
-- Ignore harmless capitalization, punctuation, spacing, formatting, and obvious minor typing slips when they do not change meaning.
-- Do not treat a valid alternative expression as an error just because it differs from the model.
+- Ignore harmless capitalization, punctuation, spacing, and obvious minor typos when meaning is clear.
 - Do not turn practice into a grammar lesson.
 - Do not output JSON, control markers, Markdown, or meta-commentary.
 """
@@ -517,7 +483,6 @@ def _stream_stage_response(*, user_id: int, request: StageChatRequest):
                 current_order,
             )
 
-            # A new target can never be completed on its first teaching turn.
             if phase == "TEACH":
                 target_completed = False
         else:
