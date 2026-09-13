@@ -1,0 +1,30 @@
+name: One-time Teaching AI behavior fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply fix
+        env:
+          PATCH_SCRIPT_B64: PLACEHOLDER
+        run: |
+          printf '%s' "$PATCH_SCRIPT_B64" | base64 -d > /tmp/patch.py
+          python /tmp/patch.py
+          python -m py_compile AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
+          python -m py_compile AI_Language_App_flutter/ai_app_flutter_backend/backend/services/ai/provider.py
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py AI_Language_App_flutter/ai_app_flutter_backend/backend/services/ai/provider.py
+          git rm .github/workflows/one_time_teaching_behavior_fix.yml
+          git commit -m "Stabilize Teaching AI progression and language"
+          git push
