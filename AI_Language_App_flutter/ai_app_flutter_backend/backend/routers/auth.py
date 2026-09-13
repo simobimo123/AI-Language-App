@@ -121,6 +121,7 @@ def google_login(user_data: GoogleLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Google email is not verified")
 
     user = db.query(User).filter(User.google_id == google_id).first()
+    is_new_user = False
 
     if user is None:
         user = db.query(User).filter(User.email == email).first()
@@ -144,6 +145,7 @@ def google_login(user_data: GoogleLogin, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+        is_new_user = True
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User account is inactive")
@@ -159,6 +161,7 @@ def google_login(user_data: GoogleLogin, db: Session = Depends(get_db)):
         "native_language": user.native_language,
         "learning_language": user.learning_language,
         "tutor_explanation_language_mode": user.tutor_explanation_language_mode,
+        "is_new_user": is_new_user,
     }
 
 
