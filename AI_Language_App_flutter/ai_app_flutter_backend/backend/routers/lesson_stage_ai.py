@@ -487,6 +487,7 @@ def _teaching_system_prompt(
     is_start: bool,
 ) -> str:
     current_target = _target_by_order(targets, current_target_order)
+
     if current_target is None:
         current_target_text = "**CURRENT TARGET**: There is no remaining target."
     else:
@@ -496,25 +497,50 @@ def _teaching_system_prompt(
             for item in current_target.get("patterns", [])
             if str(item).strip()
         ]
-        success_criteria = str(
-            current_target.get("success_criteria", "")
-        ).strip()
+        success_criteria = str(current_target.get("success_criteria", "")).strip()
         current_target_text = f"**CURRENT TARGET**: {goal}"
         if patterns:
-            current_target_text += (
-                f"\n**TARGET PATTERNS**: {' | '.join(patterns)}"
-            )
+            current_target_text += f"\n**TARGET PATTERNS**: {' | '.join(patterns)}"
         if success_criteria:
-            current_target_text += (
-                f"\n**SUCCESS CRITERIA**: {success_criteria}"
-            )
+            current_target_text += f"\n**SUCCESS CRITERIA**: {success_criteria}"
+
+    next_target = None
+    if current_target_order is not None:
+        required_orders = [
+            int(target["order"])
+            for target in targets
+            if target["required"] and target.get("order") is not None
+        ]
+        for order in required_orders:
+            if order > int(current_target_order):
+                next_target = _target_by_order(targets, order)
+                break
+
+    if next_target is None:
+        next_target_text = "**NEXT TARGET**: None; this is the final required target."
+    else:
+        next_goal = str(next_target.get("goal", "")).strip()
+        next_patterns = [
+            str(item).strip()
+            for item in next_target.get("patterns", [])
+            if str(item).strip()
+        ]
+        next_target_text = f"**NEXT TARGET**: {next_target.get('order')} — {next_goal}"
+        if next_patterns:
+            next_target_text += f"\n**NEXT TARGET PATTERNS**: {' | '.join(next_patterns)}"
+
     task = (
         "**START**: Briefly introduce the target, then ask the learner to produce it."
         if is_start
-        else "**RESPONSE**: Judge the learner's answer against the target and success criteria. "
-             "If not met, stay on the same target. For meaningful errors, briefly correct/model "
-             "and ask for another attempt. Do not declare success early."
+        else (
+            "**RESPONSE**: Judge the learner's latest answer against the target and "
+            "success criteria. If not met, stay on the same target. For meaningful "
+            "errors, briefly correct/model and ask for another attempt. If it is met, "
+            "do NOT ask the learner to repeat the same target; give brief positive "
+            "feedback and move directly to the next target."
+        )
     )
+
     return f"""
 You are the **TEACHING AI** for a {lesson.level} language lesson.
 
@@ -524,19 +550,36 @@ Teach the **CURRENT TARGET** through a short teacher-learner exchange. You are t
 
 {current_target_text}
 
-**RULES**:
+{next_target_text}
+
+**TARGET PROGRESS RULE**:
+- Evaluate ONLY the learner's latest answer for the **CURRENT TARGET**.
+- If the latest answer clearly satisfies the **SUCCESS CRITERIA**, set `target_completed` to true.
+- If it does not satisfy the criteria, set `target_completed` to false and stay on the current target.
+- When `target_completed` is true, NEVER ask for another attempt at the completed target and NEVER repeat the completed target as practice.
+- When `target_completed` is true and a next target exists, the learner-facing reply must briefly acknowledge success and immediately give ONE simple prompt for the **NEXT TARGET**.
+- When `target_completed` is false, the learner-facing reply must remain focused on the current target and ask for another attempt when appropriate.
+- Do not complete a target merely because the answer is understandable or close. Follow the success criteria exactly.
+- Accept natural alternatives only when they genuinely satisfy the success criteria.
+
+**LANGUAGE RULES**:
+- The learner is learning the lesson **LANGUAGE** shown above.
+- The selected explanation language is supplied separately by the backend and is authoritative.
+- ALL teacher explanations, corrections, grammar notes, meanings, instructions, feedback, praise, transitions, and ordinary conversational prose in `reply` MUST use the selected explanation language.
+- Do NOT use the learning language for teacher prose just because it is the language being learned.
+- The learning language may appear in `reply` ONLY when it is the actual target sentence, example sentence, model answer, or learner practice content that must be produced in the learning language.
+- Never write teacher feedback such as a learning-language equivalent of "very good", "now", "try again", or "correct" unless that language is also the selected explanation language.
+- If the selected explanation language is Arabic, teacher prose must be Arabic; German target sentences may remain German when they are the learning content.
+- If the selected explanation language is the same as the learning language, all of the reply may naturally be in the learning language.
+
+**GENERAL RULES**:
 - Focus on the current target and its **SUCCESS CRITERIA**.
-- **TARGET PATTERNS** guide teaching; they are not exact required sentences.
-- Evaluate the learner's latest answer against the **SUCCESS CRITERIA** before deciding whether the target is complete.
-- A target is complete only when the learner's latest answer clearly satisfies the success criteria. Do not mark it complete merely because the answer is understandable or close.
-- Respond to what the learner actually says and let them attempt; never answer for them.
-- Keep explanations brief and level-appropriate; prefer short examples/prompts.
+- Respond to what the learner actually says; never answer for them.
+- Keep explanations brief and level-appropriate.
 - If incorrect or incomplete, give the smallest useful correction/model and ask for another attempt.
-- Do not move on until the success criteria are clearly met.
-- Accept natural alternatives that satisfy the criteria.
-- Answer useful target questions briefly, then return to practice.
-- Handle unrelated replies naturally and guide back to the target.
-- Keep normal responses to 2-3 short sentences.
+- Ask only ONE simple question or prompt per message.
+- Handle unrelated replies naturally, then guide back to the current target.
+- Keep normal responses to 1-2 short sentences unless a correction genuinely needs more.
 
 {task}
 
@@ -544,17 +587,17 @@ Teach the **CURRENT TARGET** through a short teacher-learner exchange. You are t
 Return ONLY one valid JSON object with exactly these fields:
 {{
   "reply": "the short learner-facing response",
-  "target_completed": true,
+  "target_completed": false,
   "target_order": {current_target_order},
   "stage_completed": false
 }}
 
-- **reply** must contain only the learner-facing message. Never put JSON, metadata, markers, or evaluation text inside it.
-- **target_completed** must be true only if the learner's latest answer clearly satisfies the current target's success criteria; otherwise false.
-- **target_order** must be the current target order when evaluating a target, and null when there is no current target.
-- **stage_completed** must be true only when this completed target causes all required teaching targets to be complete; otherwise false.
-- When the learner is incorrect or incomplete, set **target_completed** to false and keep **target_order** equal to the current target order.
-- The backend, not the model, controls lesson state. Never assume that merely writing true changes the lesson state.
+- `reply` contains ONLY the learner-facing message. Never put JSON, metadata, evaluation, markers, or field names inside it.
+- `target_completed` is true ONLY when the latest learner answer clearly satisfies the current target's success criteria.
+- `target_order` is the current target order while evaluating a target, and null when there is no current target.
+- `stage_completed` is true ONLY when the current target is completed AND it is the final required target.
+- When a target is completed and a next target exists, set `stage_completed` to false.
+- The backend controls lesson state; the model only reports the evaluation.
 """.strip()
 
 

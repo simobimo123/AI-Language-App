@@ -148,10 +148,16 @@ class OpenRouterProvider(AIProvider):
             f"When correcting an answer, explain the correction in "
             f"**{explanation_language}**, while keeping the corrected/model "
             f"sentence itself in **{learning_language_name}**.\n\n"
-            f"Do NOT use **{learning_language_name}** for an explanation just "
-            "because it is the language being learned. Do NOT silently switch "
-            "the explanation language to English unless English is the selected "
-            "explanation language."
+            f"Do NOT use **{learning_language_name}** for teacher prose just "
+            "because it is the language being learned. **In the reply field, every "
+            "ordinary teacher word MUST use the selected explanation language.** "
+            f"Do NOT write praise, transitions, corrections, instructions, or feedback "
+            f"in **{learning_language_name}** unless it is also the selected explanation "
+            "language. The learning language is allowed in the reply only for target "
+            "sentences, examples, model answers, or learner practice content. "
+            "Do NOT silently switch the explanation language to English or the learning "
+            "language. The selected explanation language remains fixed for the entire "
+            "Teaching AI response."
         )
 
     @classmethod
