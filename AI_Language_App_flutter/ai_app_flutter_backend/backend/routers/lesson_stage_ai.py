@@ -527,6 +527,8 @@ Teach the **CURRENT TARGET** through a short teacher-learner exchange. You are t
 **RULES**:
 - Focus on the current target and its **SUCCESS CRITERIA**.
 - **TARGET PATTERNS** guide teaching; they are not exact required sentences.
+- Evaluate the learner's latest answer against the **SUCCESS CRITERIA** before deciding whether the target is complete.
+- A target is complete only when the learner's latest answer clearly satisfies the success criteria. Do not mark it complete merely because the answer is understandable or close.
 - Respond to what the learner actually says and let them attempt; never answer for them.
 - Keep explanations brief and level-appropriate; prefer short examples/prompts.
 - If incorrect or incomplete, give the smallest useful correction/model and ask for another attempt.
@@ -538,11 +540,21 @@ Teach the **CURRENT TARGET** through a short teacher-learner exchange. You are t
 
 {task}
 
-**COMPLETION**:
-Only when the learner clearly meets the success criteria, give brief positive feedback and append:
-[[TARGET_COMPLETE:{current_target_order}]]
+**OUTPUT FORMAT — MANDATORY JSON**:
+Return ONLY one valid JSON object with exactly these fields:
+{{
+  "reply": "the short learner-facing response",
+  "target_completed": true,
+  "target_order": {current_target_order},
+  "stage_completed": false
+}}
 
-The marker must be last and never be shown or explained.
+- **reply** must contain only the learner-facing message. Never put JSON, metadata, markers, or evaluation text inside it.
+- **target_completed** must be true only if the learner's latest answer clearly satisfies the current target's success criteria; otherwise false.
+- **target_order** must be the current target order when evaluating a target, and null when there is no current target.
+- **stage_completed** must be true only when this completed target causes all required teaching targets to be complete; otherwise false.
+- When the learner is incorrect or incomplete, set **target_completed** to false and keep **target_order** equal to the current target order.
+- The backend, not the model, controls lesson state. Never assume that merely writing true changes the lesson state.
 """.strip()
 
 
@@ -644,6 +656,66 @@ def _extract_target_completion(
         clean_reply,
         target_order,
         teaching_complete,
+    )
+
+
+def _parse_teaching_evaluation(
+    raw_reply: str,
+    *,
+    current_target_order: int | None,
+    is_control_message: bool,
+) -> tuple[str, bool, int | None, bool]:
+    """Parse structured Teaching AI evaluation while keeping backend authority."""
+    try:
+        payload = json.loads(raw_reply)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        reply, marker_target, teaching_complete = _extract_target_completion(
+            raw_reply
+        )
+        valid_marker = (
+            not is_control_message
+            and marker_target is not None
+            and current_target_order is not None
+            and marker_target == current_target_order
+        )
+        return (
+            reply,
+            valid_marker,
+            marker_target if valid_marker else None,
+            teaching_complete if valid_marker else False,
+        )
+
+    if not isinstance(payload, dict):
+        raise RuntimeError("Teaching AI returned an invalid evaluation object.")
+
+    reply = str(payload.get("reply") or "").strip()
+    if not reply:
+        raise RuntimeError(
+            "Teaching AI evaluation did not contain a learner-facing reply."
+        )
+
+    target_completed = payload.get("target_completed") is True
+    target_order_raw = payload.get("target_order")
+    target_order: int | None = None
+    if target_order_raw is not None:
+        try:
+            target_order = int(target_order_raw)
+        except (TypeError, ValueError):
+            target_order = None
+
+    stage_completed = payload.get("stage_completed") is True
+    valid_target_completion = (
+        not is_control_message
+        and target_completed
+        and current_target_order is not None
+        and target_order == current_target_order
+    )
+
+    return (
+        reply,
+        valid_target_completion,
+        target_order if valid_target_completion else None,
+        stage_completed if valid_target_completion else False,
     )
 
 
@@ -863,6 +935,11 @@ def _stream_stage_response(
                 is_start=is_control_message,
             ),
             max_output_tokens=MAX_OUTPUT_TOKENS,
+            response_mime_type=(
+                "application/json"
+                if request.stage == "teaching"
+                else None
+            ),
         )
         raw_reply = str(
             response.text or ""
@@ -871,27 +948,30 @@ def _stream_stage_response(
             raise RuntimeError(
                 "AI tutor returned an empty response."
             )
-        (
-            reply,
-            completed_target_order,
-            teaching_complete_marker,
-        ) = _extract_target_completion(
-            raw_reply
-        )
+        if request.stage == "teaching":
+            (
+                reply,
+                valid_target_completion,
+                completed_target_order,
+                teaching_complete_marker,
+            ) = _parse_teaching_evaluation(
+                raw_reply,
+                current_target_order=current_target_order,
+                is_control_message=is_control_message,
+            )
+        else:
+            (
+                reply,
+                completed_target_order,
+                teaching_complete_marker,
+            ) = _extract_target_completion(
+                raw_reply
+            )
+            valid_target_completion = False
         if not reply:
             raise RuntimeError(
                 "AI tutor returned no visible learner-facing text."
             )
-        valid_target_completion = False
-        if (
-            request.stage == "teaching"
-            and completed_target_order is not None
-            and current_target_order is not None
-            and completed_target_order
-            == current_target_order
-            and not is_control_message
-        ):
-            valid_target_completion = True
         exchange_count_after = sum(
             1
             for item in history
