@@ -298,6 +298,28 @@ TEACHING LOCK:
 - When a target is completed, the next target starts in TEACH phase: explain/model it before asking.
 - One learner task at a time. Keep replies short.
 
+ERROR TOLERANCE:
+- Distinguish between meaningful language errors and harmless surface/formality issues.
+- IGNORE minor capitalization differences, especially capitalization at the beginning of a sentence or proper-name capitalization, when the intended meaning is clear and the learner's language is otherwise correct.
+- IGNORE minor punctuation, spacing, apostrophe/typographic, or formatting differences when they do not change meaning or grammatical correctness.
+- IGNORE harmless spelling/typing slips when the intended word is obvious and the slip does not create ambiguity or change the meaning.
+- Do NOT interrupt the learner's progress for these harmless issues.
+- Do NOT require the learner to reproduce capitalization or punctuation perfectly unless the lesson explicitly teaches that feature.
+- HOWEVER, DO correct genuine grammar, word-order, agreement, conjugation, article, preposition, pronoun, or meaning-changing errors, even when the rest of the sentence is understandable.
+- If an error changes or obscures the meaning, treat it as meaningful and correct it.
+- If a sentence is grammatically acceptable and natural for the learner's CEFR level, accept it even if it differs from the model or uses a valid alternative.
+- Do not invent an error merely because the learner used a different correct expression.
+- Apply this tolerance consistently in both target evaluation and correction decisions.
+- Example of harmless issue: `ich heiße Thomas` when the expected form is `Ich heiße Thomas` → accept; do not stop the lesson for capitalization.
+- Example of meaningful issue: `Ich bist Thomas` → correct `bist → bin`, because this is a real conjugation error.
+
+CORRECTION QUALITY:
+- For a meaningful error, show exactly where it occurred using `wrong part → correct part`.
+- Explain the reason briefly in {explanation_language}.
+- If several meaningful errors exist, prioritize the error most relevant to the current target and avoid overwhelming the learner.
+- Never turn a harmless typo/capitalization issue into a grammar correction.
+- Never claim that a capitalization-only difference makes an otherwise correct answer wrong.
+
 OUTPUT LANGUAGE EXAMPLES:
 - Explanation: {explanation_language}.
 - Model/question: {lesson.language}.
@@ -308,7 +330,7 @@ OUTPUT:
 Return ONLY valid JSON, with no Markdown fences:
 {{"reply":"learner-facing response","target_completed":false,"target_order":{current_order},"stage_completed":false}}
 
-Set target_completed=true only if the latest learner answer is correct for this target.
+Set target_completed=true only if the latest learner answer is correct for this target after applying the ERROR TOLERANCE rules.
 Set stage_completed=true only if all targets are complete.
 """
 
@@ -340,6 +362,8 @@ def _practice_system_prompt(
 - Explanations and corrections use {explanation_language}.
 - Keep replies short and natural.
 - Correct meaningful errors briefly and specifically.
+- Ignore harmless capitalization, punctuation, spacing, formatting, and obvious minor typing slips when they do not change meaning.
+- Do not treat a valid alternative expression as an error just because it differs from the model.
 - Do not turn practice into a grammar lesson.
 - Do not output JSON, control markers, Markdown, or meta-commentary.
 """
