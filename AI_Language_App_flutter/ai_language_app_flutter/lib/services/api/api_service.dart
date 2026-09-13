@@ -51,48 +51,226 @@ class ApiService {
     final response = await _client.get('/');
     if (response.statusCode == 200) return response.body;
     final data = _client.decodeResponse(response);
-    throw _client.apiException(data, 'Failed to connect to backend', statusCode: response.statusCode);
+    throw _client.apiException(
+      data,
+      'Failed to connect to backend',
+      statusCode: response.statusCode,
+    );
   }
 
-  Future<Map<String, dynamic>> register({required String name, required String email, required String password, String tutorExplanationLanguageMode = 'native'}) => _auth.register(name: name, email: email, password: password, tutorExplanationLanguageMode: tutorExplanationLanguageMode);
-  Future<Map<String, dynamic>> login({required String email, required String password}) => _auth.login(email: email, password: password);
-  Future<Map<String, dynamic>> loginWithGoogle({required String idToken}) => _auth.loginWithGoogle(idToken: idToken);
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    String tutorExplanationLanguageMode = 'native',
+  }) =>
+      _auth.register(
+        name: name,
+        email: email,
+        password: password,
+        tutorExplanationLanguageMode: tutorExplanationLanguageMode,
+      );
+
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) =>
+      _auth.login(email: email, password: password);
+
+  Future<Map<String, dynamic>> loginWithGoogle({
+    required String idToken,
+  }) =>
+      _auth.loginWithGoogle(idToken: idToken);
+
   Future<Map<String, dynamic>> getCurrentUser() => _auth.getCurrentUser();
-  Future<Map<String, dynamic>> updateCurrentUser({required String name, required String email, required String nativeLanguage, required String learningLanguage, required String tutorExplanationLanguageMode}) => _auth.updateCurrentUser(name: name, email: email, nativeLanguage: nativeLanguage, learningLanguage: learningLanguage, tutorExplanationLanguageMode: tutorExplanationLanguageMode);
+
+  Future<Map<String, dynamic>> updateCurrentUser({
+    required String name,
+    required String email,
+    required String nativeLanguage,
+    required String learningLanguage,
+    String? tutorExplanationLanguageMode,
+  }) async {
+    String explanationMode = tutorExplanationLanguageMode ?? 'native';
+
+    if (tutorExplanationLanguageMode == null) {
+      final currentUser = await getCurrentUser();
+      final currentMode =
+          currentUser['tutor_explanation_language_mode']?.toString();
+
+      if (currentMode == 'native' || currentMode == 'learning') {
+        explanationMode = currentMode!;
+      }
+    }
+
+    return _auth.updateCurrentUser(
+      name: name,
+      email: email,
+      nativeLanguage: nativeLanguage,
+      learningLanguage: learningLanguage,
+      tutorExplanationLanguageMode: explanationMode,
+    );
+  }
 
   Future<List<dynamic>> getLearningProfiles() => _learning.getLearningProfiles();
-  Future<Map<String, dynamic>> getCurrentLearningProfile() => _learning.getCurrentLearningProfile();
-  Future<Map<String, dynamic>> createLearningProfile({required String language, required String level}) => _learning.createLearningProfile(language: language, level: level);
-  Future<Map<String, dynamic>> updateLearningProfile({required String language, required String level, required double progress}) => _learning.updateLearningProfile(language: language, level: level, progress: progress);
-  Future<Map<String, dynamic>> switchLearningLanguage({required String language}) => _learning.switchLearningLanguage(language: language);
+  Future<Map<String, dynamic>> getCurrentLearningProfile() =>
+      _learning.getCurrentLearningProfile();
+  Future<Map<String, dynamic>> createLearningProfile({
+    required String language,
+    required String level,
+  }) =>
+      _learning.createLearningProfile(language: language, level: level);
+  Future<Map<String, dynamic>> updateLearningProfile({
+    required String language,
+    required String level,
+    required double progress,
+  }) =>
+      _learning.updateLearningProfile(
+        language: language,
+        level: level,
+        progress: progress,
+      );
+  Future<Map<String, dynamic>> switchLearningLanguage({
+    required String language,
+  }) =>
+      _learning.switchLearningLanguage(language: language);
   Future<Map<String, dynamic>> getLearningPath() => _learning.getLearningPath();
-  Future<Map<String, dynamic>> getLessonContent({required int lessonId}) => _learning.getLessonContent(lessonId: lessonId);
-  Future<Map<String, dynamic>> getLessonAssessment({required int lessonId, String? conversationId}) => _learning.getLessonAssessment(lessonId: lessonId, conversationId: conversationId);
-  Future<Map<String, dynamic>> submitLessonAssessment({required int lessonId, String? conversationId, required List<Map<String, String>> answers}) => _learning.submitLessonAssessment(lessonId: lessonId, conversationId: conversationId, answers: answers);
-  Future<Map<String, dynamic>> completeLesson({required int lessonId, double score = 100}) => _learning.completeLesson(lessonId: lessonId, score: score);
-  Future<Map<String, dynamic>> getLessonPreview({required int lessonId}) => _lessonPreview.getLessonPreview(lessonId: lessonId);
+  Future<Map<String, dynamic>> getLessonContent({required int lessonId}) =>
+      _learning.getLessonContent(lessonId: lessonId);
+  Future<Map<String, dynamic>> getLessonAssessment({
+    required int lessonId,
+    String? conversationId,
+  }) =>
+      _learning.getLessonAssessment(
+        lessonId: lessonId,
+        conversationId: conversationId,
+      );
+  Future<Map<String, dynamic>> submitLessonAssessment({
+    required int lessonId,
+    String? conversationId,
+    required List<Map<String, String>> answers,
+  }) =>
+      _learning.submitLessonAssessment(
+        lessonId: lessonId,
+        conversationId: conversationId,
+        answers: answers,
+      );
+  Future<Map<String, dynamic>> completeLesson({
+    required int lessonId,
+    double score = 100,
+  }) =>
+      _learning.completeLesson(lessonId: lessonId, score: score);
+  Future<Map<String, dynamic>> getLessonPreview({required int lessonId}) =>
+      _lessonPreview.getLessonPreview(lessonId: lessonId);
 
-  Future<Map<String, dynamic>> getLessonStages({required int lessonId}) => _lessonStage.getStages(lessonId: lessonId);
-  Future<Map<String, dynamic>> completeLessonStage({required int lessonId, required String stage, String? conversationId}) => _lessonStage.completeStage(lessonId: lessonId, stage: stage, conversationId: conversationId);
+  Future<Map<String, dynamic>> getLessonStages({required int lessonId}) =>
+      _lessonStage.getStages(lessonId: lessonId);
+  Future<Map<String, dynamic>> completeLessonStage({
+    required int lessonId,
+    required String stage,
+    String? conversationId,
+  }) =>
+      _lessonStage.completeStage(
+        lessonId: lessonId,
+        stage: stage,
+        conversationId: conversationId,
+      );
 
-  Stream<LessonAiChunk> lessonAiChat({required int lessonId, required String message, String? conversationId}) => _lessonAi.chat(lessonId: lessonId, message: message, conversationId: conversationId);
-  Stream<LessonStageAiChunk> lessonStageAiChat({required int lessonId, required String stage, required String message, String? conversationId}) => _lessonStageAi.chat(lessonId: lessonId, stage: stage, message: message, conversationId: conversationId);
-  Future<LessonHint> getLessonHint({required int lessonId, String? conversationId}) => _lessonHint.getHint(lessonId: lessonId, conversationId: conversationId);
+  Stream<LessonAiChunk> lessonAiChat({
+    required int lessonId,
+    required String message,
+    String? conversationId,
+  }) =>
+      _lessonAi.chat(
+        lessonId: lessonId,
+        message: message,
+        conversationId: conversationId,
+      );
 
-  Future<Map<String, dynamic>> getLessonTranslationCheck({required int lessonId, required String conversationId}) => _lessonTranslationCheck.getQuestions(lessonId: lessonId, conversationId: conversationId);
-  Future<LessonTranslationCheckResult> submitLessonTranslationCheck({required int lessonId, required String conversationId, required List<Map<String, String>> answers}) => _lessonTranslationCheck.submit(lessonId: lessonId, conversationId: conversationId, answers: answers);
+  Stream<LessonStageAiChunk> lessonStageAiChat({
+    required int lessonId,
+    required String stage,
+    required String message,
+    String? conversationId,
+  }) =>
+      _lessonStageAi.chat(
+        lessonId: lessonId,
+        stage: stage,
+        message: message,
+        conversationId: conversationId,
+      );
 
-  Future<String> translateText({required String text}) => _translation.translate(text: text);
+  Future<LessonHint> getLessonHint({
+    required int lessonId,
+    String? conversationId,
+  }) =>
+      _lessonHint.getHint(
+        lessonId: lessonId,
+        conversationId: conversationId,
+      );
 
-  Future<int> startPlacementAttempt({required String language}) => _placement.startPlacementAttempt(language: language);
-  Future<PlacementWordsResponse> getPlacementWords({required int attemptId, required String language, required String level}) => _placement.getPlacementWords(attemptId: attemptId, language: language, level: level);
-  Future<PlacementWordEvaluation> evaluatePlacementWords({required int attemptId, required List<int> selectedWordIds}) => _placement.evaluatePlacementWords(attemptId: attemptId, selectedWordIds: selectedWordIds);
-  Future<PlacementFinalizeResponse> finalizePlacement({required int attemptId}) => _placement.finalizePlacement(attemptId: attemptId);
+  Future<Map<String, dynamic>> getLessonTranslationCheck({
+    required int lessonId,
+    required String conversationId,
+  }) =>
+      _lessonTranslationCheck.getQuestions(
+        lessonId: lessonId,
+        conversationId: conversationId,
+      );
 
-  Future<Map<String, dynamic>> createWord({required String word, required String translation}) => _words.createWord(word: word, translation: translation);
+  Future<LessonTranslationCheckResult> submitLessonTranslationCheck({
+    required int lessonId,
+    required String conversationId,
+    required List<Map<String, String>> answers,
+  }) =>
+      _lessonTranslationCheck.submit(
+        lessonId: lessonId,
+        conversationId: conversationId,
+        answers: answers,
+      );
+
+  Future<String> translateText({required String text}) =>
+      _translation.translate(text: text);
+
+  Future<int> startPlacementAttempt({required String language}) =>
+      _placement.startPlacementAttempt(language: language);
+  Future<PlacementWordsResponse> getPlacementWords({
+    required int attemptId,
+    required String language,
+    required String level,
+  }) =>
+      _placement.getPlacementWords(
+        attemptId: attemptId,
+        language: language,
+        level: level,
+      );
+  Future<PlacementWordEvaluation> evaluatePlacementWords({
+    required int attemptId,
+    required List<int> selectedWordIds,
+  }) =>
+      _placement.evaluatePlacementWords(
+        attemptId: attemptId,
+        selectedWordIds: selectedWordIds,
+      );
+  Future<PlacementFinalizeResponse> finalizePlacement({
+    required int attemptId,
+  }) =>
+      _placement.finalizePlacement(attemptId: attemptId);
+
+  Future<Map<String, dynamic>> createWord({
+    required String word,
+    required String translation,
+  }) =>
+      _words.createWord(word: word, translation: translation);
   Future<List<dynamic>> getWords() => _words.getWords();
-  Future<Map<String, dynamic>> updateWordStatus({required int wordId, required bool learned}) => _words.updateWordStatus(wordId: wordId, learned: learned);
-  Future<void> deleteWord({required int wordId}) => _words.deleteWord(wordId: wordId);
-  Future<Map<String, dynamic>> lookupWord({required String word}) => _words.lookupWord(word: word);
+  Future<Map<String, dynamic>> updateWordStatus({
+    required int wordId,
+    required bool learned,
+  }) =>
+      _words.updateWordStatus(wordId: wordId, learned: learned);
+  Future<void> deleteWord({required int wordId}) =>
+      _words.deleteWord(wordId: wordId);
+  Future<Map<String, dynamic>> lookupWord({required String word}) =>
+      _words.lookupWord(word: word);
   Future<Map<String, dynamic>> getHomeStats() => _stats.getHomeStats();
 }
