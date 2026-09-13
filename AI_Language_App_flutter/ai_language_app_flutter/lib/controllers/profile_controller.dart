@@ -73,10 +73,10 @@ class ProfileController extends ChangeNotifier {
     try {
       final user = await apiService.getCurrentUser();
       final profiles = await apiService.getLearningProfiles();
-      final savedExplanationMode = await tutorExplanationSettings.getMode();
       if (context.mounted) {
         final nativeCode = user['native_language']?.toString();
         final currentLanguage = user['learning_language']?.toString();
+        final serverExplanationMode = user['tutor_explanation_language_mode']?.toString();
         final profile = _findProfile(profiles, currentLanguage);
         final l10n = AppLocalizations.of(context)!;
 
@@ -87,10 +87,15 @@ class ProfileController extends ChangeNotifier {
         nativeLanguage = languageName(nativeCode, l10n);
         currentLearningLanguageCode = currentLanguage;
         currentLearningLevel = profile?['level']?.toString();
-        explanationLanguageMode = savedExplanationMode ?? TutorExplanationSettings.nativeMode;
+        explanationLanguageMode =
+            serverExplanationMode == TutorExplanationSettings.learningMode
+                ? TutorExplanationSettings.learningMode
+                : TutorExplanationSettings.nativeMode;
         learningProfiles = profiles;
         isLoading = false;
         notifyListeners();
+
+        await tutorExplanationSettings.setMode(explanationLanguageMode);
 
         if (currentLanguage != null) {
           learningLanguageController.setLanguage(currentLanguage);
@@ -147,14 +152,34 @@ class ProfileController extends ChangeNotifier {
   }
 
   Future<void> changeExplanationLanguageMode(String mode) async {
-    if (mode != TutorExplanationSettings.nativeMode &&
-        mode != TutorExplanationSettings.learningMode) {
+    if (mode != TutorExplanationSettings.nativeMode && mode != TutorExplanationSettings.learningMode) {
       return;
     }
 
-    await tutorExplanationSettings.setMode(mode);
+    final oldMode = explanationLanguageMode;
     explanationLanguageMode = mode;
     notifyListeners();
+
+    try {
+      final result = await apiService.updateCurrentUser(
+        name: name,
+        email: email,
+        nativeLanguage: nativeLanguageCode ?? 'ar',
+        learningLanguage: currentLearningLanguageCode ?? 'en',
+        tutorExplanationLanguageMode: mode,
+      );
+
+      final savedMode = result['tutor_explanation_language_mode']?.toString();
+      explanationLanguageMode = savedMode == TutorExplanationSettings.learningMode
+          ? TutorExplanationSettings.learningMode
+          : TutorExplanationSettings.nativeMode;
+      await tutorExplanationSettings.setMode(explanationLanguageMode);
+      notifyListeners();
+    } catch (_) {
+      explanationLanguageMode = oldMode;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> changeLearningLanguage(BuildContext context, String language) async {
