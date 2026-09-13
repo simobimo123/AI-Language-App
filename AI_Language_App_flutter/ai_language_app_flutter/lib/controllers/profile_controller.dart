@@ -161,14 +161,7 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await apiService.updateCurrentUser(
-        name: name,
-        email: email,
-        nativeLanguage: nativeLanguageCode ?? 'ar',
-        learningLanguage: currentLearningLanguageCode ?? 'en',
-        tutorExplanationLanguageMode: mode,
-      );
-
+      final result = await apiService.updateTutorExplanationLanguage(mode: mode);
       final savedMode = result['tutor_explanation_language_mode']?.toString();
       explanationLanguageMode = savedMode == TutorExplanationSettings.learningMode
           ? TutorExplanationSettings.learningMode
