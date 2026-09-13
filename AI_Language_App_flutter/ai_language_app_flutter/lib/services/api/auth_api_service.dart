@@ -11,6 +11,7 @@ class AuthApiService {
     required String name,
     required String email,
     required String password,
+    String tutorExplanationLanguageMode = 'native',
   }) async {
     final response = await client.post(
       '/users',
@@ -19,13 +20,13 @@ class AuthApiService {
         'name': name,
         'email': email,
         'password': password,
+        'tutor_explanation_language_mode': tutorExplanationLanguageMode,
       }),
     );
 
     final data = client.decodeResponse(response);
 
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return Map<String, dynamic>.from(data as Map);
     }
 
@@ -88,7 +89,7 @@ class AuthApiService {
 
   Future<Map<String, dynamic>> getCurrentUser() async {
     final response = await client.get(
-      '/auth/me',
+      '/users/me',
       authenticated: true,
     );
 
@@ -110,6 +111,7 @@ class AuthApiService {
     required String email,
     required String nativeLanguage,
     required String learningLanguage,
+    required String tutorExplanationLanguageMode,
   }) async {
     final response = await client.put(
       '/users/me',
@@ -120,6 +122,7 @@ class AuthApiService {
         'email': email,
         'native_language': nativeLanguage,
         'learning_language': learningLanguage,
+        'tutor_explanation_language_mode': tutorExplanationLanguageMode,
       }),
     );
 
