@@ -5,6 +5,7 @@ import '../core/language/lesson_chat_ui_text.dart';
 import '../models/learning_lesson_model.dart';
 import '../services/api/api_service.dart';
 import '../services/lesson_chat_session_store.dart';
+import '../widgets/words/word_detail_dialog.dart';
 
 class LessonChatPage extends StatefulWidget {
   final LearningLessonModel lesson;
@@ -40,7 +41,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
   final _focusNode = FocusNode();
   final List<_Message> _messages = [];
   final Map<int, String> _translations = {};
-  final Map<String, Map<String, dynamic>> _wordDetails = {};
 
   /// Message indexes whose cached translation is currently hidden.
   ///
@@ -63,10 +63,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
   String? _suggestionTranslation;
   bool _suggestionCollapsed = false;
   bool _isFocused = false;
-  String? _selectedWordKey;
-  String? _loadingWordKey;
-  int? _wordCardMessageIndex;
-  OverlayEntry? _wordActionOverlay;
 
   String _ui(String key) =>
       lessonChatUiText(widget.languageController.locale.languageCode, key);
@@ -80,181 +76,106 @@ class _LessonChatPageState extends State<LessonChatPage> {
   String get _completionLabel =>
       widget.isTeaching ? _ui('continueStage3') : _ui('complete');
 
-  String _wordUi(String key) {
-    final language = widget.languageController.locale.languageCode
+  String _cleanWordToken(String token) {
+    return token.replaceAll(
+      RegExp(
+        r'^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$',
+        unicode: true,
+      ),
+      '',
+    );
+  }
+
+  Future<void> _showWordDetails(String word) async {
+    final cleanWord = _cleanWordToken(word).trim();
+    if (cleanWord.isEmpty || cleanWord.length > 80) return;
+
+    final languageCode = widget.languageController.locale.languageCode
         .toLowerCase()
         .split('-')
         .first;
 
-    const labels = <String, Map<String, String>>{
-      'ar': {
-        'explain': 'شرح',
-        'partOfSpeech': 'نوع الكلمة',
-        'pronunciation': 'النطق',
-        'example': 'مثال',
-        'exampleTranslation': 'ترجمة المثال',
-        'loading': 'جاري إنشاء البطاقة...',
-        'lookupError': 'تعذر شرح هذه الكلمة.',
-      },
-      'en': {
-        'explain': 'Explain',
-        'partOfSpeech': 'Part of speech',
-        'pronunciation': 'Pronunciation',
-        'example': 'Example',
-        'exampleTranslation': 'Example translation',
-        'loading': 'Creating the word card...',
-        'lookupError': 'Could not explain this word.',
-      },
-      'fr': {
-        'explain': 'Expliquer',
-        'partOfSpeech': 'Nature du mot',
-        'pronunciation': 'Prononciation',
-        'example': 'Exemple',
-        'exampleTranslation': "Traduction de l’exemple",
-        'loading': 'Création de la fiche...',
-        'lookupError': 'Impossible d’expliquer ce mot.',
-      },
-      'de': {
-        'explain': 'Erklären',
-        'partOfSpeech': 'Wortart',
-        'pronunciation': 'Aussprache',
-        'example': 'Beispiel',
-        'exampleTranslation': 'Beispielübersetzung',
-        'loading': 'Wortkarte wird erstellt...',
-        'lookupError': 'Dieses Wort konnte nicht erklärt werden.',
-      },
-      'es': {
-        'explain': 'Explicar',
-        'partOfSpeech': 'Tipo de palabra',
-        'pronunciation': 'Pronunciación',
-        'example': 'Ejemplo',
-        'exampleTranslation': 'Traducción del ejemplo',
-        'loading': 'Creando la ficha...',
-        'lookupError': 'No se pudo explicar esta palabra.',
-      },
-      'it': {
-        'explain': 'Spiega',
-        'partOfSpeech': 'Parte del discorso',
-        'pronunciation': 'Pronuncia',
-        'example': 'Esempio',
-        'exampleTranslation': "Traduzione dell’esempio",
-        'loading': 'Creazione della scheda...',
-        'lookupError': 'Impossibile spiegare questo parola.',
-      },
-      'pt': {
-        'explain': 'Explicar',
-        'partOfSpeech': 'Classe gramatical',
-        'pronunciation': 'Pronúncia',
-        'example': 'Exemplo',
-        'exampleTranslation': 'Tradução do exemplo',
-        'loading': 'Criando o cartão...',
-        'lookupError': 'Não foi possível explicar esta palavra.',
-      },
-      'tr': {
-        'explain': 'Açıkla',
-        'partOfSpeech': 'Sözcük türü',
-        'pronunciation': 'Telaffuz',
-        'example': 'Örnek',
-        'exampleTranslation': 'Örnek çevirisi',
-        'loading': 'Kelime kartı oluşturuluyor...',
-        'lookupError': 'Bu kelime açıklanamadı.',
-      },
-      'nl': {
-        'explain': 'Uitleg',
-        'partOfSpeech': 'Woordsoort',
-        'pronunciation': 'Uitspraak',
-        'example': 'Voorbeeld',
-        'exampleTranslation': 'Vertaling van voorbeeld',
-        'loading': 'Woordkaart wordt gemaakt...',
-        'lookupError': 'Dit woord kon niet worden uitgelegd.',
-      },
-      'pl': {
-        'explain': 'Wyjaśnij',
-        'partOfSpeech': 'Część mowy',
-        'pronunciation': 'Wymowa',
-        'example': 'Przykład',
-        'exampleTranslation': 'Tłumaczenie przykładu',
-        'loading': 'Tworzenie karty słowa...',
-        'lookupError': 'Nie można wyjaśnić tego słowa.',
-      },
-      'ru': {
-        'explain': 'Объяснить',
-        'partOfSpeech': 'Часть речи',
-        'pronunciation': 'Произношение',
-        'example': 'Пример',
-        'exampleTranslation': 'Перевод примера',
-        'loading': 'Создание карточки...',
-        'lookupError': 'Не удалось объяснить это слово.',
-      },
-      'uk': {
-        'explain': 'Пояснити',
-        'partOfSpeech': 'Частина мови',
-        'pronunciation': 'Вимова',
-        'example': 'Приклад',
-        'exampleTranslation': 'Переклад прикладу',
-        'loading': 'Створення картки слова...',
-        'lookupError': 'Не вдалося пояснити це слово.',
-      },
-      'id': {
-        'explain': 'Jelaskan',
-        'partOfSpeech': 'Kelas kata',
-        'pronunciation': 'Pengucapan',
-        'example': 'Contoh',
-        'exampleTranslation': 'Terjemahan contoh',
-        'loading': 'Membuat kartu kata...',
-        'lookupError': 'Kata ini tidak dapat dijelaskan.',
-      },
-      'ja': {
-        'explain': '説明',
-        'partOfSpeech': '品詞',
-        'pronunciation': '発音',
-        'example': '例文',
-        'exampleTranslation': '例文の翻訳',
-        'loading': '単語カードを作成中...',
-        'lookupError': 'この単語を説明できませんでした。',
-      },
-      'ko': {
-        'explain': '설명',
-        'partOfSpeech': '품사',
-        'pronunciation': '발음',
-        'example': '예문',
-        'exampleTranslation': '예문 번역',
-        'loading': '단어 카드를 만드는 중...',
-        'lookupError': '이 단어를 설명할 수 없습니다.',
-      },
-      'zh': {
-        'explain': '解释',
-        'partOfSpeech': '词性',
-        'pronunciation': '发音',
-        'example': '例句',
-        'exampleTranslation': '例句翻译',
-        'loading': '正在创建单词卡...',
-        'lookupError': '无法解释这个词。',
-      },
-      'th': {
-        'explain': 'อธิบาย',
-        'partOfSpeech': 'ชนิดของคำ',
-        'pronunciation': 'การออกเสียง',
-        'example': 'ตัวอย่าง',
-        'exampleTranslation': 'คำแปลตัวอย่าง',
-        'loading': 'กำลังสร้างการ์ดคำศัพท์...',
-        'lookupError': 'ไม่สามารถอธิบายคำนี้ได้',
-      },
-      'vi': {
-        'explain': 'Giải thích',
-        'partOfSpeech': 'Từ loại',
-        'pronunciation': 'Phát âm',
-        'example': 'Ví dụ',
-        'exampleTranslation': 'Dịch ví dụ',
-        'loading': 'Đang tạo thẻ từ...',
-        'lookupError': 'Không thể giải thích từ này.',
-      },
-    };
-
-    return labels[language]?[key] ?? labels['en']![key]!;
+    await showWordDetailDialog(
+      context,
+      word: cleanWord,
+      languageCode: languageCode,
+    );
   }
 
-  String _normalizeWord(String word) => word.trim().toLowerCase();
+  List<Widget> _buildClickableWordWidgets(
+    BuildContext context, {
+    required String text,
+    required TextStyle style,
+  }) {
+    final tokens = text.split(RegExp(r'(\s+)'));
+    final theme = Theme.of(context);
+    final clickableColor = Color.alphaBlend(
+      theme.colorScheme.primary.withValues(alpha: 0.78),
+      style.color ?? theme.colorScheme.onSurface,
+    );
+
+    return tokens.map((token) {
+      if (token.isEmpty) return const SizedBox.shrink();
+
+      final word = _cleanWordToken(token);
+      final isWord = word.isNotEmpty && word.length <= 80;
+      final isWhitespace = token.trim().isEmpty;
+
+      if (!isWord || isWhitespace) {
+        return Text(token, textDirection: _learningDirection, style: style);
+      }
+
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(5),
+          onTap: () => _showWordDetails(word),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
+            child: Text(
+              token,
+              textDirection: _learningDirection,
+              style: style.copyWith(
+                color: clickableColor,
+                decoration: TextDecoration.underline,
+                decorationColor: clickableColor.withValues(alpha: 0.45),
+                decorationThickness: 1.1,
+              ),
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildClickableMessageText(
+    BuildContext context, {
+    required String text,
+    required TextStyle style,
+    required TextDirection direction,
+    required bool isUser,
+    required int messageIndex,
+  }) {
+    final displayText = text.replaceAll('**', '');
+
+    if (isUser || displayText.trim().isEmpty) {
+      return Text(
+        displayText,
+        textDirection: direction,
+        style: style,
+      );
+    }
+
+    return Wrap(
+      alignment: WrapAlignment.start,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: _buildClickableWordWidgets(
+        context,
+        text: displayText,
+        style: style,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -328,7 +249,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
   @override
   void dispose() {
-    _removeWordActionOverlay();
     _input.dispose();
     _scroll.dispose();
     _focusNode.dispose();
@@ -398,7 +318,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
           if (assistantIndex == -1) {
             _messages.add(const _Message(role: 'assistant', text: ''));
-
             assistantIndex = _messages.length - 1;
           }
 
@@ -555,463 +474,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
         curve: Curves.easeOutCubic,
       );
     });
-  }
-
-  void _removeWordActionOverlay() {
-    _wordActionOverlay?.remove();
-    _wordActionOverlay = null;
-  }
-
-  void _showWordAction({
-    required String word,
-    required Offset globalPosition,
-    required int messageIndex,
-  }) {
-    _removeWordActionOverlay();
-
-    final key = _normalizeWord(word);
-    if (key.isEmpty) return;
-
-    setState(() {
-      _selectedWordKey = key;
-      _wordCardMessageIndex = messageIndex;
-    });
-
-    final overlay = Overlay.of(context);
-    final size = MediaQuery.of(context).size;
-
-    const popupWidth = 112.0;
-    const popupHeight = 46.0;
-
-    final left = (globalPosition.dx - popupWidth / 2).clamp(
-      12.0,
-      size.width - popupWidth - 12.0,
-    );
-
-    final top = (globalPosition.dy - popupHeight - 10).clamp(
-      MediaQuery.of(context).padding.top + 8,
-      size.height - popupHeight - 12,
-    );
-
-    _wordActionOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        left: left,
-        top: top,
-        width: popupWidth,
-        height: popupHeight,
-        child: Material(
-          color: Colors.transparent,
-          child: Center(
-            child: Material(
-              color: Theme.of(context).colorScheme.inverseSurface,
-              borderRadius: BorderRadius.circular(14),
-              elevation: 8,
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () {
-                  _removeWordActionOverlay();
-                  _lookupWord(word, messageIndex);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 11,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.menu_book_rounded,
-                        size: 17,
-                        color: Theme.of(context).colorScheme.onInverseSurface,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _wordUi('explain'),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onInverseSurface,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(_wordActionOverlay!);
-  }
-
-  Future<void> _lookupWord(String word, int messageIndex) async {
-    final cleanWord = word.trim();
-    final key = _normalizeWord(cleanWord);
-
-    if (key.isEmpty) return;
-
-    setState(() {
-      _selectedWordKey = key;
-      _wordCardMessageIndex = messageIndex;
-      _error = null;
-    });
-
-    final cached = _wordDetails[key];
-
-    if (cached != null) {
-      _scrollToEnd();
-      return;
-    }
-
-    setState(() => _loadingWordKey = key);
-
-    try {
-      final result = await _api.lookupWord(word: cleanWord);
-
-      if (!mounted) return;
-
-      setState(() {
-        _wordDetails[key] = result;
-        _selectedWordKey = key;
-        _wordCardMessageIndex = messageIndex;
-      });
-
-      _scrollToEnd();
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() => _error = _wordUi('lookupError'));
-    } finally {
-      if (mounted) {
-        setState(() => _loadingWordKey = null);
-      }
-    }
-  }
-
-  String _plainMessageText(String text) => text.replaceAll('**', '');
-
-  String? _wordAtOffset({
-    required String text,
-    required TextStyle style,
-    required TextDirection direction,
-    required double maxWidth,
-    required Offset localPosition,
-  }) {
-    final displayText = _plainMessageText(text);
-
-    if (displayText.trim().isEmpty) return null;
-
-    final painter = TextPainter(
-      text: TextSpan(text: displayText, style: style),
-      textDirection: direction,
-      textAlign: TextAlign.start,
-      maxLines: null,
-    )..layout(maxWidth: maxWidth);
-
-    final position = painter.getPositionForOffset(localPosition);
-    final offset = position.offset.clamp(0, displayText.length);
-
-    var start = offset;
-
-    while (start > 0 && !RegExp(r'\s').hasMatch(displayText[start - 1])) {
-      start--;
-    }
-
-    var end = offset;
-
-    while (end < displayText.length &&
-        !RegExp(r'\s').hasMatch(displayText[end])) {
-      end++;
-    }
-
-    if (start >= end) return null;
-
-    final raw = displayText.substring(start, end);
-
-    final word = raw.replaceAll(
-      RegExp(r'^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$', unicode: true),
-      '',
-    );
-
-    if (word.isEmpty || word.length > 80) return null;
-
-    return word;
-  }
-
-  Widget _buildClickableMessageText(
-    BuildContext context, {
-    required String text,
-    required TextStyle style,
-    required TextDirection direction,
-    required bool isUser,
-    required int messageIndex,
-  }) {
-    final displayText = _plainMessageText(text);
-    final maxWidth = MediaQuery.of(context).size.width * 0.8 - 36;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapUp: isUser
-          ? null
-          : (details) {
-              final word = _wordAtOffset(
-                text: text,
-                style: style,
-                direction: direction,
-                maxWidth: maxWidth,
-                localPosition: details.localPosition,
-              );
-
-              if (word == null) return;
-
-              _showWordAction(
-                word: word,
-                globalPosition: (context.findRenderObject() as RenderBox)
-                    .localToGlobal(details.localPosition),
-                messageIndex: messageIndex,
-              );
-            },
-      child: Text(displayText, textDirection: direction, style: style),
-    );
-  }
-
-  Widget _buildWordCard(BuildContext context, int messageIndex) {
-    final theme = Theme.of(context);
-    final key = _selectedWordKey;
-
-    if (key == null || _wordCardMessageIndex != messageIndex) {
-      return const SizedBox.shrink();
-    }
-
-    final data = _wordDetails[key];
-    final loading = _loadingWordKey == key;
-
-    if (data == null && !loading) {
-      return const SizedBox.shrink();
-    }
-
-    String value(String field) => (data?[field] ?? '').toString().trim();
-
-    final word = value('word').isNotEmpty ? value('word') : key;
-    final translation = value('translation');
-    final partOfSpeech = value('part_of_speech');
-    final pronunciation = value('pronunciation');
-    final example = value('example_sentence');
-    final exampleTranslation = value('example_translation');
-
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-      child: Container(
-        margin: const EdgeInsets.only(top: 10),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: theme.colorScheme.primary.withValues(alpha: 0.16),
-          ),
-        ),
-        child: loading
-            ? Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.3,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _wordUi('loading'),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Directionality(
-                          textDirection: _learningDirection,
-                          child: Text(
-                            word,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              color: theme.colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                        ),
-                      ),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => setState(() {
-                          _selectedWordKey = null;
-                          _wordCardMessageIndex = null;
-                        }),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 19,
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withValues(alpha: 0.65),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (translation.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _wordInfoRow(
-                      context,
-                      icon: Icons.translate_rounded,
-                      value: translation,
-                      strong: true,
-                      direction: directionForText(translation),
-                    ),
-                  ],
-                  if (partOfSpeech.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _wordInfoRow(
-                      context,
-                      icon: Icons.category_outlined,
-                      label: _wordUi('partOfSpeech'),
-                      value: partOfSpeech,
-                      direction: directionForText(
-                        partOfSpeech,
-                        fallback: _learningDirection,
-                      ),
-                    ),
-                  ],
-                  if (pronunciation.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _wordInfoRow(
-                      context,
-                      icon: Icons.record_voice_over_outlined,
-                      label: _wordUi('pronunciation'),
-                      value: pronunciation,
-                      direction: TextDirection.ltr,
-                    ),
-                  ],
-                  if (example.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _wordSection(
-                      context,
-                      label: _wordUi('example'),
-                      value: example,
-                      direction: _learningDirection,
-                    ),
-                  ],
-                  if (exampleTranslation.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    _wordSection(
-                      context,
-                      label: _wordUi('exampleTranslation'),
-                      value: exampleTranslation,
-                      direction: directionForText(exampleTranslation),
-                    ),
-                  ],
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _wordInfoRow(
-    BuildContext context, {
-    required IconData icon,
-    required String value,
-    required TextDirection direction,
-    String? label,
-    bool strong = false,
-  }) {
-    final theme = Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 17, color: theme.colorScheme.primary),
-        const SizedBox(width: 8),
-        if (label != null) ...[
-          Text(
-            '$label: ',
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onPrimaryContainer.withValues(
-                alpha: 0.7,
-              ),
-            ),
-          ),
-        ],
-        Expanded(
-          child: Directionality(
-            textDirection: direction,
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
-                color: theme.colorScheme.onPrimaryContainer,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _wordSection(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required TextDirection direction,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(11),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Directionality(
-            textDirection: direction,
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildMessageActions(BuildContext context, int index) {
@@ -1222,10 +684,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
                       ),
                     ),
                   ),
-                  if (!isUser) ...[
-                    _buildMessageActions(context, index),
-                    _buildWordCard(context, index),
-                  ],
+                  if (!isUser) _buildMessageActions(context, index),
                 ],
               ),
             ),
