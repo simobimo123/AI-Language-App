@@ -1,0 +1,41 @@
+name: Enforce Teaching AI target transition
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event.head_commit.message != 'Enforce immediate Teaching AI target transition'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch backend transition enforcement
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py')
+          text = path.read_text(encoding='utf-8')
+
+          anchor = '''# ============================================================\n# PRACTICE AI\n# ============================================================\n'''
+          helper = '''# ============================================================\n# MANDATORY NEXT-TARGET TRANSITION\n# ============================================================\ndef _next_target_transition_prompt(\n    *,\n    lesson: CourseLesson,\n    next_target: dict,\n) -> str:\n    goal = str(next_target.get("goal", "")).strip()\n    patterns = [\n        str(item).strip()\n        for item in next_target.get("patterns", [])\n        if str(item).strip()\n    ]\n    target_text = f"**NEXT TARGET**: {next_target.get('order')} — {goal}"\n    if patterns:\n        target_text += f"\\n**TARGET PATTERNS**: {' | '.join(patterns)}"\n\n    return f"""\nYou are the **TEACHING AI** for a {lesson.level} language lesson.\n\nThe learner has JUST COMPLETED the previous target. You are now required to move immediately to the next target.\n\n{target_text}\n\n**MANDATORY TRANSITION**:\n- Do NOT stop at praise or confirmation.\n- Do NOT ask the learner to repeat the previous target.\n- Your response MUST immediately start the **NEXT TARGET**.\n- Give at most one very brief success acknowledgement, then ONE concrete prompt that makes the learner perform the next target.\n- The prompt must require the learner to produce the target in the learning language.\n- Teacher prose, instructions, praise, and transitions MUST use the selected explanation language supplied by the backend.\n- The learner may communicate with you in the explanation language or the learning language; never claim not to understand the explanation language.\n- Return ONLY the learner-facing text. No JSON, metadata, markers, or labels.\n- Keep it to 1-2 short sentences.\n""".strip()\n\n\n'''
+          if anchor not in text:\n              raise SystemExit('Practice AI anchor not found')\n          if '_next_target_transition_prompt' not in text:\n              text = text.replace(anchor, helper + anchor, 1)\n\n          old = '''        if not reply:\n            raise RuntimeError(\n                "AI tutor returned no visible learner-facing text."\n            )\n        exchange_count_after = sum(\n'''
+          new = '''        if not reply:\n            raise RuntimeError(\n                "AI tutor returned no visible learner-facing text."\n            )\n\n        # A completed Teaching target must transition immediately. Do not rely\n        # on the first model response to remember this rule: when the backend\n        # has authoritatively accepted completion and another target exists,\n        # make a short dedicated Teaching AI call whose only job is to start\n        # the next target. The first evaluation call decides completion; this\n        # second call decides only the learner-facing transition.\n        if (\n            request.stage == "teaching"\n            and valid_target_completion\n            and not teaching_complete_marker\n        ):\n            required_orders = [\n                int(target["order"])\n                for target in required_targets\n                if target.get("order") is not None\n            ]\n            next_target = None\n            if completed_target_order is not None:\n                for order in required_orders:\n                    if order > int(completed_target_order):\n                        next_target = _target_by_order(\n                            targets,\n                            order,\n                        )\n                        break\n            if next_target is not None:\n                transition_response = provider.generate_text(\n                    model=AI_MODEL,\n                    prompt=[\n                        {\n                            "role": "user",\n                            "content": request.message[:MAX_LEARNER_MESSAGE_CHARS],\n                        }\n                    ],\n                    system_instruction=_next_target_transition_prompt(\n                        lesson=lesson,\n                        next_target=next_target,\n                    ),\n                    max_output_tokens=220,\n                    response_mime_type=None,\n                )\n                transition_reply = str(\n                    transition_response.text or ""\n                ).strip()\n                if transition_reply:\n                    reply = transition_reply\n\n        exchange_count_after = sum(\n'''
+          if old not in text:\n              raise SystemExit('Response handling anchor not found')\n          text = text.replace(old, new, 1)\n          path.write_text(text, encoding='utf-8')\n          PY
+
+      - name: Verify Python syntax
+        run: |
+          python -m py_compile AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py
+
+      - name: Commit and remove workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add AI_Language_App_flutter/ai_app_flutter_backend/backend/routers/lesson_stage_ai.py .github/workflows/enforce-teaching-transition.yml
+          git commit -m 'Enforce immediate Teaching AI target transition'
+          git push
