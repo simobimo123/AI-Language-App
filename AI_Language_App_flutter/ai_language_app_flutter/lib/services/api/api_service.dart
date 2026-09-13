@@ -90,27 +90,19 @@ class ApiService {
     required String nativeLanguage,
     required String learningLanguage,
     String? tutorExplanationLanguageMode,
-  }) async {
-    String explanationMode = tutorExplanationLanguageMode ?? 'native';
+  }) =>
+      _auth.updateCurrentUser(
+        name: name,
+        email: email,
+        nativeLanguage: nativeLanguage,
+        learningLanguage: learningLanguage,
+        tutorExplanationLanguageMode: tutorExplanationLanguageMode,
+      );
 
-    if (tutorExplanationLanguageMode == null) {
-      final currentUser = await getCurrentUser();
-      final currentMode =
-          currentUser['tutor_explanation_language_mode']?.toString();
-
-      if (currentMode == 'native' || currentMode == 'learning') {
-        explanationMode = currentMode!;
-      }
-    }
-
-    return _auth.updateCurrentUser(
-      name: name,
-      email: email,
-      nativeLanguage: nativeLanguage,
-      learningLanguage: learningLanguage,
-      tutorExplanationLanguageMode: explanationMode,
-    );
-  }
+  Future<Map<String, dynamic>> updateTutorExplanationLanguage({
+    required String mode,
+  }) =>
+      _auth.updateTutorExplanationLanguage(mode: mode);
 
   Future<List<dynamic>> getLearningProfiles() => _learning.getLearningProfiles();
   Future<Map<String, dynamic>> getCurrentLearningProfile() =>
