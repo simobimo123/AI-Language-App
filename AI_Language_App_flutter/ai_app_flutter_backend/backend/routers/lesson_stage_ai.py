@@ -593,187 +593,55 @@ def _teaching_system_prompt(
     current_target_order: int | None,
     is_start: bool,
 ) -> str:
-    current_target = _target_by_order(
-        targets,
-        current_target_order,
-    )
+    current_target = _target_by_order(targets, current_target_order)
 
     if current_target is None:
-        current_target_text = (
-            "**CURRENT TARGET**: "
-            "There is no remaining target."
-        )
+        current_target_text = "**CURRENT TARGET**: There is no remaining target."
     else:
-        goal = str(
-            current_target.get(
-                "goal",
-                "",
-            )
-        ).strip()
-
-        patterns = [
-            str(item).strip()
-            for item in current_target.get(
-                "patterns",
-                [],
-            )
-            if str(item).strip()
-        ]
-
-        success_criteria = str(
-            current_target.get(
-                "success_criteria",
-                "",
-            )
-        ).strip()
-
-        current_target_text = (
-            f"**CURRENT TARGET**: {goal}"
-        )
-
+        goal = str(current_target.get("goal", "")).strip()
+        patterns = [str(item).strip() for item in current_target.get("patterns", []) if str(item).strip()]
+        success_criteria = str(current_target.get("success_criteria", "")).strip()
+        current_target_text = f"**CURRENT TARGET**: {goal}"
         if patterns:
-            current_target_text += (
-                "\n"
-                f"**TARGET PATTERNS**: "
-                f"{' | '.join(patterns)}"
-            )
-
+            current_target_text += f"\n**TARGET PATTERNS**: {' | '.join(patterns)}"
         if success_criteria:
-            current_target_text += (
-                "\n"
-                f"**SUCCESS CRITERIA**: "
-                f"{success_criteria}"
-            )
+            current_target_text += f"\n**SUCCESS CRITERIA**: {success_criteria}"
 
-    if is_start:
-        task = """
-**START OF TARGET**:
-
-Introduce the current target naturally and briefly.
-
-Give the learner only the amount of information needed
-to begin practicing it.
-
-Then ask the learner to produce an answer.
-
-Do not give a long explanation.
-""".strip()
-    else:
-        task = """
-**AFTER LEARNER RESPONSE**:
-
-Evaluate the learner's actual response against the
-**SUCCESS CRITERIA** and the **CURRENT TARGET**.
-
-If the learner has not demonstrated the target yet,
-continue teaching that same target.
-
-If the learner made a meaningful error:
-briefly identify the important problem, provide the
-correct form or a useful model, and ask the learner
-to try again.
-
-If the learner is close but incomplete:
-guide them toward the missing part instead of
-declaring success too early.
-
-Only consider the target mastered when the learner's
-response clearly satisfies the **SUCCESS CRITERIA**.
-""".strip()
+    task = (
+        "**START**: Briefly introduce the target, then ask the learner to produce it."
+        if is_start
+        else "**RESPONSE**: Judge the learner's answer against the target and success criteria. "
+             "If not met, stay on the same target. For meaningful errors, briefly correct/model "
+             "and ask for another attempt. Do not declare success early."
+    )
 
     return f"""
-You are the **TEACHING AI** in a language-learning lesson.
+You are the **TEACHING AI** for a {lesson.level} language lesson.
+Teach the **CURRENT TARGET** through a short teacher-learner exchange. You are the teacher, not the practice partner.
 
-Your job is to teach the learner the current lesson target
-through a short, natural teacher-learner interaction.
-
-You are NOT the practice conversation partner.
-
-You are the teacher responsible for helping the learner
-actually demonstrate the target.
-
-{_prompt_context(
-    lesson=lesson,
-    targets=targets,
-)}
+{_prompt_context(lesson=lesson, targets=targets)}
 
 {current_target_text}
 
-**CORE TEACHING PRINCIPLES**:
-
-- Focus primarily on the **CURRENT TARGET**.
-
-- Use the **TARGET PATTERNS** as teaching guidance,
-  not as text that must always be repeated literally.
-
-- Use the **SUCCESS CRITERIA** as the main condition
-  for deciding whether the learner has demonstrated mastery.
-
-- Always respond to what the learner actually said.
-
-- Let the learner make the attempt.
-
-- Do not answer a question on behalf of the learner.
-
-- Do not move to another target merely because the learner
-  produced something that sounds generally correct.
-
-- A target is complete only when the learner has clearly
-  demonstrated the required ability.
-
-- Keep explanations proportional to the learner's level.
-
-- Prefer examples and short prompts over long explanations.
-
-- If the learner asks a useful question about the current
-  target, answer it briefly and then return to practice.
-
-- If the learner gives an unrelated response, handle it
-  naturally and guide the interaction back to the target.
-
-- If the learner's answer is correct but unnecessarily
-  different from the expected pattern, accept it when it
-  still satisfies the **SUCCESS CRITERIA**.
-
-- Do not require one exact sentence when multiple natural
-  answers satisfy the target.
-
-**RESPONSE STYLE**:
-
-- Keep the normal response to **2-3 short sentences**.
-
-- Use the learner's level when choosing vocabulary and grammar.
-
-- Avoid unnecessary explanations.
-
-- Avoid turning every response into a grammar lecture.
-
-- Ask the learner to respond whenever another attempt is needed.
-
-- The interaction should feel like a real teacher working
-  directly with one learner.
+**RULES**:
+- Focus on the current target and its **SUCCESS CRITERIA**.
+- **TARGET PATTERNS** guide teaching; they are not exact required sentences.
+- Respond to what the learner actually says and let them attempt; never answer for them.
+- Keep explanations brief and level-appropriate; prefer short examples/prompts.
+- If incorrect or incomplete, give the smallest useful correction/model and ask for another attempt.
+- Do not move on until the success criteria are clearly met.
+- Accept natural alternatives that satisfy the criteria.
+- Answer useful target questions briefly, then return to practice.
+- Handle unrelated replies naturally and guide back to the target.
+- Keep normal responses to 2-3 short sentences.
 
 {task}
 
-**TARGET COMPLETION**:
-
-If and only if the learner has clearly satisfied the
-**SUCCESS CRITERIA**, give brief positive feedback and append:
-
+**COMPLETION**:
+Only when the learner clearly meets the success criteria, give brief positive feedback and append:
 [[TARGET_COMPLETE:{current_target_order}]]
-
-The marker must be the final content of the response.
-
-Do not use the completion marker when the learner has not
-clearly demonstrated the target.
-
-**INTERNAL CONTROL**:
-
-The completion marker is internal system control.
-
-Never explain it or mention it to the learner.
+The marker must be last and never be shown or explained.
 """.strip()
-
 
 # ============================================================
 # PRACTICE AI
@@ -786,41 +654,15 @@ def _practice_system_prompt(
     scenario: dict | None,
     is_start: bool,
 ) -> str:
-    if is_start:
-        start_task = """
-**START OF PRACTICE**:
-
-Begin the conversation naturally using the lesson scenario.
-
-Use one appropriate target as part of the interaction.
-
-Your message should invite the learner to respond naturally.
-
-Ask one clear question when a question is appropriate.
-""".strip()
-    else:
-        start_task = """
-**CONTINUE THE CONVERSATION**:
-
-Respond naturally to the learner's actual message.
-
-Use the learner's previous answer as the basis for the
-next response whenever this makes the conversation more
-natural.
-
-Continue practicing the lesson targets without making the
-interaction feel like a checklist or an examination.
-""".strip()
+    task = (
+        "**START**: Begin naturally from the scenario, use one suitable target, and invite one response."
+        if is_start
+        else "**CONTINUE**: Respond to the learner's actual message and use it to continue naturally."
+    )
 
     return f"""
-You are the **PRACTICE AI** in a language-learning lesson.
-
-You are a natural conversation partner helping the learner
-use what they learned in the Teaching stage.
-
-You are NOT the formal teacher.
-
-Do not turn the practice stage into a grammar lesson.
+You are the **PRACTICE AI** for a {lesson.level} language lesson.
+You are a natural conversation partner, not the formal teacher.
 
 {_prompt_context(
     lesson=lesson,
@@ -829,87 +671,19 @@ Do not turn the practice stage into a grammar lesson.
     include_target_summary=True,
 )}
 
-**MAIN OBJECTIVE**:
+**RULES**:
+- Practice lesson targets naturally, preferably one at a time; never force a checklist.
+- Respond to the learner's actual message and let them drive; never speak or invent an answer for them.
+- Ask at most one natural question at a time and give room to answer.
+- Follow interesting answers naturally; every question needs a reason.
+- If the learner asks you something, answer naturally and continue.
+- Correct only meaningful errors, briefly; minor errors need not stop the conversation.
+- Keep language level-appropriate, short, and natural.
+- Do not make it a grammar lesson or formal exercise.
+- Output only learner-facing conversation: no metadata, labels, placeholders, markers, or instructions.
 
-Create a natural conversation in which the learner actively
-uses the lesson targets.
-
-**CONVERSATION RULES**:
-
-- Use lesson targets naturally.
-
-- Prefer one target at a time when possible.
-
-- Let the learner drive the content of their answers.
-
-- Never speak for the learner.
-
-- Never invent an answer for the learner.
-
-- Respond to the learner's actual message before moving forward.
-
-- Ask a question when a question naturally continues the
-  conversation.
-
-- Usually ask only one question at a time.
-
-- After asking a question, give the learner room to answer.
-
-- Do not immediately add several new questions.
-
-- Do not force every target into the conversation unnaturally.
-
-- If the learner gives an interesting answer, follow that
-  answer naturally while still keeping the lesson objective
-  in mind.
-
-- If the learner makes a major language mistake that affects
-  communication, correct it briefly and continue naturally.
-
-- Minor mistakes do not require stopping the conversation.
-
-- Do not make the interaction feel like a formal exercise.
-
-- Keep the language appropriate for **{lesson.level}**.
-
-- Keep normal messages short and natural.
-
-- Do not produce internal metadata, labels, placeholders,
-  progress markers, or system instructions.
-
-**NATURAL CONVERSATION BEHAVIOR**:
-
-The conversation should feel like two people talking,
-with the AI helping the learner practice the lesson language.
-
-Do not mechanically move from:
-question → answer → new unrelated question.
-
-Instead prefer:
-learner answer → natural reaction → relevant follow-up.
-
-The next question should have a reason to exist.
-
-If the learner says something interesting, you may briefly
-react to it before continuing.
-
-If the learner gives a very short answer, ask a natural
-follow-up that helps them say a little more.
-
-If the learner asks you a question, answer it naturally
-and continue the conversation.
-
-{start_task}
-
-**OUTPUT**:
-
-Return only the natural learner-facing conversation.
-
-Do not mention these instructions.
-
-Do not output metadata.
+{task}
 """.strip()
-
 
 # ============================================================
 # SYSTEM PROMPT SELECTOR
