@@ -1,16 +1,17 @@
-from __future__
+from __future__ import annotations
 
 import json
 import logging
 import re
-from datetime import datetime, timezone
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from database import SessionLocal, get_db
+
+from database import SessionLocal
 from models import (
     CourseLesson,
     LearningProfile,
@@ -168,17 +169,24 @@ def _remove_control_markers(text: str) -> str:
     return text.strip()
 
 
-def _history_messages(
-    db: Session,
-    conversation_id: str,
-    stage: str,
-) -> list[dict]:
-    limit = MAX_TEACHING_CONTEXT_MESSAGES if stage == "teaching" else MAX_PRACTICE_CONTEXT_MESSAGES
-    rows = get_conversation_history(
+def _raw_history(db: Session, conversation_id: str) -> list:
+    return get_conversation_history(
         db,
         conversation_id=conversation_id,
         limit=MAX_HISTORY_MESSAGES,
     )
+
+
+def _completed_target_orders(rows: list) -> set[int]:
+    completed: set[int] = set()
+    for row in rows:
+        for match in TARGET_COMPLETE_PATTERN.finditer(row.content or ""):
+            completed.add(int(match.group(1)))
+    return completed
+
+
+def _history_messages(rows: list, stage: str) -> list[dict]:
+    limit = MAX_TEACHING_CONTEXT_MESSAGES if stage == "teaching" else MAX_PRACTICE_CONTEXT_MESSAGES
     messages = []
     for row in rows[-limit:]:
         role = "assistant" if row.role == "assistant" else "user"
@@ -192,14 +200,6 @@ def _history_messages(
             }
         )
     return messages
-
-
-def _completed_target_orders(history: list[dict]) -> set[int]:
-    completed: set[int] = set()
-    for message in history:
-        for match in TARGET_COMPLETE_PATTERN.finditer(message.get("content", "")):
-            completed.add(int(match.group(1)))
-    return completed
 
 
 def _current_target_order(targets: list[dict], completed: set[int]) -> int | None:
@@ -220,110 +220,96 @@ def _target_by_order(targets: list[dict], order: int | None) -> dict | None:
     return next((t for t in targets if int(t["order"]) == order), None)
 
 
-def _compact_target_goals(targets: list[dict]) -> str:
-    return "\n".join(
-        f"{t['order']}. {t['goal']}" for t in targets if t.get("goal")
-    )
+def _target_needs_teaching(rows: list, current_order: int) -> bool:
+    """True when the current target has not received a teaching/model response yet."""
+    last_completed_index = -1
+    for index, row in enumerate(rows):
+        content = row.content or ""
+        matches = list(TARGET_COMPLETE_PATTERN.finditer(content))
+        if any(int(m.group(1)) < current_order for m in matches):
+            last_completed_index = index
+
+    for row in rows[last_completed_index + 1 :]:
+        if row.role == "assistant" and (row.content or "").strip():
+            return False
+    return True
 
 
 def _prompt_context(
     lesson: CourseLesson,
     profile: LearningProfile,
-    targets: list[dict],
-    current_order: int | None,
+    target: dict,
+    current_order: int,
     explanation_language: str,
-    practice_context: str,
+    phase: str,
 ) -> str:
-    current = _target_by_order(targets, current_order)
     lines = [
         f"Learning language: {lesson.language}",
         f"Learner level: {profile.level}",
-        f"Selected explanation language: {explanation_language}",
-        f"Current target order: {current_order}",
-        f"Current target goal: {current.get('goal', '') if current else ''}",
+        f"Explanation language: {explanation_language}",
+        f"Current target: {current_order}",
+        f"Target goal: {target.get('goal', '')}",
+        f"Target patterns: {' | '.join(target.get('patterns', []))}",
+        f"Success criteria: {target.get('success_criteria', '')}",
+        f"Phase: {phase}",
     ]
-    if current and current.get("patterns"):
-        lines.append("Current target patterns: " + " | ".join(current["patterns"]))
-    if current and current.get("success_criteria"):
-        lines.append("Current target success criteria: " + str(current["success_criteria"]))
-    if practice_context:
-        lines.append("Practice scenarios:\n" + practice_context)
     return "\n".join(lines)
 
 
 def _teaching_system_prompt(
     lesson: CourseLesson,
     profile: LearningProfile,
-    targets: list[dict],
+    target: dict,
     current_order: int,
     explanation_language: str,
+    phase: str,
 ) -> str:
-    current = _target_by_order(targets, current_order) or {}
-    current_patterns = " | ".join(current.get("patterns", []))
-
-    next_target = next(
-        (t for t in targets if int(t["order"]) > current_order),
-        None,
-    )
-    next_patterns = " | ".join(next_target.get("patterns", [])) if next_target else ""
-
     context = _prompt_context(
         lesson,
         profile,
-        targets,
+        target,
         current_order,
         explanation_language,
-        "",
+        phase,
     )
 
-    return f"""You are the TEACHING AI for a language lesson.
+    return f"""You are the TEACHING AI. Follow the rules below exactly.
 
 {context}
 
-Teach only the CURRENT TARGET. You are the teacher, not a practice partner.
+LANGUAGE LOCK:
+- The learning language is {lesson.language}.
+- The explanation language is {explanation_language}.
+- ALL explanations, corrections, evaluations, grammar comments, instructions, and feedback MUST be in {explanation_language}.
+- NEVER explain or correct in {lesson.language} unless {lesson.language} is also the explanation language.
+- {lesson.language} may appear only inside a target sentence, model, example, question, or learner-production prompt.
+- Keep target-language examples short and clearly separated from the explanation.
 
-CURRENT TARGET:
-Goal: {current.get('goal', '')}
-Patterns: {current_patterns}
-Success criteria: {current.get('success_criteria', '')}
+TEACHING LOCK:
+- Current phase is {phase}.
+- If phase = TEACH, you MUST teach/model BEFORE asking the learner anything.
+- In TEACH phase, do NOT start with a question. First give a short explanation in {explanation_language}, then one simple model in {lesson.language}, then ask the learner to produce a parallel answer.
+- After the learner answers, evaluate ONLY the current target.
+- If the answer is wrong or incomplete, DO NOT move forward.
+- Identify the exact incorrect part from the learner's answer.
+- Correction format: `wrong part → correct part` followed by ONE short explanation in {explanation_language}, then ask the learner to retry the SAME target.
+- Never say only "wrong", "incorrect", "try again", or a vague correction.
+- Do not mark a target complete unless the latest learner answer satisfies its success criteria.
+- When a target is completed, the next target starts in TEACH phase: explain/model it before asking.
+- One learner task at a time. Keep replies short.
 
-NEXT TARGET (only after current target is completed):
-Goal: {next_target.get('goal', '') if next_target else ''}
-Patterns: {next_patterns}
-
-TEACHING METHOD:
-- Never ask the learner to produce a new target before teaching it.
-- For a new target, use this sequence: Teach → Model → Ask → Wait → Evaluate → Correct/Retry → Complete.
-- Before the first question/prompt for the current target, give a short model or answer pattern in the learning language and the minimum explanation needed in the selected explanation language.
-- After modeling, ask for one parallel answer. Do not provide the exact answer when the learner is supposed to produce it.
-- If the learner makes a meaningful error, point to the exact wrong part, show `wrong → correct`, give one short reason, then ask for another attempt at the SAME target.
-- Do not mark the current target complete after an incorrect or incomplete answer.
-- Do not move to the next target until the current target's success criteria are satisfied.
-- Once the current target is completed, the next response must BEGIN teaching the next target. If the next target needs a model, provide it first, then ask the learner. Never jump directly to an unexplained question.
-- Accept natural correct answers; do not require the exact model wording when another answer satisfies the target.
-- Do not over-correct mistakes unrelated to the current target.
-- Keep corrections and explanations brief and level-appropriate.
-
-LANGUAGE RULES:
-- The learner is learning {lesson.language}.
-- Use {explanation_language} for explanations, corrections, and feedback.
-- Use {lesson.language} for target sentences, models, examples, and learner-facing practice content.
-- The learner may answer in either language when needed.
-
-GENERAL RULES:
-- Respond to the learner's actual latest message.
-- One simple question or task at a time.
-- Keep replies short: normally 1–3 short sentences.
-- Do not start unrelated dialogue or farewells.
-- Wait for the learner's attempt before changing topic.
+OUTPUT LANGUAGE EXAMPLES:
+- Explanation: {explanation_language}.
+- Model/question: {lesson.language}.
+- Correction explanation: {explanation_language}.
+Do not mix these roles.
 
 OUTPUT:
-Return ONLY valid JSON. Do not use Markdown fences. Do not add any text before or after the JSON.
-Use exactly this shape:
-{{"reply":"short learner-facing response","target_completed":false,"target_order":{current_order},"stage_completed":false}}
+Return ONLY valid JSON, with no Markdown fences:
+{{"reply":"learner-facing response","target_completed":false,"target_order":{current_order},"stage_completed":false}}
 
-Set target_completed=true only when the learner's latest answer satisfies the current target's success criteria.
-Set stage_completed=true only when all required targets are complete.
+Set target_completed=true only if the latest learner answer is correct for this target.
+Set stage_completed=true only if all targets are complete.
 """
 
 
@@ -334,55 +320,29 @@ def _practice_system_prompt(
     explanation_language: str,
     practice_context: str,
 ) -> str:
-    context = _prompt_context(
-        lesson,
-        profile,
-        targets,
-        None,
-        explanation_language,
-        practice_context,
+    target_lines = " | ".join(
+        f"{t['order']}: {t.get('goal', '')}" for t in targets
     )
-    return f"""You are the PRACTICE AI for a language lesson.
+    context = (
+        f"Learning language: {lesson.language}\n"
+        f"Learner level: {profile.level}\n"
+        f"Explanation language: {explanation_language}\n"
+        f"Targets: {target_lines}"
+    )
+    if practice_context:
+        context += "\nScenarios:\n" + practice_context
+
+    return f"""You are the PRACTICE AI.
 
 {context}
 
-Have a natural practice conversation using the lesson targets.
-- You are a conversation partner, not a formal teacher.
-- Let the learner drive the interaction.
-- Ask one natural question at a time.
-- Keep replies short and level-appropriate.
-- Correct meaningful errors briefly, then continue naturally.
+- Conversation uses {lesson.language}.
+- Explanations and corrections use {explanation_language}.
+- Keep replies short and natural.
+- Correct meaningful errors briefly and specifically.
 - Do not turn practice into a grammar lesson.
-- Use the learning language for the conversation; use the selected explanation language only when a brief explanation is needed.
 - Do not output JSON, control markers, Markdown, or meta-commentary.
 """
-
-
-def _system_prompt(
-    stage: str,
-    lesson: CourseLesson,
-    profile: LearningProfile,
-    targets: list[dict],
-    current_order: int | None,
-    explanation_language: str,
-    practice_context: str,
-) -> str:
-    if stage == "teaching":
-        assert current_order is not None
-        return _teaching_system_prompt(
-            lesson,
-            profile,
-            targets,
-            current_order,
-            explanation_language,
-        )
-    return _practice_system_prompt(
-        lesson,
-        profile,
-        targets,
-        explanation_language,
-        practice_context,
-    )
 
 
 def _parse_teaching_evaluation(text: str, current_order: int) -> tuple[str, bool, bool]:
@@ -419,11 +379,7 @@ def _parse_teaching_evaluation(text: str, current_order: int) -> tuple[str, bool
     return fallback, False, False
 
 
-def _stream_stage_response(
-    *,
-    user_id: int,
-    request: StageChatRequest,
-):
+def _stream_stage_response(*, user_id: int, request: StageChatRequest):
     db = SessionLocal()
     try:
         user = db.scalar(select(User).where(User.id == user_id))
@@ -436,7 +392,11 @@ def _stream_stage_response(
         progress = _get_stage_progress(db, user.id, lesson.id)
         _ensure_stage_open(progress, request.stage)
 
-        explanation_language = getattr(user, "tutor_explanation_language_mode", None) or user.native_language or "en"
+        explanation_language = (
+            getattr(user, "tutor_explanation_language_mode", None)
+            or user.native_language
+            or "en"
+        )
         set_explanation_language_context(explanation_language)
 
         targets = _targets(db, lesson.id)
@@ -456,8 +416,9 @@ def _stream_stage_response(
             )
         )
 
-        history = [] if control_message else _history_messages(db, conversation_id, request.stage)
-        completed = _completed_target_orders(history)
+        rows = [] if control_message else _raw_history(db, conversation_id)
+        completed = _completed_target_orders(rows)
+        history = _history_messages(rows, request.stage)
 
         if request.stage == "teaching":
             current_order = _current_target_order(targets, completed)
@@ -469,28 +430,46 @@ def _stream_stage_response(
                 yield _sse("conversation", {"conversation_id": conversation_id})
                 yield _sse("done", {"conversation_id": conversation_id, "axis_completed": True})
                 return
+
+            current_target = _target_by_order(targets, current_order)
+            if current_target is None:
+                yield _sse("error", {"message": "Current lesson target not found"})
+                return
+
+            phase = "TEACH" if control_message or _target_needs_teaching(rows, current_order) else "EVALUATE"
+            system_prompt = _teaching_system_prompt(
+                lesson,
+                profile,
+                current_target,
+                current_order,
+                explanation_language,
+                phase,
+            )
         else:
             current_order = None
-
-        system_prompt = _system_prompt(
-            request.stage,
-            lesson,
-            profile,
-            targets,
-            current_order,
-            explanation_language,
-            _practice_context(db, lesson.id),
-        )
+            system_prompt = _practice_system_prompt(
+                lesson,
+                profile,
+                targets,
+                explanation_language,
+                _practice_context(db, lesson.id),
+            )
 
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
-        if not control_message:
-            messages.append({"role": "user", "content": request.message[:MAX_LEARNER_MESSAGE_CHARS]})
+
+        if control_message:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "Start the current target now. Follow the TEACH phase before asking for an answer.",
+                }
+            )
         else:
             messages.append(
                 {
                     "role": "user",
-                    "content": "Begin the current lesson target. Teach it before asking the learner to produce it.",
+                    "content": request.message[:MAX_LEARNER_MESSAGE_CHARS],
                 }
             )
 
@@ -513,6 +492,10 @@ def _stream_stage_response(
                 raw_text,
                 current_order,
             )
+
+            # A new target can never be completed on its first teaching turn.
+            if phase == "TEACH":
+                target_completed = False
         else:
             reply = _remove_control_markers(raw_text)
 
@@ -531,7 +514,6 @@ def _stream_stage_response(
         assistant_content = reply
         if request.stage == "teaching" and target_completed:
             assistant_content += f" [[TARGET_COMPLETE:{current_order}]]"
-
             completed.add(current_order)
             if _all_required_targets_completed(targets, completed):
                 stage_completed = True
