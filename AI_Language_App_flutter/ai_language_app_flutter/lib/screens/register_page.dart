@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../services/api/api_service.dart';
 import '../core/language/language_controller.dart';
 import '../core/storage/storage_service.dart';
+import '../core/storage/tutor_explanation_settings.dart';
 import '../core/theme/theme_controller.dart';
 import 'splash_page.dart';
 
@@ -34,6 +35,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   String? _errorMessage;
+  String _explanationLanguageMode = TutorExplanationSettings.nativeMode;
 
   Future<void> _register() async {
     final l10n = AppLocalizations.of(context)!;
@@ -52,6 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        tutorExplanationLanguageMode: _explanationLanguageMode,
       );
 
       final loginResult = await _apiService.login(
@@ -61,13 +64,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
       final accessToken = loginResult['access_token'];
 
-      if (accessToken == null ||
-          accessToken is! String ||
-          accessToken.isEmpty) {
+      if (accessToken == null || accessToken is! String || accessToken.isEmpty) {
         throw Exception('Access token was not returned');
       }
 
       await _storageService.saveToken(accessToken);
+      await tutorExplanationSettings.setMode(_explanationLanguageMode);
 
       if (!mounted) return;
 
@@ -101,7 +103,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-
     super.dispose();
   }
 
@@ -110,7 +111,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
-
+    final uiLanguage = widget.languageController.locale.languageCode;
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
@@ -122,18 +123,12 @@ class _RegisterPageState extends State<RegisterPage> {
         actions: [
           IconButton(
             tooltip: isDark ? l10n.lightMode : l10n.darkMode,
-            onPressed: _isLoading
-                ? null
-                : () {
-                    widget.themeController.setThemeMode(
-                      isDark ? ThemeMode.light : ThemeMode.dark,
-                    );
-                  },
-            icon: Icon(
-              isDark
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
-            ),
+            onPressed: _isLoading ? null : () {
+              widget.themeController.setThemeMode(
+                isDark ? ThemeMode.light : ThemeMode.dark,
+              );
+            },
+            icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
           ),
           const SizedBox(width: 8),
         ],
@@ -152,16 +147,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     Text(
                       l10n.createYourAccount,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       l10n.createAccountSubtitle,
-                      style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 26),
                     Container(
@@ -169,9 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       decoration: BoxDecoration(
                         color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: theme.dividerColor.withValues(alpha: 0.2),
-                        ),
+                        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
                       ),
                       child: Column(
                         children: [
@@ -182,17 +171,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             autofillHints: const [AutofillHints.name],
                             decoration: InputDecoration(
                               labelText: l10n.name,
-                              prefixIcon: const Icon(
-                                Icons.person_outline_rounded,
-                              ),
+                              prefixIcon: const Icon(Icons.person_outline_rounded),
                               border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null ||
-                                  value.trim().length < 2) {
-                                return l10n.usernameMinLength;
-                              }
-
+                              if (value == null || value.trim().length < 2) return l10n.usernameMinLength;
                               return null;
                             },
                           ),
@@ -205,16 +188,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             autofillHints: const [AutofillHints.email],
                             decoration: InputDecoration(
                               labelText: l10n.email,
-                              prefixIcon: const Icon(
-                                Icons.email_outlined,
-                              ),
+                              prefixIcon: const Icon(Icons.email_outlined),
                               border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || !value.contains('@')) {
-                                return l10n.enterEmail;
-                              }
-
+                              if (value == null || !value.contains('@')) return l10n.enterEmail;
                               return null;
                             },
                           ),
@@ -228,42 +206,64 @@ class _RegisterPageState extends State<RegisterPage> {
                             decoration: InputDecoration(
                               labelText: l10n.password,
                               helperText: l10n.passwordHelper,
-                              prefixIcon: const Icon(
-                                Icons.lock_outline_rounded,
-                              ),
+                              prefixIcon: const Icon(Icons.lock_outline_rounded),
                               suffixIcon: IconButton(
-                                tooltip: _isPasswordVisible
-                                    ? l10n.passwordVisibilityHide
-                                    : l10n.passwordVisibilityShow,
-                                onPressed: _isLoading
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _isPasswordVisible =
-                                              !_isPasswordVisible;
-                                        });
-                                      },
-                                icon: Icon(
-                                  _isPasswordVisible
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                ),
+                                tooltip: _isPasswordVisible ? l10n.passwordVisibilityHide : l10n.passwordVisibilityShow,
+                                onPressed: _isLoading ? null : () {
+                                  setState(() => _isPasswordVisible = !_isPasswordVisible);
+                                },
+                                icon: Icon(_isPasswordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                               ),
                               border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || value.length < 8) {
-                                return l10n.passwordMinLength;
-                              }
-
+                              if (value == null || value.length < 8) return l10n.passwordMinLength;
                               return null;
+                            },
+                          ),
+                          const SizedBox(height: 18),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              TutorExplanationSettings.title(uiLanguage),
+                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              TutorExplanationSettings.question(uiLanguage),
+                              style: TextStyle(color: colorScheme.onSurfaceVariant, height: 1.4),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            initialValue: _explanationLanguageMode,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.translate_rounded),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: [
+                              DropdownMenuItem(
+                                value: TutorExplanationSettings.nativeMode,
+                                child: Text(TutorExplanationSettings.nativeLabel(uiLanguage)),
+                              ),
+                              DropdownMenuItem(
+                                value: TutorExplanationSettings.learningMode,
+                                child: Text(TutorExplanationSettings.learningLabel(uiLanguage)),
+                              ),
+                            ],
+                            onChanged: _isLoading ? null : (value) {
+                              if (value != null) {
+                                setState(() => _explanationLanguageMode = value);
+                              }
                             },
                           ),
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 18),
-                            _RegisterError(
-                              message: _errorMessage!,
-                            ),
+                            _RegisterError(message: _errorMessage!),
                           ],
                           const SizedBox(height: 24),
                           SizedBox(
@@ -271,23 +271,10 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: double.infinity,
                             child: FilledButton(
                               onPressed: _isLoading ? null : _register,
-                              style: FilledButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
+                              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                               child: _isLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : Text(
-                                      l10n.createAccountButton,
-                                    ),
+                                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                                  : Text(l10n.createAccountButton),
                             ),
                           ),
                         ],
@@ -307,27 +294,16 @@ class _RegisterPageState extends State<RegisterPage> {
 class _RegisterError extends StatelessWidget {
   final String message;
 
-  const _RegisterError({
-    required this.message,
-  });
+  const _RegisterError({required this.message});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Text(
-        message,
-        style: TextStyle(
-          color: theme.colorScheme.onErrorContainer,
-        ),
-      ),
+      decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(14)),
+      child: Text(message, style: TextStyle(color: theme.colorScheme.onErrorContainer)),
     );
   }
 }
