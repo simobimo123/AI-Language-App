@@ -106,27 +106,28 @@ class _LoginPageState extends State<LoginPage> {
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 12),
-                  RadioListTile<String>(
-                    value: TutorExplanationSettings.nativeMode,
+                  RadioGroup<String>(
                     groupValue: selected,
-                    title: Text(
-                      TutorExplanationSettings.nativeLabel(uiLanguage),
-                    ),
                     onChanged: (value) {
                       if (value == null) return;
                       setDialogState(() => selected = value);
                     },
-                  ),
-                  RadioListTile<String>(
-                    value: TutorExplanationSettings.learningMode,
-                    groupValue: selected,
-                    title: Text(
-                      TutorExplanationSettings.learningLabel(uiLanguage),
+                    child: Column(
+                      children: [
+                        RadioListTile<String>(
+                          value: TutorExplanationSettings.nativeMode,
+                          title: Text(
+                            TutorExplanationSettings.nativeLabel(uiLanguage),
+                          ),
+                        ),
+                        RadioListTile<String>(
+                          value: TutorExplanationSettings.learningMode,
+                          title: Text(
+                            TutorExplanationSettings.learningLabel(uiLanguage),
+                          ),
+                        ),
+                      ],
                     ),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() => selected = value);
-                    },
                   ),
                 ],
               ),
