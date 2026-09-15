@@ -16,6 +16,9 @@ from services.tts.text_segments import split_tts_segments
 from services.tts.voice_registry import get_model_path, get_voice
 
 
+SEGMENT_PAUSE_SECONDS = 0.12
+
+
 class TTSManager:
     def __init__(self) -> None:
         self._piper = PiperEngine()
@@ -63,7 +66,7 @@ class TTSManager:
 
         temp_files: list[Path] = []
         try:
-            for segment in segments:
+            for index, segment in enumerate(segments):
                 language = self._language_for_role(
                     segment.role,
                     learning_language=learning_language,
@@ -85,6 +88,14 @@ class TTSManager:
                 if target_rate is None:
                     target_rate = sample_rate
                 samples = self._resample(samples, sample_rate, target_rate)
+
+                if index > 0 and target_rate:
+                    pause_samples = np.zeros(
+                        max(1, round(target_rate * SEGMENT_PAUSE_SECONDS)),
+                        dtype=np.float32,
+                    )
+                    rendered.append(pause_samples)
+
                 rendered.append(samples)
                 metadata.append(
                     {
