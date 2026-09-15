@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import unicodedata
 import wave
 
 
@@ -95,8 +96,16 @@ class PiperEngine:
             details = (result.stderr or result.stdout or "Piper failed").strip()
             raise RuntimeError(details)
 
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        # Normalize decomposed Unicode sequences (for example "c" +
+        # COMBINING CEDILLA) into their NFC form ("ç") before Piper's
+        # phonemizer sees the text. This prevents unsupported standalone
+        # combining marks such as U+0327 from reaching Piper.
+        return unicodedata.normalize("NFC", text).strip()
+
     def synthesize(self, text: str, model_path: Path) -> Path:
-        cleaned = text.strip()
+        cleaned = self._normalize_text(text)
         if not cleaned:
             raise ValueError("TTS text cannot be empty.")
 
