@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../models/placement_models.dart';
 import 'api_client.dart';
 import 'auth_api_service.dart';
@@ -227,20 +229,18 @@ class ApiService {
   Future<String> translateText({required String text}) =>
       _translation.translate(text: text);
 
-  Future<List<int>> synthesizeSpeech({
+  Future<Uint8List> synthesizeSpeech({
     required String text,
-    required String learningLanguage,
-    required String nativeLanguage,
+    String? learningLanguage,
+    String? nativeLanguage,
     String? gender,
-  }) async {
-    final bytes = await _tts.synthesize(
-      text: text,
-      learningLanguage: learningLanguage,
-      nativeLanguage: nativeLanguage,
-      gender: gender,
-    );
-    return bytes;
-  }
+  }) =>
+      _tts.synthesize(
+        text: text,
+        learningLanguage: learningLanguage,
+        nativeLanguage: nativeLanguage,
+        gender: gender,
+      );
 
   Future<int> startPlacementAttempt({required String language}) =>
       _placement.startPlacementAttempt(language: language);
