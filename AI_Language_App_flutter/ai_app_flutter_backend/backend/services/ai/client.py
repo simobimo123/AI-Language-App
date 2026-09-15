@@ -39,6 +39,15 @@ if not AI_CLASSIFIER_MODEL:
     raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is empty in the .env file")
 
 
+# Lesson AI already computes the complete pedagogical state on the backend.
+# The model therefore only needs a very small recent conversational window.
+# This keeps the full lesson memory in the database without repeatedly sending
+# the entire conversation to OpenRouter.
+LESSON_CONTEXT_MAX_HISTORY_MESSAGES = 2
+LESSON_CONTEXT_MAX_HISTORY_CHARS = 900
+LESSON_CONTEXT_MAX_MESSAGE_CHARS = 450
+
+
 class OpenRouterRequestError(RuntimeError):
     """An OpenRouter HTTP request failed with a known status code."""
 
@@ -57,6 +66,72 @@ def _headers() -> dict[str, str]:
     }
 
 
+def _is_lesson_system_message(message: dict[str, str]) -> bool:
+    if message.get("role") != "system":
+        return False
+
+    content = str(message.get("content") or "")
+    return (
+        "You are the **TEACHING AI**" in content
+        or "You are the **PRACTICE AI**" in content
+    )
+
+
+def _compact_lesson_messages(
+    messages: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Keep lesson prompts under the small free-tier context budget.
+
+    Backend lesson state, completed targets, current target, success criteria,
+    language rules, and pedagogical rules stay in the system message. Only the
+    two most recent stored conversation messages are sent as conversational
+    memory, and those are capped by both per-message and total character
+    budgets. The current user message remains untouched except for its normal
+    validation upstream.
+    """
+    system_messages = [
+        message
+        for message in messages
+        if message.get("role") == "system"
+    ]
+
+    if not any(_is_lesson_system_message(message) for message in system_messages):
+        return messages
+
+    non_system = [
+        message
+        for message in messages
+        if message.get("role") != "system"
+    ]
+
+    recent = non_system[-LESSON_CONTEXT_MAX_HISTORY_MESSAGES:]
+    compacted: list[dict[str, str]] = []
+    remaining = LESSON_CONTEXT_MAX_HISTORY_CHARS
+
+    for message in recent:
+        content = str(message.get("content") or "").strip()
+        if not content or remaining <= 0:
+            continue
+
+        limit = min(
+            LESSON_CONTEXT_MAX_MESSAGE_CHARS,
+            remaining,
+        )
+
+        if len(content) > limit:
+            content = content[:limit].rstrip() + "…"
+
+        compacted.append(
+            {
+                "role": message.get("role", "user"),
+                "content": content,
+            }
+        )
+        remaining -= len(content)
+
+    return system_messages + compacted
+
+
 def chat_completion(
     *,
     model: str,
@@ -65,6 +140,8 @@ def chat_completion(
     response_format: dict | None = None,
 ) -> dict:
     import httpx
+
+    messages = _compact_lesson_messages(messages)
 
     payload = {
         "model": model,
@@ -104,6 +181,8 @@ def stream_chat_completion(
 ):
     import json
     import httpx
+
+    messages = _compact_lesson_messages(messages)
 
     payload = {
         "model": model,
