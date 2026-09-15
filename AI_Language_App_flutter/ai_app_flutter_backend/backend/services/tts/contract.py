@@ -25,10 +25,10 @@ never has to guess the language.
 - Markers are control tags only. Never explain them, pronounce them, or put
   them inside the learner-facing wording.
 - If the whole reply is in one language, still mark it explicitly.
-- Short learner-language examples must be marked {LEARNING} even when the
+- Short learner-language examples must be marked {LEARNING_MARKER} even when the
   surrounding explanation is in the native language.
-- Corrections must mark the actual target-language form as {LEARNING}; a
-  native-language explanation of the error must be {NATIVE}.
+- Corrections must mark the actual target-language form as {LEARNING_MARKER}; a
+  native-language explanation of the error must be {NATIVE_MARKER}.
 - Do not use any other language-routing markers.
 
 Example:
