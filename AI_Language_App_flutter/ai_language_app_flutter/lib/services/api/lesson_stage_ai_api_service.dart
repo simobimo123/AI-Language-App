@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/errors/api_exception.dart';
@@ -69,13 +70,12 @@ class LessonStageAiApiService {
     try {
       final audio = await _tts.synthesize(text: cleaned);
 
-      // If another AI reply arrived while this audio was being generated,
-      // discard this older audio instead of letting it play out of order.
       if (generation != _speechGeneration) return;
 
       await _ttsPlayer.play(audio);
-    } catch (_) {
-      // TTS must never break or delay the lesson conversation.
+    } catch (error, stackTrace) {
+      debugPrint('[TTS][LESSON] Speech generation/playback failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
