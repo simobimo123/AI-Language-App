@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../services/api/api_service.dart';
@@ -37,9 +39,7 @@ class _TtsTestPageState extends State<TtsTestPage> {
         gender: 'female',
       );
 
-      await _player.play(
-        audio as dynamic,
-      );
+      await _player.play(Uint8List.fromList(audio));
 
       if (!mounted) {
         return;
