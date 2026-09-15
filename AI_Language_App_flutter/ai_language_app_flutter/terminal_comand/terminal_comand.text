@@ -10,13 +10,11 @@ python -m uvicorn main:app --reload --host 0.0.0.0
 °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
 تعديل جيت هوب
 
-git add -A; git commit -m "Fix localization and update app interface"; git push origin main
+git add -A; git commit -m "Sync local changes"; git push origin HEAD --force-with-lease
 
-تعديل مشروع من جيت هوب
+تعديل مشروع 
 
-cd C:\Users\simobimo\Documents\AI_Language_App111
-git pull origin main
-cd AI_Language_App_flutter\ai_language_app_flutter
-flutter gen-l10n
+git fetch origin; git reset --hard origin/$(git branch --show-current); git clean -fd
+
 
 flutter analyze

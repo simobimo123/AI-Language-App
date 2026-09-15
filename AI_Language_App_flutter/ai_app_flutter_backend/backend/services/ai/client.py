@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -33,10 +34,15 @@ AI_CLASSIFIER_MODEL = os.getenv(
 ).strip()
 
 if not AI_MODEL:
-    raise RuntimeError("OPENROUTER_MAIN_MODEL is empty in the .env file")
+    raise RuntimeError("OPENROUTER_MAIN_MODEL is not configured in the backend .env file")
 
 if not AI_CLASSIFIER_MODEL:
-    raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is empty in the .env file")
+    raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is not configured in the backend .env file")
+
+
+LESSON_CONTEXT_MAX_HISTORY_MESSAGES = 1
+LESSON_CONTEXT_MAX_HISTORY_CHARS = 600
+LESSON_CONTEXT_MAX_MESSAGE_CHARS = 600
 
 
 class OpenRouterRequestError(RuntimeError):
@@ -57,6 +63,155 @@ def _headers() -> dict[str, str]:
     }
 
 
+def _is_lesson_system_message(message: dict[str, str]) -> bool:
+    if message.get("role") != "system":
+        return False
+
+    content = str(message.get("content") or "")
+    return (
+        "You are the **TEACHING AI**" in content
+        or "You are the **PRACTICE AI**" in content
+    )
+
+
+def _extract_block(text: str, heading: str, next_heading: str | None = None) -> str:
+    if next_heading:
+        pattern = rf"({re.escape(heading)}.*?)(?=\n\n{re.escape(next_heading)}|\Z)"
+    else:
+        pattern = rf"({re.escape(heading)}.*)"
+
+    match = re.search(pattern, text, flags=re.DOTALL)
+    return match.group(1).strip() if match else ""
+
+
+def _compact_teaching_system_prompt(system: str) -> str:
+    language_match = re.search(
+        r"\*\*LANGUAGE\*\*:\s*([^\n]+)\s*\n\*\*LEVEL\*\*:\s*([^\n]+)",
+        system,
+    )
+    target_order_match = re.search(
+        r'\"target_order\"\s*:\s*(\d+|null)',
+        system,
+    )
+
+    language = language_match.group(1).strip() if language_match else "unknown"
+    level = language_match.group(2).strip() if language_match else "unknown"
+    target_order = target_order_match.group(1) if target_order_match else "null"
+
+    current = _extract_block(
+        system,
+        "**CURRENT TARGET**:",
+        "**NEXT TARGET**:",
+    )
+    next_target = _extract_block(
+        system,
+        "**NEXT TARGET**:",
+        "**CORE PEDAGOGICAL SEQUENCE",
+    )
+
+    return f"""You are the TEACHING AI for a {level} language lesson.
+LANGUAGE: {language}
+{current or '**CURRENT TARGET**: none'}
+{next_target or '**NEXT TARGET**: none'}
+
+RULES:
+- TEACH meaning/form first; MODEL one short correct example; then ASK one learner prompt.
+- Evaluate only the learner's latest message for the current target.
+- Meaningful error: show `wrong → correct`, give one short reason, then ask for retry.
+- Do not advance until the current target clearly satisfies its success criteria.
+- Once complete, do not require the same target again; teach/model the next target and give one prompt.
+- Accept natural correct alternatives.
+- Use the backend-selected explanation language for teacher explanations/corrections; use the learning language for targets/examples.
+- Keep replies short, one prompt only, no stories or invented learner information.
+- Red `"text"` and green `*text*` may mark corrections.
+
+OUTPUT: ONLY valid JSON:
+{{"reply":"learner-facing text","target_completed":false,"target_order":{target_order},"stage_completed":false}}
+stage_completed=true only when the current target is complete and it is the final required target.
+""".strip()
+
+
+def _compact_practice_system_prompt(system: str) -> str:
+    language_match = re.search(
+        r"\*\*LANGUAGE\*\*:\s*([^\n]+)\s*\n\*\*LEVEL\*\*:\s*([^\n]+)",
+        system,
+    )
+    language = language_match.group(1).strip() if language_match else "unknown"
+    level = language_match.group(2).strip() if language_match else "unknown"
+
+    scenario = _extract_block(system, "**PRACTICE SCENARIO**:")
+    targets = _extract_block(system, "**LESSON TARGETS**:", "**PRACTICE SCENARIO**:")
+
+    return f"""You are the PRACTICE AI for a {level} lesson.
+LANGUAGE: {language}
+TARGETS: {targets[:500]}
+SCENARIO: {scenario[:300]}
+
+RULES:
+- Natural conversation partner, not formal teacher.
+- Respond to the learner's actual message; never invent the learner's answer/info.
+- Ask at most one natural question at a time.
+- Practice targets naturally; do not force a checklist.
+- Correct meaningful errors briefly; keep replies short and level-appropriate.
+- Output only learner-facing conversation.
+""".strip()
+
+
+def _compact_lesson_system(system: str) -> str:
+    if "You are the **TEACHING AI**" in system:
+        return _compact_teaching_system_prompt(system)
+    if "You are the **PRACTICE AI**" in system:
+        return _compact_practice_system_prompt(system)
+    return system
+
+
+def _compact_lesson_messages(
+    messages: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Send only compact lesson state plus the current learner message."""
+    lesson_system = next(
+        (
+            dict(message)
+            for message in messages
+            if _is_lesson_system_message(message)
+        ),
+        None,
+    )
+
+    if lesson_system is None:
+        return messages
+
+    lesson_system["content"] = _compact_lesson_system(
+        str(lesson_system.get("content") or "")
+    )
+
+    non_system = [
+        message
+        for message in messages
+        if message.get("role") != "system"
+    ]
+
+    recent = non_system[-LESSON_CONTEXT_MAX_HISTORY_MESSAGES:]
+    compacted: list[dict[str, str]] = []
+
+    for message in recent:
+        content = str(message.get("content") or "").strip()
+        if not content:
+            continue
+
+        if len(content) > LESSON_CONTEXT_MAX_MESSAGE_CHARS:
+            content = content[:LESSON_CONTEXT_MAX_MESSAGE_CHARS].rstrip() + "…"
+
+        compacted.append(
+            {
+                "role": message.get("role", "user"),
+                "content": content,
+            }
+        )
+
+    return [lesson_system] + compacted
+
+
 def chat_completion(
     *,
     model: str,
@@ -65,6 +220,8 @@ def chat_completion(
     response_format: dict | None = None,
 ) -> dict:
     import httpx
+
+    messages = _compact_lesson_messages(messages)
 
     payload = {
         "model": model,
@@ -104,6 +261,8 @@ def stream_chat_completion(
 ):
     import json
     import httpx
+
+    messages = _compact_lesson_messages(messages)
 
     payload = {
         "model": model,
