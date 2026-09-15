@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import '../../core/errors/api_exception.dart';
 import '../../core/storage/tutor_explanation_settings.dart';
 import 'api_client.dart';
+import 'tts_api_service.dart';
+import '../tts_player_service.dart';
 
 class LessonStageAiChunk {
   final String type;
@@ -38,7 +40,9 @@ class LessonStageAiChunk {
       conversationId: json['conversation_id']?.toString(),
       action: json['action']?.toString(),
       targetId: json['target_id']?.toString(),
-      confidence: rawConfidence is num ? rawConfidence.toDouble() : double.tryParse(rawConfidence?.toString() ?? ''),
+      confidence: rawConfidence is num
+          ? rawConfidence.toDouble()
+          : double.tryParse(rawConfidence?.toString() ?? ''),
       axisCompleted: json['axis_completed'] == true,
       lessonCompleted: json['lesson_completed'] == true,
       message: json['message']?.toString(),
@@ -48,8 +52,24 @@ class LessonStageAiChunk {
 
 class LessonStageAiApiService {
   final ApiClient _client;
+  late final TtsApiService _tts;
+  final TtsPlayerService _ttsPlayer = TtsPlayerService();
 
-  LessonStageAiApiService(this._client);
+  LessonStageAiApiService(this._client) {
+    _tts = TtsApiService(_client);
+  }
+
+  Future<void> _speakAssistantReply(String text) async {
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) return;
+
+    try {
+      final audio = await _tts.synthesize(text: cleaned);
+      await _ttsPlayer.play(audio);
+    } catch (_) {
+      // TTS must never break or delay the lesson conversation.
+    }
+  }
 
   Stream<LessonStageAiChunk> chat({
     required int lessonId,
@@ -82,10 +102,14 @@ class LessonStageAiApiService {
     });
 
     final client = http.Client();
+    var assistantText = StringBuffer();
+
     try {
       late final http.StreamedResponse response;
       try {
-        response = await client.send(request).timeout(const Duration(seconds: 60));
+        response = await client
+            .send(request)
+            .timeout(const Duration(seconds: 60));
       } on TimeoutException {
         throw NetworkException('The connection timed out. Please try again.');
       } on http.ClientException catch (e) {
@@ -131,6 +155,14 @@ class LessonStageAiApiService {
         return null;
       }
 
+      Future<void> emitChunk(LessonStageAiChunk chunk) async {
+        if ((chunk.type == 'token' || chunk.type == 'chunk') &&
+            chunk.text != null &&
+            chunk.text!.isNotEmpty) {
+          assistantText.write(chunk.text);
+        }
+      }
+
       await for (final line in response.stream
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
@@ -140,13 +172,24 @@ class LessonStageAiApiService {
           dataLines.add(line.substring(5).trimLeft());
         } else if (line.isEmpty && dataLines.isNotEmpty) {
           final chunk = parseEvent();
-          if (chunk != null) yield chunk;
+          if (chunk != null) {
+            await emitChunk(chunk);
+            yield chunk;
+          }
         }
       }
 
       if (dataLines.isNotEmpty) {
         final chunk = parseEvent();
-        if (chunk != null) yield chunk;
+        if (chunk != null) {
+          await emitChunk(chunk);
+          yield chunk;
+        }
+      }
+
+      final finalText = assistantText.toString().trim();
+      if (finalText.isNotEmpty) {
+        unawaited(_speakAssistantReply(finalText));
       }
     } finally {
       client.close();
