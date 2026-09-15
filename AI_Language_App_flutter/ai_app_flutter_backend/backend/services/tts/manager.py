@@ -6,7 +6,6 @@ anything about Piper model filenames, and lesson AI code does not execute TTS.
 
 from io import BytesIO
 from pathlib import Path
-import os
 
 import numpy as np
 import soundfile as sf
@@ -75,7 +74,11 @@ class TTSManager:
                 wav_path = self._piper.synthesize(segment.text, model_path)
                 temp_files.append(wav_path)
 
-                samples, sample_rate = sf.read(wav_path, dtype="float32", always_2d=False)
+                samples, sample_rate = sf.read(
+                    wav_path,
+                    dtype="float32",
+                    always_2d=False,
+                )
                 if samples.ndim > 1:
                     samples = samples.mean(axis=1)
 
@@ -94,7 +97,13 @@ class TTSManager:
             assert target_rate is not None
             combined = np.concatenate(rendered)
             buffer = BytesIO()
-            sf.write(buffer, combined, target_rate, format="WAV", subtype="PCM_16")
+            sf.write(
+                buffer,
+                combined,
+                target_rate,
+                format="WAV",
+                subtype="PCM_16",
+            )
             return buffer.getvalue(), metadata
         finally:
             for path in temp_files:
