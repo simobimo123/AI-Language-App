@@ -1,7 +1,7 @@
 """Local Piper voice registry.
 
 Model binaries are intentionally not stored in Git. The registry only stores
-portable metadata and resolves the matching local .onnx file at runtime.
+portable metadata and resolves matching local .onnx files at runtime.
 """
 
 from dataclasses import dataclass
@@ -21,12 +21,13 @@ class VoiceSpec:
     quality: str = "medium"
 
 
-# These are the voices currently prepared for the project. Additional voices
-# can be added here without changing the TTS engine or router.
+# Keep candidates ordered from the most useful/preferred voice to fallbacks.
+# Only locally present .onnx files are ever selected. The binaries themselves
+# are intentionally ignored by Git.
 VOICE_SPECS: tuple[VoiceSpec, ...] = (
     VoiceSpec("ar", "ar_JO-kareem-medium", "male", "medium"),
-    VoiceSpec("de", "de_DE-thorsten-high", "male", "high"),
     VoiceSpec("de", "de_DE-kerstin-low", "female", "low"),
+    VoiceSpec("de", "de_DE-eva_k-x_low", "female", "x_low"),
     VoiceSpec("en", "en_US-lessac-high", "female", "high"),
     VoiceSpec("es", "es_AR-daniela-high", "female", "high"),
     VoiceSpec("fr", "fr_FR-siwis-medium", "female", "medium"),
@@ -36,6 +37,7 @@ VOICE_SPECS: tuple[VoiceSpec, ...] = (
     VoiceSpec("ja", "ja_JP-hi_fi_captain-medium", None, "medium"),
     VoiceSpec("ko", "ko_KR-kss-medium", None, "medium"),
     VoiceSpec("nl", "nl_BE-nathalie-medium", "female", "medium"),
+    VoiceSpec("nl", "nl_NL-mls_5809-low", None, "low"),
     VoiceSpec("pl", "pl_PL-gosia-medium", "female", "medium"),
     VoiceSpec("pt", "pt_BR-edresson-low", "male", "low"),
     VoiceSpec("ru", "ru_RU-irina-medium", "female", "medium"),
@@ -55,6 +57,19 @@ def _available(spec: VoiceSpec) -> bool:
     return _model_path(spec.model_stem).is_file()
 
 
+def get_available_voices(language: str | None = None) -> list[VoiceSpec]:
+    """Return registry voices whose .onnx model is physically installed."""
+    normalized = None
+    if language:
+        normalized = language.lower().replace("-", "_").split("_")[0]
+
+    voices = [voice for voice in VOICE_SPECS if _available(voice)]
+    if normalized is not None:
+        voices = [voice for voice in voices if voice.language == normalized]
+
+    return voices
+
+
 def get_voice(
     language: str,
     *,
@@ -62,11 +77,12 @@ def get_voice(
 ) -> VoiceSpec:
     """Return the best locally available voice for a language.
 
-    Gender is preferred when available. Quality is then used as the primary
-    ranking. We never invent a voice that is not physically present locally.
+    A requested gender is preferred, but if that gender is not installed we
+    deliberately fall back to the best available voice for the language.
+    Quality is the primary ranking inside the selected gender group.
     """
     language = language.lower().replace("-", "_").split("_")[0]
-    candidates = [v for v in VOICE_SPECS if v.language == language and _available(v)]
+    candidates = get_available_voices(language)
 
     if not candidates:
         raise FileNotFoundError(
@@ -75,11 +91,11 @@ def get_voice(
         )
 
     if gender:
-        matching = [v for v in candidates if v.gender == gender.lower()]
+        matching = [voice for voice in candidates if voice.gender == gender.lower()]
         if matching:
             candidates = matching
 
-    return max(candidates, key=lambda v: QUALITY_RANK.get(v.quality, -1))
+    return max(candidates, key=lambda voice: QUALITY_RANK.get(voice.quality, -1))
 
 
 def get_model_path(spec: VoiceSpec) -> Path:
