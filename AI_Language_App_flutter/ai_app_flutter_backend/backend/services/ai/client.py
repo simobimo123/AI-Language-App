@@ -34,15 +34,12 @@ AI_CLASSIFIER_MODEL = os.getenv(
 ).strip()
 
 if not AI_MODEL:
-    raise RuntimeError("OPENROUTER_MAIN_MODEL is empty in the backend .env file")
+    raise RuntimeError("OPENROUTER_MAIN_MODEL is not configured in the backend .env file")
 
 if not AI_CLASSIFIER_MODEL:
-    raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is empty in the backend .env file")
+    raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is not configured in the backend .env file")
 
 
-# The backend keeps the full lesson memory and computes the current target.
-# OpenRouter receives only the current learner message plus a compact state
-# summary, keeping the free-tier prompt as small as possible.
 LESSON_CONTEXT_MAX_HISTORY_MESSAGES = 1
 LESSON_CONTEXT_MAX_HISTORY_CHARS = 600
 LESSON_CONTEXT_MAX_MESSAGE_CHARS = 600
@@ -92,9 +89,14 @@ def _compact_teaching_system_prompt(system: str) -> str:
         r"\*\*LANGUAGE\*\*:\s*([^\n]+)\s*\n\*\*LEVEL\*\*:\s*([^\n]+)",
         system,
     )
+    target_order_match = re.search(
+        r'\"target_order\"\s*:\s*(\d+|null)',
+        system,
+    )
 
     language = language_match.group(1).strip() if language_match else "unknown"
     level = language_match.group(2).strip() if language_match else "unknown"
+    target_order = target_order_match.group(1) if target_order_match else "null"
 
     current = _extract_block(
         system,
@@ -107,18 +109,7 @@ def _compact_teaching_system_prompt(system: str) -> str:
         "**CORE PEDAGOGICAL SEQUENCE",
     )
 
-    json_start = system.find("**OUTPUT FORMAT — MANDATORY JSON**")
-    output_hint = (
-        system[json_start:]
-        if json_start >= 0
-        else ""
-    )
-
-    stage_completed_rule = (
-        "stage_completed=true only when the current target is complete and it is the final required target."
-    )
-
-    prompt = f"""You are the TEACHING AI for a {level} language lesson.
+    return f"""You are the TEACHING AI for a {level} language lesson.
 LANGUAGE: {language}
 {current or '**CURRENT TARGET**: none'}
 {next_target or '**NEXT TARGET**: none'}
@@ -130,19 +121,14 @@ RULES:
 - Do not advance until the current target clearly satisfies its success criteria.
 - Once complete, do not require the same target again; teach/model the next target and give one prompt.
 - Accept natural correct alternatives.
-- Use the backend-selected explanation language for all teacher explanations/corrections; use the learning language for targets/examples.
-- Keep replies short (normally 1–4 sentences), one question/prompt only, no stories or invented learner information.
-- Use red `"text"` and green `*text*` formatting only when useful for corrections.
+- Use the backend-selected explanation language for teacher explanations/corrections; use the learning language for targets/examples.
+- Keep replies short, one prompt only, no stories or invented learner information.
+- Red `"text"` and green `*text*` may mark corrections.
 
-OUTPUT: Return ONLY valid JSON with exactly:
-{{"reply":"learner-facing text","target_completed":false,"target_order":{('null' if 'CURRENT TARGET**: none' in (current or '') else 'CURRENT_TARGET')},"stage_completed":false}}
-{stage_completed_rule}
+OUTPUT: ONLY valid JSON:
+{{"reply":"learner-facing text","target_completed":false,"target_order":{target_order},"stage_completed":false}}
+stage_completed=true only when the current target is complete and it is the final required target.
 """.strip()
-
-    # Preserve the exact output contract from the original prompt when possible.
-    # The dynamic target order is authoritative in the router/backend, so null
-    # is safer here than inventing a number in the compact prompt.
-    return prompt
 
 
 def _compact_practice_system_prompt(system: str) -> str:
@@ -156,21 +142,17 @@ def _compact_practice_system_prompt(system: str) -> str:
     scenario = _extract_block(system, "**PRACTICE SCENARIO**:")
     targets = _extract_block(system, "**LESSON TARGETS**:", "**PRACTICE SCENARIO**:")
 
-    scenario_line = scenario[:300] if scenario else ""
-    targets_line = targets[:500] if targets else ""
-
     return f"""You are the PRACTICE AI for a {level} lesson.
 LANGUAGE: {language}
-TARGETS: {targets_line}
-SCENARIO: {scenario_line}
+TARGETS: {targets[:500]}
+SCENARIO: {scenario[:300]}
 
 RULES:
-- Be a natural conversation partner, not a formal teacher.
+- Natural conversation partner, not formal teacher.
 - Respond to the learner's actual message; never invent the learner's answer/info.
 - Ask at most one natural question at a time.
 - Practice targets naturally; do not force a checklist.
-- Correct meaningful errors briefly with red/green formatting when useful.
-- Keep replies short, natural, and level-appropriate.
+- Correct meaningful errors briefly; keep replies short and level-appropriate.
 - Output only learner-facing conversation.
 """.strip()
 
@@ -186,17 +168,11 @@ def _compact_lesson_system(system: str) -> str:
 def _compact_lesson_messages(
     messages: list[dict[str, str]],
 ) -> list[dict[str, str]]:
-    """Send only a compact lesson state plus the current learner message."""
-    system_messages = [
-        dict(message)
-        for message in messages
-        if message.get("role") == "system"
-    ]
-
+    """Send only compact lesson state plus the current learner message."""
     lesson_system = next(
         (
-            message
-            for message in system_messages
+            dict(message)
+            for message in messages
             if _is_lesson_system_message(message)
         ),
         None,
@@ -223,7 +199,7 @@ def _compact_lesson_messages(
         if not content:
             continue
 
-        if len(content) > LESSON_CONTEXT_MAX_HISTORY_CHARS:
+        if len(content) > LESSON_CONTEXT_MAX_MESSAGE_CHARS:
             content = content[:LESSON_CONTEXT_MAX_MESSAGE_CHARS].rstrip() + "…"
 
         compacted.append(
