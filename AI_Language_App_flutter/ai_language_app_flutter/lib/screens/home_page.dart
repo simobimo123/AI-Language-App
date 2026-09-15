@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/home_stats_controller.dart';
@@ -10,6 +11,7 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/home/home_view.dart';
 import 'learning_path_page.dart';
 import 'profile_page.dart';
+import 'tts_test_page.dart';
 import 'words_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -107,10 +109,26 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _openTtsTest() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const TtsTestPage(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
+      floatingActionButton: kDebugMode
+          ? FloatingActionButton.extended(
+              onPressed: _openTtsTest,
+              icon: const Icon(Icons.volume_up_rounded),
+              label: const Text('TTS'),
+              tooltip: 'Test text-to-speech',
+            )
+          : null,
       bottomNavigationBar: AppBottomNavBar(
         currentIndex: currentIndex,
         onItemSelected: onNavigationChanged,
