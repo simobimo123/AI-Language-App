@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+
 import 'api_client.dart';
 
 class TtsApiService {
@@ -23,11 +25,21 @@ class TtsApiService {
       if (gender != null) 'gender': gender,
     };
 
+    debugPrint(
+      '[TTS][API] Requesting speech for ${text.length} characters.',
+    );
+
     final response = await _client.post(
       '/ai/tts/',
       authenticated: true,
       headers: _client.jsonHeaders,
       body: jsonEncode(payload),
+    );
+
+    final contentType = response.headers['content-type'] ?? '';
+    debugPrint(
+      '[TTS][API] status=${response.statusCode}, '
+      'content-type=$contentType, bytes=${response.bodyBytes.length}.',
     );
 
     if (response.statusCode != 200) {
@@ -44,6 +56,14 @@ class TtsApiService {
         null,
         'The TTS server returned empty audio.',
         statusCode: response.statusCode,
+      );
+    }
+
+    if (response.bodyBytes.length < 12 ||
+        String.fromCharCodes(response.bodyBytes.sublist(0, 4)) != 'RIFF' ||
+        String.fromCharCodes(response.bodyBytes.sublist(8, 12)) != 'WAVE') {
+      throw StateError(
+        'The TTS server returned invalid WAV audio.',
       );
     }
 
