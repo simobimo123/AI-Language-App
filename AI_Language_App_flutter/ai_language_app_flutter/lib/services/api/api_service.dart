@@ -11,6 +11,7 @@ import 'lesson_translation_check_api_service.dart';
 import 'placement_api_service.dart';
 import 'stats_api_service.dart';
 import 'translation_api_service.dart';
+import 'tts_api_service.dart';
 import 'word_api_service.dart';
 
 class ApiService {
@@ -27,6 +28,7 @@ class ApiService {
   late final PlacementApiService _placement;
   late final StatsApiService _stats;
   late final TranslationApiService _translation;
+  late final TtsApiService _tts;
   late final WordApiService _words;
 
   ApiClient get client => _client;
@@ -44,6 +46,7 @@ class ApiService {
     _placement = PlacementApiService(_client);
     _stats = StatsApiService(_client);
     _translation = TranslationApiService(_client);
+    _tts = TtsApiService(_client);
     _words = WordApiService(_client);
   }
 
@@ -223,6 +226,21 @@ class ApiService {
 
   Future<String> translateText({required String text}) =>
       _translation.translate(text: text);
+
+  Future<List<int>> synthesizeSpeech({
+    required String text,
+    required String learningLanguage,
+    required String nativeLanguage,
+    String? gender,
+  }) async {
+    final bytes = await _tts.synthesize(
+      text: text,
+      learningLanguage: learningLanguage,
+      nativeLanguage: nativeLanguage,
+      gender: gender,
+    );
+    return bytes;
+  }
 
   Future<int> startPlacementAttempt({required String language}) =>
       _placement.startPlacementAttempt(language: language);
