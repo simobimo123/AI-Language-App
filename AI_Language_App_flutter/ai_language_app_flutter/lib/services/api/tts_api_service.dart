@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'api_client.dart';
 
@@ -10,14 +10,16 @@ class TtsApiService {
 
   Future<Uint8List> synthesize({
     required String text,
-    required String learningLanguage,
-    required String nativeLanguage,
+    String? learningLanguage,
+    String? nativeLanguage,
     String? gender,
   }) async {
     final payload = <String, dynamic>{
       'text': text,
-      'learning_language': learningLanguage,
-      'native_language': nativeLanguage,
+      if (learningLanguage != null && learningLanguage.isNotEmpty)
+        'learning_language': learningLanguage,
+      if (nativeLanguage != null && nativeLanguage.isNotEmpty)
+        'native_language': nativeLanguage,
       if (gender != null) 'gender': gender,
     };
 
