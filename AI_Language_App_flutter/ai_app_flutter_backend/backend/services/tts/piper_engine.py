@@ -7,6 +7,9 @@ import sys
 import tempfile
 
 
+PIPER_TIMEOUT_SECONDS = 60
+
+
 class PiperEngine:
     def __init__(self) -> None:
         self._piper_executable = shutil.which("piper")
@@ -55,7 +58,13 @@ class PiperEngine:
                 text=True,
                 capture_output=True,
                 check=False,
+                timeout=PIPER_TIMEOUT_SECONDS,
             )
+        except subprocess.TimeoutExpired as exc:
+            output_path.unlink(missing_ok=True)
+            raise RuntimeError(
+                f"Piper synthesis timed out after {PIPER_TIMEOUT_SECONDS} seconds."
+            ) from exc
         except Exception:
             output_path.unlink(missing_ok=True)
             raise
