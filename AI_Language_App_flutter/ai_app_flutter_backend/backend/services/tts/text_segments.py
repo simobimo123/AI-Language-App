@@ -5,6 +5,10 @@ import re
 
 
 _MARKER_RE = re.compile(r"\[(NATIVE|LEARNING)\]", re.IGNORECASE)
+_CONTROL_MARKER_RE = re.compile(
+    r"\[\[(?:TARGET_COMPLETE:\d+|TEACHING_COMPLETE)\]\]",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -17,9 +21,9 @@ def split_tts_segments(text: str, *, default_role: str = "LEARNING") -> list[TTS
     """Split text into explicit NATIVE/LEARNING segments.
 
     If the model does not emit markers, the whole text uses ``default_role``.
-    Marker text itself is never sent to the TTS engine.
+    Marker and lesson-control text is never sent to the TTS engine.
     """
-    cleaned = text.strip()
+    cleaned = _CONTROL_MARKER_RE.sub("", text).strip()
     if not cleaned:
         return []
 
