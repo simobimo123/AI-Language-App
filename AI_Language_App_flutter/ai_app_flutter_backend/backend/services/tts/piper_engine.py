@@ -1,12 +1,9 @@
 """Fast Piper TTS engine with in-memory voice reuse.
 
-The old implementation started a new Piper subprocess for every synthesis
-request. That forces Piper to reload the ONNX model every time, which is
-unnecessarily slow for an interactive tutor. This implementation loads each
-voice once and reuses it for subsequent requests.
-
-A subprocess fallback is kept for environments where the Python Piper API is
-not available.
+Each voice model is loaded once and reused for subsequent synthesis requests.
+The Python API is preferred because it keeps the ONNX session in memory. A
+subprocess fallback remains available for environments where the Python API
+cannot be imported.
 """
 
 from pathlib import Path
@@ -22,7 +19,7 @@ PIPER_TIMEOUT_SECONDS = 60
 
 try:
     from piper import PiperVoice
-except ImportError:  # pragma: no cover - exercised only in fallback environments
+except ImportError:  # pragma: no cover - fallback environments only
     PiperVoice = None  # type: ignore[assignment,misc]
 
 
@@ -75,10 +72,9 @@ class PiperEngine:
     ) -> None:
         voice = self._load_voice(model_path)
 
-        # Piper's high-level API writes a standard mono 16-bit WAV and reuses
-        # the already-loaded ONNX session for repeated requests.
+        # Piper TTS 1.8.x exposes synthesize_wav for a ready-to-write WAV file.
         with wave.open(str(output_path), "wb") as wav_file:
-            voice.synthesize(text, wav_file)  # type: ignore[attr-defined]
+            voice.synthesize_wav(text, wav_file)  # type: ignore[attr-defined]
 
     def _synthesize_with_cli(
         self,
@@ -118,12 +114,11 @@ class PiperEngine:
 
         try:
             if PiperVoice is not None:
-                with self._voices_lock:
-                    self._synthesize_with_python_api(
-                        cleaned,
-                        model_path,
-                        output_path,
-                    )
+                self._synthesize_with_python_api(
+                    cleaned,
+                    model_path,
+                    output_path,
+                )
             else:
                 self._synthesize_with_cli(
                     cleaned,
