@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -33,19 +34,18 @@ AI_CLASSIFIER_MODEL = os.getenv(
 ).strip()
 
 if not AI_MODEL:
-    raise RuntimeError("OPENROUTER_MAIN_MODEL is empty in the .env file")
+    raise RuntimeError("OPENROUTER_MAIN_MODEL is empty in the backend .env file")
 
 if not AI_CLASSIFIER_MODEL:
-    raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is empty in the .env file")
+    raise RuntimeError("OPENROUTER_CLASSIFIER_MODEL is empty in the backend .env file")
 
 
-# Lesson AI already computes the complete pedagogical state on the backend.
-# The model therefore only needs a very small recent conversational window.
-# This keeps the full lesson memory in the database without repeatedly sending
-# the entire conversation to OpenRouter.
-LESSON_CONTEXT_MAX_HISTORY_MESSAGES = 2
-LESSON_CONTEXT_MAX_HISTORY_CHARS = 900
-LESSON_CONTEXT_MAX_MESSAGE_CHARS = 450
+# The backend keeps the full lesson memory and computes the current target.
+# OpenRouter receives only the current learner message plus a compact state
+# summary, keeping the free-tier prompt as small as possible.
+LESSON_CONTEXT_MAX_HISTORY_MESSAGES = 1
+LESSON_CONTEXT_MAX_HISTORY_CHARS = 600
+LESSON_CONTEXT_MAX_MESSAGE_CHARS = 600
 
 
 class OpenRouterRequestError(RuntimeError):
@@ -77,26 +77,137 @@ def _is_lesson_system_message(message: dict[str, str]) -> bool:
     )
 
 
+def _extract_block(text: str, heading: str, next_heading: str | None = None) -> str:
+    if next_heading:
+        pattern = rf"({re.escape(heading)}.*?)(?=\n\n{re.escape(next_heading)}|\Z)"
+    else:
+        pattern = rf"({re.escape(heading)}.*)"
+
+    match = re.search(pattern, text, flags=re.DOTALL)
+    return match.group(1).strip() if match else ""
+
+
+def _compact_teaching_system_prompt(system: str) -> str:
+    language_match = re.search(
+        r"\*\*LANGUAGE\*\*:\s*([^\n]+)\s*\n\*\*LEVEL\*\*:\s*([^\n]+)",
+        system,
+    )
+
+    language = language_match.group(1).strip() if language_match else "unknown"
+    level = language_match.group(2).strip() if language_match else "unknown"
+
+    current = _extract_block(
+        system,
+        "**CURRENT TARGET**:",
+        "**NEXT TARGET**:",
+    )
+    next_target = _extract_block(
+        system,
+        "**NEXT TARGET**:",
+        "**CORE PEDAGOGICAL SEQUENCE",
+    )
+
+    json_start = system.find("**OUTPUT FORMAT — MANDATORY JSON**")
+    output_hint = (
+        system[json_start:]
+        if json_start >= 0
+        else ""
+    )
+
+    stage_completed_rule = (
+        "stage_completed=true only when the current target is complete and it is the final required target."
+    )
+
+    prompt = f"""You are the TEACHING AI for a {level} language lesson.
+LANGUAGE: {language}
+{current or '**CURRENT TARGET**: none'}
+{next_target or '**NEXT TARGET**: none'}
+
+RULES:
+- TEACH meaning/form first; MODEL one short correct example; then ASK one learner prompt.
+- Evaluate only the learner's latest message for the current target.
+- Meaningful error: show `wrong → correct`, give one short reason, then ask for retry.
+- Do not advance until the current target clearly satisfies its success criteria.
+- Once complete, do not require the same target again; teach/model the next target and give one prompt.
+- Accept natural correct alternatives.
+- Use the backend-selected explanation language for all teacher explanations/corrections; use the learning language for targets/examples.
+- Keep replies short (normally 1–4 sentences), one question/prompt only, no stories or invented learner information.
+- Use red `"text"` and green `*text*` formatting only when useful for corrections.
+
+OUTPUT: Return ONLY valid JSON with exactly:
+{{"reply":"learner-facing text","target_completed":false,"target_order":{('null' if 'CURRENT TARGET**: none' in (current or '') else 'CURRENT_TARGET')},"stage_completed":false}}
+{stage_completed_rule}
+""".strip()
+
+    # Preserve the exact output contract from the original prompt when possible.
+    # The dynamic target order is authoritative in the router/backend, so null
+    # is safer here than inventing a number in the compact prompt.
+    return prompt
+
+
+def _compact_practice_system_prompt(system: str) -> str:
+    language_match = re.search(
+        r"\*\*LANGUAGE\*\*:\s*([^\n]+)\s*\n\*\*LEVEL\*\*:\s*([^\n]+)",
+        system,
+    )
+    language = language_match.group(1).strip() if language_match else "unknown"
+    level = language_match.group(2).strip() if language_match else "unknown"
+
+    scenario = _extract_block(system, "**PRACTICE SCENARIO**:")
+    targets = _extract_block(system, "**LESSON TARGETS**:", "**PRACTICE SCENARIO**:")
+
+    scenario_line = scenario[:300] if scenario else ""
+    targets_line = targets[:500] if targets else ""
+
+    return f"""You are the PRACTICE AI for a {level} lesson.
+LANGUAGE: {language}
+TARGETS: {targets_line}
+SCENARIO: {scenario_line}
+
+RULES:
+- Be a natural conversation partner, not a formal teacher.
+- Respond to the learner's actual message; never invent the learner's answer/info.
+- Ask at most one natural question at a time.
+- Practice targets naturally; do not force a checklist.
+- Correct meaningful errors briefly with red/green formatting when useful.
+- Keep replies short, natural, and level-appropriate.
+- Output only learner-facing conversation.
+""".strip()
+
+
+def _compact_lesson_system(system: str) -> str:
+    if "You are the **TEACHING AI**" in system:
+        return _compact_teaching_system_prompt(system)
+    if "You are the **PRACTICE AI**" in system:
+        return _compact_practice_system_prompt(system)
+    return system
+
+
 def _compact_lesson_messages(
     messages: list[dict[str, str]],
 ) -> list[dict[str, str]]:
-    """Keep lesson prompts under the small free-tier context budget.
-
-    Backend lesson state, completed targets, current target, success criteria,
-    language rules, and pedagogical rules stay in the system message. Only the
-    two most recent stored conversation messages are sent as conversational
-    memory, and those are capped by both per-message and total character
-    budgets. The current user message remains untouched except for its normal
-    validation upstream.
-    """
+    """Send only a compact lesson state plus the current learner message."""
     system_messages = [
-        message
+        dict(message)
         for message in messages
         if message.get("role") == "system"
     ]
 
-    if not any(_is_lesson_system_message(message) for message in system_messages):
+    lesson_system = next(
+        (
+            message
+            for message in system_messages
+            if _is_lesson_system_message(message)
+        ),
+        None,
+    )
+
+    if lesson_system is None:
         return messages
+
+    lesson_system["content"] = _compact_lesson_system(
+        str(lesson_system.get("content") or "")
+    )
 
     non_system = [
         message
@@ -106,20 +217,14 @@ def _compact_lesson_messages(
 
     recent = non_system[-LESSON_CONTEXT_MAX_HISTORY_MESSAGES:]
     compacted: list[dict[str, str]] = []
-    remaining = LESSON_CONTEXT_MAX_HISTORY_CHARS
 
     for message in recent:
         content = str(message.get("content") or "").strip()
-        if not content or remaining <= 0:
+        if not content:
             continue
 
-        limit = min(
-            LESSON_CONTEXT_MAX_MESSAGE_CHARS,
-            remaining,
-        )
-
-        if len(content) > limit:
-            content = content[:limit].rstrip() + "…"
+        if len(content) > LESSON_CONTEXT_MAX_HISTORY_CHARS:
+            content = content[:LESSON_CONTEXT_MAX_MESSAGE_CHARS].rstrip() + "…"
 
         compacted.append(
             {
@@ -127,9 +232,8 @@ def _compact_lesson_messages(
                 "content": content,
             }
         )
-        remaining -= len(content)
 
-    return system_messages + compacted
+    return [lesson_system] + compacted
 
 
 def chat_completion(
