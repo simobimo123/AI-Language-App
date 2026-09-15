@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../core/language/language_controller.dart';
@@ -121,57 +122,141 @@ class _LessonChatPageState extends State<LessonChatPage> {
     );
   }
 
-  List<Widget> _buildClickableWordWidgets(
-    BuildContext context, {
+  TextSpan _buildClickableWordSpan(
+    String token,
+    TextStyle style,
+  ) {
+    final word = _cleanWordToken(token);
+    final isWord = word.isNotEmpty && word.length <= 80;
+
+    if (!isWord) {
+      return TextSpan(
+        text: token,
+        style: style,
+      );
+    }
+
+    return TextSpan(
+      text: token,
+      style: style,
+      recognizer: TapGestureRecognizer()
+        ..onTap = () {
+          _showWordDetails(word);
+        },
+    );
+  }
+
+  TextSpan _buildNormalTextSpan({
     required String text,
     required TextStyle style,
   }) {
-    final tokens = text.split(RegExp(r'(\s+)'));
+    final spans = <InlineSpan>[];
 
-    return tokens.map((token) {
-      if (token.isEmpty) {
-        return const SizedBox.shrink();
-      }
+    final matches = RegExp(r'(\s+)').allMatches(text);
 
-      final word = _cleanWordToken(token);
-      final isWord = word.isNotEmpty && word.length <= 80;
-      final isWhitespace = token.trim().isEmpty;
+    int lastEnd = 0;
 
-      if (!isWord || isWhitespace) {
-        return Text(
-          token,
-          textDirection: _learningDirection,
-          style: style,
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        final wordToken = text.substring(
+          lastEnd,
+          match.start,
+        );
+
+        spans.add(
+          _buildClickableWordSpan(
+            wordToken,
+            style,
+          ),
         );
       }
 
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(5),
-          onTap: () => _showWordDetails(word),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 1,
-              vertical: 1,
-            ),
-            child: Text(
-              token,
-              textDirection: _learningDirection,
-              style: style,
-            ),
+      spans.add(
+        TextSpan(
+          text: text.substring(
+            match.start,
+            match.end,
           ),
+          style: style,
         ),
       );
-    }).toList();
+
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < text.length) {
+      spans.add(
+        _buildClickableWordSpan(
+          text.substring(lastEnd),
+          style,
+        ),
+      );
+    }
+
+    return TextSpan(
+      children: spans,
+      style: style,
+    );
   }
 
-  List<Widget> _buildFormattedMessageWidgets(
-    BuildContext context, {
+  TextSpan _buildColoredTextSpan({
     required String text,
     required TextStyle style,
   }) {
-    final widgets = <Widget>[];
+    final spans = <InlineSpan>[];
+
+    final matches = RegExp(r'(\s+)').allMatches(text);
+
+    int lastEnd = 0;
+
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        final wordToken = text.substring(
+          lastEnd,
+          match.start,
+        );
+
+        spans.add(
+          _buildClickableWordSpan(
+            wordToken,
+            style,
+          ),
+        );
+      }
+
+      spans.add(
+        TextSpan(
+          text: text.substring(
+            match.start,
+            match.end,
+          ),
+          style: style,
+        ),
+      );
+
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < text.length) {
+      spans.add(
+        _buildClickableWordSpan(
+          text.substring(lastEnd),
+          style,
+        ),
+      );
+    }
+
+    return TextSpan(
+      children: spans,
+      style: style,
+    );
+  }
+
+  TextSpan _buildFormattedMessageSpan({
+    required String text,
+    required TextStyle style,
+  }) {
+    final spans = <InlineSpan>[];
 
     int index = 0;
 
@@ -180,7 +265,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
       // ------------------------------------------------------------
       // **text**
-      // Remove the ** markers and display the content normally.
+      // Normal text. The ** markers are hidden.
       // ------------------------------------------------------------
       if (current == '*' &&
           index + 1 < text.length &&
@@ -197,9 +282,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
           );
 
           if (content.isNotEmpty) {
-            widgets.addAll(
-              _buildClickableWordWidgets(
-                context,
+            spans.add(
+              _buildNormalTextSpan(
                 text: content,
                 style: style,
               ),
@@ -213,8 +297,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
       // ------------------------------------------------------------
       // "text"
-      // Double quotes are UI markers for RED text.
-      // The quote characters themselves are hidden.
+      // RED text.
+      // The quote characters are hidden.
+      // Every word remains clickable and selectable.
       // ------------------------------------------------------------
       if (current == '"') {
         final closingIndex = text.indexOf(
@@ -229,10 +314,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
           );
 
           if (content.isNotEmpty) {
-            widgets.add(
-              Text(
-                content,
-                textDirection: _learningDirection,
+            spans.add(
+              _buildColoredTextSpan(
+                text: content,
                 style: style.copyWith(
                   color: Colors.red,
                 ),
@@ -247,8 +331,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
       // ------------------------------------------------------------
       // *text*
-      // Single asterisks are UI markers for GREEN text.
-      // The asterisk characters themselves are hidden.
+      // GREEN text.
+      // The asterisk characters are hidden.
+      // Every word remains clickable and selectable.
       // ------------------------------------------------------------
       if (current == '*' &&
           (index == 0 || text[index - 1] != '*')) {
@@ -258,6 +343,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
         );
 
         if (closingIndex != -1 &&
+            closingIndex > index + 1 &&
             (closingIndex + 1 >= text.length ||
                 text[closingIndex + 1] != '*')) {
           final content = text.substring(
@@ -266,10 +352,9 @@ class _LessonChatPageState extends State<LessonChatPage> {
           );
 
           if (content.isNotEmpty) {
-            widgets.add(
-              Text(
-                content,
-                textDirection: _learningDirection,
+            spans.add(
+              _buildColoredTextSpan(
+                text: content,
                 style: style.copyWith(
                   color: Colors.green,
                 ),
@@ -284,7 +369,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
       // ------------------------------------------------------------
       // Normal text.
-      //
       // Find the next formatting marker.
       // ------------------------------------------------------------
       int nextMarker = text.length;
@@ -320,9 +404,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
       }
 
       if (nextMarker == index) {
-        widgets.addAll(
-          _buildClickableWordWidgets(
-            context,
+        spans.add(
+          TextSpan(
             text: current,
             style: style,
           ),
@@ -338,9 +421,8 @@ class _LessonChatPageState extends State<LessonChatPage> {
       );
 
       if (normalText.isNotEmpty) {
-        widgets.addAll(
-          _buildClickableWordWidgets(
-            context,
+        spans.add(
+          _buildNormalTextSpan(
             text: normalText,
             style: style,
           ),
@@ -350,7 +432,10 @@ class _LessonChatPageState extends State<LessonChatPage> {
       index = nextMarker;
     }
 
-    return widgets;
+    return TextSpan(
+      children: spans,
+      style: style,
+    );
   }
 
   int _findSingleStarMarker(
@@ -384,22 +469,63 @@ class _LessonChatPageState extends State<LessonChatPage> {
     required bool isUser,
     required int messageIndex,
   }) {
-    if (isUser || text.trim().isEmpty) {
-      return Text(
-        text.replaceAll('**', ''),
-        textDirection: direction,
+    if (text.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final TextSpan messageSpan;
+
+    if (isUser) {
+      messageSpan = TextSpan(
+        text: text.replaceAll('**', ''),
+        style: style,
+      );
+    } else {
+      messageSpan = _buildFormattedMessageSpan(
+        text: text,
         style: style,
       );
     }
 
-    return Wrap(
-      alignment: WrapAlignment.start,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: _buildFormattedMessageWidgets(
-        context,
-        text: text,
-        style: style,
-      ),
+    return SelectableText.rich(
+      messageSpan,
+      textDirection: direction,
+      style: style,
+
+      // ------------------------------------------------------------
+      // IMPORTANT:
+      //
+      // Flutter's native selectable-text system handles:
+      //
+      // 1. Normal tap.
+      // 2. Long press -> starts selection.
+      // 3. Long press + drag -> expands selection.
+      // 4. Selection handles -> can be moved independently.
+      //
+      // TapGestureRecognizer on the individual TextSpan only
+      // fires for a completed normal tap, so it does not open
+      // the word dialog while the user is selecting text.
+      // ------------------------------------------------------------
+      enableInteractiveSelection: true,
+
+      // We do not want the blinking text cursor.
+      // Selection handles remain available.
+      showCursor: false,
+      cursorWidth: 0,
+
+      // Make the selection clearly visible without changing
+      // the normal appearance of the message.
+      selectionColor: Theme.of(context)
+          .colorScheme
+          .primary
+          .withValues(alpha: 0.22),
+
+      // Use Flutter's normal Material selection controls so
+      // the user gets the two draggable selection handles.
+      selectionControls: materialTextSelectionControls,
+
+      // Keep the text itself visually unchanged.
+      textAlign: TextAlign.start,
     );
   }
 
