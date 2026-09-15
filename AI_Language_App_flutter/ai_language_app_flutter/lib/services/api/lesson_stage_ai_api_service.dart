@@ -61,6 +61,17 @@ class LessonStageAiApiService {
     _tts = TtsApiService(_client);
   }
 
+  String _stripTtsMarkers(String text) {
+    return text
+        .replaceAll(
+          RegExp(r'\[(?:NATIVE|LEARNING)\]', caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'[ \t]{2,}'), ' ')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
   Future<void> _speakAssistantReply(String text) async {
     final cleaned = text.trim();
     if (cleaned.isEmpty) return;
@@ -77,6 +88,25 @@ class LessonStageAiApiService {
       debugPrint('[TTS][LESSON] Speech generation/playback failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
+  }
+
+  LessonStageAiChunk _visibleChunk(LessonStageAiChunk chunk) {
+    if ((chunk.type != 'token' && chunk.type != 'chunk') ||
+        chunk.text == null) {
+      return chunk;
+    }
+
+    return LessonStageAiChunk(
+      type: chunk.type,
+      text: _stripTtsMarkers(chunk.text!),
+      conversationId: chunk.conversationId,
+      action: chunk.action,
+      targetId: chunk.targetId,
+      confidence: chunk.confidence,
+      axisCompleted: chunk.axisCompleted,
+      lessonCompleted: chunk.lessonCompleted,
+      message: chunk.message,
+    );
   }
 
   Stream<LessonStageAiChunk> chat({
@@ -182,7 +212,7 @@ class LessonStageAiApiService {
           final chunk = parseEvent();
           if (chunk != null) {
             emitChunk(chunk);
-            yield chunk;
+            yield _visibleChunk(chunk);
           }
         }
       }
@@ -191,7 +221,7 @@ class LessonStageAiApiService {
         final chunk = parseEvent();
         if (chunk != null) {
           emitChunk(chunk);
-          yield chunk;
+          yield _visibleChunk(chunk);
         }
       }
 
