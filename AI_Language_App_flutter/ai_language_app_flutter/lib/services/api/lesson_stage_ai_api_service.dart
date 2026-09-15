@@ -54,6 +54,7 @@ class LessonStageAiApiService {
   final ApiClient _client;
   late final TtsApiService _tts;
   final TtsPlayerService _ttsPlayer = TtsPlayerService();
+  int _speechGeneration = 0;
 
   LessonStageAiApiService(this._client) {
     _tts = TtsApiService(_client);
@@ -63,8 +64,15 @@ class LessonStageAiApiService {
     final cleaned = text.trim();
     if (cleaned.isEmpty) return;
 
+    final generation = ++_speechGeneration;
+
     try {
       final audio = await _tts.synthesize(text: cleaned);
+
+      // If another AI reply arrived while this audio was being generated,
+      // discard this older audio instead of letting it play out of order.
+      if (generation != _speechGeneration) return;
+
       await _ttsPlayer.play(audio);
     } catch (_) {
       // TTS must never break or delay the lesson conversation.
@@ -155,7 +163,7 @@ class LessonStageAiApiService {
         return null;
       }
 
-      Future<void> emitChunk(LessonStageAiChunk chunk) async {
+      void emitChunk(LessonStageAiChunk chunk) {
         if ((chunk.type == 'token' || chunk.type == 'chunk') &&
             chunk.text != null &&
             chunk.text!.isNotEmpty) {
@@ -173,7 +181,7 @@ class LessonStageAiApiService {
         } else if (line.isEmpty && dataLines.isNotEmpty) {
           final chunk = parseEvent();
           if (chunk != null) {
-            await emitChunk(chunk);
+            emitChunk(chunk);
             yield chunk;
           }
         }
@@ -182,7 +190,7 @@ class LessonStageAiApiService {
       if (dataLines.isNotEmpty) {
         final chunk = parseEvent();
         if (chunk != null) {
-          await emitChunk(chunk);
+          emitChunk(chunk);
           yield chunk;
         }
       }
