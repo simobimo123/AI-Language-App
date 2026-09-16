@@ -43,6 +43,7 @@ from routers.vocabulary import router as vocabulary_router
 from routers.stats import router as stats_router
 from routers.lesson_content import router as lesson_content_router
 from routers.lesson_preview import router as lesson_preview_router
+from routers.tts import router as tts_router
 
 
 @asynccontextmanager
@@ -104,5 +105,6 @@ app.include_router(vocabulary_router)
 app.include_router(stats_router)
 app.include_router(lesson_content_router)
 app.include_router(lesson_preview_router)
+app.include_router(tts_router)
 
 # python -m uvicorn main:app --reload --host 0.0.0.0

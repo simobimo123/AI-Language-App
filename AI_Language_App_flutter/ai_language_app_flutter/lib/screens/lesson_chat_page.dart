@@ -6,6 +6,7 @@ import '../core/language/lesson_chat_ui_text.dart';
 import '../models/learning_lesson_model.dart';
 import '../services/api/api_service.dart';
 import '../services/lesson_chat_session_store.dart';
+import '../services/tts_player_service.dart';
 import '../widgets/words/word_detail_dialog.dart';
 
 class LessonChatPage extends StatefulWidget {
@@ -40,6 +41,7 @@ class _Message {
 
 class _LessonChatPageState extends State<LessonChatPage> {
   final ApiService _api = ApiService();
+  final TtsPlayerService _ttsPlayer = TtsPlayerService();
   final _input = TextEditingController();
   final _scroll = ScrollController();
   final _focusNode = FocusNode();
@@ -58,6 +60,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
   bool _completed = false;
 
   int? _translatingIndex;
+  int? _speakingIndex;
 
   bool _suggesting = false;
   String? _suggestionText;
@@ -263,10 +266,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
     while (index < text.length) {
       final current = text[index];
 
-      // ------------------------------------------------------------
-      // **text**
-      // Normal text. The ** markers are hidden.
-      // ------------------------------------------------------------
       if (current == '*' &&
           index + 1 < text.length &&
           text[index + 1] == '*') {
@@ -295,12 +294,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
         }
       }
 
-      // ------------------------------------------------------------
-      // "text"
-      // RED text.
-      // The quote characters are hidden.
-      // Every word remains clickable and selectable.
-      // ------------------------------------------------------------
       if (current == '"') {
         final closingIndex = text.indexOf(
           '"',
@@ -329,12 +322,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
         }
       }
 
-      // ------------------------------------------------------------
-      // *text*
-      // GREEN text.
-      // The asterisk characters are hidden.
-      // Every word remains clickable and selectable.
-      // ------------------------------------------------------------
       if (current == '*' &&
           (index == 0 || text[index - 1] != '*')) {
         final closingIndex = text.indexOf(
@@ -367,10 +354,6 @@ class _LessonChatPageState extends State<LessonChatPage> {
         }
       }
 
-      // ------------------------------------------------------------
-      // Normal text.
-      // Find the next formatting marker.
-      // ------------------------------------------------------------
       int nextMarker = text.length;
 
       final doubleQuoteIndex = text.indexOf(
@@ -491,40 +474,14 @@ class _LessonChatPageState extends State<LessonChatPage> {
       messageSpan,
       textDirection: direction,
       style: style,
-
-      // ------------------------------------------------------------
-      // IMPORTANT:
-      //
-      // Flutter's native selectable-text system handles:
-      //
-      // 1. Normal tap.
-      // 2. Long press -> starts selection.
-      // 3. Long press + drag -> expands selection.
-      // 4. Selection handles -> can be moved independently.
-      //
-      // TapGestureRecognizer on the individual TextSpan only
-      // fires for a completed normal tap, so it does not open
-      // the word dialog while the user is selecting text.
-      // ------------------------------------------------------------
       enableInteractiveSelection: true,
-
-      // We do not want the blinking text cursor.
-      // Selection handles remain available.
       showCursor: false,
       cursorWidth: 0,
-
-      // Make the selection clearly visible without changing
-      // the normal appearance of the message.
       selectionColor: Theme.of(context)
           .colorScheme
           .primary
           .withValues(alpha: 0.22),
-
-      // Use Flutter's normal Material selection controls so
-      // the user gets the two draggable selection handles.
       selectionControls: materialTextSelectionControls,
-
-      // Keep the text itself visually unchanged.
       textAlign: TextAlign.start,
     );
   }
@@ -619,10 +576,67 @@ class _LessonChatPageState extends State<LessonChatPage> {
 
   @override
   void dispose() {
+    _ttsPlayer.dispose();
     _input.dispose();
     _scroll.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _speakMessage(int index) async {
+    if (index < 0 || index >= _messages.length) {
+      return;
+    }
+
+    final text = _messages[index].text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+
+    if (_speakingIndex == index) {
+      await _ttsPlayer.stop();
+      if (mounted) {
+        setState(() {
+          _speakingIndex = null;
+        });
+      }
+      return;
+    }
+
+    if (_speakingIndex != null) {
+      await _ttsPlayer.stop();
+    }
+
+    setState(() {
+      _speakingIndex = index;
+      _error = null;
+    });
+
+    try {
+      final audio = await _api.synthesizeSpeech(
+        text: text,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      await _ttsPlayer.play(audio);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _error = 'TTS: $error';
+      });
+    } finally {
+      if (mounted && _speakingIndex == index) {
+        setState(() {
+          _speakingIndex = null;
+        });
+      }
+    }
   }
 
   Future<void> _sendCurrent() async {
@@ -973,6 +987,7 @@ class _LessonChatPageState extends State<LessonChatPage> {
         _hiddenTranslationIndexes.contains(index);
 
     final translating = _translatingIndex == index;
+    final speaking = _speakingIndex == index;
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(
@@ -982,55 +997,95 @@ class _LessonChatPageState extends State<LessonChatPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!hasTranslation || translationHidden)
-            Material(
-              color: theme
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: translating || _sending
-                    ? null
-                    : () => _translateMessage(index),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (translating)
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: theme.colorScheme.primary,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                color: theme
+                    .colorScheme
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: _sending
+                      ? null
+                      : () => _speakMessage(index),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    child: speaking
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.primary,
+                            ),
+                          )
+                        : Icon(
+                            Icons.volume_up_rounded,
+                            size: 16,
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.9),
                           ),
-                        )
-                      else
-                        Icon(
-                          Icons.translate_rounded,
-                          size: 14,
-                          color: theme.colorScheme.primary
-                              .withValues(alpha: 0.9),
-                        ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _ui('translate'),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              if (!hasTranslation || translationHidden)
+                Material(
+                  color: theme
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: translating || _sending
+                        ? null
+                        : () => _translateMessage(index),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (translating)
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: theme.colorScheme.primary,
+                              ),
+                            )
+                          else
+                            Icon(
+                              Icons.translate_rounded,
+                              size: 14,
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.9),
+                            ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _ui('translate'),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           if (hasTranslation && !translationHidden)
             Container(
               margin: const EdgeInsets.only(top: 8),

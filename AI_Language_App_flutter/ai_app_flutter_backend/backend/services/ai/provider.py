@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -25,6 +26,11 @@ LESSON_MAX_OUTPUT_TOKENS = 2048
 
 LESSON_PROGRESS_RE = re.compile(
     r"\[\[LESSON_PROGRESS:([^\]\r\n]*)\]\]"
+)
+
+TTS_MARKER_RE = re.compile(
+    r"\[(?:NATIVE|LEARNING)\]",
+    re.IGNORECASE,
 )
 
 
@@ -164,7 +170,27 @@ class OpenRouterProvider(AIProvider):
             "sentences, examples, model answers, or learner practice content. "
             "Do NOT silently switch the explanation language to English or the learning "
             "language. The selected explanation language remains fixed for the entire "
-            "Teaching AI response."
+            "Teaching AI response.\n\n"
+            "**TTS SPEECH PLAN — MANDATORY INTERNAL DATA**:\n\n"
+            "Add one extra JSON field named `speech_segments`. This field is internal "
+            "machine-readable metadata and is never shown to the learner.\n\n"
+            "`speech_segments` MUST be an array of objects in speaking order. Each object "
+            "has exactly `role` and `text`. `role` MUST be either `NATIVE` or `LEARNING`.\n\n"
+            "Use `NATIVE` for explanations, corrections, meanings, grammar notes, feedback, "
+            "instructions, praise, and other teacher prose written in the selected explanation "
+            "language. Use `LEARNING` for target words, target sentences, examples, model "
+            "answers, answer patterns, and learner-production content written in the language "
+            "being learned.\n\n"
+            "The concatenated speech segment texts, in order, MUST reproduce the visible `reply` "
+            "content exactly apart from insignificant whitespace differences. Do not omit any "
+            "spoken words from `reply`. Do not add words that are absent from `reply`.\n\n"
+            "Keep segments reasonably large; do not create one segment per word. Split only when "
+            "the spoken language actually changes. The `reply` field itself MUST NOT contain "
+            "`[NATIVE]` or `[LEARNING]` markers.\n\n"
+            "Example: if the visible reply is `هذا يعني أن اسمك يأتي بعد ich heiße. مثال: Ich heiße Anna.` "
+            "then the speech plan should use one NATIVE segment for the Arabic explanation and one "
+            "LEARNING segment for the German example. The learner must never see the speech metadata.\n\n"
+            "Return valid JSON that contains the normal lesson fields plus `speech_segments`."
         )
 
     @classmethod
@@ -227,10 +253,15 @@ class OpenRouterProvider(AIProvider):
                 }:
                     role = "user"
 
+                cleaned_content = TTS_MARKER_RE.sub(
+                    "",
+                    str(content),
+                )
+
                 messages.append(
                     {
                         "role": role,
-                        "content": str(content),
+                        "content": cleaned_content,
                     }
                 )
 
@@ -372,11 +403,61 @@ class OpenRouterProvider(AIProvider):
             visible
         )
 
-        # The provider must NOT re-attach the marker.
-        #
-        # lesson_ai.py receives the original stream separately and
-        # extracts the marker there.
         return visible.strip()
+
+    @classmethod
+    def _normalize_teaching_tts_response(
+        cls,
+        text: str,
+        system_instruction: str | None,
+    ) -> str:
+        """Validate the teaching TTS plan and encode it into private markers."""
+        if not system_instruction or "You are the **TEACHING AI**" not in system_instruction:
+            return text
+
+        try:
+            payload = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return text
+
+        if not isinstance(payload, dict):
+            return text
+
+        reply = str(payload.get("reply") or "").strip()
+        if not reply:
+            return text
+
+        raw_segments = payload.get("speech_segments")
+        valid_segments: list[tuple[str, str]] = []
+
+        if isinstance(raw_segments, list):
+            for item in raw_segments:
+                if not isinstance(item, dict):
+                    continue
+                role = str(item.get("role") or "").strip().upper()
+                segment_text = str(item.get("text") or "").strip()
+                if role not in {"NATIVE", "LEARNING"} or not segment_text:
+                    continue
+                valid_segments.append((role, segment_text))
+
+        if not valid_segments:
+            return text
+
+        reconstructed = "".join(segment_text for _, segment_text in valid_segments).strip()
+        normalized_reply = re.sub(r"\s+", " ", reply).strip()
+        normalized_reconstructed = re.sub(r"\s+", " ", reconstructed).strip()
+
+        if normalized_reply != normalized_reconstructed:
+            return text
+
+        private_reply_parts: list[str] = []
+        for role, segment_text in valid_segments:
+            private_reply_parts.append(f"[{role}] {segment_text}")
+
+        payload["reply"] = " ".join(private_reply_parts)
+        payload.pop("speech_segments", None)
+
+        return json.dumps(payload, ensure_ascii=False)
 
     def generate_text(
         self,
@@ -436,6 +517,11 @@ class OpenRouterProvider(AIProvider):
                 f"(model={model!r}, "
                 f"finish_reason={finish_reason!r})."
             )
+
+        text = self._normalize_teaching_tts_response(
+            text,
+            system_instruction,
+        )
 
         usage = response.get(
             "usage"
@@ -590,7 +676,6 @@ class OpenRouterProvider(AIProvider):
                     )
 
                 # Lesson responses are intentionally buffered.
-                #
                 # This allows lesson_ai.py to see the complete internal
                 # progress marker before sending learner-facing text.
                 continue
@@ -625,17 +710,9 @@ class OpenRouterProvider(AIProvider):
                 )
 
             # IMPORTANT:
-            #
-            # Do NOT add:
-            #
-            # [[LESSON_PROGRESS:]]
-            #
-            # here.
-            #
-            # The real marker generated by MiniMax remains inside
+            # Do NOT add a lesson progress marker here.
+            # The real marker generated by the model remains inside
             # buffered_lesson_text and is passed to lesson_ai.py.
-            #
-            # lesson_ai.py extracts it before exposing text to Flutter.
 
             yield AITextResponse(
                 text=buffered_lesson_text,

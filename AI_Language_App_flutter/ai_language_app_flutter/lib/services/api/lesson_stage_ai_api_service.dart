@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/errors/api_exception.dart';
 import '../../core/storage/tutor_explanation_settings.dart';
 import 'api_client.dart';
+import 'tts_api_service.dart';
+import '../tts_player_service.dart';
 
 class LessonStageAiChunk {
   final String type;
@@ -38,7 +41,9 @@ class LessonStageAiChunk {
       conversationId: json['conversation_id']?.toString(),
       action: json['action']?.toString(),
       targetId: json['target_id']?.toString(),
-      confidence: rawConfidence is num ? rawConfidence.toDouble() : double.tryParse(rawConfidence?.toString() ?? ''),
+      confidence: rawConfidence is num
+          ? rawConfidence.toDouble()
+          : double.tryParse(rawConfidence?.toString() ?? ''),
       axisCompleted: json['axis_completed'] == true,
       lessonCompleted: json['lesson_completed'] == true,
       message: json['message']?.toString(),
@@ -48,8 +53,61 @@ class LessonStageAiChunk {
 
 class LessonStageAiApiService {
   final ApiClient _client;
+  late final TtsApiService _tts;
+  final TtsPlayerService _ttsPlayer = TtsPlayerService();
+  int _speechGeneration = 0;
 
-  LessonStageAiApiService(this._client);
+  LessonStageAiApiService(this._client) {
+    _tts = TtsApiService(_client);
+  }
+
+  String _stripTtsMarkers(String text) {
+    return text
+        .replaceAll(
+          RegExp(r'\[(?:NATIVE|LEARNING)\]', caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'[ \t]{2,}'), ' ')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
+  Future<void> _speakAssistantReply(String text) async {
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) return;
+
+    final generation = ++_speechGeneration;
+
+    try {
+      final audio = await _tts.synthesize(text: cleaned);
+
+      if (generation != _speechGeneration) return;
+
+      await _ttsPlayer.play(audio);
+    } catch (error, stackTrace) {
+      debugPrint('[TTS][LESSON] Speech generation/playback failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  LessonStageAiChunk _visibleChunk(LessonStageAiChunk chunk) {
+    if ((chunk.type != 'token' && chunk.type != 'chunk') ||
+        chunk.text == null) {
+      return chunk;
+    }
+
+    return LessonStageAiChunk(
+      type: chunk.type,
+      text: _stripTtsMarkers(chunk.text!),
+      conversationId: chunk.conversationId,
+      action: chunk.action,
+      targetId: chunk.targetId,
+      confidence: chunk.confidence,
+      axisCompleted: chunk.axisCompleted,
+      lessonCompleted: chunk.lessonCompleted,
+      message: chunk.message,
+    );
+  }
 
   Stream<LessonStageAiChunk> chat({
     required int lessonId,
@@ -82,10 +140,14 @@ class LessonStageAiApiService {
     });
 
     final client = http.Client();
+    var assistantText = StringBuffer();
+
     try {
       late final http.StreamedResponse response;
       try {
-        response = await client.send(request).timeout(const Duration(seconds: 60));
+        response = await client
+            .send(request)
+            .timeout(const Duration(seconds: 60));
       } on TimeoutException {
         throw NetworkException('The connection timed out. Please try again.');
       } on http.ClientException catch (e) {
@@ -131,6 +193,14 @@ class LessonStageAiApiService {
         return null;
       }
 
+      void emitChunk(LessonStageAiChunk chunk) {
+        if ((chunk.type == 'token' || chunk.type == 'chunk') &&
+            chunk.text != null &&
+            chunk.text!.isNotEmpty) {
+          assistantText.write(chunk.text);
+        }
+      }
+
       await for (final line in response.stream
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
@@ -140,13 +210,24 @@ class LessonStageAiApiService {
           dataLines.add(line.substring(5).trimLeft());
         } else if (line.isEmpty && dataLines.isNotEmpty) {
           final chunk = parseEvent();
-          if (chunk != null) yield chunk;
+          if (chunk != null) {
+            emitChunk(chunk);
+            yield _visibleChunk(chunk);
+          }
         }
       }
 
       if (dataLines.isNotEmpty) {
         final chunk = parseEvent();
-        if (chunk != null) yield chunk;
+        if (chunk != null) {
+          emitChunk(chunk);
+          yield _visibleChunk(chunk);
+        }
+      }
+
+      final finalText = assistantText.toString().trim();
+      if (finalText.isNotEmpty) {
+        unawaited(_speakAssistantReply(finalText));
       }
     } finally {
       client.close();
